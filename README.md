@@ -39,30 +39,49 @@ Readory is a simple online bookstore designed for digital manga, comics, novels 
 
 1. **Clone the repository** and install dependencies:
 
-   `git clone <your‑repo‑url> cd readory/server npm install`
+   ```bash
+   git clone https://github.com/MjavadH/Readory.git
+   cd readory/server
+   npm install
+   ```
 
 2. **Configure environment variables**. Copy `.env.example` to `.env` and fill in your database credentials and JWT secret. **Never commit your `.env` file** to version control; it contains secrets. For example:
 
-   `DATABASE_URL="postgresql://<username>:<password>@localhost:5432/readory_db?schema=public" JWT_SECRET="your‑strong‑random‑secret" JWT_EXPIRES_IN=3600 PORT=3000`
+   ```env
+   DATABASE_URL="postgresql://<username>:<password>@localhost:5432/readory_db?schema=public"
+   JWT_SECRET="your‑strong‑random‑secret"
+   JWT_EXPIRES_IN=3600
+   PORT=3000
+   ```
 
-3. **Create the database** if it doesn’t already exist:
+4. **Create the database** if it doesn’t already exist:
 
-   `psql -U postgres -c "CREATE DATABASE readory_db;"`
+   ```bash
+   psql -U postgres -c "CREATE DATABASE readory_db;"
+   ```
 
-4. **Run migrations and generate the Prisma client**:
+6. **Run migrations and generate the Prisma client**:
 
-   `npx prisma generate npx prisma migrate dev --name init`
+   ```bash
+   npx prisma generate
+   npx prisma migrate dev --name init
+   ````
 
-5. **Start the development server**:
+7. **Start the development server**:
 
-   `npm run start:dev`
+   ```bash
+   npm run start:dev
+   ```
 
    The server will compile TypeScript in watch mode and start listening on `localhost:3000` (or the `PORT` you set).
 
-6. **Seed an admin role**. By default the `USER` role is created when a user registers. To create an `ADMIN` role and assign it to a user, run the following SQL in your database:
+9. **Seed an admin role**. By default the `USER` role is created when a user registers. To create an `ADMIN` role and assign it to a user, run the following SQL in your database:
 
-   `INSERT INTO "Role" ("name") VALUES ('ADMIN') ON CONFLICT DO NOTHING; -- replace with your admin user’s email UPDATE "User" SET "roleId" = (SELECT id FROM "Role" WHERE "name"='ADMIN') WHERE "email" = 'admin@example.com';`
-
+   ```sql
+   INSERT INTO "Role" ("name") VALUES ('ADMIN') ON CONFLICT DO NOTHING;
+   -- replace with your admin user’s email
+   UPDATE "User" SET "roleId" = (SELECT id FROM "Role" WHERE "name"='ADMIN') WHERE "email" = 'admin@example.com';
+   ```
 
 ## API Overview
 
@@ -79,7 +98,6 @@ Readory is a simple online bookstore designed for digital manga, comics, novels 
 
 - `POST /wallet/deposit` – deposit funds with `{ amount, reference? }` (JWT required).
 
-
 ### Books
 
 - `GET /books` – list all published books.
@@ -90,7 +108,6 @@ Readory is a simple online bookstore designed for digital manga, comics, novels 
 
 - `PATCH /books/:id` – **admin only**. Update a book’s details or publish it.
 
-
 ### Chapters
 
 - `GET /books/:bookId/chapters` – list chapters for a book.
@@ -98,47 +115,6 @@ Readory is a simple online bookstore designed for digital manga, comics, novels 
 - `POST /books/:bookId/chapters` – **admin only**. Add a chapter with `{ title, index, price?, isFree?, contentPath? }`.
 
 - `POST /books/:bookId/chapters/:chapterId/purchase` – purchase a chapter (JWT required). Debits the user’s wallet if the chapter isn’t free.
-
-
-## Security & Best Practices
-
-- **Do not commit sensitive files** like `.env` or any files containing secrets, API keys or passwords. Use `.env.example` to document required variables.
-
-- Exclude generated folders (`node_modules`, `dist`) by using a `.gitignore` file. The NestJS CLI generates a `.gitignore` for you.
-
-- Keep your dependencies up to date and monitor for security advisories.
-
-
-## Commit Workflow
-
-Below is a suggested commit history to reflect the major milestones of this project. Each step corresponds to a logical unit of work; commit messages should be descriptive and in the imperative mood:
-
-1. **Initialize NestJS project** – scaffold the `server` with `nest new`.
-
-2. **Enable strict TypeScript and ES modules** – configure `tsconfig.json` and set `"type": "module"` in `package.json`.
-
-3. **Add Prisma and initial schema** – install Prisma, define roles, users, wallets, books, chapters, and migrations.
-
-4. **Integrate Prisma with NestJS** – create `PrismaService` and `PrismaModule`, update `AppModule`.
-
-5. **Implement user module** – create `UsersModule`, `UsersService`, add wallet creation on user registration.
-
-6. **Add authentication** – install auth dependencies, implement `AuthService`, strategies, guards, DTOs, and controllers.
-
-7. **Configure environment variables and JWT** – set up `.env`, load variables via `ConfigModule`.
-
-8. **Add wallet module** – implement credit/debit and wallet endpoints.
-
-9. **Add role‑based access control** – implement roles decorator and guard; include role in JWT payload.
-
-10. **Add books module** – implement listing, creation and updating of books; admin‑only routes.
-
-11. **Add chapters module** – implement listing, creation and purchasing of chapters; integrate with wallet service.
-
-12. **Update README and docs** – document setup, endpoints, and usage instructions.
-
-
-Feel free to squash minor tweaks or fixes into the relevant commits. Avoid committing secrets or environment files.
 
 ## License
 
