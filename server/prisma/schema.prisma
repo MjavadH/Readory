@@ -1,0 +1,96 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Enumerations
+enum RoleName {
+  USER
+  ADMIN
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+// User roles
+model Role {
+  id    Int      @id @default(autoincrement())
+  name  RoleName @unique
+  users User[]
+}
+
+// Application users
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  passwordHash  String
+  roleId        Int?
+  role          Role?          @relation(fields: [roleId], references: [id])
+  wallet        Wallet?
+  accessRecords AccessRecord[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Wallet for each user
+model Wallet {
+  id           Int                 @id @default(autoincrement())
+  userId       Int                 @unique
+  user         User                @relation(fields: [userId], references: [id])
+  balance      Decimal             @default(0) @db.Decimal(12, 2)
+  transactions WalletTransaction[]
+}
+
+// Individual wallet transactions
+model WalletTransaction {
+  id        Int             @id @default(autoincrement())
+  walletId  Int
+  wallet    Wallet          @relation(fields: [walletId], references: [id])
+  amount    Decimal         @db.Decimal(12, 2)
+  type      TransactionType
+  createdAt DateTime        @default(now())
+  reference String?
+}
+
+// Books (manga, comics, novels, etc.)
+model Book {
+  id          Int       @id @default(autoincrement())
+  title       String
+  author      String?
+  description String?
+  coverImage  String?
+  isPublished Boolean   @default(false)
+  chapters    Chapter[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Chapters of each book
+model Chapter {
+  id            Int            @id @default(autoincrement())
+  bookId        Int
+  book          Book           @relation(fields: [bookId], references: [id])
+  title         String
+  index         Int
+  price         Decimal?       @db.Decimal(12, 2)
+  isFree        Boolean        @default(false)
+  contentPath   String? // path to stored images or PDF
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  accessRecords AccessRecord[]
+}
+
+// Records of which users purchased which chapters
+model AccessRecord {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  chapterId   Int
+  user        User     @relation(fields: [userId], references: [id])
+  chapter     Chapter  @relation(fields: [chapterId], references: [id])
+  purchasedAt DateTime @default(now())
+}
