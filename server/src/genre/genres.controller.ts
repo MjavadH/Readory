@@ -1,0 +1,55 @@
+import {Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards,} from '@nestjs/common';
+import { RoleName } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { CreateGenreDto } from './dto/create-genre.dto';
+import { UpdateGenreDto } from './dto/update-genre.dto';
+import { GenresService } from './genres.service';
+import { RequirePermissions } from '../auth/permissions.decorator';
+import { AdminPermissions } from '../auth/permissions.enum';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import {RolesGuard} from "../auth/roles.guard";
+
+@Controller('genres')
+export class GenresController {
+    constructor(private readonly genresService: GenresService) {}
+
+    @Get()
+    async list() {
+        return this.genresService.listAll();
+    }
+
+    @Get('featured')
+    async featured() {
+        return this.genresService.listFeatured();
+    }
+
+    @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    async create(@Body() dto: CreateGenreDto) {
+        return this.genresService.create(dto);
+    }
+
+    @Patch(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateGenreDto) {
+        return this.genresService.update(id, dto);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    async delete(@Param('id', ParseIntPipe) id: number) {
+        return this.genresService.delete(id);
+    }
+
+    @Get(':slug')
+    async getBySlug(@Param('slug') slug: string) {
+        return this.genresService.findBySlug(slug);
+    }
+}

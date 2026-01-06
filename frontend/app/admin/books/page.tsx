@@ -1,0 +1,1373 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import { Button } from "@/components/ui/button"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import {
+    BookOpen,
+    Plus,
+    Edit,
+    Eye,
+    Calendar,
+    Trash2,
+    Layers,
+    Search,
+    CheckCircle2,
+    Clock,
+    DollarSign, Users,
+} from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+
+// Added type alias for StatusFilter
+type StatusFilter = "all" | "published" | "draft"
+
+// Added type alias for MediaItem
+type MediaItem = {
+    code: string
+    filename: string
+}
+
+// Added type alias for Genre
+type Genre = {
+    id: number
+    name: string
+    slug: string
+}
+
+const BOOK_TYPES = ["MANGA", "MANHWA", "COMIC", "NOVEL", "LIGHT_NOVEL"]
+
+interface Book {
+    id: number
+    title: string
+    author?: string | null
+    description?: string | null
+    coverImage?: string | null
+    isPublished: boolean
+    type?: string
+    price: number
+    updatedAt: string
+    genres?: { genre: Genre }[]
+    _count?: {
+        chapters: number
+    }
+}
+
+interface Chapter {
+    id: number
+    title: string
+    index: number
+    price?: number
+    isFree: boolean
+    requiresSeparatePurchase: boolean
+    contentPath?: string
+}
+
+export default function AdminBooks() {
+    const { toast } = useToast()
+    const [books, setBooks] = useState<Book[]>([])
+    const [media, setMedia] = useState<MediaItem[]>([])
+    const [genres, setGenres] = useState<Genre[]>([])
+    const [loading, setLoading] = useState(true)
+    const [selectedBook, setSelectedBook] = useState<Book | null>(null)
+    const [chapters, setChapters] = useState<Chapter[]>([])
+
+    // Dialog states
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isAddOpen, setIsAddOpen] = useState(false)
+    const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false)
+    const [isEditChapterOpen, setIsEditChapterOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
+    const [deleteBookDialogOpen, setDeleteBookDialogOpen] = useState(false)
+    const [bookToDelete, setBookToDelete] = useState<number | null>(null)
+    const [deleteChapterDialogOpen, setDeleteChapterDialogOpen] = useState(false)
+    const [chapterToDelete, setChapterToDelete] = useState<number | null>(null)
+    const [chapterEditing, setChapterEditing] = useState<Chapter | null>(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    // Add book form state
+    const [newBook, setNewBook] = useState({
+        title: "",
+        author: "",
+        type: "MANGA",
+        description: "",
+        coverImage: "",
+        price: 0,
+        genreIds: [] as number[],
+        isPublished: false,
+    })
+
+    // Edit book form state
+    const [editBook, setEditBook] = useState({
+        title: "",
+        author: "",
+        type: "MANGA",
+        description: "",
+        coverImage: "",
+        price: 0,
+        genreIds: [] as number[],
+        isPublished: false,
+    })
+
+    // Add chapter form state
+    const [newChapter, setNewChapter] = useState({
+        title: "",
+        index: 0,
+        price: 0,
+        isFree: true,
+        contentPath: "",
+        requiresSeparatePurchase: false,
+    })
+
+    // Edit chapter form state
+    const [editChapter, setEditChapter] = useState({
+        title: "",
+        index: 0,
+        price: 0,
+        isFree: true,
+        contentPath: "",
+        requiresSeparatePurchase: false,
+    })
+
+    // Load books
+    useEffect(() => {
+        void bootstrap()
+    }, [])
+
+    const bootstrap = async () => {
+        setLoading(true)
+        try {
+            await Promise.all([fetchBooks(), fetchGenres(), fetchMedia()])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const fetchBooks = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/allBooks`, {
+                credentials: "include",
+            })
+            const data = await res.json().catch(() => [])
+            setBooks(Array.isArray(data) ? data : [])
+        } catch (err: any) {
+            toast({ title: "Error fetching books", description: err.message, variant: "destructive" })
+            setBooks([])
+        }
+    }
+
+    const fetchGenres = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres`, {
+                credentials: "include",
+            })
+            const data = await res.json().catch(() => [])
+            setGenres(Array.isArray(data) ? data : [])
+        } catch (err: any) {
+            toast({ title: "Error fetching genres", description: err.message, variant: "destructive" })
+            setGenres([])
+        }
+    }
+
+    const fetchMedia = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media`, {
+                credentials: "include",
+            })
+            const data = await res.json().catch(() => [])
+            const list = Array.isArray(data) ? data : []
+            setMedia(
+                list
+                    .map((x: any) => ({ code: String(x.code), filename: String(x.filename ?? x.code) }))
+                    .sort((a: MediaItem, b: MediaItem) => a.filename.localeCompare(b.filename)),
+            )
+        } catch (err: any) {
+            toast({ title: "Error fetching media", description: err.message, variant: "destructive" })
+            setMedia([])
+        }
+    }
+
+    const handleDeleteBookClick = (bookId: number) => {
+        setBookToDelete(bookId)
+        setDeleteBookDialogOpen(true)
+    }
+
+    const handleDeleteBookConfirm = async () => {
+        if (!bookToDelete) return
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${bookToDelete}`, {
+                method: "DELETE",
+                credentials: "include",
+            })
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                throw new Error(data.message || "Failed to delete book")
+            }
+            setBooks((prevBooks) => prevBooks.filter((b) => b.id !== bookToDelete))
+            if (selectedBook?.id === bookToDelete) {
+                setIsDetailsOpen(false)
+                setIsEditOpen(false)
+                setSelectedBook(null)
+            }
+            toast({ title: "Deleted", description: "Book deleted successfully" })
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" })
+        } finally {
+            setDeleteBookDialogOpen(false)
+            setBookToDelete(null)
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleAddChapter = async () => {
+        if (!selectedBook) return
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({
+                    ...newChapter,
+                    price: newChapter.isFree ? undefined : (Number(newChapter.price) || 0).toFixed(2),
+                }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) {throw new Error(data.message || "Failed to create chapter")}
+
+            setChapters([...chapters, data])
+            setIsChapterDialogOpen(false)
+            setNewChapter({
+                title: "",
+                index: chapters.length + 1,
+                price: 0,
+                isFree: true,
+                contentPath: "",
+                requiresSeparatePurchase: false,
+            })
+            toast({ title: "Success", description: "Chapter added successfully" })
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleDeleteChapterClick = (chapterId: number) => {
+        setChapterToDelete(chapterId)
+        setDeleteChapterDialogOpen(true)
+    }
+
+    const handleDeleteChapterConfirm = async () => {
+        if (!chapterToDelete || !selectedBook) return
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters/${chapterToDelete}`,
+                {
+                    method: "DELETE",
+                    credentials: "include",
+                },
+            )
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                throw new Error(data.message || "Failed to delete chapter")
+            }
+            setChapters((prevChapters) => prevChapters.filter((c) => c.id !== chapterToDelete))
+            toast({ title: "Deleted", description: "Chapter deleted successfully" })
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" })
+        } finally {
+            setDeleteChapterDialogOpen(false)
+            setChapterToDelete(null)
+            setIsSubmitting(false)
+        }
+    }
+
+    const filteredBooks = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase()
+        return books.filter((book) => {
+            const matchesSearch = (book.title ?? "").toLowerCase().includes(q)
+            const matchesStatus =
+                statusFilter === "all" ||
+                (statusFilter === "published" && book.isPublished) ||
+                (statusFilter === "draft" && !book.isPublished)
+            return matchesSearch && matchesStatus
+        })
+    }, [books, searchQuery, statusFilter])
+
+    const totalBooks = books.length
+    const publishedBooks = books.filter((book) => book.isPublished).length
+    const draftBooks = books.filter((book) => !book.isPublished).length
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
+                    <p className="text-sm text-muted-foreground">Loading books...</p>
+                </div>
+            </div>
+        )
+    }
+
+    const handleAddBook = async () => {
+        if (newBook.genreIds.length === 0) {
+            return toast({ title: "Validation Error", description: "Select at least one genre", variant: "destructive" })
+        }
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...newBook,
+                    price: (newBook.price || 0).toFixed(2),
+                    genreIds: newBook.genreIds,
+                }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.message || "Failed to create book")
+
+            setBooks([...books, data])
+            setIsAddOpen(false)
+            setNewBook({
+                title: "",
+                author: "",
+                type: "MANGA",
+                description: "",
+                coverImage: "",
+                price: 0,
+                genreIds: [],
+                isPublished: false,
+            })
+            toast({ title: "Success", description: "Book created successfully" })
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const loadBookDetails = async (book: Book) => {
+        setSelectedBook(book)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${book.id}/chapters`, {
+                credentials: "include",
+            })
+            const data = await res.json().catch(() => [])
+            setChapters(Array.isArray(data) ? data : [])
+        } catch (err: any) {
+            toast({ title: "Error fetching chapters", description: err.message, variant: "destructive" })
+            setChapters([])
+        }
+    }
+
+    const handleUpdateBook = async () => {
+        if (!selectedBook) return
+        if (!editBook.title.trim()) {
+            return toast({ title: "Validation Error", description: "Title is required", variant: "destructive" })
+        }
+        setIsSubmitting(true)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ...editBook,
+                    price: Number(editBook.price || 0).toFixed(2),
+                    genreIds: editBook.genreIds.length > 0 ? editBook.genreIds : undefined,
+                }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.message || "Failed to update book")
+
+            setBooks((prev) => prev.map((b) => (b.id === selectedBook.id ? { ...b, ...data } : b)))
+            setSelectedBook({ ...selectedBook, ...data })
+            setIsEditOpen(false)
+            toast({ title: "Updated", description: "Book updated successfully" })
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" })
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
+            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                            Books
+                        </h1>
+                        <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
+                    </div>
+                    {/* Add Book Dialog */}
+                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Book
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                                <DialogTitle>Add New Book</DialogTitle>
+                                <DialogDescription>Create a new book in your catalog</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2 col-span-2">
+                                        <Label htmlFor="add-title">Title *</Label>
+                                        <Input
+                                            id="add-title"
+                                            value={newBook.title}
+                                            onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+                                            placeholder="Enter book title"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="add-author">Author</Label>
+                                        <Input
+                                            id="add-author"
+                                            value={newBook.author}
+                                            onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+                                            placeholder="Author name"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Type</Label>
+                                        <Select value={newBook.type} onValueChange={(v) => setNewBook({ ...newBook, type: v })}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {BOOK_TYPES.map((t) => (
+                                                    <SelectItem key={t} value={t}>
+                                                        {t}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="add-price">Book Price ($)</Label>
+                                        <Input
+                                            id="add-price"
+                                            type="number"
+                                            step="0.01"
+                                            value={newBook.price}
+                                            onChange={(e) => setNewBook({ ...newBook, price: Number(e.target.value) })}
+                                            placeholder="0.00"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="add-description">Description</Label>
+                                    <Textarea
+                                        id="add-description"
+                                        value={newBook.description}
+                                        onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
+                                        placeholder="Enter book description"
+                                        rows={3}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Cover Image</Label>
+                                    <Select
+                                        value={newBook.coverImage || "none"}
+                                        onValueChange={(v) => setNewBook({ ...newBook, coverImage: v === "none" ? "" : v })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select cover image..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No cover</SelectItem>
+                                            {media.map((m) => (
+                                                <SelectItem key={m.code} value={m.code}>
+                                                    {m.filename}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Genres *</Label>
+                                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
+                                        {genres.map((g) => {
+                                            const checked = newBook.genreIds.includes(g.id)
+                                            return (
+                                                <label
+                                                    key={g.id}
+                                                    className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 p-2 rounded"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={() => {
+                                                            setNewBook((prev) => ({
+                                                                ...prev,
+                                                                genreIds: checked ? prev.genreIds.filter((x) => x !== g.id) : [...prev.genreIds, g.id],
+                                                            }))
+                                                        }}
+                                                        className="w-4 h-4"
+                                                    />
+                                                    <span>{g.name}</span>
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                    {genres.length === 0 && (
+                                        <p className="text-xs text-muted-foreground">Create genres first in the Genres page.</p>
+                                    )}
+                                </div>
+                                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
+                                    <input
+                                        type="checkbox"
+                                        id="add-published"
+                                        checked={newBook.isPublished}
+                                        onChange={(e) => setNewBook({ ...newBook, isPublished: e.target.checked })}
+                                        className="w-4 h-4"
+                                    />
+                                    <Label htmlFor="add-published" className="cursor-pointer">
+                                        Publish immediately
+                                    </Label>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                                <Button onClick={handleAddBook} disabled={isSubmitting}>
+                                    {isSubmitting ? "Creating..." : "Create Book"}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
+                <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                        <CardContent className="flex items-center gap-4 py-4">
+                            <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
+                                <BookOpen className="size-6 text-blue-600 dark:text-blue-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Books</p>
+                                <p className="text-xl sm:text-2xl font-bold">{totalBooks}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border/50 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+                        <CardContent className="flex items-center gap-4 py-4">
+                            <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
+                                <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Published</p>
+                                <p className="text-xl sm:text-2xl font-bold">{publishedBooks}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-border/50 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
+                        <CardContent className="flex items-center gap-4 py-4">
+                            <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20">
+                                <Clock className="size-6 text-amber-600 dark:text-amber-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Drafts</p>
+                                <p className="text-xl sm:text-2xl font-bold">{draftBooks}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                            placeholder="Search books by title..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 h-11 shadow-sm"
+                        />
+                    </div>
+                    <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
+                        <SelectTrigger className="w-full sm:w-[200px] h-11 shadow-sm">
+                            <SelectValue placeholder="Filter by status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Books</SelectItem>
+                            <SelectItem value="published">Published Only</SelectItem>
+                            <SelectItem value="draft">Drafts Only</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {filteredBooks.length === 0 ? (
+                    <Card className="py-16 sm:py-20 border-none shadow-lg bg-gradient-to-br from-card to-muted/20">
+                        <CardContent className="flex flex-col items-center justify-center text-center px-4">
+                            <div className="size-16 sm:size-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 sm:mb-6">
+                                <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
+                            </div>
+                            <h3 className="text-lg sm:text-xl font-semibold mb-2">
+                                {books.length === 0 ? "No books yet" : "No books found"}
+                            </h3>
+                            <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-md">
+                                {books.length === 0 ? "Get started by creating your first book" : "Try adjusting your search or filter"}
+                            </p>
+                            {books.length === 0 && (
+                                <Button size="lg" onClick={() => setIsAddOpen(true)} className="shadow-lg">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Your First Book
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        {filteredBooks.map((book) => (
+                            <Card
+                                key={book.id}
+                                className="group overflow-hidden border-none shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-card"
+                            >
+                                <div className="relative aspect-[2/3] bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
+                                    {book.coverImage ? (
+                                        <img
+                                            src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${book.coverImage}/thumbnail`}
+                                            alt={book.title || "Book cover"}
+                                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                                            loading="lazy"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center">
+                                            <BookOpen className="w-16 h-16 text-muted-foreground/30" />
+                                        </div>
+                                    )}
+                                    <div className="absolute top-3 right-3">
+                                        <Badge
+                                            variant={book.isPublished ? "default" : "secondary"}
+                                            className={
+                                                book.isPublished ? "bg-emerald-500 hover:bg-emerald-600 shadow-lg" : "bg-muted shadow-lg"
+                                            }
+                                        >
+                                            {book.isPublished ? "Published" : "Draft"}
+                                        </Badge>
+                                    </div>
+                                    {book.type && (
+                                        <div className="absolute top-3 left-3">
+                                            <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-lg text-xs">
+                                                {book.type}
+                                            </Badge>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <CardHeader className="p-4 pb-3 space-y-2">
+                                    <CardTitle className="line-clamp-2 text-base sm:text-lg leading-tight group-hover:text-primary transition-colors">
+                                        {book.title}
+                                    </CardTitle>
+                                    {book.author && <CardDescription className="text-xs line-clamp-1">by {book.author}</CardDescription>}
+                                </CardHeader>
+
+                                <CardContent className="p-4 pt-0 space-y-4">
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                        <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
+                                            <DollarSign className="w-3 h-3" />
+                                            <span className="font-medium">{book.price}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
+                                            <Layers className="w-3 h-3" />
+                                            <span>{book._count?.chapters || 0} ch</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
+                                            <Calendar className="w-3 h-3" />
+                                            <span>
+                        {new Date(book.updatedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                                        </div>
+                                    </div>
+
+                                    {(book.genres ?? []).length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {(book.genres ?? []).slice(0, 2).map((g) => (
+                                                <Badge key={g.genre.id} variant="outline" className="text-xs px-2 py-0.5">
+                                                    {g.genre.name}
+                                                </Badge>
+                                            ))}
+                                            {(book.genres ?? []).length > 2 && (
+                                                <Badge variant="outline" className="text-xs px-2 py-0.5">
+                                                    +{(book.genres ?? []).length - 2}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex gap-2 pt-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 h-9 bg-transparent"
+                                            onClick={() => {
+                                                loadBookDetails(book)
+                                                setIsDetailsOpen(true)
+                                            }}
+                                        >
+                                            <Eye className="w-3.5 h-3.5 sm:mr-1" />
+                                            <span className="hidden sm:inline">View</span>
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1 h-9 bg-transparent"
+                                            onClick={() => {
+                                                setEditBook({
+                                                    title: book.title,
+                                                    author: book.author ?? "",
+                                                    type: book.type || "MANGA",
+                                                    description: book.description ?? "",
+                                                    coverImage: book.coverImage ?? "",
+                                                    price: book.price,
+                                                    genreIds: book.genres?.map((g) => g.genre.id) ?? [],
+                                                    isPublished: book.isPublished,
+                                                })
+                                                loadBookDetails(book)
+                                                setIsEditOpen(true)
+                                            }}
+                                        >
+                                            <Edit className="w-3.5 h-3.5 sm:mr-1" />
+                                            <span className="hidden sm:inline">Edit</span>
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="px-3 h-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() => handleDeleteBookClick(book.id)}
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+                    <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
+                        {selectedBook && (
+                            <>
+                                <DialogHeader className="text-left pr-8 sm:pr-0 space-y-2">
+                                    <DialogTitle className="text-xl sm:text-2xl font-bold leading-snug">{selectedBook.title}</DialogTitle>
+                                    {selectedBook.author && (
+                                        <DialogDescription className="text-base">by {selectedBook.author}</DialogDescription>
+                                    )}
+                                </DialogHeader>
+                                <div className="space-y-6 py-4">
+                                    <div className="grid md:grid-cols-[auto_1fr] gap-6">
+                                        {selectedBook.coverImage && (
+                                            <div className="space-y-2">
+                                                <h3 className="font-semibold text-sm text-muted-foreground">Cover Image</h3>
+                                                <img
+                                                    src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${selectedBook.coverImage}`}
+                                                    alt={selectedBook.title || "Book cover"}
+                                                    className="w-full max-w-[200px] sm:max-w-[250px] aspect-[2/3] object-cover rounded-lg border shadow-lg mx-auto md:mx-0"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Status</h3>
+                                                    <Badge variant={selectedBook.isPublished ? "default" : "outline"} className="text-sm">
+                                                        {selectedBook.isPublished ? "Published" : "Draft"}
+                                                    </Badge>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Type</h3>
+                                                    <Badge variant="secondary" className="text-sm">
+                                                        {selectedBook.type || "N/A"}
+                                                    </Badge>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Price</h3>
+                                                    <p className="text-sm font-medium">${selectedBook.price}</p>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Chapters</h3>
+                                                    <p className="text-sm font-medium">{chapters.length}</p>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Genres</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {(selectedBook.genres ?? []).map((g) => (
+                                                        <Badge key={g.genre.id} variant="secondary">
+                                                            {g.genre.name}
+                                                        </Badge>
+                                                    ))}
+                                                    {(selectedBook.genres ?? []).length === 0 && (
+                                                        <span className="text-sm text-muted-foreground">No genres</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <h3 className="font-semibold text-sm text-muted-foreground mb-2">Last Updated</h3>
+                                                <p className="text-sm">{new Date(selectedBook.updatedAt).toLocaleDateString()}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {selectedBook.description && (
+                                        <div>
+                                            <h3 className="font-semibold text-sm text-muted-foreground mb-2">Description</h3>
+                                            <p className="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 p-4 rounded-lg">
+                                                {selectedBook.description}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="border-t pt-6">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                            <h3 className="font-semibold text-lg">Chapters ({chapters.length})</h3>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setNewChapter((prev) => ({ ...prev, index: chapters.length + 1 }))
+                                                    setIsChapterDialogOpen(true)
+                                                }}
+                                            >
+                                                <Plus className="w-4 h-4 mr-1" />
+                                                Add Chapter
+                                            </Button>
+                                        </div>
+                                        {chapters.length === 0 ? (
+                                            <div className="text-center py-12 border-2 border-dashed rounded-lg bg-muted/20">
+                                                <Layers className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+                                                <p className="text-sm text-muted-foreground">
+                                                    No chapters yet. Add your first chapter to get started.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {chapters.map((chapter) => (
+                                                    <Card key={chapter.id} className="hover:shadow-md transition-shadow border">
+                                                        <CardContent className="p-4">
+                                                            <div className="flex items-start justify-between gap-3 mb-3">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <Badge variant="outline" className="text-xs font-mono">
+                                                                            #{chapter.index}
+                                                                        </Badge>
+                                                                        <Badge
+                                                                            variant={chapter.isFree ? "secondary" : "default"}
+                                                                            className={chapter.isFree ? "" : "bg-emerald-500 hover:bg-emerald-600"}
+                                                                        >
+                                                                            {chapter.isFree ? "Free" : `$${chapter.price ?? 0}`}
+                                                                        </Badge>
+                                                                    </div>
+                                                                    <h4 className="font-medium text-sm line-clamp-2 leading-snug mb-2">
+                                                                        {chapter.title}
+                                                                    </h4>
+                                                                    {!chapter.isFree && chapter.requiresSeparatePurchase && (
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className="text-xs border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10 mt-1"
+                                                                        >
+                                                                            Separate Purchase
+                                                                        </Badge>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex gap-2 pt-2 border-t">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="flex-1 h-8 text-xs"
+                                                                    onClick={() => {
+                                                                        setChapterEditing(chapter)
+                                                                        setEditChapter({
+                                                                            title: chapter.title,
+                                                                            index: chapter.index,
+                                                                            price: chapter.price ?? 0,
+                                                                            isFree: chapter.isFree,
+                                                                            contentPath: chapter.contentPath ?? "",
+                                                                            requiresSeparatePurchase: chapter.requiresSeparatePurchase,
+                                                                        })
+                                                                        setIsEditChapterOpen(true)
+                                                                    }}
+                                                                >
+                                                                    <Edit className="w-3 h-3 mr-1" />
+                                                                    Edit
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="px-3 h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                    onClick={() => handleDeleteChapterClick(chapter.id)}
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Book Dialog */}
+                <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                        {selectedBook && (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle>Edit Book</DialogTitle>
+                                    <DialogDescription>Update book details</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label htmlFor="edit-title">Title *</Label>
+                                            <Input
+                                                id="edit-title"
+                                                value={editBook.title}
+                                                onChange={(e) => setEditBook({ ...editBook, title: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-author">Author</Label>
+                                            <Input
+                                                id="edit-author"
+                                                value={editBook.author}
+                                                onChange={(e) => setEditBook({ ...editBook, author: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Type</Label>
+                                            <Select value={editBook.type} onValueChange={(v) => setEditBook({ ...editBook, type: v })}>
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {BOOK_TYPES.map((t) => (
+                                                        <SelectItem key={t} value={t}>
+                                                            {t}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-price">Book Price ($)</Label>
+                                            <Input
+                                                id="edit-price"
+                                                type="number"
+                                                step="0.01"
+                                                value={editBook.price}
+                                                onChange={(e) => setEditBook({ ...editBook, price: Number(e.target.value) })}
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit-description">Description</Label>
+                                        <Textarea
+                                            id="edit-description"
+                                            value={editBook.description}
+                                            onChange={(e) => setEditBook({ ...editBook, description: e.target.value })}
+                                            rows={3}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Cover Image</Label>
+                                        <Select
+                                            value={editBook.coverImage || "none"}
+                                            onValueChange={(v) => setEditBook({ ...editBook, coverImage: v === "none" ? "" : v })}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select cover..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">No cover</SelectItem>
+                                                {media.map((m) => (
+                                                    <SelectItem key={m.code} value={m.code}>
+                                                        {m.filename}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Genres *</Label>
+                                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
+                                            {genres.map((g) => {
+                                                const checked = editBook.genreIds.includes(g.id)
+                                                return (
+                                                    <label
+                                                        key={g.id}
+                                                        className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 p-2 rounded"
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked}
+                                                            onChange={() => {
+                                                                setEditBook((prev) => ({
+                                                                    ...prev,
+                                                                    genreIds: checked
+                                                                        ? prev.genreIds.filter((x) => x !== g.id)
+                                                                        : [...prev.genreIds, g.id],
+                                                                }))
+                                                            }}
+                                                            className="w-4 h-4"
+                                                        />
+                                                        <span>{g.name}</span>
+                                                    </label>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
+                                        <input
+                                            type="checkbox"
+                                            id="edit-published"
+                                            checked={editBook.isPublished}
+                                            onChange={(e) => setEditBook({ ...editBook, isPublished: e.target.checked })}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="edit-published" className="cursor-pointer">
+                                            Published
+                                        </Label>
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button onClick={handleUpdateBook}>Save Changes</Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* Add Chapter Dialog */}
+                <Dialog open={isChapterDialogOpen} onOpenChange={setIsChapterDialogOpen}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Add New Chapter</DialogTitle>
+                            <DialogDescription>Create a new chapter for this book</DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-6 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2 col-span-2">
+                                    <Label htmlFor="chapter-title">Chapter Title *</Label>
+                                    <Input
+                                        id="chapter-title"
+                                        value={newChapter.title}
+                                        onChange={(e) => setNewChapter({ ...newChapter, title: e.target.value })}
+                                        placeholder="Enter chapter title"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="chapter-index">Chapter Number *</Label>
+                                    <Input
+                                        id="chapter-index"
+                                        type="number"
+                                        value={newChapter.index}
+                                        onChange={(e) => setNewChapter({ ...newChapter, index: Number.parseInt(e.target.value) || 0 })}
+                                    />
+                                </div>
+
+                                {!newChapter.isFree && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="chapter-price">Price ($)</Label>
+                                        <Input
+                                            id="chapter-price"
+                                            type="number"
+                                            step="0.01"
+                                            value={newChapter.price}
+                                            onChange={(e) => setNewChapter({ ...newChapter, price: Number(e.target.value) })}
+                                            placeholder="0.99"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="chapter-content">Content Path *</Label>
+                                <Input
+                                    id="chapter-content"
+                                    value={newChapter.contentPath}
+                                    onChange={(e) => setNewChapter({ ...newChapter, contentPath: e.target.value })}
+                                    placeholder="path/to/chapter-content.md"
+                                />
+                            </div>
+
+                            <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                                <h4 className="text-sm font-semibold">Pricing Options</h4>
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="chapter-free"
+                                        checked={newChapter.isFree}
+                                        onChange={(e) => setNewChapter({ ...newChapter, isFree: e.target.checked })}
+                                        className="w-4 h-4 mt-0.5"
+                                    />
+                                    <div className="flex-1">
+                                        <Label htmlFor="chapter-free" className="cursor-pointer">
+                                            Free Chapter
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">This chapter can be read without payment</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="chapter-separate"
+                                        checked={newChapter.requiresSeparatePurchase ?? false}
+                                        onChange={(e) => setNewChapter({ ...newChapter, requiresSeparatePurchase: e.target.checked })}
+                                        className="w-4 h-4 mt-0.5"
+                                    />
+                                    <div className="flex-1">
+                                        <Label htmlFor="chapter-separate" className="cursor-pointer">
+                                            Requires Separate Purchase
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Readers must purchase this chapter individually, even if they own the book
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsChapterDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleAddChapter}>Add Chapter</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Edit Chapter Dialog */}
+                <Dialog open={isEditChapterOpen} onOpenChange={setIsEditChapterOpen}>
+                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Edit Chapter</DialogTitle>
+                            <DialogDescription>Update chapter details and pricing</DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2 col-span-2">
+                                    <Label htmlFor="edit-chapter-title">Chapter Title *</Label>
+                                    <Input
+                                        id="edit-chapter-title"
+                                        value={editChapter.title}
+                                        onChange={(e) => setEditChapter({ ...editChapter, title: e.target.value })}
+                                        placeholder="Enter chapter title"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-chapter-index">Chapter Number *</Label>
+                                    <Input
+                                        id="edit-chapter-index"
+                                        type="number"
+                                        value={editChapter.index}
+                                        onChange={(e) =>
+                                            setEditChapter({ ...editChapter, index: Number.parseInt(e.target.value, 10) || 1 })
+                                        }
+                                    />
+                                </div>
+
+                                {!editChapter.isFree && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit-chapter-price">Price ($)</Label>
+                                        <Input
+                                            id="edit-chapter-price"
+                                            type="number"
+                                            step="0.01"
+                                            value={editChapter.price}
+                                            onChange={(e) => setEditChapter({ ...editChapter, price: Number(e.target.value) })}
+                                            placeholder="0.99"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-chapter-content">Content Path</Label>
+                                <Input
+                                    id="edit-chapter-content"
+                                    value={editChapter.contentPath}
+                                    onChange={(e) => setEditChapter({ ...editChapter, contentPath: e.target.value })}
+                                    placeholder="path/to/chapter-content.md"
+                                />
+                            </div>
+
+                            <div className="space-y-3 p-4 bg-muted/30 rounded-lg border">
+                                <h4 className="text-sm font-semibold">Pricing Options</h4>
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="edit-chapter-free"
+                                        checked={editChapter.isFree}
+                                        onChange={(e) => setEditChapter({ ...editChapter, isFree: e.target.checked })}
+                                        className="w-4 h-4 mt-0.5"
+                                    />
+                                    <div className="flex-1">
+                                        <Label htmlFor="edit-chapter-free" className="cursor-pointer">
+                                            Free Chapter
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">This chapter can be read without payment</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        type="checkbox"
+                                        id="edit-chapter-separate"
+                                        checked={editChapter.requiresSeparatePurchase}
+                                        onChange={(e) => setEditChapter({ ...editChapter, requiresSeparatePurchase: e.target.checked })}
+                                        className="w-4 h-4 mt-0.5"
+                                    />
+                                    <div className="flex-1">
+                                        <Label htmlFor="edit-chapter-separate" className="cursor-pointer">
+                                            Requires Separate Purchase
+                                        </Label>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Readers must purchase this chapter individually, even if they own the book
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setIsEditChapterOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={async () => {
+                                    if (!selectedBook || !chapterEditing) return
+                                    const t = editChapter.title.trim()
+                                    if (!t) return toast({ title: "Error", description: "Title is required", variant: "destructive" })
+
+                                    const payload: any = {
+                                        title: t,
+                                        index: editChapter.index,
+                                        isFree: editChapter.isFree,
+                                        requiresSeparatePurchase: editChapter.requiresSeparatePurchase,
+                                        contentPath: editChapter.contentPath.trim() || undefined,
+                                    }
+
+                                    if (!editChapter.isFree) payload.price = Number(editChapter.price || 0).toFixed(2)
+
+                                    const res = await fetch(
+                                        `${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters/${chapterEditing.id}`,
+                                        {
+                                            method: "PATCH",
+                                            credentials: "include",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify(payload),
+                                        },
+                                    )
+
+                                    const data = await res.json().catch(() => ({}))
+                                    if (!res.ok) return toast({ title: "Error", description: data.message || "Failed to update chapter", variant: "destructive" })
+
+                                    setChapters((prev) => prev.map((c) => (c.id === chapterEditing.id ? { ...c, ...data } : c)))
+                                    setIsEditChapterOpen(false)
+                                    setChapterEditing(null)
+                                }}
+                            >
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <AlertDialog open={deleteBookDialogOpen} onOpenChange={setDeleteBookDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Book</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this book? This action cannot be undone and will permanently remove the
+                                book and all its chapters.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDeleteBookConfirm}
+                                disabled={isSubmitting}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                                {isSubmitting ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
+                <AlertDialog open={deleteChapterDialogOpen} onOpenChange={setDeleteChapterDialogOpen}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Chapter</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this chapter? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDeleteChapterConfirm}
+                                disabled={isSubmitting}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                                {isSubmitting ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        </div>
+    )
+}

@@ -12,9 +12,22 @@ enum RoleName {
   ADMIN
 }
 
+enum BookType {
+  MANGA
+  MANHWA
+  COMIC
+  NOVEL
+  LIGHT_NOVEL
+}
+
 enum TransactionType {
   CREDIT
   DEBIT
+}
+
+enum AccessKind {
+  BOOK
+  CHAPTER
 }
 
 // User roles
@@ -28,13 +41,18 @@ model Role {
 model User {
   id            Int            @id @default(autoincrement())
   email         String         @unique
+  username      String         @unique
   passwordHash  String
   roleId        Int?
   role          Role?          @relation(fields: [roleId], references: [id])
   wallet        Wallet?
   accessRecords AccessRecord[]
+  lastLoginAt   DateTime?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  BookAccess    BookAccess[]
+  isBanned      Boolean        @default(false)
+  permissions   String[]
 }
 
 // Wallet for each user
@@ -59,38 +77,107 @@ model WalletTransaction {
 
 // Books (manga, comics, novels, etc.)
 model Book {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   author      String?
   description String?
+  price       Decimal  @default(0) @db.Decimal(12, 2)
+  type        BookType @default(MANGA)
+  // Stores Media.code
   coverImage  String?
-  isPublished Boolean   @default(false)
+  coverMedia  Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
+
+  isPublished Boolean     @default(false)
   chapters    Chapter[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  genres      BookGenre[]
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  AccessRecord AccessRecord[]
+  BookAccess   BookAccess[]
+
+  @@index([isPublished])
+  @@index([createdAt])
+}
+
+model Genre {
+  id            Int         @id @default(autoincrement())
+  name          String      @unique
+  slug          String      @unique
+  isFeatured    Boolean     @default(false)
+  featuredOrder Int         @default(0)
+  books         BookGenre[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model BookGenre {
+  bookId  Int
+  genreId Int
+
+  book  Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, genreId])
+  @@index([genreId])
 }
 
 // Chapters of each book
 model Chapter {
-  id            Int            @id @default(autoincrement())
-  bookId        Int
-  book          Book           @relation(fields: [bookId], references: [id])
-  title         String
-  index         Int
-  price         Decimal?       @db.Decimal(12, 2)
-  isFree        Boolean        @default(false)
-  contentPath   String? // path to stored images or PDF
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accessRecords AccessRecord[]
+  id                       Int            @id @default(autoincrement())
+  bookId                   Int
+  book                     Book           @relation(fields: [bookId], references: [id])
+  title                    String
+  index                    Int
+  price                    Decimal?       @db.Decimal(12, 2)
+  isFree                   Boolean        @default(false)
+  requiresSeparatePurchase Boolean        @default(false)
+  contentPath              String? // path to stored images or PDF
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  accessRecords            AccessRecord[]
+
+  @@unique([bookId, index])
 }
 
 // Records of which users purchased which chapters
 model AccessRecord {
-  id          Int      @id @default(autoincrement())
+  id          Int        @id @default(autoincrement())
   userId      Int
-  chapterId   Int
-  user        User     @relation(fields: [userId], references: [id])
-  chapter     Chapter  @relation(fields: [chapterId], references: [id])
+  chapterId   Int?
+  kind        AccessKind @default(CHAPTER)
+  user        User       @relation(fields: [userId], references: [id])
+  chapter     Chapter?   @relation(fields: [chapterId], references: [id])
+  purchasedAt DateTime   @default(now())
+  Book        Book?      @relation(fields: [bookId], references: [id])
+  bookId      Int?
+
+  @@unique([userId, chapterId])
+  @@index([userId, purchasedAt])
+}
+
+model BookAccess {
+  id     Int @id @default(autoincrement())
+  userId Int
+  bookId Int
+
+  user User @relation(fields: [userId], references: [id])
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
   purchasedAt DateTime @default(now())
+
+  @@unique([userId, bookId])
+  @@index([userId, purchasedAt])
+  @@index([bookId])
+}
+
+model Media {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  filename   String   @unique
+  storageKey String   @unique
+  mimeType   String
+  size       Int
+  createdAt  DateTime @default(now())
+  Book       Book[]
 }
