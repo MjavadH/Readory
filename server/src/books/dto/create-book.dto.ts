@@ -49,6 +49,10 @@ export class CreateBookDto {
     isPublished?: boolean;
 
     @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
+
+    @IsOptional()
     @IsEnum(BookType, {
         message: 'Type must be one of: MANGA, MANHWA, COMIC, NOVEL, LIGHT_NOVEL',
     })

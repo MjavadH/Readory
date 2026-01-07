@@ -49,6 +49,10 @@ export class UpdateBookDto {
     isPublished?: boolean;
 
     @IsOptional()
+    @IsBoolean()
+    isFeatured?: boolean;
+
+    @IsOptional()
     @IsEnum(BookType)
     type?: BookType;
 

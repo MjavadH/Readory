@@ -41,7 +41,7 @@ export class BooksService {
             include: {
                 _count: { select: { chapters: true } },
                 coverMedia: { select: { code: true, filename: true } },
-                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                genres: { select: { genre: { select: { id: true, name: true } } } },
             },
         });
     }
@@ -129,6 +129,7 @@ export class BooksService {
         coverImage?: string;
         price?: string;
         isPublished?: boolean;
+        isFeatured?: boolean;
         type?: string;
         genreIds: number[];
     }) {
@@ -165,6 +166,7 @@ export class BooksService {
             coverImage?: string;
             price?: string;
             isPublished?: boolean;
+            isFeatured?: boolean;
             type?: string;
             genreIds?: number[];
         }>,

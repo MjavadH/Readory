@@ -88,6 +88,7 @@ model Book {
   coverMedia  Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
 
   isPublished Boolean     @default(false)
+  isFeatured  Boolean     @default(false)
   chapters    Chapter[]
   genres      BookGenre[]
 
@@ -96,7 +97,7 @@ model Book {
   AccessRecord AccessRecord[]
   BookAccess   BookAccess[]
 
-  @@index([isPublished])
+  @@index([isPublished, isFeatured])
   @@index([createdAt])
 }
 

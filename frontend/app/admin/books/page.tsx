@@ -36,7 +36,8 @@ import {
     Search,
     CheckCircle2,
     Clock,
-    DollarSign, Users,
+    DollarSign,
+    Star
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -67,6 +68,7 @@ interface Book {
     description?: string | null
     coverImage?: string | null
     isPublished: boolean
+    isFeatured: boolean
     type?: string
     price: number
     updatedAt: string
@@ -120,6 +122,7 @@ export default function AdminBooks() {
         price: 0,
         genreIds: [] as number[],
         isPublished: false,
+        isFeatured: false,
     })
 
     // Edit book form state
@@ -132,6 +135,7 @@ export default function AdminBooks() {
         price: 0,
         genreIds: [] as number[],
         isPublished: false,
+        isFeatured: false,
     })
 
     // Add chapter form state
@@ -367,6 +371,7 @@ export default function AdminBooks() {
                 price: 0,
                 genreIds: [],
                 isPublished: false,
+                isFeatured: false,
             })
             toast({ title: "Success", description: "Book created successfully" })
         } catch (err: any) {
@@ -563,6 +568,18 @@ export default function AdminBooks() {
                                         Publish immediately
                                     </Label>
                                 </div>
+                                <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
+                                    <input
+                                        type="checkbox"
+                                        id="is-featured"
+                                        checked={newBook.isFeatured}
+                                        onChange={(e) => setNewBook({ ...newBook, isFeatured: e.target.checked })}
+                                        className="w-4 h-4"
+                                    />
+                                    <Label htmlFor="is-featured" className="cursor-pointer">
+                                        Mark as featured
+                                    </Label>
+                                </div>
                             </div>
                             <DialogFooter>
                                 <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
@@ -672,7 +689,7 @@ export default function AdminBooks() {
                                             <BookOpen className="w-16 h-16 text-muted-foreground/30" />
                                         </div>
                                     )}
-                                    <div className="absolute top-3 right-3">
+                                    <div className="absolute top-3 space-x-2 right-3">
                                         <Badge
                                             variant={book.isPublished ? "default" : "secondary"}
                                             className={
@@ -681,6 +698,11 @@ export default function AdminBooks() {
                                         >
                                             {book.isPublished ? "Published" : "Draft"}
                                         </Badge>
+                                        {book.isFeatured && (
+                                            <Badge variant="default" className="bg-amber-500 shadow-lg text-xs">
+                                                <Star />
+                                            </Badge>
+                                        )}
                                     </div>
                                     {book.type && (
                                         <div className="absolute top-3 left-3">
@@ -758,6 +780,7 @@ export default function AdminBooks() {
                                                     price: book.price,
                                                     genreIds: book.genres?.map((g) => g.genre.id) ?? [],
                                                     isPublished: book.isPublished,
+                                                    isFeatured: book.isFeatured,
                                                 })
                                                 loadBookDetails(book)
                                                 setIsEditOpen(true)
@@ -807,9 +830,14 @@ export default function AdminBooks() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
                                                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Status</h3>
-                                                    <Badge variant={selectedBook.isPublished ? "default" : "outline"} className="text-sm">
+                                                    <Badge variant={selectedBook.isPublished ? "default" : "outline"} className="text-sm mr-2">
                                                         {selectedBook.isPublished ? "Published" : "Draft"}
                                                     </Badge>
+                                                    {selectedBook.isFeatured && (
+                                                        <Badge variant="default" className="bg-amber-500 shadow-lg text-sm">
+                                                            Featured
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Type</h3>
@@ -1072,6 +1100,18 @@ export default function AdminBooks() {
                                         />
                                         <Label htmlFor="edit-published" className="cursor-pointer">
                                             Published
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
+                                        <input
+                                            type="checkbox"
+                                            id="is-featured"
+                                            checked={editBook.isFeatured}
+                                            onChange={(e) => setEditBook({ ...editBook, isFeatured: e.target.checked })}
+                                            className="w-4 h-4"
+                                        />
+                                        <Label htmlFor="is-featured" className="cursor-pointer">
+                                            Mark as featured
                                         </Label>
                                     </div>
                                 </div>
