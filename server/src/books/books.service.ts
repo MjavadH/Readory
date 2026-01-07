@@ -4,6 +4,26 @@ import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 import { WalletsService } from '../wallets/wallets.service';
 
+type StatusFilter = 'all' | 'published' | 'draft';
+
+function clamp(n: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, n));
+}
+
+function normalizeQ(q?: string) {
+    const s = (q ?? '').trim();
+    return s.length ? s : undefined;
+}
+
+function toNumber(v: any): number {
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') return Number(v);
+    if (typeof v === 'object' && typeof v.toNumber === 'function') return v.toNumber();
+    return Number(v);
+}
+
+
 @Injectable()
 export class BooksService {
     constructor(
@@ -12,38 +32,82 @@ export class BooksService {
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
-    async countAll() {
-        const CACHE_KEY = 'stats:books:count';
-        const cached = await this.redis.get(CACHE_KEY);
-        if (cached) return Number.parseInt(cached,10);
-
-        const count = await this.prisma.book.count();
-        await this.redis.set(CACHE_KEY, String(count), 'EX', 3600);
-        return count;
-    }
-
     // List published books
-    async findPublished() {
-        return this.prisma.book.findMany({
-            where: { isPublished: true },
-            orderBy: { createdAt: 'desc' },
-            include: {
-                coverMedia: { select: { code: true, filename: true } },
-                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
-            },
-        });
+    async listPublished(args: { page: number; limit: number; q?: string }) {
+        const page = clamp(args.page, 1, 10_000);
+        const limit = clamp(args.limit, 1, 50);
+        const q = normalizeQ(args.q);
+
+        const where: Prisma.BookWhereInput = { isPublished: true };
+        if (q) where.title = { contains: q, mode: 'insensitive' };
+
+        const skip = (page - 1) * limit;
+
+        const [total, books] = await this.prisma.$transaction([
+            this.prisma.book.count({ where }),
+            this.prisma.book.findMany({
+                where,
+                orderBy: { updatedAt: 'desc' },
+                skip,
+                take: limit,
+                include: {
+                    genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+                },
+            }),
+        ]);
+
+        return {
+            books: books.map((b: any) => ({ ...b, price: toNumber(b.price) })),
+            hasMore: skip + books.length < total,
+            page,
+            limit,
+            total,
+        };
     }
 
     // List all books
-    async listAll() {
-        return this.prisma.book.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: {
-                _count: { select: { chapters: true } },
-                coverMedia: { select: { code: true, filename: true } },
-                genres: { select: { genre: { select: { id: true, name: true } } } },
-            },
-        });
+    async listAll(args: { page: number; limit: number; q?: string; status: StatusFilter }) {
+        const page = clamp(args.page, 1, 10_000);
+        const limit = clamp(args.limit, 1, 50);
+        const q = normalizeQ(args.q);
+
+        const where: Prisma.BookWhereInput = {};
+        if (q) {
+            where.title = { contains: q, mode: 'insensitive' };
+        }
+        if (args.status === 'published') where.isPublished = true;
+        if (args.status === 'draft') where.isPublished = false;
+
+        const skip = (page - 1) * limit;
+
+        const [total, published, drafts, books] = await this.prisma.$transaction([
+            this.prisma.book.count({ where }),
+            this.prisma.book.count({ where: { ...where, isPublished: true } }),
+            this.prisma.book.count({ where: { ...where, isPublished: false } }),
+            this.prisma.book.findMany({
+                where,
+                orderBy: { updatedAt: 'desc' },
+                skip,
+                take: limit,
+                include: {
+                    genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+                    _count: { select: { chapters: true } },
+                },
+            }),
+        ]);
+
+        const mapped = books.map((b: any) => ({
+            ...b,
+            price: toNumber(b.price),
+        }));
+
+        return {
+            books: mapped,
+            hasMore: skip + mapped.length < total,
+            stats: { total, Published: published, Drafts: drafts },
+            page,
+            limit,
+        };
     }
 
     // Get book with chapters
@@ -152,7 +216,7 @@ export class BooksService {
             },
         });
 
-        await this.redis.del('stats:books:count');
+        await this.redis.del('stats:books');
         return created;
     }
 
@@ -199,7 +263,7 @@ export class BooksService {
                 },
             });
 
-            await this.redis.del('stats:books:count');
+            await this.redis.del('stats:books');
             return updated;
         } catch (err: any) {
             if (err?.code === 'P2025') throw new NotFoundException('book not found');
@@ -213,7 +277,7 @@ export class BooksService {
 
         await this.prisma.book.delete({ where: { id } });
 
-        await this.redis.del('stats:books:count');
+        await this.redis.del('stats:books');
         await this.redis.del('stats:chapters:count');
 
         return { id, deleted: true };

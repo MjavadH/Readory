@@ -37,7 +37,7 @@ import {
     CheckCircle2,
     Clock,
     DollarSign,
-    Star
+    Star, ChevronLeft, ChevronRight
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -88,14 +88,31 @@ interface Chapter {
     contentPath?: string
 }
 
+interface BookStats{
+    total: number,
+    Published: number,
+    Drafts: number,
+}
+
 export default function AdminBooks() {
     const { toast } = useToast()
     const [books, setBooks] = useState<Book[]>([])
+    const [stats, setStats] = useState<BookStats>({
+        total: 0,
+        Published: 0,
+        Drafts: 0,
+    })
     const [media, setMedia] = useState<MediaItem[]>([])
     const [genres, setGenres] = useState<Genre[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedBook, setSelectedBook] = useState<Book | null>(null)
     const [chapters, setChapters] = useState<Chapter[]>([])
+    const [page, setPage] = useState(1)
+    const [hasMore, setHasMore] = useState(false)
+    const ITEMS_PER_PAGE = 20
+    const totalPages = Math.ceil(stats.total / ITEMS_PER_PAGE)
+    const [searchQuery, setSearchQuery] = useState("")
+    const [debouncedQ, setDebouncedQ] = useState("")
 
     // Dialog states
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -103,7 +120,6 @@ export default function AdminBooks() {
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [isChapterDialogOpen, setIsChapterDialogOpen] = useState(false)
     const [isEditChapterOpen, setIsEditChapterOpen] = useState(false)
-    const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
     const [deleteBookDialogOpen, setDeleteBookDialogOpen] = useState(false)
     const [bookToDelete, setBookToDelete] = useState<number | null>(null)
@@ -172,18 +188,41 @@ export default function AdminBooks() {
         }
     }
 
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQ(searchQuery.trim()), 300)
+        return () => clearTimeout(t)
+    }, [searchQuery])
+
+    useEffect(() => {
+        void fetchBooks()
+    }, [page, statusFilter, debouncedQ])
+
     const fetchBooks = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/allBooks`, {
+            const qs = new URLSearchParams({
+                page: String(page),
+                limit: String(ITEMS_PER_PAGE),
+                status: statusFilter,
+            })
+            if (debouncedQ) qs.set("q", debouncedQ)
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/allBooks?${qs.toString()}`, {
                 credentials: "include",
             })
-            const data = await res.json().catch(() => [])
-            setBooks(Array.isArray(data) ? data : [])
+
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.message || "Failed to load books")
+
+            setBooks(Array.isArray(data.books) ? data.books : [])
+            setHasMore(Boolean(data.hasMore))
+            if (data.stats) setStats(data.stats)
         } catch (err: any) {
             toast({ title: "Error fetching books", description: err.message, variant: "destructive" })
             setBooks([])
         }
     }
+
+    useEffect(() => { setPage(1) }, [statusFilter, debouncedQ])
 
     const fetchGenres = async () => {
         try {
@@ -313,22 +352,6 @@ export default function AdminBooks() {
             setIsSubmitting(false)
         }
     }
-
-    const filteredBooks = useMemo(() => {
-        const q = searchQuery.trim().toLowerCase()
-        return books.filter((book) => {
-            const matchesSearch = (book.title ?? "").toLowerCase().includes(q)
-            const matchesStatus =
-                statusFilter === "all" ||
-                (statusFilter === "published" && book.isPublished) ||
-                (statusFilter === "draft" && !book.isPublished)
-            return matchesSearch && matchesStatus
-        })
-    }, [books, searchQuery, statusFilter])
-
-    const totalBooks = books.length
-    const publishedBooks = books.filter((book) => book.isPublished).length
-    const draftBooks = books.filter((book) => !book.isPublished).length
 
     if (loading) {
         return (
@@ -599,7 +622,7 @@ export default function AdminBooks() {
                             </div>
                             <div>
                                 <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Books</p>
-                                <p className="text-xl sm:text-2xl font-bold">{totalBooks}</p>
+                                <p className="text-xl sm:text-2xl font-bold">{stats.total.toLocaleString()}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -610,7 +633,7 @@ export default function AdminBooks() {
                             </div>
                             <div>
                                 <p className="text-xs sm:text-sm text-muted-foreground font-medium">Published</p>
-                                <p className="text-xl sm:text-2xl font-bold">{publishedBooks}</p>
+                                <p className="text-xl sm:text-2xl font-bold">{stats.Published.toLocaleString()}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -621,7 +644,7 @@ export default function AdminBooks() {
                             </div>
                             <div>
                                 <p className="text-xs sm:text-sm text-muted-foreground font-medium">Drafts</p>
-                                <p className="text-xl sm:text-2xl font-bold">{draftBooks}</p>
+                                <p className="text-xl sm:text-2xl font-bold">{stats.Drafts.toLocaleString()}</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -649,7 +672,7 @@ export default function AdminBooks() {
                     </Select>
                 </div>
 
-                {filteredBooks.length === 0 ? (
+                {books.length === 0 ? (
                     <Card className="py-16 sm:py-20 border-none shadow-lg bg-gradient-to-br from-card to-muted/20">
                         <CardContent className="flex flex-col items-center justify-center text-center px-4">
                             <div className="size-16 sm:size-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 sm:mb-6">
@@ -671,7 +694,7 @@ export default function AdminBooks() {
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                        {filteredBooks.map((book) => (
+                        {books.map((book) => (
                             <Card
                                 key={book.id}
                                 className="group overflow-hidden border-none shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-card"
@@ -1407,6 +1430,61 @@ export default function AdminBooks() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                        Showing <span className="font-semibold text-foreground">{books.length}</span> of{" "}
+                        <span className="font-semibold text-foreground">{stats.total}</span> books (Page {page} of{" "}
+                        {totalPages || 1})
+                    </p>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                            <ChevronLeft className="size-4 mr-1" />
+                            Previous
+                        </Button>
+                        <div className="flex items-center gap-1">
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                let pageNum
+                                if (totalPages <= 5) {
+                                    pageNum = i + 1
+                                } else if (page <= 3) {
+                                    pageNum = i + 1
+                                } else if (page >= totalPages - 2) {
+                                    pageNum = totalPages - 4 + i
+                                } else {
+                                    pageNum = page - 2 + i
+                                }
+                                return (
+                                    <Button
+                                        key={pageNum}
+                                        variant={page === pageNum ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setPage(pageNum)}
+                                        className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
+                                    >
+                                        {pageNum}
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage((p) => p + 1)}
+                            disabled={!hasMore}
+                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                            Next
+                            <ChevronRight className="size-4 ml-1" />
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     )

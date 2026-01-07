@@ -1,4 +1,16 @@
-import { Controller, Delete, Get, Post, Patch, Request, Param, Body, UseGuards, ParseIntPipe } from '@nestjs/common';
+import {
+    Controller,
+    Delete,
+    Get,
+    Post,
+    Patch,
+    Request,
+    Param,
+    Body,
+    UseGuards,
+    ParseIntPipe,
+    Query, DefaultValuePipe
+} from '@nestjs/common';
 import { BooksService } from './books.service';
 import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
@@ -10,23 +22,20 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
 
+type StatusFilter = 'all' | 'published' | 'draft';
+
 @Controller('books')
 export class BooksController {
     constructor(private booksService: BooksService) {}
 
-    @Get('count')
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async countBooks() {
-        const count = await this.booksService.countAll();
-        return { count };
-    }
-
     // Public: list published books
     @Get()
-    async listPublished() {
-        return this.booksService.findPublished();
+    async listPublished(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+        @Query('q') q?: string,
+    ) {
+        return this.booksService.listPublished({ page, limit, q });
     }
 
     // List all books
@@ -34,8 +43,13 @@ export class BooksController {
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async listBooks() {
-        return this.booksService.listAll();
+    async listBooks(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+        @Query('q') q?: string,
+        @Query('status') status: StatusFilter = 'all',
+    ) {
+        return this.booksService.listAll({ page, limit, q, status });
     }
 
     @Get('type/:type')
