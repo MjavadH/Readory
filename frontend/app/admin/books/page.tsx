@@ -699,7 +699,7 @@ export default function AdminBooks() {
                                             {book.isPublished ? "Published" : "Draft"}
                                         </Badge>
                                         {book.isFeatured && (
-                                            <Badge variant="default" className="bg-amber-500 shadow-lg text-xs">
+                                            <Badge variant="default" className="bg-amber-500 shadow-lg px-1 text-xs">
                                                 <Star />
                                             </Badge>
                                         )}
