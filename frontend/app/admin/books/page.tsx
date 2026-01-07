@@ -108,7 +108,6 @@ export default function AdminBooks() {
     const [selectedBook, setSelectedBook] = useState<Book | null>(null)
     const [chapters, setChapters] = useState<Chapter[]>([])
     const [page, setPage] = useState(1)
-    const [hasMore, setHasMore] = useState(false)
     const ITEMS_PER_PAGE = 20
     const totalPages = Math.ceil(stats.total / ITEMS_PER_PAGE)
     const [searchQuery, setSearchQuery] = useState("")
@@ -214,7 +213,6 @@ export default function AdminBooks() {
             if (!res.ok) throw new Error(data.message || "Failed to load books")
 
             setBooks(Array.isArray(data.books) ? data.books : [])
-            setHasMore(Boolean(data.hasMore))
             if (data.stats) setStats(data.stats)
         } catch (err: any) {
             toast({ title: "Error fetching books", description: err.message, variant: "destructive" })
@@ -826,7 +824,60 @@ export default function AdminBooks() {
                         ))}
                     </div>
                 )}
-
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                            Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, stats.total)}{" "}
+                            of {stats.total} books
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                            >
+                                <ChevronLeft className="size-4 mr-1" />
+                                Previous
+                            </Button>
+                            <div className="hidden sm:flex items-center gap-1">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1
+                                    } else if (page <= 3) {
+                                        pageNum = i + 1
+                                    } else if (page >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i
+                                    } else {
+                                        pageNum = page - 2 + i
+                                    }
+                                    return (
+                                        <Button
+                                            key={pageNum}
+                                            variant={page === pageNum ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => setPage(pageNum)}
+                                            className="w-9"
+                                        >
+                                            {pageNum}
+                                        </Button>
+                                    )
+                                })}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                            >
+                                Next
+                                <ChevronRight className="size-4 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
                 <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
                     <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
                         {selectedBook && (
@@ -853,7 +904,7 @@ export default function AdminBooks() {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
                                                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Status</h3>
-                                                    <Badge variant={selectedBook.isPublished ? "default" : "outline"} className="text-sm mr-2">
+                                                    <Badge variant={selectedBook.isPublished ? "default" : "outline"} className="text-sm mr-2 mb-2">
                                                         {selectedBook.isPublished ? "Published" : "Draft"}
                                                     </Badge>
                                                     {selectedBook.isFeatured && (
@@ -1430,61 +1481,6 @@ export default function AdminBooks() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                        Showing <span className="font-semibold text-foreground">{books.length}</span> of{" "}
-                        <span className="font-semibold text-foreground">{stats.total}</span> books (Page {page} of{" "}
-                        {totalPages || 1})
-                    </p>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                            <ChevronLeft className="size-4 mr-1" />
-                            Previous
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                let pageNum
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1
-                                } else if (page <= 3) {
-                                    pageNum = i + 1
-                                } else if (page >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i
-                                } else {
-                                    pageNum = page - 2 + i
-                                }
-                                return (
-                                    <Button
-                                        key={pageNum}
-                                        variant={page === pageNum ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setPage(pageNum)}
-                                        className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
-                                    >
-                                        {pageNum}
-                                    </Button>
-                                )
-                            })}
-                        </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage((p) => p + 1)}
-                            disabled={!hasMore}
-                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                            Next
-                            <ChevronRight className="size-4 ml-1" />
-                        </Button>
-                    </div>
-                </div>
             </div>
         </div>
     )
