@@ -21,10 +21,6 @@ export class CreateChapterDto {
     isFree?: boolean;
 
     @IsOptional()
-    @IsBoolean()
-    requiresSeparatePurchase?: boolean;
-
-    @IsOptional()
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
     @IsString()
     @MaxLength(500)

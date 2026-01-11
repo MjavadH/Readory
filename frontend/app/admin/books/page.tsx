@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -70,7 +70,6 @@ interface Book {
     isPublished: boolean
     isFeatured: boolean
     type?: string
-    price: number
     updatedAt: string
     genres?: { genre: Genre }[]
     _count?: {
@@ -84,7 +83,6 @@ interface Chapter {
     index: number
     price?: number
     isFree: boolean
-    requiresSeparatePurchase: boolean
     contentPath?: string
 }
 
@@ -134,7 +132,6 @@ export default function AdminBooks() {
         type: "MANGA",
         description: "",
         coverImage: "",
-        price: 0,
         genreIds: [] as number[],
         isPublished: false,
         isFeatured: false,
@@ -147,7 +144,6 @@ export default function AdminBooks() {
         type: "MANGA",
         description: "",
         coverImage: "",
-        price: 0,
         genreIds: [] as number[],
         isPublished: false,
         isFeatured: false,
@@ -160,7 +156,6 @@ export default function AdminBooks() {
         price: 0,
         isFree: true,
         contentPath: "",
-        requiresSeparatePurchase: false,
     })
 
     // Edit chapter form state
@@ -170,7 +165,6 @@ export default function AdminBooks() {
         price: 0,
         isFree: true,
         contentPath: "",
-        requiresSeparatePurchase: false,
     })
 
     // Load books
@@ -310,7 +304,6 @@ export default function AdminBooks() {
                 price: 0,
                 isFree: true,
                 contentPath: "",
-                requiresSeparatePurchase: false,
             })
             toast({ title: "Success", description: "Chapter added successfully" })
         } catch (err: any) {
@@ -353,10 +346,20 @@ export default function AdminBooks() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
-                    <p className="text-sm text-muted-foreground">Loading books...</p>
+            <div className="p-4 sm:p-6 space-y-6">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 bg-muted rounded w-1/4" />
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <div className="h-32 bg-muted rounded-xl" />
+                        <div className="h-32 bg-muted rounded-xl" />
+                        <div className="h-32 bg-muted rounded-xl" />
+                    </div>
+                    <div className="flex gap-4 md:grid-cols-2">
+                        <div className="h-10 bg-muted rounded-xl w-4/5" />
+                        <div className="h-10 bg-muted rounded-xl w-1/5" />
+                    </div>
+                    <div className="h-96 bg-muted rounded-xl" />
                 </div>
             </div>
         )
@@ -374,7 +377,6 @@ export default function AdminBooks() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...newBook,
-                    price: (newBook.price || 0).toFixed(2),
                     genreIds: newBook.genreIds,
                 }),
             })
@@ -389,7 +391,6 @@ export default function AdminBooks() {
                 type: "MANGA",
                 description: "",
                 coverImage: "",
-                price: 0,
                 genreIds: [],
                 isPublished: false,
                 isFeatured: false,
@@ -429,7 +430,6 @@ export default function AdminBooks() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     ...editBook,
-                    price: Number(editBook.price || 0).toFixed(2),
                     genreIds: editBook.genreIds.length > 0 ? editBook.genreIds : undefined,
                 }),
             })
@@ -505,17 +505,6 @@ export default function AdminBooks() {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="add-price">Book Price ($)</Label>
-                                        <Input
-                                            id="add-price"
-                                            type="number"
-                                            step="0.01"
-                                            value={newBook.price}
-                                            onChange={(e) => setNewBook({ ...newBook, price: Number(e.target.value) })}
-                                            placeholder="0.00"
-                                        />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -744,10 +733,6 @@ export default function AdminBooks() {
                                 <CardContent className="p-4 pt-0 space-y-4">
                                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                                         <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
-                                            <DollarSign className="w-3 h-3" />
-                                            <span className="font-medium">{book.price}</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 bg-muted/50 rounded-full px-2 py-1">
                                             <Layers className="w-3 h-3" />
                                             <span>{book._count?.chapters || 0} ch</span>
                                         </div>
@@ -798,7 +783,6 @@ export default function AdminBooks() {
                                                     type: book.type || "MANGA",
                                                     description: book.description ?? "",
                                                     coverImage: book.coverImage ?? "",
-                                                    price: book.price,
                                                     genreIds: book.genres?.map((g) => g.genre.id) ?? [],
                                                     isPublished: book.isPublished,
                                                     isFeatured: book.isFeatured,
@@ -920,10 +904,6 @@ export default function AdminBooks() {
                                                     </Badge>
                                                 </div>
                                                 <div>
-                                                    <h3 className="font-semibold text-sm text-muted-foreground mb-2">Price</h3>
-                                                    <p className="text-sm font-medium">${selectedBook.price}</p>
-                                                </div>
-                                                <div>
                                                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Chapters</h3>
                                                     <p className="text-sm font-medium">{chapters.length}</p>
                                                 </div>
@@ -1001,14 +981,6 @@ export default function AdminBooks() {
                                                                     <h4 className="font-medium text-sm line-clamp-2 leading-snug mb-2">
                                                                         {chapter.title}
                                                                     </h4>
-                                                                    {!chapter.isFree && chapter.requiresSeparatePurchase && (
-                                                                        <Badge
-                                                                            variant="outline"
-                                                                            className="text-xs border-orange-500 text-orange-600 dark:text-orange-400 bg-orange-500/10 mt-1"
-                                                                        >
-                                                                            Separate Purchase
-                                                                        </Badge>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                             <div className="flex gap-2 pt-2 border-t">
@@ -1024,7 +996,6 @@ export default function AdminBooks() {
                                                                             price: chapter.price ?? 0,
                                                                             isFree: chapter.isFree,
                                                                             contentPath: chapter.contentPath ?? "",
-                                                                            requiresSeparatePurchase: chapter.requiresSeparatePurchase,
                                                                         })
                                                                         setIsEditChapterOpen(true)
                                                                     }}
@@ -1094,17 +1065,6 @@ export default function AdminBooks() {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-price">Book Price ($)</Label>
-                                            <Input
-                                                id="edit-price"
-                                                type="number"
-                                                step="0.01"
-                                                value={editBook.price}
-                                                onChange={(e) => setEditBook({ ...editBook, price: Number(e.target.value) })}
-                                                placeholder="0.00"
-                                            />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
@@ -1271,24 +1231,6 @@ export default function AdminBooks() {
                                         <p className="text-xs text-muted-foreground mt-1">This chapter can be read without payment</p>
                                     </div>
                                 </div>
-
-                                <div className="flex items-start gap-3">
-                                    <input
-                                        type="checkbox"
-                                        id="chapter-separate"
-                                        checked={newChapter.requiresSeparatePurchase ?? false}
-                                        onChange={(e) => setNewChapter({ ...newChapter, requiresSeparatePurchase: e.target.checked })}
-                                        className="w-4 h-4 mt-0.5"
-                                    />
-                                    <div className="flex-1">
-                                        <Label htmlFor="chapter-separate" className="cursor-pointer">
-                                            Requires Separate Purchase
-                                        </Label>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Readers must purchase this chapter individually, even if they own the book
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                         <DialogFooter>
@@ -1374,24 +1316,6 @@ export default function AdminBooks() {
                                         <p className="text-xs text-muted-foreground mt-1">This chapter can be read without payment</p>
                                     </div>
                                 </div>
-
-                                <div className="flex items-start gap-3">
-                                    <input
-                                        type="checkbox"
-                                        id="edit-chapter-separate"
-                                        checked={editChapter.requiresSeparatePurchase}
-                                        onChange={(e) => setEditChapter({ ...editChapter, requiresSeparatePurchase: e.target.checked })}
-                                        className="w-4 h-4 mt-0.5"
-                                    />
-                                    <div className="flex-1">
-                                        <Label htmlFor="edit-chapter-separate" className="cursor-pointer">
-                                            Requires Separate Purchase
-                                        </Label>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                            Readers must purchase this chapter individually, even if they own the book
-                                        </p>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -1409,7 +1333,6 @@ export default function AdminBooks() {
                                         title: t,
                                         index: editChapter.index,
                                         isFree: editChapter.isFree,
-                                        requiresSeparatePurchase: editChapter.requiresSeparatePurchase,
                                         contentPath: editChapter.contentPath.trim() || undefined,
                                     }
 

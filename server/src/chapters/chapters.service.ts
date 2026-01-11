@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException, Inject } from '@nestjs/common';
-import { Prisma, TransactionType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from '../wallets/wallets.service';
+import { PublicService } from '../public/public.service'
 import Redis from 'ioredis';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
@@ -11,6 +12,7 @@ export class ChaptersService {
     constructor(
         private prisma: PrismaService,
         private walletsService: WalletsService,
+        private publicService: PublicService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis
     ) {}
 
@@ -25,7 +27,6 @@ export class ChaptersService {
                 index: true,
                 price: true,
                 isFree: true,
-                requiresSeparatePurchase: true,
             },
         });
     }
@@ -44,11 +45,16 @@ export class ChaptersService {
                     isFree,
                     price,
                     contentPath: dto.contentPath,
-                    requiresSeparatePurchase: dto.requiresSeparatePurchase ?? false,
                 },
             });
 
+            await this.prisma.book.update({
+                where: { id: bookId },
+                data: { updatedAt: new Date() },
+            });
+
             await this.redis.del('stats:chapters:count');
+            await this.publicService.clearHomeCache();
             return chapter;
         } catch (err: any) {
             if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
@@ -66,7 +72,7 @@ export class ChaptersService {
             nextIsFree ? null : dto.price !== undefined ? new Prisma.Decimal(dto.price) : existing.price;
 
         try {
-            return await this.prisma.chapter.update({
+            const chapter = await this.prisma.chapter.update({
                 where: { id: chapterId },
                 data: {
                     title: dto.title,
@@ -74,7 +80,6 @@ export class ChaptersService {
                     isFree: dto.isFree,
                     price: nextPrice,
                     contentPath: dto.contentPath,
-                    requiresSeparatePurchase: dto.requiresSeparatePurchase,
                 },
                 select: {
                     id: true,
@@ -82,9 +87,17 @@ export class ChaptersService {
                     index: true,
                     price: true,
                     isFree: true,
-                    requiresSeparatePurchase: true,
                 },
             });
+
+            await this.prisma.book.update({
+                where: { id: bookId },
+                data: { updatedAt: new Date() },
+            });
+
+            await this.publicService.clearHomeCache();
+            return chapter
+
         } catch (err: any) {
             if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
             throw err;
@@ -97,6 +110,12 @@ export class ChaptersService {
 
         await this.prisma.chapter.delete({ where: { id: chapterId } });
 
+        await this.prisma.book.update({
+            where: { id: bookId },
+            data: { updatedAt: new Date() },
+        });
+
+        await this.publicService.clearHomeCache();
         await this.redis.del('stats:chapters:count');
         return { id: chapterId, deleted: true };
     }
@@ -107,9 +126,9 @@ export class ChaptersService {
             where: { id: chapterId },
             select: {
                 id: true,
+                index: true,
                 isFree: true,
                 price: true,
-                requiresSeparatePurchase: true,
                 bookId: true,
             },
         });
@@ -123,20 +142,12 @@ export class ChaptersService {
             return this.prisma.accessRecord.create({ data: { userId, chapterId } });
         }
 
-        // If user owns the book and this chapter does NOT require separate purchase, buying chapter is unnecessary
-        if (!chapter.requiresSeparatePurchase) {
-            const bookOwned = await this.prisma.bookAccess.findFirst({ where: { userId, bookId: chapter.bookId } });
-            if (bookOwned) {
-                return { alreadyAccessible: true, reason: 'BOOK_OWNERSHIP' };
-            }
-        }
-
         const existing = await this.prisma.accessRecord.findFirst({ where: { userId, chapterId } });
         if (existing) return existing;
 
         // Debit + access record in tx
         return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.id}`);
+            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index}`);
             return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.bookId } });
         });
     }

@@ -15,6 +15,9 @@ export class GenresController {
     constructor(private readonly genresService: GenresService) {}
 
     @Get()
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     async list() {
         return this.genresService.listAll();
     }

@@ -92,16 +92,7 @@ export class UsersService {
                         }
                     }
                 },
-                BookAccess: {
-                    include: {
-                        book: {
-                            select: { title: true, price: true }
-                        }
-                    },
-                    orderBy: { purchasedAt: 'desc' }
-                },
                 accessRecords: {
-                    where: { kind: 'CHAPTER' },
                     take: 50,
                     orderBy: { purchasedAt: 'desc' },
                     include: {

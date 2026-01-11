@@ -1,6 +1,7 @@
 import {ConflictException, Inject, Injectable, NotFoundException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
+import { PublicService } from '../public/public.service'
 
 function slugify(input: string): string {
     return input
@@ -18,7 +19,8 @@ function slugify(input: string): string {
 export class GenresService {
     constructor(
         private readonly prisma: PrismaService,
-    @Inject('REDIS_CLIENT') private readonly redis: Redis
+        private publicService: PublicService,
+        @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
     private readonly CACHE_KEY_ALL = 'genres:all';
@@ -66,6 +68,7 @@ export class GenresService {
         const genres = await this.prisma.genre.findMany({
             where: { isFeatured: true },
             orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
+            select: {name: true, slug: true}
         });
         await this.redis.set(this.CACHE_KEY_FEATURED, JSON.stringify(genres), 'EX', 7200);
 
@@ -89,7 +92,6 @@ export class GenresService {
             id: genre.id,
             name: genre.name,
             slug: genre.slug,
-            description: `Browse our collection of ${genre.name} books`,
             books: genre.books.map(bg => bg.book).filter(b => b.isPublished)
         };
     }
@@ -137,6 +139,7 @@ export class GenresService {
                 }
             });
 
+
             await this.invalidateCache();
             return updatedGenre;
         } catch (err: any) {
@@ -157,5 +160,6 @@ export class GenresService {
     private async invalidateCache() {
         await this.redis.del(this.CACHE_KEY_ALL);
         await this.redis.del(this.CACHE_KEY_FEATURED);
+        await this.publicService.clearHomeCache();
     }
 }

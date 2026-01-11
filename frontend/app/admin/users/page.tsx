@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Restricted } from "@/components/auth/restricted"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -45,14 +45,6 @@ interface Transaction {
   createdAt: string
 }
 
-interface BookAccess {
-  id: number
-  bookId: number
-  bookTitle: string
-  purchasedAt: string
-  price: number
-}
-
 interface AccessRecord {
   id: number
   chapterId: number
@@ -78,7 +70,6 @@ interface UserDetails extends User {
     balance: number
     transactions: Transaction[]
   }
-  BookAccess: BookAccess[]
   accessRecords: AccessRecord[]
   lastLoginAt?: string
   createdAt: string
@@ -268,11 +259,12 @@ export default function AdminUsers() {
             <div className="h-8 bg-muted rounded w-1/4" />
             <div className="h-4 bg-muted rounded w-1/3" />
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="h-24 bg-muted rounded" />
-              <div className="h-24 bg-muted rounded" />
-              <div className="h-24 bg-muted rounded" />
+              <div className="h-32 bg-muted rounded-xl" />
+              <div className="h-32 bg-muted rounded-xl" />
+              <div className="h-32 bg-muted rounded-xl" />
             </div>
-            <div className="h-96 bg-muted rounded" />
+            <div className="h-10 bg-muted rounded-xl" />
+            <div className="h-96 bg-muted rounded-xl" />
           </div>
         </div>
     )
@@ -735,27 +727,27 @@ export default function AdminUsers() {
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                           <BookOpen className="size-5 text-blue-600 dark:text-blue-500" />
-                          Purchased Books ({selectedUser.BookAccess.length})
+                          Purchased Chapter ({selectedUser.accessRecords.length})
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {selectedUser.BookAccess.length === 0 ? (
+                        {selectedUser.accessRecords.length === 0 ? (
                             <div className="text-center py-8 text-muted-foreground">
                               <BookOpen className="size-12 mx-auto mb-2 opacity-30" />
                               <p className="text-sm">No books purchased yet</p>
                             </div>
                         ) : (
                             <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {selectedUser.BookAccess.map((book) => (
+                              {selectedUser.accessRecords.map((chapter) => (
                                   <div
-                                      key={book.id}
+                                      key={chapter.id}
                                       className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
                                   >
                                     <div className="flex-1 min-w-0">
-                                      <p className="font-medium truncate">{book.bookTitle}</p>
+                                      <p className="font-medium truncate">{chapter.chapterTitle}</p>
                                       <p className="text-xs text-muted-foreground">
                                         Purchased{" "}
-                                        {new Date(book.purchasedAt).toLocaleDateString("en-US", {
+                                        {new Date(chapter.purchasedAt).toLocaleDateString("en-US", {
                                           month: "short",
                                           day: "numeric",
                                           year: "numeric",
@@ -763,7 +755,7 @@ export default function AdminUsers() {
                                       </p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                      <p className="font-semibold text-sm">${(book.price || 0).toFixed(2)}</p>
+                                      <p className="font-semibold text-sm">${(chapter.price || 0).toFixed(2)}</p>
                                     </div>
                                   </div>
                               ))}

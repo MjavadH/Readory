@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -134,10 +134,16 @@ export default function AdminTransactions() {
 
     if (loading && transactions.length === 0) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-3">
-                    <div className="size-10 animate-spin rounded-full border-4 border-muted border-t-primary" />
-                    <p className="text-sm text-muted-foreground">Loading transactions...</p>
+            <div className="p-4 sm:p-6 space-y-6">
+                <div className="animate-pulse space-y-4">
+                    <div className="h-8 bg-muted rounded w-1/4" />
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                    <div className="grid gap-4 md:grid-cols-3">
+                        <div className="h-32 bg-muted rounded-xl" />
+                        <div className="h-32 bg-muted rounded-xl" />
+                        <div className="h-32 bg-muted rounded-xl" />
+                    </div>
+                    <div className="h-96 bg-muted rounded-xl" />
                 </div>
             </div>
         )
@@ -307,61 +313,63 @@ export default function AdminTransactions() {
                         </div>
                     </CardContent>
                 </Card>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                        Showing <span className="font-semibold text-foreground">{transactions.length}</span> of{" "}
-                        <span className="font-semibold text-foreground">{stats.total}</span> transactions (Page {page} of{" "}
-                        {totalPages || 1})
-                    </p>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                            <ChevronLeft className="size-4 mr-1" />
-                            Previous
-                        </Button>
-                        <div className="flex items-center gap-1">
-                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                let pageNum
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1
-                                } else if (page <= 3) {
-                                    pageNum = i + 1
-                                } else if (page >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i
-                                } else {
-                                    pageNum = page - 2 + i
-                                }
-                                return (
-                                    <Button
-                                        key={pageNum}
-                                        variant={page === pageNum ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setPage(pageNum)}
-                                        className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
-                                    >
-                                        {pageNum}
-                                    </Button>
-                                )
-                            })}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                            Showing <span className="font-semibold text-foreground">{transactions.length}</span> of{" "}
+                            <span className="font-semibold text-foreground">{stats.total}</span> transactions (Page {page} of{" "}
+                            {totalPages || 1})
+                        </p>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                <ChevronLeft className="size-4 mr-1" />
+                                Previous
+                            </Button>
+                            <div className="flex items-center gap-1">
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    let pageNum
+                                    if (totalPages <= 5) {
+                                        pageNum = i + 1
+                                    } else if (page <= 3) {
+                                        pageNum = i + 1
+                                    } else if (page >= totalPages - 2) {
+                                        pageNum = totalPages - 4 + i
+                                    } else {
+                                        pageNum = page - 2 + i
+                                    }
+                                    return (
+                                        <Button
+                                            key={pageNum}
+                                            variant={page === pageNum ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => setPage(pageNum)}
+                                            className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
+                                        >
+                                            {pageNum}
+                                        </Button>
+                                    )
+                                })}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage((p) => p + 1)}
+                                disabled={!hasMore}
+                                className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                            >
+                                Next
+                                <ChevronRight className="size-4 ml-1" />
+                            </Button>
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setPage((p) => p + 1)}
-                            disabled={!hasMore}
-                            className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                        >
-                            Next
-                            <ChevronRight className="size-4 ml-1" />
-                        </Button>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     )

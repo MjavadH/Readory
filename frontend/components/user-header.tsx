@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 type RoleName = "USER" | "ADMIN"
-type Profile = { userId: number; email: string; roleName: RoleName }
-type Genre = { id: number; name: string; slug: string }
+type Profile = { userId: number; username: string; roleName: RoleName }
+type Genre = { name: string; slug: string }
 
 const CONTENT_TYPES = [
   { name: "Manga", path: "/books/manga" },
@@ -41,8 +41,8 @@ const CONTENT_TYPES = [
   { name: "Light Novel", path: "/books/light-novel" },
 ] as const
 
-function initialsFromEmail(email: string) {
-  const safe = (email || "").trim()
+function initialsFromUsername(username: string) {
+  const safe = (username || "").trim()
   if (!safe) return "U"
   return safe.slice(0, 2).toUpperCase()
 }
@@ -129,8 +129,6 @@ export function UserHeader() {
         setGenres(
             list
                 .map((g: any) => ({ id: Number(g.id), name: String(g.name), slug: String(g.slug) }))
-                .filter((g: Genre) => Number.isFinite(g.id) && g.name && g.slug)
-
         )
       } catch {
         setGenres([])
@@ -200,7 +198,7 @@ export function UserHeader() {
         <div className="container mx-auto px-4 h-full flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <BookOpen className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl hidden sm:inline">Readory</span>
+            <span className="font-bold text-xl sm:inline">Readory</span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-6">
@@ -255,7 +253,7 @@ export function UserHeader() {
                           <div className="grid grid-cols-2 gap-2">
                             {topGenres.map((g) => (
                                 <Link
-                                    key={g.id}
+                                    key={g.slug}
                                     href={`/genres/${g.slug}`}
                                     className="p-2 rounded-md hover:bg-accent text-sm transition-colors"
                                 >
@@ -316,7 +314,7 @@ export function UserHeader() {
                     <Button variant="ghost" size="icon" className="hidden lg:flex" aria-label="Account">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                          {initialsFromEmail(profile?.email ?? "")}
+                          {initialsFromUsername(profile?.username ?? "")}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -324,7 +322,7 @@ export function UserHeader() {
 
                   <DropdownMenuContent align="end" className="w-52">
                     <div className="px-2 py-2">
-                      <div className="text-sm font-medium truncate">{profile?.email}</div>
+                      <div className="text-sm font-medium truncate">{profile?.username}</div>
                     </div>
 
                     <DropdownMenuSeparator />
@@ -444,7 +442,7 @@ export function UserHeader() {
                       <div className="grid grid-cols-2 gap-2 mt-2">
                         {topGenres.slice(0, 8).map((g) => (
                             <Link
-                                key={g.id}
+                                key={g.slug}
                                 href={`/genres/${g.slug}`}
                                 className="p-2 rounded-md hover:bg-accent text-sm"
                                 onClick={() => setIsMobileMenuOpen(false)}

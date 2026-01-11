@@ -4,7 +4,6 @@ import {
     Get,
     Post,
     Patch,
-    Request,
     Param,
     Body,
     UseGuards,
@@ -61,12 +60,6 @@ export class BooksController {
     @Get(':id')
     async get(@Param('id', ParseIntPipe) id: number) {
         return this.booksService.findById(id);
-    }
-
-    @UseGuards(JwtAuthGuard)
-    @Post(':id/purchase')
-    async purchase(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
-        return this.booksService.purchaseBook(req.user.userId, id);
     }
 
     // Admin: create a new book

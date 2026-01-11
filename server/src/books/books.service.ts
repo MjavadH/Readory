@@ -3,6 +3,7 @@ import { Prisma, BookType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 import { WalletsService } from '../wallets/wallets.service';
+import { PublicService } from '../public/public.service'
 
 type StatusFilter = 'all' | 'published' | 'draft';
 
@@ -29,6 +30,7 @@ export class BooksService {
     constructor(
         private prisma: PrismaService,
         private walletsService: WalletsService,
+        private publicService: PublicService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
@@ -57,7 +59,7 @@ export class BooksService {
         ]);
 
         return {
-            books: books.map((b: any) => ({ ...b, price: toNumber(b.price) })),
+            books: books,
             hasMore: skip + books.length < total,
             page,
             limit,
@@ -96,14 +98,9 @@ export class BooksService {
             }),
         ]);
 
-        const mapped = books.map((b: any) => ({
-            ...b,
-            price: toNumber(b.price),
-        }));
-
         return {
-            books: mapped,
-            hasMore: skip + mapped.length < total,
+            books: books,
+            hasMore: skip + books.length < total,
             stats: { total, Published: published, Drafts: drafts },
             page,
             limit,
@@ -119,7 +116,7 @@ export class BooksService {
                 genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
                 chapters: {
                     orderBy: { index: 'asc' },
-                    select: { id: true, title: true, index: true, price: true, isFree: true },
+                    select: { id: true, title: true, index: true, isFree: true },
                 },
             },
         });
@@ -136,74 +133,23 @@ export class BooksService {
         });
     }
 
-    async purchaseBook(userId: number, bookId: number) {
-        const book = await this.prisma.book.findUnique({
-            where: { id: bookId },
-            select: { id: true, title: true, price: true, isPublished: true }
-        });
-
-        if (!book || !book.isPublished) {
-            throw new NotFoundException('Book not found or not available');
-        }
-
-        const existingAccess = await this.prisma.bookAccess.findUnique({
-            where: {
-                userId_bookId: { userId, bookId }
-            }
-        });
-
-        if (existingAccess) {
-            return { message: 'You already own this book', access: existingAccess };
-        }
-
-        if (book.price.toNumber() <= 0) {
-            return this.prisma.bookAccess.create({
-                data: { userId, bookId }
-            });
-        }
-
-        return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(
-                userId,
-                book.price.toNumber(),
-                `Purchase Book: ${book.title}`
-            );
-
-            const bookAccess = await tx.bookAccess.create({
-                data: { userId, bookId }
-            });
-
-            await tx.accessRecord.create({
-                data: {
-                    userId,
-                    bookId,
-                    kind: 'BOOK',
-                }
-            });
-
-            return bookAccess;
-        });
-    }
-
     // Admin: create a new book
     async create(data: {
         title: string;
         author?: string;
         description?: string;
         coverImage?: string;
-        price?: string;
         isPublished?: boolean;
         isFeatured?: boolean;
         type?: string;
         genreIds: number[];
     }) {
-        const { genreIds, price, type, ...rest } = data;
+        const { genreIds, type, ...rest } = data;
 
         const created = await this.prisma.book.create({
             data: {
                 ...rest,
                 type: type as BookType,
-                price: price ? new Prisma.Decimal(price) : undefined,
                 genres: {
                     create: genreIds.map((genreId) => ({
                         genre: { connect: { id: genreId } },
@@ -216,6 +162,7 @@ export class BooksService {
             },
         });
 
+        await this.publicService.clearHomeCache();
         await this.redis.del('stats:books');
         return created;
     }
@@ -228,19 +175,17 @@ export class BooksService {
             author?: string;
             description?: string;
             coverImage?: string;
-            price?: string;
             isPublished?: boolean;
             isFeatured?: boolean;
             type?: string;
             genreIds?: number[];
         }>,
     ) {
-        const { genreIds, price, type, ...rest } = data;
+        const { genreIds, type, ...rest } = data;
 
         const updateData: Prisma.BookUpdateInput = {
             ...rest,
             ...(type ? { type: type as BookType } : {}),
-            ...(price !== undefined ? { price: new Prisma.Decimal(price) } : {}),
             ...(genreIds
                 ? {
                     genres: {
@@ -263,6 +208,7 @@ export class BooksService {
                 },
             });
 
+            await this.publicService.clearHomeCache();
             await this.redis.del('stats:books');
             return updated;
         } catch (err: any) {
@@ -277,6 +223,7 @@ export class BooksService {
 
         await this.prisma.book.delete({ where: { id } });
 
+        await this.publicService.clearHomeCache();
         await this.redis.del('stats:books');
         await this.redis.del('stats:chapters:count');
 

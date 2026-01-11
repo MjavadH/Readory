@@ -8,7 +8,6 @@ import {
     IsOptional,
     IsString,
     IsUUID,
-    Matches,
     MaxLength,
     MinLength,
 } from 'class-validator';
@@ -37,12 +36,6 @@ export class UpdateBookDto {
     @IsOptional()
     @IsUUID('4')
     coverImage?: string;
-
-    @IsOptional()
-    @Matches(/^[0-9]+(?:\.[0-9]{1,2})?$/, {
-        message: 'price must be a decimal string with up to 2 decimal places',
-    })
-    price?: string;
 
     @IsOptional()
     @IsBoolean()

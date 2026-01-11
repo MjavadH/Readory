@@ -44,7 +44,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
         const sessionUser = {
             userId: user.id,
-            email: user.email,
             username: user.username,
             roleName: user.role?.name,
             permissions: user.permissions || []

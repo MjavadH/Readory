@@ -1,32 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import Redis from 'ioredis';
 
 @Injectable()
 export class LibraryService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        @Inject('REDIS_CLIENT') private readonly redis: Redis
+    ) {}
 
     async getLibrary(userId: number) {
-        const [bookAccess, chapterAccess] = await Promise.all([
-            this.prisma.bookAccess?.findMany?.({
-                where: { userId },
-                orderBy: { purchasedAt: 'desc' },
-                include: {
-                    book: {
-                        select: {
-                            id: true,
-                            title: true,
-                            author: true,
-                            description: true,
-                            coverImage: true,
-                            price: true,
-                            isPublished: true,
-                            updatedAt: true,
-                        },
-                    },
-                },
-            }) ?? Promise.resolve([]),
-
-            this.prisma.accessRecord.findMany({
+        const chapterAccess = this.prisma.accessRecord.findMany({
                 where: { userId },
                 orderBy: { purchasedAt: 'desc' },
                 include: {
@@ -37,7 +21,6 @@ export class LibraryService {
                             index: true,
                             isFree: true,
                             price: true,
-                            requiresSeparatePurchase: true,
                             book: {
                                 select: {
                                     id: true,
@@ -48,15 +31,8 @@ export class LibraryService {
                         },
                     },
                 },
-            }),
-        ]);
+            })
 
-        const books = bookAccess
-            .map((x: any) => x.book)
-            .filter(Boolean);
-
-        const chapters = chapterAccess.map((x) => x.chapter);
-
-        return { books, chapters };
+        return chapterAccess;
     }
 }

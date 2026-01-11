@@ -121,13 +121,6 @@ export class UsersController {
                     createdAt: t.createdAt
                 })) || []
             },
-            BookAccess: user.BookAccess.map(b => ({
-                id: b.id,
-                bookId: b.bookId,
-                purchasedAt: b.purchasedAt,
-                bookTitle: b.book.title,
-                price: Number(b.book.price)
-            })),
 
             accessRecords: user.accessRecords.map(r => ({
                 id: r.id,

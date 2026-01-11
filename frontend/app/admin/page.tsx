@@ -375,12 +375,13 @@ function DashboardSkeleton() {
     return (
         <div className="p-6 space-y-6">
             <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-5 w-80 bg-muted rounded animate-pulse" />
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => <div key={i} className="h-32 bg-muted rounded animate-pulse" />)}
+                {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-                <div className="lg:col-span-4 h-80 bg-muted rounded animate-pulse" />
-                <div className="lg:col-span-3 h-80 bg-muted rounded animate-pulse" />
+                <div className="lg:col-span-4 h-100 bg-muted rounded-xl animate-pulse" />
+                <div className="lg:col-span-3 h-100 bg-muted rounded-xl animate-pulse" />
             </div>
         </div>
     )

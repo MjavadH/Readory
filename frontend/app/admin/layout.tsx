@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import {notFound, useRouter} from 'next/navigation';
+import {notFound} from 'next/navigation';
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Loader2 } from "lucide-react";
 import { Inter } from "next/font/google";
