@@ -1,7 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
     ArrayNotEmpty, IsArray, IsBoolean,
-    IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MaxLength, MinLength,
+    IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength,
 } from 'class-validator';
 
 export enum BookType {

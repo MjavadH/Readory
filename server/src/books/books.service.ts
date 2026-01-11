@@ -16,15 +16,6 @@ function normalizeQ(q?: string) {
     return s.length ? s : undefined;
 }
 
-function toNumber(v: any): number {
-    if (v == null) return 0;
-    if (typeof v === 'number') return v;
-    if (typeof v === 'string') return Number(v);
-    if (typeof v === 'object' && typeof v.toNumber === 'function') return v.toNumber();
-    return Number(v);
-}
-
-
 @Injectable()
 export class BooksService {
     constructor(

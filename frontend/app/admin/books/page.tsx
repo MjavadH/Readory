@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
     Dialog,
@@ -36,7 +36,6 @@ import {
     Search,
     CheckCircle2,
     Clock,
-    DollarSign,
     Star, ChevronLeft, ChevronRight
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
