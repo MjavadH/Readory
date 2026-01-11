@@ -5,7 +5,7 @@ import {notFound, useRouter} from 'next/navigation';
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { Loader2 } from "lucide-react";
 import { Inter } from "next/font/google";
-import "../globals.css";
+import "@/styles/globals.css";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/providers/theme-provider";
