@@ -38,7 +38,7 @@ const CONTENT_TYPES = [
   { name: "Manhwa", path: "/books/manhwa" },
   { name: "Comic", path: "/books/comic" },
   { name: "Novel", path: "/books/novel" },
-  { name: "Light Novel", path: "/books/light-novel" },
+  { name: "Light Novel", path: "/books/light_novel" },
 ] as const
 
 function initialsFromUsername(username: string) {

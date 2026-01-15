@@ -56,7 +56,7 @@ const TYPE_THEMES: Record<string, TypeTheme> = {
         borderColor: "border-emerald-200",
         headerGradient: "from-emerald-700 to-teal-600",
     },
-    "light-novel": {
+    "light_novel": {
         label: "Light Novel",
         description: "Short, illustrated Japanese novels targeting young adults.",
         icon: BookOpen,
@@ -76,7 +76,7 @@ async function getBooksByType(type: string) {
         cache: "no-store",
     })
 
-    if (!res.ok) return []
+    if (!res.ok) return null
     return res.json()
 }
 
@@ -84,6 +84,9 @@ export default async function BookTypePage({ params }: { params: Promise<{ type:
     const { type } = await params
 
     const books = await getBooksByType(type)
+    if (!books) {
+        notFound()
+    }
 
     const theme = getTypeTheme(type)
     const ThemeIcon = theme.icon
@@ -91,7 +94,7 @@ export default async function BookTypePage({ params }: { params: Promise<{ type:
     return (
         <div className="container mx-auto px-4 py-8">
 
-            <div className={`mb-10 rounded-2xl p-8 text-white bg-gradient-to-r ${theme.headerGradient} shadow-lg relative overflow-hidden`}>
+            <div className={`mb-10 rounded-2xl p-8 text-white bg-linear-to-r ${theme.headerGradient} shadow-lg relative overflow-hidden`}>
                 <div className="absolute top-0 right-0 p-8 opacity-10">
                     <ThemeIcon className="w-32 h-32" />
                 </div>
@@ -124,7 +127,7 @@ export default async function BookTypePage({ params }: { params: Promise<{ type:
                             key={book.id}
                             className={`group hover:shadow-xl transition-all duration-300 overflow-hidden border ${theme.borderColor} bg-card`}
                         >
-                            <div className="aspect-[2/3] relative bg-muted overflow-hidden">
+                            <div className="aspect-2/3 relative bg-muted overflow-hidden">
                                 {book.coverImage ? (
                                     <img
                                         src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${book.coverImage}`}

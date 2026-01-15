@@ -29,7 +29,7 @@ import {
   Pencil,
   X,
   CheckCircle2,
-  AlertCircle, BookOpen,
+  AlertCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
@@ -42,6 +42,7 @@ type MediaItem = {
 
 export default function AdminMedia() {
   const { toast } = useToast()
+  const [loading, setLoading] = useState(true)
   const [files, setFiles] = useState<MediaItem[]>([])
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
@@ -60,6 +61,7 @@ export default function AdminMedia() {
 
   useEffect(() => {
     const controller = new AbortController()
+    setLoading(true)
 
     const t = setTimeout(async () => {
       try {
@@ -77,6 +79,8 @@ export default function AdminMedia() {
         if (e?.name !== "AbortError") {
           // ignore
         }
+      } finally {
+        setLoading(false)
       }
     }, 250)
 
@@ -236,12 +240,30 @@ export default function AdminMedia() {
     }, 0)
   }, [files])
 
+
+  if (loading) {
+    return (
+        <div className="p-4 sm:p-6 space-y-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded w-1/4" />
+            <div className="h-4 bg-muted rounded w-1/3" />
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="h-32 bg-muted rounded-xl" />
+              <div className="h-32 bg-muted rounded-xl" />
+            </div>
+            <div className="h-120 bg-muted rounded-xl" />
+            <div className="h-100 bg-muted rounded-xl" />
+          </div>
+        </div>
+    )
+  }
+
   return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
         <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Media Library
             </h1>
             <p className="text-muted-foreground">Upload and manage your media assets</p>
@@ -249,7 +271,7 @@ export default function AdminMedia() {
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+            <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
               <CardContent className="flex items-center gap-4 py-4">
                 <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
                   <FileImage className="size-6 text-blue-600 dark:text-blue-500" />
@@ -261,7 +283,7 @@ export default function AdminMedia() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/50 bg-gradient-to-br from-purple-500/5 to-purple-500/10">
+            <Card className="border-border/50 bg-linear-to-br from-purple-500/5 to-purple-500/10">
               <CardContent className="flex items-center gap-4 py-4">
                 <div className="flex size-12 items-center justify-center rounded-xl bg-purple-500/10 ring-1 ring-purple-500/20">
                   <HardDrive className="size-6 text-purple-600 dark:text-purple-500" />
@@ -487,7 +509,7 @@ export default function AdminMedia() {
                                 sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                                 unoptimized
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/0 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                             <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                               <Button
                                   size="icon"
@@ -529,7 +551,7 @@ export default function AdminMedia() {
                               </Button>
                             </div>
                           </div>
-                          <div className="p-2.5 bg-gradient-to-r from-muted/50 to-muted/30 border-t space-y-1">
+                          <div className="p-2.5 bg-linear-to-r from-muted/50 to-muted/30 border-t space-y-1">
                             <div className="text-xs font-medium truncate text-center">{file.filename}</div>
                             <code className="text-[9px] font-mono bg-background/80 px-1.5 py-0.5 rounded block truncate text-center text-muted-foreground">
                               {file.code}

@@ -93,14 +93,14 @@ function HeroCarousel({ books }: { books: Book[] }) {
         <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8 text-white">
           <div className="max-w-xl">
             <div className="flex flex-wrap gap-2 mb-3">
-              {book.genres.slice(0, 3).map((genre) => (
-                  <Badge key={genre} variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
+              {book.genres && book.genres.slice(0, 3).map((genre,idx) => (
+                  <Badge key={idx} variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
                     {genre}
                   </Badge>
               ))}
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold mb-3 line-clamp-2 text-pretty">{book.title}</h1>
+            <h1 className="text-2xl md:text-4xl font-bold mb-3 line-clamp-2 text-pretty">{book.title}</h1>
 
             <p className="text-sm md:text-base text-white/90 mb-6 line-clamp-2">{book.desc}</p>
 

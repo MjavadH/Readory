@@ -13,8 +13,6 @@ import {
 } from "@/components/ui/dialog"
 import {
     AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
@@ -255,6 +253,24 @@ export default function AdminBooks() {
         if (!bookToDelete) return
         setIsSubmitting(true)
         try {
+            const book = books.find(b => b.id === bookToDelete);
+            if (!book) {
+                toast({
+                    title: "Error",
+                    description: "Book not found. It might have been deleted already.",
+                    variant: "destructive",
+                });
+                return;
+            }
+            if (book._count?.chapters && book._count.chapters > 0) {
+                toast({
+                    title: "Cannot Delete Book",
+                    description: "This book has chapters and cannot be deleted. Please delete all chapters first.",
+                    variant: "destructive",
+                });
+                return;
+            }
+
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${bookToDelete}`, {
                 method: "DELETE",
                 credentials: "include",
@@ -447,11 +463,11 @@ export default function AdminBooks() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
+        <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
             <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="space-y-1">
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                             Books
                         </h1>
                         <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
@@ -601,7 +617,7 @@ export default function AdminBooks() {
                 </div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
                         <CardContent className="flex items-center gap-4 py-4">
                             <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
                                 <BookOpen className="size-6 text-blue-600 dark:text-blue-500" />
@@ -612,7 +628,7 @@ export default function AdminBooks() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="border-border/50 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-emerald-500/5 to-emerald-500/10">
                         <CardContent className="flex items-center gap-4 py-4">
                             <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
                                 <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-500" />
@@ -623,7 +639,7 @@ export default function AdminBooks() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="border-border/50 bg-gradient-to-br from-amber-500/5 to-amber-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-amber-500/5 to-amber-500/10">
                         <CardContent className="flex items-center gap-4 py-4">
                             <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20">
                                 <Clock className="size-6 text-amber-600 dark:text-amber-500" />
@@ -659,7 +675,7 @@ export default function AdminBooks() {
                 </div>
 
                 {books.length === 0 ? (
-                    <Card className="py-16 sm:py-20 border-none shadow-lg bg-gradient-to-br from-card to-muted/20">
+                    <Card className="py-16 sm:py-20 border-none shadow-lg bg-linear-to-br from-card to-muted/20">
                         <CardContent className="flex flex-col items-center justify-center text-center px-4">
                             <div className="size-16 sm:size-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 sm:mb-6">
                                 <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
@@ -685,7 +701,7 @@ export default function AdminBooks() {
                                 key={book.id}
                                 className="group overflow-hidden border-none shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 bg-card"
                             >
-                                <div className="relative aspect-[2/3] bg-gradient-to-br from-muted/50 to-muted overflow-hidden">
+                                <div className="relative aspect-2/3 bg-linear-to-br from-muted/50 to-muted overflow-hidden">
                                     {book.coverImage ? (
                                         <img
                                             src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${book.coverImage}/thumbnail`}
@@ -716,7 +732,7 @@ export default function AdminBooks() {
                                     {book.type && (
                                         <div className="absolute top-3 left-3">
                                             <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-lg text-xs">
-                                                {book.type}
+                                                {book.type.replace('_',' ').toLowerCase()}
                                             </Badge>
                                         </div>
                                     )}
@@ -879,7 +895,7 @@ export default function AdminBooks() {
                                                 <img
                                                     src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${selectedBook.coverImage}`}
                                                     alt={selectedBook.title || "Book cover"}
-                                                    className="w-full max-w-[200px] sm:max-w-[250px] aspect-[2/3] object-cover rounded-lg border shadow-lg mx-auto md:mx-0"
+                                                    className="w-full max-w-[200px] sm:max-w-[250px] aspect-2/3 object-cover rounded-lg border shadow-lg mx-auto md:mx-0"
                                                 />
                                             </div>
                                         )}
@@ -1371,14 +1387,25 @@ export default function AdminBooks() {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (isSubmitting) return false;
+                                    setBookToDelete(null);
+                                    setDeleteBookDialogOpen(false)
+                                }}
+                                disabled={isSubmitting}
+                                className={`${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
                                 onClick={handleDeleteBookConfirm}
                                 disabled={isSubmitting}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                className={`bg-destructive text-destructive-foreground hover:bg-destructive/90 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 {isSubmitting ? "Deleting..." : "Delete"}
-                            </AlertDialogAction>
+                            </Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -1392,14 +1419,25 @@ export default function AdminBooks() {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (isSubmitting) return false;
+                                    setChapterToDelete(null);
+                                    setDeleteChapterDialogOpen(false)
+                                }}
+                                disabled={isSubmitting}
+                                className={`${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
                                 onClick={handleDeleteChapterConfirm}
                                 disabled={isSubmitting}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                className={`bg-destructive text-destructive-foreground hover:bg-destructive/90 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 {isSubmitting ? "Deleting..." : "Delete"}
-                            </AlertDialogAction>
+                            </Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
