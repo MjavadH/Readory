@@ -304,7 +304,7 @@ export default function AdminUsers() {
               </div>
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground font-medium">Active (30 Days)</p>
-                <p className="text-xl sm:text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold">{(stats?.activeUsers || 0).toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
@@ -316,7 +316,7 @@ export default function AdminUsers() {
               </div>
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground font-medium">New (7 Days)</p>
-                <p className="text-xl sm:text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</p>
+                <p className="text-xl sm:text-2xl font-bold">{(stats?.newUsers || 0).toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
