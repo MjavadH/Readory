@@ -135,9 +135,13 @@ export default function AdminTransactions() {
     if (loading && transactions.length === 0) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
+                <div className="space-y-1">
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Transactions
+                    </h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">View and manage all wallet transactions</p>
+                </div>
                 <div className="animate-pulse space-y-4">
-                    <div className="h-8 bg-muted rounded w-1/4" />
-                    <div className="h-4 bg-muted rounded w-1/3" />
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="h-32 bg-muted rounded-xl" />
                         <div className="h-32 bg-muted rounded-xl" />
@@ -150,10 +154,10 @@ export default function AdminTransactions() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20">
+        <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
             <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
                 <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Transactions
                     </h1>
                     <p className="text-sm sm:text-base text-muted-foreground">View and manage all wallet transactions</p>
@@ -175,7 +179,7 @@ export default function AdminTransactions() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-border/50 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-emerald-500/5 to-emerald-500/10">
                         <CardContent className="flex items-center justify-between gap-4 py-4">
                             <div className="flex items-center gap-4">
                                 <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
@@ -190,7 +194,7 @@ export default function AdminTransactions() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-border/50 bg-gradient-to-br from-red-500/5 to-red-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-red-500/5 to-red-500/10">
                         <CardContent className="flex items-center justify-between gap-4 py-4">
                             <div className="flex items-center gap-4">
                                 <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10 ring-1 ring-red-500/20">

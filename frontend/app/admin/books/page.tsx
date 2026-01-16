@@ -362,9 +362,13 @@ export default function AdminBooks() {
     if (loading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
+                <div className="space-y-1">
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Books
+                    </h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
+                </div>
                 <div className="animate-pulse space-y-4">
-                    <div className="h-8 bg-muted rounded w-1/4" />
-                    <div className="h-4 bg-muted rounded w-1/3" />
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="h-32 bg-muted rounded-xl" />
                         <div className="h-32 bg-muted rounded-xl" />

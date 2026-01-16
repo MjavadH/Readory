@@ -374,8 +374,10 @@ function EmptyState({ text }: { text: string }) {
 function DashboardSkeleton() {
     return (
         <div className="p-6 space-y-6">
-            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
-            <div className="h-5 w-80 bg-muted rounded animate-pulse" />
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
+                <p className="text-muted-foreground mt-1">Overview of your platform's performance.</p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
             </div>

@@ -275,10 +275,20 @@ export default function AdminStaff() {
     if (loading) {
         return (
             <div className="p-4 sm:p-6 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Staff Management</h1>
+                        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                            Manage admin staff and their specific permissions
+                        </p>
+                    </div>
+                    <Button disabled={true} className="gap-2 w-full sm:w-auto">
+                        <UserPlus className="size-4" />
+                        Add Staff
+                    </Button>
+                </div>
                 <div className="animate-pulse space-y-4">
-                    <div className="h-8 bg-muted rounded w-1/4" />
-                    <div className="h-4 bg-muted rounded w-1/3" />
-                    <div className="h-96 bg-muted rounded" />
+                    <div className="h-96 bg-muted rounded-xl" />
                 </div>
             </div>
         )
