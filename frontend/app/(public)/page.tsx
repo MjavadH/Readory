@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useSWR from "swr"
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react"
+import { Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -55,9 +55,24 @@ interface HomeContent {
 const fetcher = (url: string) => fetch(url).then((r) => r.json())
 
 function HeroSkeleton() {
-  return (
-      <div className="w-full h-100 md:h-125 bg-linear-to-r from-muted via-muted to-muted animate-pulse rounded-lg" />
-  )
+    return (
+        <div className="w-full rounded-2xl bg-muted/60 p-6 md:p-10">
+            <div className="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-start">
+                <div className="w-44 md:w-52 aspect-2/3 bg-muted animate-pulse rounded-xl shrink-0" />
+                <div className="flex-1 space-y-4 w-full py-4">
+                    <div className="h-8 bg-muted animate-pulse rounded w-3/4" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-4 bg-muted animate-pulse rounded w-2/3" />
+                    <div className="flex gap-2 pt-2">
+                        <div className="h-7 w-16 bg-muted animate-pulse rounded-full" />
+                        <div className="h-7 w-20 bg-muted animate-pulse rounded-full" />
+                        <div className="h-7 w-14 bg-muted animate-pulse rounded-full" />
+                    </div>
+                    <div className="h-11 w-32 bg-muted animate-pulse rounded-lg mt-4" />
+                </div>
+            </div>
+        </div>
+    )
 }
 
 function BookCardSkeleton() {
@@ -71,79 +86,126 @@ function BookCardSkeleton() {
 }
 
 function HeroCarousel({ books }: { books: Book[] }) {
-  const [current, setCurrent] = useState(0)
+    const [current, setCurrent] = useState(0)
+    const [isTransitioning, setIsTransitioning] = useState(false)
+    const [direction, setDirection] = useState<"next" | "prev">("next")
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % books.length)
-    }, 5000)
-    return () => clearInterval(timer)
-  }, [books.length])
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setDirection("next")
+            setIsTransitioning(true)
+            setTimeout(() => {
+                setCurrent((prev) => (prev + 1) % books.length)
+                setIsTransitioning(false)
+            }, 300)
+        }, 6000)
+        return () => clearInterval(timer)
+    }, [books.length])
 
-  const book = books[current]
+    const book = books[current]
 
-  return (
-      <div className="relative w-full h-100 md:h-125 rounded-lg overflow-hidden group">
-        <Image src={book.cover ? `/media/${book.cover}` : "/placeholder.svg"} alt={book.title} fill className="object-cover" priority />
+    return (
+        <div className="w-full rounded-2xl bg-muted/50 border border-border/50 overflow-hidden">
+            <div
+                className={`flex flex-col md:flex-row items-center md:items-stretch transition-all duration-500 ease-out ${
+                    isTransitioning
+                        ? direction === "next"
+                            ? "opacity-0 translate-x-4"
+                            : "opacity-0 -translate-x-4"
+                        : "opacity-100 translate-x-0"
+                }`}
+            >
+                {/* Book Cover - Left Side */}
+                <div className="w-full md:w-auto shrink-0 p-6 pb-0 md:p-8 flex justify-center md:justify-start">
+                    <Link href={`/${book.type.toLowerCase()}/${book.id}`} className="block">
+                        <div className="relative w-44 md:w-52 aspect-2/3 rounded-xl overflow-hidden shadow-xl ring-1 ring-border/20 transition-transform duration-300 hover:scale-[1.03]">
+                            <Image
+                                src={book.cover ? `/media/${book.cover}/thumbnail` : "/placeholder.svg"}
+                                alt={book.title}
+                                fill
+                                className="object-cover"
+                                priority
+                            />
+                        </div>
+                    </Link>
+                </div>
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-transparent" />
+                {/* Content - Right Side */}
+                <div className="flex-1 flex flex-col justify-center p-6 pt-4 md:p-8 md:pl-2">
+                    {/* Title */}
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3 line-clamp-2 text-balance">
+                        {book.title}
+                    </h1>
 
-        {/* Content */}
-        <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-8 text-white">
-          <div className="max-w-xl">
-            <div className="flex flex-wrap gap-2 mb-3">
-              {book.genres && book.genres.slice(0, 3).map((genre,idx) => (
-                  <Badge key={idx} variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
-                    {genre}
-                  </Badge>
-              ))}
+                    {/* Description */}
+                    <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-5 line-clamp-2">
+                        {book.desc}
+                    </p>
+
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mb-6">
+                        {book.genres &&
+                            book.genres.map((genre, idx) => (
+                                <Link key={`genre-${idx}`} href={`/genres/${genre.toLowerCase()}`}>
+                                    <Badge
+                                        variant="secondary"
+                                        className="cursor-pointer bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-all duration-200 text-xs md:text-sm px-3 py-1"
+                                    >
+                                        {genre}
+                                    </Badge>
+                                </Link>
+                            ))}
+                        {book.type && (
+                            <Link href={`/books/${book.type.toLowerCase()}`}>
+                                <Badge
+                                    variant="outline"
+                                    className="cursor-pointer border-accent-foreground/20 text-accent-foreground/70 hover:bg-accent hover:text-accent-foreground transition-all duration-200 text-xs md:text-sm px-3 py-1"
+                                >
+                                    {book.type.replace("_", " ").toLowerCase()}
+                                </Badge>
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Read Now Button */}
+                    <div>
+                        <Link href={`/${book.type.toLowerCase()}/${book.id}`}>
+                            <Button
+                                size="lg"
+                                className="rounded-lg font-semibold px-8 transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-md hover:shadow-lg"
+                            >
+                                Read Now
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
             </div>
 
-            <h1 className="text-2xl md:text-4xl font-bold mb-3 line-clamp-2 text-pretty">{book.title}</h1>
-
-            <p className="text-sm md:text-base text-white/90 mb-6 line-clamp-2">{book.desc}</p>
-
-            <div className="flex gap-3">
-              <Button size="lg" className="bg-white text-black hover:bg-white/90">
-                Read Now
-              </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 bg-transparent">
-                Details
-              </Button>
+            {/* Indicators */}
+            <div className="flex justify-center gap-2 pb-5">
+                {books.map((_, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => {
+                            if (idx === current) return
+                            setDirection(idx > current ? "next" : "prev")
+                            setIsTransitioning(true)
+                            setTimeout(() => {
+                                setCurrent(idx)
+                                setIsTransitioning(false)
+                            }, 300)
+                        }}
+                        className={`h-1.5 rounded-full transition-all duration-300 ${
+                            idx === current
+                                ? "w-8 bg-primary"
+                                : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                        }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                    />
+                ))}
             </div>
-          </div>
         </div>
-
-        {/* Navigation */}
-        <button
-            onClick={() => setCurrent((prev) => (prev - 1 + books.length) % books.length)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-
-        <button
-            onClick={() => setCurrent((prev) => (prev + 1) % books.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <ChevronRight className="w-6 h-6" />
-        </button>
-
-        {/* Indicators */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-          {books.map((_, idx) => (
-              <button
-                  key={idx}
-                  onClick={() => setCurrent(idx)}
-                  className={`h-2 rounded-full transition-all ${
-                      idx === current ? "w-8 bg-white" : "w-2 bg-white/50 hover:bg-white/70"
-                  }`}
-              />
-          ))}
-        </div>
-      </div>
-  )
+    )
 }
 
 export default function Home() {
