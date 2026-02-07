@@ -1,4 +1,4 @@
-import {Injectable, NotFoundException, Inject} from '@nestjs/common';
+import {Injectable, NotFoundException, BadRequestException, Inject} from '@nestjs/common';
 import { Prisma, BookType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
@@ -206,6 +206,47 @@ export class BooksService {
             if (err?.code === 'P2025') throw new NotFoundException('book not found');
             throw err;
         }
+    }
+
+    async rateBook(userId: number, bookId: number, rating: number) {
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+            throw new BadRequestException('rating must be between 1 and 5');
+        }
+
+        // ensure book exists + published (optional: allow rating unpublished? usually no)
+        const book = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
+        if (!book) throw new NotFoundException('book not found');
+
+        const result = await this.prisma.$transaction(async (tx) => {
+            await tx.bookRating.upsert({
+                where: { userId_bookId: { userId, bookId } },
+                create: { userId, bookId, rating },
+                update: { rating },
+            });
+
+            const agg = await tx.bookRating.aggregate({
+                where: { bookId },
+                _avg: { rating: true },
+                _count: { rating: true },
+            });
+
+            const avg = agg._avg.rating ?? 0;
+            const count = agg._count.rating ?? 0;
+
+            await tx.book.update({
+                where: { id: bookId },
+                data: {
+                    ratingAvg: new Prisma.Decimal(avg.toFixed(2)),
+                    ratingCount: count,
+                },
+                select: { id: true },
+            });
+
+            return { rating, ratingAvg: Number(avg.toFixed(2)), ratingCount: count };
+        });
+
+        await this.publicService.clearHomeCache();
+        return result;
     }
 
     async deleteById(id: number) {

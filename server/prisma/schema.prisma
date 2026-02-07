@@ -47,6 +47,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   isBanned      Boolean        @default(false)
   permissions   String[]
+  BookRating    BookRating[]
 }
 
 // Wallet for each user
@@ -85,12 +86,33 @@ model Book {
   chapters    Chapter[]
   genres      BookGenre[]
 
+  ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
+  ratingCount Int     @default(0)
+
+  ratings BookRating[]
+
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   AccessRecord AccessRecord[]
 
+  @@index([ratingAvg, ratingCount])
   @@index([isPublished, isFeatured])
   @@index([createdAt])
+}
+
+model BookRating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([bookId])
 }
 
 model Genre {

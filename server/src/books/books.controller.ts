@@ -7,6 +7,8 @@ import {
     Param,
     Body,
     UseGuards,
+    Request,
+    Put,
     ParseIntPipe,
     Query, DefaultValuePipe
 } from '@nestjs/common';
@@ -20,6 +22,7 @@ import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
+import { RateBookDto } from './dto/rate-book.dto';
 
 type StatusFilter = 'all' | 'published' | 'draft';
 
@@ -78,6 +81,17 @@ export class BooksController {
     @Patch(':id')
     async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBookDto) {
         return this.booksService.update(id, dto);
+    }
+
+    @Put(':id/rating')
+    @UseGuards(JwtAuthGuard)
+    async rateBook(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: RateBookDto,
+        @Request() req: any,
+    ) {
+        const userId = req.user.userId ?? req.user.id;
+        return this.booksService.rateBook(Number(userId), id, dto.rating);
     }
 
     // delete book

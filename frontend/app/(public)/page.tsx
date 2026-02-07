@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import useSWR from "swr"
-import { Clock } from "lucide-react"
+import { Clock, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
@@ -37,6 +37,8 @@ interface TrendingBook {
     title: string
     cover: string
     type: string
+    ratingAvg: number
+    ratingCount: number
 }
 
 interface Genre {
@@ -208,6 +210,36 @@ function HeroCarousel({ books }: { books: Book[] }) {
     )
 }
 
+function RatingInline({ avg, count }: { avg: number; count: number }) {
+    if (!count) return null
+
+    const rounded = Math.round(avg * 10) / 10
+    const full = Math.floor(rounded)
+    const half = rounded - full >= 0.5
+
+    return (
+        <div className="flex items-center gap-1 text-white/90 text-xs">
+            <div className="flex items-center">
+                {Array.from({ length: 5 }).map((_, i) => {
+                    const filled = i < full
+                    const isHalf = i === full && half
+                    return (
+                        <Star
+                            key={i}
+                            className={[
+                                "h-3.5 w-3.5",
+                                filled ? "fill-yellow-400 text-yellow-400" : isHalf ? "fill-yellow-400/60 text-yellow-400" : "text-white/35",
+                            ].join(" ")}
+                        />
+                    )
+                })}
+            </div>
+            <span className="tabular-nums">{rounded.toFixed(1)}</span>
+            <span className="text-white/60">({count})</span>
+        </div>
+    )
+}
+
 export default function Home() {
   const { data, isLoading } = useSWR<HomeContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/content`, fetcher)
 
@@ -222,7 +254,7 @@ export default function Home() {
               <section>
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold text-foreground mb-2">Trending Now</h2>
-                  <p className="text-muted-foreground">Most read this week</p>
+                  <p className="text-muted-foreground">Most Popular</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -239,6 +271,7 @@ export default function Home() {
                           {/* Overlay */}
                           <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
                             <p className="text-white text-sm font-semibold line-clamp-2 text-balance">{book.title}</p>
+                            <RatingInline avg={book.ratingAvg} count={book.ratingCount} />
                             <Badge variant="secondary" className="w-fit mt-2 text-xs">
                               {book.type.replace('_',' ').toLowerCase()}
                             </Badge>

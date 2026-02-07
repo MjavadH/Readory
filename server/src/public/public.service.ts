@@ -68,14 +68,21 @@ export class PublicService {
 
             // Trending
             this.prisma.book.findMany({
-                where: { isPublished: true },
+                where: { isPublished: true, ratingCount: { gte: 5 } },
                 take: 10,
+                orderBy: [
+                    { ratingAvg: 'desc' },
+                    { ratingCount: 'desc' },
+                    { updatedAt: 'desc' },
+                ],
                 select: {
                     id: true,
                     title: true,
                     coverImage: true,
                     type: true,
-                }
+                    ratingAvg: true,
+                    ratingCount: true,
+                },
             }),
 
             // Top Genres
@@ -116,7 +123,9 @@ export class PublicService {
                 id: b.id,
                 title: b.title,
                 cover: b.coverImage,
-                type: b.type
+                type: b.type,
+                ratingAvg: Number(b.ratingAvg),
+                ratingCount: b.ratingCount,
             })),
             genres: topGenres
         };
