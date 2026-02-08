@@ -35,7 +35,7 @@ export class PublicService {
                     title: true,
                     description: true,
                     coverImage: true,
-                    type: true,
+                    type: { select: { id: true, name: true, slug: true } },
                     genres: {
                         select: { genre: { select: { name: true } } },
                         take: 3
@@ -53,7 +53,7 @@ export class PublicService {
                     title: true,
                     coverImage: true,
                     updatedAt: true,
-                    type: true,
+                    type: { select: { id: true, name: true, slug: true } },
                     chapters: {
                         take: 2,
                         orderBy: { index: 'desc' },
@@ -79,7 +79,7 @@ export class PublicService {
                     id: true,
                     title: true,
                     coverImage: true,
-                    type: true,
+                    type: { select: { id: true, name: true, slug: true } },
                     ratingAvg: true,
                     ratingCount: true,
                 },
@@ -163,7 +163,7 @@ export class PublicService {
                     },
                     orderBy: [{ updatedAt: 'desc' }],
                     take: 6,
-                    select: { id: true, title: true, author: true, type: true, ratingAvg: true, ratingCount: true, coverImage: true },
+                    select: { id: true, title: true, author: true, type: { select: { id: true, name: true, slug: true } }, ratingAvg: true, ratingCount: true, coverImage: true },
                 });
 
                 return { ...g, books };

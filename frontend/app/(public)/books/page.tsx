@@ -18,7 +18,7 @@ import {
 import { Search, X, Filter, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BookCardData, BookType, SortOption, Genre } from "@/lib/types";
-import { BOOK_TYPES, SORT_OPTIONS } from "@/lib/types";
+import { bookTypeLabel, SORT_OPTIONS } from "@/lib/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -40,11 +40,13 @@ export default function BooksPage() {
     const [nextCursor, setNextCursor] = useState<string | undefined>();
     const [genres, setGenres] = useState<Genre[]>([]);
     const [isLoadingGenres, setIsLoadingGenres] = useState(true);
+    const [bookTypes, setBookTypes] = useState<BookType[]>([]);
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
     // Filter states
-    const [selectedTypes, setSelectedTypes] = useState<BookType[]>([]);
+    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
     const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
     const [sortBy, setSortBy] = useState<SortOption>("recently_updated");
     const [searchQuery, setSearchQuery] = useState("");
@@ -72,6 +74,26 @@ export default function BooksPage() {
         void fetchGenres();
     }, []);
 
+    useEffect(() => {
+        const fetchTypes = async () => {
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_BASE}/books/types`
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setBookTypes(data);
+                }
+            } catch (error) {
+                console.error("[v0] Failed to fetch book types:", error);
+            } finally {
+                setIsLoadingTypes(false);
+            }
+        };
+
+        void fetchTypes();
+    }, []);
+
     // Initialize filters from URL params
     useEffect(() => {
         const types = searchParams.get("types");
@@ -80,7 +102,7 @@ export default function BooksPage() {
         const q = searchParams.get("q");
 
         if (types) {
-            setSelectedTypes(types.split(",") as BookType[]);
+            setSelectedTypes(types.split(","));
         }
         if (genreParams) {
             setSelectedGenres(genreParams.split(","));
@@ -225,7 +247,7 @@ export default function BooksPage() {
     }, [hasMore, isLoadingMore, nextCursor, fetchBooks]);
 
     // Handler functions
-    const handleTypeToggle = (type: BookType) => {
+    const handleTypeToggle = (type: string) => {
         setSelectedTypes((prev) =>
             prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
         );
@@ -327,6 +349,8 @@ export default function BooksPage() {
                                         selectedGenres={selectedGenres}
                                         genres={genres}
                                         isLoadingGenres={isLoadingGenres}
+                                        isLoadingTypes={isLoadingTypes}
+                                        bookTypes={bookTypes}
                                         onTypeToggle={handleTypeToggle}
                                         onGenreToggle={handleGenreToggle}
                                         onClearFilters={clearFilters}
@@ -347,7 +371,7 @@ export default function BooksPage() {
                                     variant="secondary"
                                     className="gap-1 pl-2 pr-1"
                                 >
-                                    {BOOK_TYPES.find((t) => t.value === type)?.label}
+                                    {bookTypes.find((t) => t.slug === type)?.name ?? bookTypeLabel(type)}
                                     <button
                                         type="button"
                                         onClick={() => handleTypeToggle(type)}
@@ -429,6 +453,8 @@ export default function BooksPage() {
                                 selectedGenres={selectedGenres}
                                 genres={genres}
                                 isLoadingGenres={isLoadingGenres}
+                                isLoadingTypes={isLoadingTypes}
+                                bookTypes={bookTypes}
                                 onTypeToggle={handleTypeToggle}
                                 onGenreToggle={handleGenreToggle}
                                 onClearFilters={clearFilters}
@@ -487,11 +513,13 @@ export default function BooksPage() {
 
 // Filters Content Component
 interface FiltersContentProps {
-    selectedTypes: BookType[];
+    selectedTypes: string[];
     selectedGenres: string[];
     genres: Genre[];
     isLoadingGenres: boolean;
-    onTypeToggle: (type: BookType) => void;
+    isLoadingTypes: boolean;
+    bookTypes: BookType[];
+    onTypeToggle: (type: string) => void;
     onGenreToggle: (slug: string) => void;
     onClearFilters: () => void;
     hasActiveFilters: boolean;
@@ -502,6 +530,8 @@ function FiltersContent({
                             selectedGenres,
                             genres,
                             isLoadingGenres,
+                            isLoadingTypes,
+                            bookTypes,
                             onTypeToggle,
                             onGenreToggle,
                         }: FiltersContentProps) {
@@ -511,21 +541,32 @@ function FiltersContent({
             <div>
                 <h3 className="mb-3 text-sm font-semibold">Category</h3>
                 <div className="space-y-2">
-                    {BOOK_TYPES.map((type) => (
-                        <div key={type.value} className="flex items-center space-x-2">
-                            <Checkbox
-                                id={`type-${type.value}`}
-                                checked={selectedTypes.includes(type.value) ? true : false}
-                                onCheckedChange={() => onTypeToggle(type.value)}
-                            />
-                            <Label
-                                htmlFor={`type-${type.value}`}
-                                className="cursor-pointer text-sm font-normal"
-                            >
-                                {type.label}
-                            </Label>
+                    {isLoadingTypes ? (
+                        <div className="space-y-2">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className="h-5 animate-pulse rounded bg-muted"
+                                />
+                            ))}
                         </div>
-                    ))}
+                    ) : (
+                        bookTypes.map((type) => (
+                            <div key={type.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`type-${type.slug}`}
+                                    checked={selectedTypes.includes(type.slug) ? true : false}
+                                    onCheckedChange={() => onTypeToggle(type.slug)}
+                                />
+                                <Label
+                                    htmlFor={`type-${type.slug}`}
+                                    className="cursor-pointer text-sm font-normal"
+                                >
+                                    {type.name}
+                                </Label>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
 

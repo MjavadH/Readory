@@ -56,7 +56,11 @@ type Genre = {
     slug: string
 }
 
-const BOOK_TYPES = ["MANGA", "MANHWA", "COMIC", "NOVEL", "LIGHT_NOVEL"]
+type BookType = {
+    id: number
+    name: string
+    slug: string
+}
 
 interface Book {
     id: number
@@ -66,7 +70,7 @@ interface Book {
     coverImage?: string | null
     isPublished: boolean
     isFeatured: boolean
-    type?: string
+    type?: BookType
     updatedAt: string
     genres?: { genre: Genre }[]
     _count?: {
@@ -99,6 +103,8 @@ export default function AdminBooks() {
     })
     const [media, setMedia] = useState<MediaItem[]>([])
     const [genres, setGenres] = useState<Genre[]>([])
+    const [bookTypes, setBookTypes] = useState<BookType[]>([])
+    const [isLoadingTypes, setIsLoadingTypes] = useState(true)
     const [loading, setLoading] = useState(true)
     const [selectedBook, setSelectedBook] = useState<Book | null>(null)
     const [chapters, setChapters] = useState<Chapter[]>([])
@@ -126,7 +132,7 @@ export default function AdminBooks() {
     const [newBook, setNewBook] = useState({
         title: "",
         author: "",
-        type: "MANGA",
+        type: "",
         description: "",
         coverImage: "",
         genreIds: [] as number[],
@@ -138,7 +144,7 @@ export default function AdminBooks() {
     const [editBook, setEditBook] = useState({
         title: "",
         author: "",
-        type: "MANGA",
+        type: "",
         description: "",
         coverImage: "",
         genreIds: [] as number[],
@@ -172,7 +178,7 @@ export default function AdminBooks() {
     const bootstrap = async () => {
         setLoading(true)
         try {
-            await Promise.all([fetchBooks(), fetchGenres(), fetchMedia()])
+            await Promise.all([fetchBooks(), fetchGenres(), fetchMedia(), fetchTypes()])
         } finally {
             setLoading(false)
         }
@@ -223,6 +229,26 @@ export default function AdminBooks() {
         } catch (err: any) {
             toast({ title: "Error fetching genres", description: err.message, variant: "destructive" })
             setGenres([])
+        }
+    }
+
+    const fetchTypes = async () => {
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/types`, {
+                credentials: "include",
+            })
+            const data = await res.json().catch(() => [])
+            const list = Array.isArray(data) ? data : []
+            setBookTypes(list)
+            if (list.length > 0) {
+                setNewBook((prev) => ({ ...prev, type: prev.type || list[0].slug }))
+                setEditBook((prev) => ({ ...prev, type: prev.type || list[0].slug }))
+            }
+        } catch (err: any) {
+            toast({ title: "Error fetching book types", description: err.message, variant: "destructive" })
+            setBookTypes([])
+        } finally {
+            setIsLoadingTypes(false)
         }
     }
 
@@ -407,7 +433,7 @@ export default function AdminBooks() {
             setNewBook({
                 title: "",
                 author: "",
-                type: "MANGA",
+                type: bookTypes[0]?.slug ?? "",
                 description: "",
                 coverImage: "",
                 genreIds: [],
@@ -512,14 +538,18 @@ export default function AdminBooks() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Type</Label>
-                                        <Select value={newBook.type} onValueChange={(v) => setNewBook({ ...newBook, type: v })}>
+                                        <Select
+                                            value={newBook.type}
+                                            onValueChange={(v) => setNewBook({ ...newBook, type: v })}
+                                            disabled={isLoadingTypes || bookTypes.length === 0}
+                                        >
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {BOOK_TYPES.map((t) => (
-                                                    <SelectItem key={t} value={t}>
-                                                        {t}
+                                                {bookTypes.map((t) => (
+                                                    <SelectItem key={t.id} value={t.slug}>
+                                                        {t.name}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -736,7 +766,7 @@ export default function AdminBooks() {
                                     {book.type && (
                                         <div className="absolute top-3 left-3">
                                             <Badge variant="secondary" className="bg-background/90 backdrop-blur-sm shadow-lg text-xs">
-                                                {book.type.replace('_',' ').toLowerCase()}
+                                                {book.type.name}
                                             </Badge>
                                         </div>
                                     )}
@@ -799,7 +829,7 @@ export default function AdminBooks() {
                                                 setEditBook({
                                                     title: book.title,
                                                     author: book.author ?? "",
-                                                    type: book.type || "MANGA",
+                                                    type: book.type?.slug ?? bookTypes[0]?.slug ?? "",
                                                     description: book.description ?? "",
                                                     coverImage: book.coverImage ?? "",
                                                     genreIds: book.genres?.map((g) => g.genre.id) ?? [],
@@ -919,7 +949,7 @@ export default function AdminBooks() {
                                                 <div>
                                                     <h3 className="font-semibold text-sm text-muted-foreground mb-2">Type</h3>
                                                     <Badge variant="secondary" className="text-sm">
-                                                        {selectedBook.type || "N/A"}
+                                                        {selectedBook.type?.name ?? "N/A"}
                                                     </Badge>
                                                 </div>
                                                 <div>
@@ -1072,14 +1102,18 @@ export default function AdminBooks() {
                                         </div>
                                         <div className="space-y-2">
                                             <Label>Type</Label>
-                                            <Select value={editBook.type} onValueChange={(v) => setEditBook({ ...editBook, type: v })}>
+                                            <Select
+                                                value={editBook.type}
+                                                onValueChange={(v) => setEditBook({ ...editBook, type: v })}
+                                                disabled={isLoadingTypes || bookTypes.length === 0}
+                                            >
                                                 <SelectTrigger>
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {BOOK_TYPES.map((t) => (
-                                                        <SelectItem key={t} value={t}>
-                                                            {t}
+                                                    {bookTypes.map((t) => (
+                                                        <SelectItem key={t.id} value={t.slug}>
+                                                            {t.name}
                                                         </SelectItem>
                                                     ))}
                                                 </SelectContent>

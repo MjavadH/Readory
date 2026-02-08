@@ -14,7 +14,11 @@ interface ApiFeaturedGenre {
         title: string;
         coverImage: string;
         author: string | null;
-        type: "MANGA" | "MANHWA" | "COMIC" | "NOVEL" | "LIGHT_NOVEL";
+        type: {
+            id: number;
+            name: string;
+            slug: string;
+        };
         ratingAvg: number | null;
         ratingCount: number;
     }>;

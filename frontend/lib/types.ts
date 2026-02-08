@@ -1,4 +1,8 @@
-export type BookType = "MANGA" | "MANHWA" | "COMIC" | "NOVEL" | "LIGHT_NOVEL";
+export interface BookType {
+    id: number;
+    name: string;
+    slug: string;
+}
 
 export interface BookGenre {
     id: number;
@@ -39,16 +43,23 @@ export interface BookCardData {
  * Converts a BookType enum value to a URL-friendly path segment.
  * e.g. MANGA -> "manga", LIGHT_NOVEL -> "light-novel"
  */
-export function bookTypeToSlug(type: BookType): string {
-    return type.toLowerCase().replace(/_/g, "-");
+export function bookTypeToSlug(type: BookType | string): string {
+    if (typeof type === "string") {
+        return type.toLowerCase().replace(/_/g, "-");
+    }
+    return type.slug;
 }
 
 /**
  * Returns a human-readable label for a BookType.
  * e.g. LIGHT_NOVEL -> "Light Novel"
  */
-export function bookTypeLabel(type: BookType): string {
+export function bookTypeLabel(type: BookType | string): string {
+    if (typeof type !== "string") {
+        return type.name;
+    }
     return type
+        .replace(/-/g, "_")
         .split("_")
         .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
         .join(" ");
@@ -62,14 +73,6 @@ export function getBookUrl(book: Pick<BookCardData, "id" | "slug" | "type">): st
     const identifier = book.slug ?? book.id;
     return `/${typeSlug}/${identifier}`;
 }
-
-export const BOOK_TYPES: { value: BookType; label: string }[] = [
-    { value: "MANGA", label: "Manga" },
-    { value: "MANHWA", label: "Manhwa" },
-    { value: "COMIC", label: "Comic" },
-    { value: "NOVEL", label: "Novel" },
-    { value: "LIGHT_NOVEL", label: "Light Novel" },
-];
 
 export type SortOption = "newest" | "oldest" | "most_popular" | "recently_updated";
 

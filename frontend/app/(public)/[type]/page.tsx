@@ -3,9 +3,6 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import {
     BookOpen,
     User,
-    Palette,
-    Zap,
-    Feather,
     LucideIcon
 } from "lucide-react"
 
@@ -19,56 +16,33 @@ interface TypeTheme {
     headerGradient: string
 }
 
-const TYPE_THEMES: Record<string, TypeTheme> = {
-    manga: {
-        label: "Manga Collection",
-        description: "Explore traditional Japanese comics and graphic novels.",
-        icon: Palette,
-        color: "text-slate-900",
-        bgColor: "bg-slate-50",
-        borderColor: "border-slate-200",
-        headerGradient: "from-slate-800 to-gray-600",
-    },
-    manhwa: {
-        label: "Manhwa Universe",
-        description: "Dive into the vibrant world of South Korean webtoons.",
-        icon: Palette,
-        color: "text-blue-600",
-        bgColor: "bg-blue-50",
-        borderColor: "border-blue-200",
-        headerGradient: "from-blue-600 to-cyan-500",
-    },
-    comic: {
-        label: "Western Comics",
-        description: "Superheroes, villains, and epic adventures.",
-        icon: Zap,
-        color: "text-yellow-600",
-        bgColor: "bg-yellow-50",
-        borderColor: "border-yellow-200",
-        headerGradient: "from-red-600 to-yellow-500",
-    },
-    novel: {
-        label: "Novel",
-        description: "Immersive text-based stories to ignite your imagination.",
-        icon: Feather,
-        color: "text-emerald-700",
-        bgColor: "bg-emerald-50",
-        borderColor: "border-emerald-200",
-        headerGradient: "from-emerald-700 to-teal-600",
-    },
-    "light-novel": {
-        label: "Light Novel",
-        description: "Short, illustrated Japanese novels targeting young adults.",
-        icon: BookOpen,
-        color: "text-pink-600",
-        bgColor: "bg-pink-50",
-        borderColor: "border-pink-200",
-        headerGradient: "from-pink-500 to-rose-400",
-    }
+const DEFAULT_THEME: TypeTheme = {
+    label: "Books",
+    description: "Explore titles curated for this category.",
+    icon: BookOpen,
+    color: "text-slate-700",
+    bgColor: "bg-slate-50",
+    borderColor: "border-slate-200",
+    headerGradient: "from-slate-700 to-slate-500",
+}
+
+function formatTypeLabel(type: string) {
+    return type
+        .trim()
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(" ")
 }
 
 function getTypeTheme(type: string) {
-    return TYPE_THEMES[type.toLowerCase()] || TYPE_THEMES.manga
+    const label = formatTypeLabel(type)
+    return {
+        ...DEFAULT_THEME,
+        label: `${label} Collection`,
+        description: `Explore ${label} titles curated for this category.`,
+    }
 }
 
 async function getBooksByType(type: string) {
@@ -142,7 +116,7 @@ export default async function BookTypePage({ params }: { params: Promise<{ type:
 
                                 <div className="absolute top-2 left-2">
                     <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded bg-black/70 text-white backdrop-blur`}>
-                        {type}
+                        {formatTypeLabel(type)}
                     </span>
                                 </div>
                             </div>
