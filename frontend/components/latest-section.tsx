@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { bookTypeToSlug, bookTypeLabel } from "@/lib/types";
+import { bookTypeToSlug, bookTypeLabel, type BookType } from "@/lib/types";
 
 interface Chapter {
     id: number;
@@ -17,7 +17,7 @@ interface LatestBook {
     title: string;
     cover: string;
     time: string;
-    type: string;
+    type: BookType;
     chapters: Chapter[];
 }
 
@@ -66,12 +66,8 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filtered.map((book) => {
-                    const typeSlug = bookTypeToSlug(
-                        book.type.toUpperCase().replace("-", "_") as any
-                    );
-                    const typeDisplay = bookTypeLabel(
-                        book.type.toUpperCase().replace("-", "_") as any
-                    );
+                    const typeSlug = bookTypeToSlug(book.type);
+                    const typeDisplay = bookTypeLabel(book.type);
 
                     return (
                         <Link key={book.id} href={`/${typeSlug}/${book.id}`}>

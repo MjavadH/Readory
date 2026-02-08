@@ -9,7 +9,7 @@ interface TrendingBook {
     id: number;
     title: string;
     cover: string;
-    type: string;
+    type: BookType;
     ratingAvg: number;
     ratingCount: number;
 }
@@ -89,7 +89,7 @@ export function TrendingSection({ books }: { books: TrendingBook[] }) {
                             coverImage: book.cover
                                 ? `${book.cover}`
                                 : "/placeholder.svg",
-                            type: book.type.toUpperCase().replace("-", "_") as BookType,
+                            type: book.type,
                             ratingAvg: book.ratingAvg,
                             ratingCount: book.ratingCount,
                         };

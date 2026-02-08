@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingSection } from "@/components/trending-section"
 import { LatestSection } from "@/components/latest-section"
 import { GenresSection } from "@/components/genres-section"
+import { bookTypeToSlug, type BookType } from "@/lib/types"
 
 interface Book {
     id: number
     title: string
     cover: string
     desc: string
-    type: string
+    type: BookType
     genres: string[]
 }
 
@@ -30,7 +31,7 @@ interface LatestBook {
     title: string
     cover: string
     time: string
-    type: string
+    type: BookType
     chapters: Chapter[]
 }
 
@@ -38,7 +39,7 @@ interface TrendingBook {
     id: number
     title: string
     cover: string
-    type: string
+    type: BookType
     ratingAvg: number
     ratingCount: number
 }
@@ -97,6 +98,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
     }, [books.length])
 
     const book = books[current]
+    const bookTypeSlug = bookTypeToSlug(book.type)
 
     return (
         <div className="w-full rounded-2xl bg-muted/50 border border-border/50 overflow-hidden">
@@ -111,7 +113,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
             >
                 {/* Book Cover - Left Side */}
                 <div className="w-full md:w-auto shrink-0 p-6 pb-0 md:p-8 flex justify-center md:justify-start">
-                    <Link href={`/${book.type.toLowerCase()}/${book.id}`} className="block">
+                    <Link href={`/${bookTypeSlug}/${book.id}`} className="block">
                         <div className="relative w-44 md:w-52 aspect-2/3 rounded-xl overflow-hidden shadow-xl ring-1 ring-border/20 transition-transform duration-300 hover:scale-[1.03]">
                             <Image
                                 src={book.cover ? `/media/${book.cover}/thumbnail` : "/placeholder.svg"}
@@ -150,12 +152,12 @@ function HeroCarousel({ books }: { books: Book[] }) {
                                 </Link>
                             ))}
                         {book.type && (
-                            <Link href={`/books/${book.type.toLowerCase()}`}>
+                            <Link href={`/books/${bookTypeSlug}`}>
                                 <Badge
                                     variant="outline"
                                     className="cursor-pointer border-accent-foreground/20 text-accent-foreground/70 hover:bg-accent hover:text-accent-foreground transition-all duration-200 text-xs md:text-sm px-3 py-1"
                                 >
-                                    {book.type.replace("_", " ").toLowerCase()}
+                                    {book.type.name}
                                 </Badge>
                             </Link>
                         )}
@@ -163,7 +165,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
 
                     {/* Read Now Button */}
                     <div>
-                        <Link href={`/${book.type.toLowerCase()}/${book.id}`}>
+                        <Link href={`/${bookTypeSlug}/${book.id}`}>
                             <Button
                                 size="lg"
                                 className="rounded-lg font-semibold px-8 transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] shadow-md hover:shadow-lg"

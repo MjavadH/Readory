@@ -5,14 +5,14 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BookCard } from "@/components/book-card";
-import type { BookCardData } from "@/lib/types";
+import type { BookCardData, BookType } from "@/lib/types";
 
 interface GenreBook {
     id: number;
     title: string;
     coverImage: string;
     author: string | null;
-    type: "MANGA" | "MANHWA" | "COMIC" | "NOVEL" | "LIGHT_NOVEL";
+    type: BookType;
     ratingAvg: number | null;
     ratingCount: number;
 }

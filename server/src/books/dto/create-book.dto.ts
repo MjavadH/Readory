@@ -1,16 +1,8 @@
 import { Transform, Type } from 'class-transformer';
 import {
     ArrayNotEmpty, IsArray, IsBoolean,
-    IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength,
+    IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength,
 } from 'class-validator';
-
-export enum BookType {
-    MANGA = 'MANGA',
-    MANHWA = 'MANHWA',
-    COMIC = 'COMIC',
-    NOVEL = 'NOVEL',
-    LIGHT_NOVEL = 'LIGHT_NOVEL',
-}
 
 export class CreateBookDto {
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -46,10 +38,9 @@ export class CreateBookDto {
     isFeatured?: boolean;
 
     @IsOptional()
-    @IsEnum(BookType, {
-        message: 'Type must be one of: MANGA, MANHWA, COMIC, NOVEL, LIGHT_NOVEL',
-    })
-    type?: BookType;
+    @IsString()
+    @MaxLength(100)
+    type?: string;
 
     @IsArray()
     @ArrayNotEmpty()

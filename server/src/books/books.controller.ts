@@ -37,6 +37,11 @@ export class BooksController {
         return this.booksService.browse(query);
     }
 
+    @Get('types')
+    async listTypes() {
+        return this.booksService.listTypes();
+    }
+
     // List all books
     @Get('allBooks')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)

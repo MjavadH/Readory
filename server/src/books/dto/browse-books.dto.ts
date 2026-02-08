@@ -18,7 +18,7 @@ const splitCsv = (v: unknown): string[] => {
 export class BrowseBooksDto {
     @IsOptional()
     @Transform(({ value }) => splitCsv(value))
-    types?: string[]; // BookType enum values
+    types?: string[]; // Book type slugs
 
     @IsOptional()
     @Transform(({ value }) => splitCsv(value))

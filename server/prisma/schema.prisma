@@ -12,14 +12,6 @@ enum RoleName {
   ADMIN
 }
 
-enum BookType {
-  MANGA
-  MANHWA
-  COMIC
-  NOVEL
-  LIGHT_NOVEL
-}
-
 enum TransactionType {
   CREDIT
   DEBIT
@@ -76,7 +68,8 @@ model Book {
   title       String
   author      String?
   description String?
-  type        BookType @default(MANGA)
+  typeId      Int
+  type        BookType @relation(fields: [typeId], references: [id])
   // Stores Media.code
   coverImage  String?
   coverMedia  Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
@@ -98,6 +91,16 @@ model Book {
   @@index([ratingAvg, ratingCount])
   @@index([isPublished, isFeatured])
   @@index([createdAt])
+  @@index([typeId])
+}
+
+model BookType {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  books     Book[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model BookRating {

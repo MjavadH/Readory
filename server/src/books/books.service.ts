@@ -1,5 +1,5 @@
 import {Injectable, NotFoundException, BadRequestException, Inject} from '@nestjs/common';
-import { Prisma, BookType } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 import { WalletsService } from '../wallets/wallets.service';
@@ -45,6 +45,27 @@ function normalizeQ(q?: string) {
     return s.length ? s : undefined;
 }
 
+function slugifyType(value: string) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[_\s]+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+function titleCase(value: string) {
+    const trimmed = value.trim();
+    if (!trimmed) return trimmed;
+    return trimmed
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
 @Injectable()
 export class BooksService {
     constructor(
@@ -70,7 +91,7 @@ export class BooksService {
 
         // Category/type filter
         if (args.types?.length) {
-            where.type = { in: args.types as any };
+            where.type = { is: { slug: { in: args.types } } };
         }
 
         // Search in title OR author
@@ -107,7 +128,7 @@ export class BooksService {
                 id: true,
                 title: true,
                 coverImage: true,
-                type: true,
+                type: { select: { id: true, name: true, slug: true } },
                 author: true,
                 ratingAvg: true,
                 ratingCount: true,
@@ -125,7 +146,7 @@ export class BooksService {
             id: b.id,
             title: b.title,
             coverImage: b.coverImage,
-            type: String(b.type),
+            type: b.type,
             author: b.author,
             ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
             ratingCount: b.ratingCount,
@@ -273,6 +294,7 @@ export class BooksService {
                 include: {
                     genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
                     _count: { select: { chapters: true } },
+                    type: { select: { id: true, name: true, slug: true } },
                 },
             }),
         ]);
@@ -293,6 +315,7 @@ export class BooksService {
             include: {
                 coverMedia: { select: { code: true, filename: true } },
                 genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                type: { select: { id: true, name: true, slug: true } },
                 chapters: {
                     orderBy: { index: 'asc' },
                     select: { id: true, title: true, index: true, isFree: true },
@@ -302,13 +325,36 @@ export class BooksService {
     }
 
     async findByType(type: string) {
-        const upperType = type.toUpperCase();
+        const slug = slugifyType(type);
+        if (!slug) {
+            throw new NotFoundException('book type not found');
+        }
+        const bookType = await this.prisma.bookType.findUnique({
+            where: { slug },
+        });
+        if (!bookType) {
+            throw new NotFoundException('book type not found');
+        }
         return this.prisma.book.findMany({
             where: {
-                type: upperType as BookType,
+                typeId: bookType.id,
                 isPublished: true
             },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+                author: true,
+                type: { select: { id: true, name: true, slug: true } },
+            },
+        });
+    }
+
+    async listTypes() {
+        return this.prisma.bookType.findMany({
+            orderBy: { name: 'asc' },
+            select: { id: true, name: true, slug: true },
         });
     }
 
@@ -325,10 +371,11 @@ export class BooksService {
     }) {
         const { genreIds, type, ...rest } = data;
 
+        const resolvedType = await this.resolveBookType(type);
         const created = await this.prisma.book.create({
             data: {
                 ...rest,
-                type: type as BookType,
+                type: { connect: { id: resolvedType.id } },
                 genres: {
                     create: genreIds.map((genreId) => ({
                         genre: { connect: { id: genreId } },
@@ -338,6 +385,7 @@ export class BooksService {
             include: {
                 coverMedia: { select: { code: true, filename: true } },
                 genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                type: { select: { id: true, name: true, slug: true } },
             },
         });
 
@@ -362,10 +410,11 @@ export class BooksService {
         }>,
     ) {
         const { genreIds, type, ...rest } = data;
+        const resolvedType = type ? await this.resolveBookType(type) : null;
 
         const updateData: Prisma.BookUpdateInput = {
             ...rest,
-            ...(type ? { type: type as BookType } : {}),
+            ...(resolvedType ? { type: { connect: { id: resolvedType.id } } } : {}),
             ...(genreIds
                 ? {
                     genres: {
@@ -385,6 +434,7 @@ export class BooksService {
                 include: {
                     coverMedia: { select: { code: true, filename: true } },
                     genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                    type: { select: { id: true, name: true, slug: true } },
                 },
             });
 
@@ -396,6 +446,31 @@ export class BooksService {
             if (err?.code === 'P2025') throw new NotFoundException('book not found');
             throw err;
         }
+    }
+
+    private async resolveBookType(type?: string) {
+        if (!type) {
+            const fallback = await this.prisma.bookType.findFirst({ orderBy: { id: 'asc' } });
+            if (!fallback) {
+                throw new BadRequestException('book type not configured');
+            }
+            return fallback;
+        }
+
+        const slug = slugifyType(type);
+        if (!slug) {
+            throw new BadRequestException('book type is invalid');
+        }
+
+        const existing = await this.prisma.bookType.findUnique({ where: { slug } });
+        if (existing) return existing;
+
+        return this.prisma.bookType.create({
+            data: {
+                name: titleCase(type),
+                slug,
+            },
+        });
     }
 
     async rateBook(userId: number, bookId: number, rating: number) {

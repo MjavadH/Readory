@@ -3,7 +3,6 @@ import {
     ArrayNotEmpty,
     IsArray,
     IsBoolean,
-    IsEnum,
     IsInt,
     IsOptional,
     IsString,
@@ -11,7 +10,6 @@ import {
     MaxLength,
     MinLength,
 } from 'class-validator';
-import { BookType } from './create-book.dto';
 
 export class UpdateBookDto {
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -46,8 +44,9 @@ export class UpdateBookDto {
     isFeatured?: boolean;
 
     @IsOptional()
-    @IsEnum(BookType)
-    type?: BookType;
+    @IsString()
+    @MaxLength(100)
+    type?: string;
 
     @IsOptional()
     @IsArray()
