@@ -135,7 +135,57 @@ export class PublicService {
         return response;
     }
 
+    async getGenresPage() {
+        const CACHE_KEY = 'genres_page_data';
+
+        const cached = await this.redis.get(CACHE_KEY);
+        if (cached) {
+            try {
+                return JSON.parse(cached);
+            } catch {
+                await this.redis.del(CACHE_KEY);
+            }
+        }
+
+        const featuredGenres = await this.prisma.genre.findMany({
+            where: { isFeatured: true },
+            orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
+            take: 5,
+            select: { id: true, name: true, slug: true },
+        });
+
+        const featured = await Promise.all(
+            featuredGenres.map(async (g) => {
+                const books = await this.prisma.book.findMany({
+                    where: {
+                        isPublished: true,
+                        genres: { some: { genreId: g.id } },
+                    },
+                    orderBy: [{ updatedAt: 'desc' }],
+                    take: 6,
+                    select: { id: true, title: true, author: true, type: true, ratingAvg: true, ratingCount: true, coverImage: true },
+                });
+
+                return { ...g, books };
+            }),
+        );
+
+        const allGenres = await this.prisma.genre.findMany({
+            orderBy: { name: 'asc' },
+            select: { id: true, name: true, slug: true },
+        });
+
+        const response = { featured, allGenres };
+
+        await this.redis.set(CACHE_KEY, JSON.stringify(response), 'EX', 900);
+        return response;
+    }
+
     async clearHomeCache() {
         await this.redis.del('home_content_data');
+    }
+
+    async clearGenresPageCache() {
+        await this.redis.del('genres_page_data');
     }
 }

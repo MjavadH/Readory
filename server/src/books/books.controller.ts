@@ -23,6 +23,8 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
 import { RateBookDto } from './dto/rate-book.dto';
+import { BrowseBooksDto } from './dto/browse-books.dto';
+
 
 type StatusFilter = 'all' | 'published' | 'draft';
 
@@ -30,14 +32,9 @@ type StatusFilter = 'all' | 'published' | 'draft';
 export class BooksController {
     constructor(private booksService: BooksService) {}
 
-    // Public: list published books
-    @Get()
-    async listPublished(
-        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
-        @Query('q') q?: string,
-    ) {
-        return this.booksService.listPublished({ page, limit, q });
+    @Get('browse')
+    async browse(@Query() query: BrowseBooksDto) {
+        return this.booksService.browse(query);
     }
 
     // List all books

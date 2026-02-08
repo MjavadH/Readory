@@ -9,7 +9,6 @@ import { ChaptersModule } from './chapters/chapters.module';
 import { MediaModule } from './media/media.module';
 import { RedisModule } from './redis/redis.module';
 import { GenresModule } from './genre/genres.module';
-import { LibraryModule } from './library/library.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PublicModule } from './public/public.module';
 
@@ -24,7 +23,6 @@ import { PublicModule } from './public/public.module';
     ChaptersModule,
     MediaModule,
     GenresModule,
-    LibraryModule,
     DashboardModule,
     PublicModule
   ],

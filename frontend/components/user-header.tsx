@@ -39,11 +39,11 @@ type Profile = { userId: number; username: string; roleName: RoleName }
 type Genre = { name: string; slug: string }
 
 const CONTENT_TYPES = [
-  { name: "Manga", path: "/books/manga", icon: BookMarked },
-  { name: "Manhwa", path: "/books/manhwa", icon: Sparkles },
-  { name: "Comic", path: "/books/comic", icon: ScrollText },
-  { name: "Novel", path: "/books/novel", icon: Feather },
-  { name: "Light Novel", path: "/books/light_novel", icon: PenLine },
+  { name: "Manga", path: "/manga", icon: BookMarked },
+  { name: "Manhwa", path: "/manhwa", icon: Sparkles },
+  { name: "Comic", path: "/comic", icon: ScrollText },
+  { name: "Novel", path: "/novel", icon: Feather },
+  { name: "Light Novel", path: "/light-novel", icon: PenLine },
 ] as const
 
 function initialsFromUsername(username: string) {

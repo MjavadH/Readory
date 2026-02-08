@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
     BookOpen,
     User,
@@ -56,7 +56,7 @@ const TYPE_THEMES: Record<string, TypeTheme> = {
         borderColor: "border-emerald-200",
         headerGradient: "from-emerald-700 to-teal-600",
     },
-    "light_novel": {
+    "light-novel": {
         label: "Light Novel",
         description: "Short, illustrated Japanese novels targeting young adults.",
         icon: BookOpen,

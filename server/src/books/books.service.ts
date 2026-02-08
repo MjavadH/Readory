@@ -6,6 +6,35 @@ import { WalletsService } from '../wallets/wallets.service';
 import { PublicService } from '../public/public.service'
 
 type StatusFilter = 'all' | 'published' | 'draft';
+type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated';
+
+type CursorPayload = { sort: BrowseSort; id: number; v: string };
+
+function encodeCursor(payload: CursorPayload): string {
+    return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+}
+
+function decodeCursor(cursor?: string): CursorPayload | null {
+    if (!cursor) return null;
+    try {
+        const raw = Buffer.from(cursor, 'base64url').toString('utf8');
+        const obj = JSON.parse(raw) as CursorPayload;
+        if (!obj || typeof obj.id !== 'number' || typeof obj.sort !== 'string') return null;
+        return obj;
+    } catch {
+        return null;
+    }
+}
+
+function toNumber(v: unknown): number {
+    if (v == null) return 0;
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') return Number(v);
+    if (typeof v === 'object' && v !== null && 'toNumber' in v && typeof (v as any).toNumber === 'function') {
+        return (v as any).toNumber();
+    }
+    return Number(v);
+}
 
 function clamp(n: number, min: number, max: number) {
     return Math.max(min, Math.min(max, n));
@@ -25,36 +54,195 @@ export class BooksService {
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
-    // List published books
-    async listPublished(args: { page: number; limit: number; q?: string }) {
-        const page = clamp(args.page, 1, 10_000);
-        const limit = clamp(args.limit, 1, 50);
+    async browse(args: {
+        types?: string[];
+        genres?: string[];
+        q?: string;
+        sort?: BrowseSort;
+        limit?: number;
+        cursor?: string;
+    }) {
+        const limit = clamp(args.limit ?? 24, 1, 50);
+        const sort: BrowseSort = args.sort ?? 'recently_updated';
         const q = normalizeQ(args.q);
 
         const where: Prisma.BookWhereInput = { isPublished: true };
-        if (q) where.title = { contains: q, mode: 'insensitive' };
 
-        const skip = (page - 1) * limit;
+        // Category/type filter
+        if (args.types?.length) {
+            where.type = { in: args.types as any };
+        }
 
-        const [total, books] = await this.prisma.$transaction([
-            this.prisma.book.count({ where }),
-            this.prisma.book.findMany({
-                where,
-                orderBy: { updatedAt: 'desc' },
-                skip,
-                take: limit,
-                include: {
-                    genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
-                },
-            }),
-        ]);
+        // Search in title OR author
+        if (q) {
+            where.OR = [
+                { title: { contains: q, mode: 'insensitive' } },
+                { author: { contains: q, mode: 'insensitive' } },
+            ];
+        }
+
+        // Genre filter (AND semantics: must include ALL slugs)
+        if (args.genres?.length) {
+            const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
+
+            where.AND = [
+                ...existingAnd,
+                ...args.genres.map((slug) => ({
+                    genres: { some: { genre: { slug } } },
+                })),
+            ];
+        }
+
+
+        const cursor = decodeCursor(args.cursor);
+        const take = limit + 1;
+
+        const { orderBy, seekWhere, cursorValue } = this.buildBrowseSort(sort, cursor);
+
+        const rows = await this.prisma.book.findMany({
+            where: seekWhere ? { AND: [where, seekWhere] } : where,
+            orderBy,
+            take,
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+                type: true,
+                author: true,
+                ratingAvg: true,
+                ratingCount: true,
+                isFeatured: true,
+                updatedAt: true,
+                _count: { select: { chapters: true } },
+                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+            },
+        });
+
+        const hasMore = rows.length > limit;
+        const pageRows = hasMore ? rows.slice(0, limit) : rows;
+
+        const items = pageRows.map((b) => ({
+            id: b.id,
+            title: b.title,
+            coverImage: b.coverImage,
+            type: String(b.type),
+            author: b.author,
+            ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
+            ratingCount: b.ratingCount,
+            genres: b.genres.map((g) => g.genre),
+            isFeatured: b.isFeatured,
+            chapterCount: b._count.chapters,
+            updatedAt: b.updatedAt.toISOString(),
+        }));
+
+        let nextCursor: string | null = null;
+        if (hasMore) {
+            const last = pageRows[pageRows.length - 1];
+            nextCursor = encodeCursor({ sort, id: last.id, v: cursorValue(last) });
+        }
+
+        return { items, nextCursor };
+    }
+
+    private buildBrowseSort(sort: BrowseSort, cursor: CursorPayload | null): {
+        orderBy: Prisma.BookOrderByWithRelationInput[];
+        seekWhere: Prisma.BookWhereInput | null;
+        cursorValue: (row: any) => string;
+    } {
+        // Stable seek pagination using (sortField, id) tie-breaker.
+        if (sort === 'newest') {
+            const orderBy: Prisma.BookOrderByWithRelationInput[] = [{ createdAt: 'desc' }, { id: 'desc' }];
+            const seekWhere = cursor
+                ? {
+                    OR: [
+                        { createdAt: { lt: new Date(cursor.v) } },
+                        { AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { lt: cursor.id } }] },
+                    ],
+                }
+                : null;
+
+            return { orderBy, seekWhere, cursorValue: (r) => r.createdAt.toISOString() };
+        }
+
+        if (sort === 'oldest') {
+            const orderBy: Prisma.BookOrderByWithRelationInput[] = [{ createdAt: 'asc' }, { id: 'asc' }];
+            const seekWhere = cursor
+                ? {
+                    OR: [
+                        { createdAt: { gt: new Date(cursor.v) } },
+                        { AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { gt: cursor.id } }] },
+                    ],
+                }
+                : null;
+
+            return { orderBy, seekWhere, cursorValue: (r) => r.createdAt.toISOString() };
+        }
+
+        if (sort === 'most_popular') {
+            // Popular = ratingAvg desc, ratingCount desc, updatedAt desc, id desc
+            const orderBy: Prisma.BookOrderByWithRelationInput[] = [
+                { ratingAvg: 'desc' },
+                { ratingCount: 'desc' },
+                { updatedAt: 'desc' },
+                { id: 'desc' },
+            ];
+
+            // Cursor.v is JSON string of compound fields
+            const seekWhere = cursor ? this.popularSeekWhere(cursor) : null;
+
+            return {
+                orderBy,
+                seekWhere,
+                cursorValue: (r) =>
+                    JSON.stringify({
+                        ratingAvg: toNumber(r.ratingAvg),
+                        ratingCount: r.ratingCount,
+                        updatedAt: r.updatedAt.toISOString(),
+                    }),
+            };
+        }
+
+        // recently_updated (default)
+        const orderBy: Prisma.BookOrderByWithRelationInput[] = [{ updatedAt: 'desc' }, { id: 'desc' }];
+        const seekWhere = cursor
+            ? {
+                OR: [
+                    { updatedAt: { lt: new Date(cursor.v) } },
+                    { AND: [{ updatedAt: { equals: new Date(cursor.v) } }, { id: { lt: cursor.id } }] },
+                ],
+            }
+            : null;
+
+        return { orderBy, seekWhere, cursorValue: (r) => r.updatedAt.toISOString() };
+    }
+
+    private popularSeekWhere(cursor: CursorPayload): Prisma.BookWhereInput {
+        let v: { ratingAvg: number; ratingCount: number; updatedAt: string } | null = null;
+        try {
+            v = JSON.parse(cursor.v);
+        } catch {
+            v = null;
+        }
+        if (!v) return { id: { lt: cursor.id } };
+
+        const avg = new Prisma.Decimal(v.ratingAvg);
+        const count = v.ratingCount;
+        const updatedAt = new Date(v.updatedAt);
 
         return {
-            books: books,
-            hasMore: skip + books.length < total,
-            page,
-            limit,
-            total,
+            OR: [
+                { ratingAvg: { lt: avg } },
+                { AND: [{ ratingAvg: { equals: avg } }, { ratingCount: { lt: count } }] },
+                { AND: [{ ratingAvg: { equals: avg } }, { ratingCount: { equals: count } }, { updatedAt: { lt: updatedAt } }] },
+                {
+                    AND: [
+                        { ratingAvg: { equals: avg } },
+                        { ratingCount: { equals: count } },
+                        { updatedAt: { equals: updatedAt } },
+                        { id: { lt: cursor.id } },
+                    ],
+                },
+            ],
         };
     }
 
@@ -154,6 +342,7 @@ export class BooksService {
         });
 
         await this.publicService.clearHomeCache();
+        await this.publicService.clearGenresPageCache();
         await this.redis.del('stats:books');
         return created;
     }
@@ -200,6 +389,7 @@ export class BooksService {
             });
 
             await this.publicService.clearHomeCache();
+            await this.publicService.clearGenresPageCache();
             await this.redis.del('stats:books');
             return updated;
         } catch (err: any) {
@@ -210,10 +400,9 @@ export class BooksService {
 
     async rateBook(userId: number, bookId: number, rating: number) {
         if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-            throw new BadRequestException('rating must be between 1 and 5');
+            throw new NotFoundException('invalid rating');
         }
 
-        // ensure book exists + published (optional: allow rating unpublished? usually no)
         const book = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
         if (!book) throw new NotFoundException('book not found');
 
@@ -236,16 +425,21 @@ export class BooksService {
             await tx.book.update({
                 where: { id: bookId },
                 data: {
-                    ratingAvg: new Prisma.Decimal(avg.toFixed(2)),
+                    ratingAvg: new Prisma.Decimal(Number(avg).toFixed(2)),
                     ratingCount: count,
                 },
                 select: { id: true },
             });
 
-            return { rating, ratingAvg: Number(avg.toFixed(2)), ratingCount: count };
+            return {
+                rating,
+                ratingAvg: Number(Number(avg).toFixed(2)),
+                ratingCount: count,
+            };
         });
 
         await this.publicService.clearHomeCache();
+
         return result;
     }
 

@@ -1,0 +1,568 @@
+"use client";
+
+import React from "react"
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { BookGrid, BookGridSkeleton } from "@/components/book-grid";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Search, X, Filter, SlidersHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { BookCardData, BookType, SortOption, Genre } from "@/lib/types";
+import { BOOK_TYPES, SORT_OPTIONS } from "@/lib/types";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+
+interface BrowseResponse {
+    items: BookCardData[];
+    nextCursor?: string;
+    hasMore: boolean;
+}
+
+export default function BooksPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [books, setBooks] = useState<BookCardData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(false);
+    const [nextCursor, setNextCursor] = useState<string | undefined>();
+    const [genres, setGenres] = useState<Genre[]>([]);
+    const [isLoadingGenres, setIsLoadingGenres] = useState(true);
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
+
+    // Filter states
+    const [selectedTypes, setSelectedTypes] = useState<BookType[]>([]);
+    const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+    const [sortBy, setSortBy] = useState<SortOption>("recently_updated");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchInput, setSearchInput] = useState("");
+    const [filtersOpen, setFiltersOpen] = useState(false);
+
+    // Load genres
+    useEffect(() => {
+        const fetchGenres = async () => {
+            try {
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_BASE}/genres`
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    setGenres(data);
+                }
+            } catch (error) {
+                console.error("[v0] Failed to fetch genres:", error);
+            } finally {
+                setIsLoadingGenres(false);
+            }
+        };
+
+        void fetchGenres();
+    }, []);
+
+    // Initialize filters from URL params
+    useEffect(() => {
+        const types = searchParams.get("types");
+        const genreParams = searchParams.get("genres");
+        const sort = searchParams.get("sort");
+        const q = searchParams.get("q");
+
+        if (types) {
+            setSelectedTypes(types.split(",") as BookType[]);
+        }
+        if (genreParams) {
+            setSelectedGenres(genreParams.split(","));
+        }
+        if (sort) {
+            setSortBy(sort as SortOption);
+        }
+        if (q) {
+            setSearchQuery(q);
+            setSearchInput(q);
+        }
+    }, [searchParams]);
+
+    // Build query params
+    const buildQueryParams = useCallback(
+        (cursor?: string) => {
+            const params = new URLSearchParams();
+
+            if (selectedTypes.length > 0) {
+                params.set("types", selectedTypes.join(","));
+            }
+            if (selectedGenres.length > 0) {
+                params.set("genres", selectedGenres.join(","));
+            }
+            if (sortBy) {
+                params.set("sort", sortBy);
+            }
+            if (searchQuery) {
+                params.set("q", searchQuery);
+            }
+            if (cursor) {
+                params.set("cursor", cursor);
+            }
+            params.set("limit", "24");
+
+            return params.toString();
+        },
+        [selectedTypes, selectedGenres, sortBy, searchQuery]
+    );
+
+    // Update URL when filters change
+    const updateURL = useCallback(() => {
+        const params = new URLSearchParams();
+
+        if (selectedTypes.length > 0) {
+            params.set("types", selectedTypes.join(","));
+        }
+        if (selectedGenres.length > 0) {
+            params.set("genres", selectedGenres.join(","));
+        }
+        if (sortBy !== "recently_updated") {
+            params.set("sort", sortBy);
+        }
+        if (searchQuery) {
+            params.set("q", searchQuery);
+        }
+
+        const queryString = params.toString();
+        router.push(`/books${queryString ? `?${queryString}` : ""}`, {
+            scroll: false,
+        });
+    }, [selectedTypes, selectedGenres, sortBy, searchQuery, router]);
+
+    // Fetch books
+    const fetchBooks = useCallback(
+        async (cursor?: string) => {
+            const isInitialLoad = !cursor;
+            if (isInitialLoad) {
+                setIsLoading(true);
+            } else {
+                setIsLoadingMore(true);
+            }
+
+            try {
+                const queryParams = buildQueryParams(cursor);
+                const response = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_BASE}/books/browse?${queryParams}`
+                );
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch books");
+                }
+
+                const data: BrowseResponse = await response.json();
+
+                if (isInitialLoad) {
+                    setBooks(data.items);
+                } else {
+                    setBooks((prev) => [...prev, ...data.items]);
+                }
+
+                setNextCursor(data.nextCursor);
+                setHasMore(data.hasMore);
+            } catch (error) {
+                console.error("[v0] Failed to fetch books:", error);
+                if (isInitialLoad) {
+                    setBooks([]);
+                }
+                setHasMore(false);
+            } finally {
+                if (isInitialLoad) {
+                    setIsLoading(false);
+                } else {
+                    setIsLoadingMore(false);
+                }
+            }
+        },
+        [buildQueryParams]
+    );
+
+    // Fetch books when filters change
+    useEffect(() => {
+        void fetchBooks();
+        updateURL();
+    }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchBooks, updateURL]);
+
+    // Infinite scroll setup
+    useEffect(() => {
+        if (observerRef.current) {
+            observerRef.current.disconnect();
+        }
+
+        observerRef.current = new IntersectionObserver(
+            (entries) => {
+                const [entry] = entries;
+                if (entry.isIntersecting && hasMore && !isLoadingMore) {
+                    void fetchBooks(nextCursor);
+                }
+            },
+            { threshold: 0.1, rootMargin: "100px" }
+        );
+
+        if (loadMoreRef.current) {
+            observerRef.current.observe(loadMoreRef.current);
+        }
+
+        return () => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+            }
+        };
+    }, [hasMore, isLoadingMore, nextCursor, fetchBooks]);
+
+    // Handler functions
+    const handleTypeToggle = (type: BookType) => {
+        setSelectedTypes((prev) =>
+            prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+        );
+    };
+
+    const handleGenreToggle = (slug: string) => {
+        setSelectedGenres((prev) =>
+            prev.includes(slug) ? prev.filter((g) => g !== slug) : [...prev, slug]
+        );
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        setSearchQuery(searchInput);
+    };
+
+    const clearFilters = () => {
+        setSelectedTypes([]);
+        setSelectedGenres([]);
+        setSortBy("recently_updated");
+        setSearchQuery("");
+        setSearchInput("");
+    };
+
+    const hasActiveFilters =
+        selectedTypes.length > 0 ||
+        selectedGenres.length > 0 ||
+        searchQuery ||
+        sortBy !== "recently_updated";
+
+    return (
+        <div className="min-h-screen bg-background">
+            <div className="container mx-auto px-4 py-6 md:py-8">
+                {/* Header */}
+                <div className="mb-6 md:mb-8">
+                    <h1 className="text-balance text-3xl font-bold tracking-tight md:text-4xl">
+                        Browse Books
+                    </h1>
+                    <p className="mt-2 text-pretty text-muted-foreground">
+                        Discover your next favorite manga, novel, or comic
+                    </p>
+                </div>
+
+                {/* Filters Bar */}
+                <div className="mb-6 space-y-4">
+                    {/* Search and Sort */}
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        {/* Search */}
+                        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder="Search by title or author..."
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+                            <Button type="submit" variant="secondary">
+                                Search
+                            </Button>
+                        </form>
+
+                        {/* Sort */}
+                        <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+                            <SelectTrigger className="w-full sm:w-[200px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SORT_OPTIONS.map((option) => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Mobile Filters Button */}
+                        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="sm:hidden bg-transparent">
+                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                    Filters
+                                    {hasActiveFilters && (
+                                        <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1">
+                                            {selectedTypes.length + selectedGenres.length}
+                                        </Badge>
+                                    )}
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="w-80 overflow-y-auto">
+                                <SheetHeader>
+                                    <SheetTitle>Filters</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-6 space-y-6">
+                                    <FiltersContent
+                                        selectedTypes={selectedTypes}
+                                        selectedGenres={selectedGenres}
+                                        genres={genres}
+                                        isLoadingGenres={isLoadingGenres}
+                                        onTypeToggle={handleTypeToggle}
+                                        onGenreToggle={handleGenreToggle}
+                                        onClearFilters={clearFilters}
+                                        hasActiveFilters={hasActiveFilters}
+                                    />
+                                </div>
+                            </SheetContent>
+                        </Sheet>
+                    </div>
+
+                    {/* Active Filters Pills */}
+                    {hasActiveFilters && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Active filters:</span>
+                            {selectedTypes.map((type) => (
+                                <Badge
+                                    key={type}
+                                    variant="secondary"
+                                    className="gap-1 pl-2 pr-1"
+                                >
+                                    {BOOK_TYPES.find((t) => t.value === type)?.label}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleTypeToggle(type)}
+                                        className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            ))}
+                            {selectedGenres.map((slug) => {
+                                const genre = genres.find((g) => g.slug === slug);
+                                return genre ? (
+                                    <Badge
+                                        key={slug}
+                                        variant="secondary"
+                                        className="gap-1 pl-2 pr-1"
+                                    >
+                                        {genre.name}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGenreToggle(slug)}
+                                            className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ) : null;
+                            })}
+                            {searchQuery && (
+                                <Badge variant="secondary" className="gap-1 pl-2 pr-1">
+                                    Search: {searchQuery}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            setSearchInput("");
+                                        }}
+                                        className="rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            )}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="h-7"
+                            >
+                                Clear all
+                            </Button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Filters Sidebar + Content */}
+                <div className="flex gap-6">
+                    {/* Desktop Filters Sidebar */}
+                    <aside className="hidden w-64 shrink-0 sm:block">
+                        <div className="sticky top-6 rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="flex items-center gap-2 text-lg font-semibold">
+                                    <Filter className="h-5 w-5" />
+                                    Filters
+                                </h2>
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={clearFilters}
+                                        className="h-8 text-xs"
+                                    >
+                                        Clear
+                                    </Button>
+                                )}
+                            </div>
+                            <FiltersContent
+                                selectedTypes={selectedTypes}
+                                selectedGenres={selectedGenres}
+                                genres={genres}
+                                isLoadingGenres={isLoadingGenres}
+                                onTypeToggle={handleTypeToggle}
+                                onGenreToggle={handleGenreToggle}
+                                onClearFilters={clearFilters}
+                                hasActiveFilters={hasActiveFilters}
+                            />
+                        </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1">
+                        {isLoading ? (
+                            <BookGridSkeleton count={24} />
+                        ) : books.length === 0 ? (
+                            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                                    <Search className="h-8 w-8 text-muted-foreground" />
+                                </div>
+                                <h3 className="mt-4 text-lg font-semibold">No books found</h3>
+                                <p className="mt-2 text-pretty text-sm text-muted-foreground">
+                                    Try adjusting your filters or search query
+                                </p>
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="outline"
+                                        onClick={clearFilters}
+                                        className="mt-4 bg-transparent"
+                                    >
+                                        Clear filters
+                                    </Button>
+                                )}
+                            </div>
+                        ) : (
+                            <>
+                                <BookGrid books={books} priorityCount={6} />
+
+                                {/* Infinite scroll trigger */}
+                                {hasMore && (
+                                    <div ref={loadMoreRef} className="mt-8 flex justify-center">
+                                        {isLoadingMore && <BookGridSkeleton count={12} />}
+                                    </div>
+                                )}
+
+                                {!hasMore && books.length > 0 && (
+                                    <p className="mt-8 text-center text-sm text-muted-foreground">
+                                        You've reached the end of the list
+                                    </p>
+                                )}
+                            </>
+                        )}
+                    </main>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Filters Content Component
+interface FiltersContentProps {
+    selectedTypes: BookType[];
+    selectedGenres: string[];
+    genres: Genre[];
+    isLoadingGenres: boolean;
+    onTypeToggle: (type: BookType) => void;
+    onGenreToggle: (slug: string) => void;
+    onClearFilters: () => void;
+    hasActiveFilters: boolean;
+}
+
+function FiltersContent({
+                            selectedTypes,
+                            selectedGenres,
+                            genres,
+                            isLoadingGenres,
+                            onTypeToggle,
+                            onGenreToggle,
+                        }: FiltersContentProps) {
+    return (
+        <div className="space-y-6">
+            {/* Category Filter */}
+            <div>
+                <h3 className="mb-3 text-sm font-semibold">Category</h3>
+                <div className="space-y-2">
+                    {BOOK_TYPES.map((type) => (
+                        <div key={type.value} className="flex items-center space-x-2">
+                            <Checkbox
+                                id={`type-${type.value}`}
+                                checked={selectedTypes.includes(type.value) ? true : false}
+                                onCheckedChange={() => onTypeToggle(type.value)}
+                            />
+                            <Label
+                                htmlFor={`type-${type.value}`}
+                                className="cursor-pointer text-sm font-normal"
+                            >
+                                {type.label}
+                            </Label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <Separator />
+
+            {/* Genre Filter */}
+            <div>
+                <h3 className="mb-3 text-sm font-semibold">Genres</h3>
+                {isLoadingGenres ? (
+                    <div className="space-y-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="h-5 animate-pulse rounded bg-muted"
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
+                        {genres.map((genre) => (
+                            <div key={genre.id} className="flex items-center space-x-2">
+                                <Checkbox
+                                    id={`genre-${genre.slug}`}
+                                    checked={selectedGenres.includes(genre.slug) ? true : false}
+                                    onCheckedChange={() => onGenreToggle(genre.slug)}
+                                />
+                                <Label
+                                    htmlFor={`genre-${genre.slug}`}
+                                    className="cursor-pointer text-sm font-normal"
+                                >
+                                    {genre.name}
+                                </Label>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

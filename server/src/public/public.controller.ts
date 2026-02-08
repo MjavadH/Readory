@@ -9,4 +9,9 @@ export class PublicController {
     async getHomeContent() {
         return this.publicService.getHomeContent();
     }
+
+    @Get('genres')
+    async getGenresPage() {
+        return this.publicService.getGenresPage();
+    }
 }

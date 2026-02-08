@@ -161,5 +161,6 @@ export class GenresService {
         await this.redis.del(this.CACHE_KEY_ALL);
         await this.redis.del(this.CACHE_KEY_FEATURED);
         await this.publicService.clearHomeCache();
+        await this.publicService.clearGenresPageCache();
     }
 }
