@@ -179,7 +179,7 @@ export default function BooksPage() {
                 }
 
                 setNextCursor(data.nextCursor);
-                setHasMore(Boolean(data.hasMore && data.nextCursor));
+                setHasMore(data.hasMore);
             } catch (error: any) {
                 if (error?.name === "AbortError") return;
                 console.error("[v0] Failed to fetch books:", error);

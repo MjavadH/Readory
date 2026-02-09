@@ -6,6 +6,7 @@ import {
     LucideIcon
 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
+import {BookType} from "@/lib/types";
 
 interface TypeTheme {
     label: string
@@ -48,7 +49,7 @@ function getTypeTheme(type: string) {
 
 async function getBooksByType(type: string) {
     try {
-        return await apiClient.get(`/public/book-types/${type}`, { cache: "no-store" })
+        return await apiClient.get<BookType[]>(`/public/book-types/${type}`, { cache: "no-store" })
     } catch {
         return null
     }

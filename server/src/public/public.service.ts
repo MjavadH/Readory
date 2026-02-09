@@ -103,7 +103,7 @@ export class PublicService {
             hero: featuredBooks.map(b => ({
                 id: b.id,
                 title: b.title,
-                desc: b.description ? b.description.substring(0, 100) + '...' : '',
+                desc: b.description ? b.description.substring(0, 200) + '...' : '',
                 cover: b.coverImage,
                 type: b.type,
                 genres: b.genres.map(g => g.genre.name)
@@ -161,6 +161,7 @@ export class PublicService {
                     where: {
                         isPublished: true,
                         genres: { some: { genreId: g.id } },
+                        type: {isActive: true}
                     },
                     orderBy: [{ updatedAt: 'desc' }],
                     take: 6,
