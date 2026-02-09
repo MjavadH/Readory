@@ -6,24 +6,15 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
-  BookOpen,
-  Library,
   Search,
   User,
   LayoutDashboard,
   LogOut,
-  Shield,
   Sun,
   Moon,
   Monitor,
   ChevronRight,
-  Sparkles,
-  BookMarked,
-  ScrollText,
-  Feather,
-  PenLine,
   X,
-  Home,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -33,18 +24,13 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,} from "@/components/ui/dropdown-menu"
 import {Sheet, SheetContent, SheetTitle,} from "@/components/ui/sheet"
+import {AppIcon} from "@/components/AppIcon";
+import {IconKey} from "@/lib/iconRegistry";
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName: RoleName }
 type Genre = { name: string; slug: string }
-
-const CONTENT_TYPES = [
-  { name: "Manga", path: "/manga", icon: BookMarked },
-  { name: "Manhwa", path: "/manhwa", icon: Sparkles },
-  { name: "Comic", path: "/comic", icon: ScrollText },
-  { name: "Novel", path: "/novel", icon: Feather },
-  { name: "Light Novel", path: "/light-novel", icon: PenLine },
-] as const
+type BookType = {name: string; slug: string; iconKey: string;}
 
 function initialsFromUsername(username: string) {
   const safe = (username || "").trim()
@@ -124,7 +110,7 @@ function ThemePickerMobile() {
 /* Desktop Mega-dropdown */
 function NavDropdown({label, icon: Icon, href, children, isActive,}: {
   label: string
-  icon: React.ElementType
+  icon: IconKey
   href: string
   children: React.ReactNode
   isActive?: boolean
@@ -157,7 +143,7 @@ function NavDropdown({label, icon: Icon, href, children, isActive,}: {
                     : "text-muted-foreground hover:text-foreground hover:bg-accent"
             )}
         >
-          <Icon className="h-4 w-4" />
+          <AppIcon name={Icon} className="h-4 w-4" />
           {label}
         </Link>
 
@@ -193,7 +179,7 @@ function MobileSection({title, children,}: {
 /* Mobile Nav Link */
 function MobileNavLink({href, icon: Icon, label, onClick, badge, active,}: {
   href: string
-  icon: React.ElementType
+  icon: IconKey
   label: string
   onClick?: () => void
   badge?: string
@@ -214,7 +200,7 @@ function MobileNavLink({href, icon: Icon, label, onClick, badge, active,}: {
             "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
             active ? "bg-primary/20" : "bg-muted"
         )}>
-          <Icon className="h-4 w-4" />
+          <AppIcon name={Icon} className="h-4 w-4" />
         </div>
         <span className="flex-1">{label}</span>
         {badge && (
@@ -244,6 +230,8 @@ export function UserHeader() {
 
   const [genres, setGenres] = useState<Genre[]>([])
   const [genresLoading, setGenresLoading] = useState(true)
+  const [bookType, setBookType] = useState<BookType[]>([])
+  const [bookTypeLoading, setBookTypeLoading] = useState(true)
 
   /* scroll listener */
   useEffect(() => {
@@ -321,6 +309,34 @@ export function UserHeader() {
     return () => ac.abort()
   }, [])
 
+  /* load BookType */
+  useEffect(() => {
+    const ac = new AbortController()
+    const loadBookType = async () => {
+      setBookTypeLoading(true)
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/types`, {
+          credentials: "include",
+          signal: ac.signal,
+        })
+        const data = await res.json().catch(() => [])
+        setBookType(
+            (Array.isArray(data) ? data : []).map((b: any) => ({
+              name: String(b.name),
+              slug: String(b.slug),
+              iconKey: String(b.iconKey),
+            }))
+        )
+      } catch {
+        setBookType([])
+      } finally {
+        setBookTypeLoading(false)
+      }
+    }
+    void loadBookType()
+    return () => ac.abort()
+  }, [])
+
   const authenticated = !!profile
   const isAdmin = profile?.roleName === "ADMIN"
   const topGenres = useMemo(() => genres.slice(0, 12), [genres])
@@ -367,7 +383,7 @@ export function UserHeader() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
-                <BookOpen className="h-5 w-5" />
+                <AppIcon name={"bookOpen"} className="h-5 w-5" />
               </div>
               <span className="font-bold text-lg tracking-tight hidden sm:block">Readory</span>
             </Link>
@@ -376,7 +392,7 @@ export function UserHeader() {
             <nav className="hidden lg:flex items-center gap-1">
               <NavDropdown
                   label="Books"
-                  icon={BookOpen}
+                  icon={"bookOpen"}
                   href="/books"
                   isActive={pathname.startsWith("/books")}
               >
@@ -384,29 +400,36 @@ export function UserHeader() {
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Browse by Type
                   </p>
-                  <div className="grid grid-cols-1 gap-1">
-                    {CONTENT_TYPES.map((c) => {
-                      const CIcon = c.icon
-                      return (
-                          <Link
-                              key={c.name}
-                              href={c.path}
-                              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
-                          >
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                              <CIcon className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                            {c.name}
-                          </Link>
-                      )
-                    })}
-                  </div>
+                  {bookTypeLoading ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="h-9 rounded-lg bg-muted animate-pulse" />
+                        ))}
+                      </div>
+                  ) : bookType.length === 0 ? (
+                      <p className="py-4 text-center text-sm text-muted-foreground">No book type yet.</p>
+                  ) : (
+                      <div className="grid grid-cols-2 gap-1">
+                        {bookType.map((b) => (
+                            <Link
+                                key={b.slug}
+                                href={`/${b.slug}`}
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+                            >
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                                <AppIcon name={b.iconKey as any} className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                              {b.name}
+                            </Link>
+                        ))}
+                      </div>
+                  )}
                 </div>
               </NavDropdown>
 
               <NavDropdown
                   label="Genres"
-                  icon={Library}
+                  icon={"library"}
                   href="/genres"
                   isActive={pathname.startsWith("/genres")}
               >
@@ -536,7 +559,7 @@ export function UserHeader() {
 
                             {isAdmin && (
                                 <DropdownMenuItem onClick={() => router.push("/admin")} className="rounded-lg px-3 py-2">
-                                  <Shield className="h-4 w-4 mr-2" />
+                                  <AppIcon name={"shield"} className="h-4 w-4 mr-2" />
                                   Admin Panel
                                 </DropdownMenuItem>
                             )}
@@ -670,21 +693,21 @@ export function UserHeader() {
               <MobileSection title="Navigate">
                 <MobileNavLink
                     href="/"
-                    icon={Home}
+                    icon={"home"}
                     label="Home"
                     onClick={closeMobile}
                     active={pathname === "/"}
                 />
                 <MobileNavLink
                     href="/books"
-                    icon={BookOpen}
+                    icon={"bookOpen"}
                     label="All Books"
                     onClick={closeMobile}
                     active={pathname === "/books"}
                 />
                 <MobileNavLink
                     href="/genres"
-                    icon={Library}
+                    icon={"library"}
                     label="Genres"
                     onClick={closeMobile}
                     active={pathname === "/genres"}
@@ -692,18 +715,22 @@ export function UserHeader() {
               </MobileSection>
 
               {/* Content Types */}
-              <MobileSection title="Browse by Type">
-                {CONTENT_TYPES.map((c) => (
-                    <MobileNavLink
-                        key={c.name}
-                        href={c.path}
-                        icon={c.icon}
-                        label={c.name}
-                        onClick={closeMobile}
-                        active={pathname === c.path}
-                    />
-                ))}
-              </MobileSection>
+              {!bookTypeLoading && bookType.length > 0 && (
+                  <MobileSection title="Browse by Type">
+                    <div className="flex flex-wrap gap-2 px-1">
+                      {bookType.map((b) => (
+                          <MobileNavLink
+                              key={b.name}
+                              href={`/${b.slug}`}
+                              icon={b.iconKey as IconKey}
+                              label={b.name}
+                              onClick={closeMobile}
+                              active={pathname === `/${b.slug}`}
+                          />
+                      ))}
+                    </div>
+                  </MobileSection>
+              )}
 
               {/* Genres */}
               {!genresLoading && topGenres.length > 0 && (
@@ -733,7 +760,7 @@ export function UserHeader() {
                   <MobileSection title="Account">
                     <MobileNavLink
                         href="/dashboard"
-                        icon={LayoutDashboard}
+                        icon={"layoutDashboard"}
                         label="Dashboard"
                         onClick={closeMobile}
                         active={pathname === "/dashboard"}
@@ -741,7 +768,7 @@ export function UserHeader() {
                     {isAdmin && (
                         <MobileNavLink
                             href="/admin"
-                            icon={Shield}
+                            icon={"shield"}
                             label="Admin Panel"
                             onClick={closeMobile}
                             badge="ADMIN"

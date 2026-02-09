@@ -92,7 +92,8 @@ export class PublicService {
                 select: {
                     id: true,
                     name: true,
-                    slug: true
+                    slug: true,
+                    iconKey: true,
                 }
             })
         ]);
@@ -151,7 +152,7 @@ export class PublicService {
             where: { isFeatured: true },
             orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
             take: 5,
-            select: { id: true, name: true, slug: true },
+            select: { id: true, name: true, slug: true, iconKey: true },
         });
 
         const featured = await Promise.all(

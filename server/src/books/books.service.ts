@@ -354,7 +354,7 @@ export class BooksService {
     async listTypes() {
         return this.prisma.bookType.findMany({
             orderBy: { name: 'asc' },
-            select: { id: true, name: true, slug: true },
+            select: { id: true, name: true, slug: true, iconKey: true },
         });
     }
 

@@ -1,33 +1,15 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, Swords, Heart, Ghost, Laugh, Wand2, Skull, Globe, Flame, Compass } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { BookOpen, } from "lucide-react"
+import {AppIcon} from "@/components/AppIcon";
+import {IconKey, iconRegistry} from "@/lib/iconRegistry";
 
 interface Genre {
     id: number
     name: string
     slug: string
-}
-
-const genreIcons: Record<string, LucideIcon> = {
-    action: Swords,
-    adventure: Compass,
-    romance: Heart,
-    horror: Ghost,
-    comedy: Laugh,
-    fantasy: Wand2,
-    thriller: Skull,
-    drama: Flame,
-    "sci-fi": Globe,
-}
-
-function getGenreIcon(slug: string): LucideIcon {
-    const lower = slug.toLowerCase()
-    for (const [key, icon] of Object.entries(genreIcons)) {
-        if (lower.includes(key)) return icon
-    }
-    return BookOpen
+    iconKey: string
 }
 
 const genreColors = [
@@ -59,7 +41,6 @@ export function GenresSection({ genres }: { genres: Genre[] }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {genres.map((genre, index) => {
-                    const Icon = getGenreIcon(genre.slug)
                     const colorClass = genreColors[index % genreColors.length]
 
                     return (
@@ -68,7 +49,7 @@ export function GenresSection({ genres }: { genres: Genre[] }) {
                                 className={`group relative flex items-center gap-3 p-4 md:p-5 rounded-xl border bg-gradient-to-br transition-all duration-300 cursor-pointer ${colorClass}`}
                             >
                                 <div className="shrink-0 p-2 rounded-lg bg-background/60 backdrop-blur-sm border border-border/50 group-hover:scale-110 transition-transform duration-300">
-                                    <Icon className="h-5 w-5 text-foreground" />
+                                    <AppIcon name={genre.iconKey as IconKey} className="h-5 w-5 text-foreground" />
                                 </div>
                                 <span className="text-sm md:text-base font-semibold text-foreground group-hover:translate-x-0.5 transition-transform duration-300">
                   {genre.name}

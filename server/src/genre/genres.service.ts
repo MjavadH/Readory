@@ -2,6 +2,7 @@ import {ConflictException, Inject, Injectable, NotFoundException} from '@nestjs/
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 import { PublicService } from '../public/public.service'
+import {UpdateGenreDto} from "./dto/update-genre.dto";
 
 function slugify(input: string): string {
     return input
@@ -53,7 +54,7 @@ export class GenresService {
                 }
             }
         });
-        await this.redis.set(this.CACHE_KEY_ALL, JSON.stringify(genres), 'EX', 7200);
+        await this.redis.set(this.CACHE_KEY_ALL_ADMIN, JSON.stringify(genres), 'EX', 7200);
         return genres;
     }
 
@@ -82,7 +83,7 @@ export class GenresService {
         const genres = await this.prisma.genre.findMany({
             where: { isFeatured: true },
             orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
-            select: {name: true, slug: true}
+            select: {name: true, slug: true, iconKey: true}
         });
         await this.redis.set(this.CACHE_KEY_FEATURED, JSON.stringify(genres), 'EX', 7200);
 
@@ -110,7 +111,7 @@ export class GenresService {
         };
     }
 
-    async create(data: { name: string; slug?: string, isFeatured?: boolean, featuredOrder?: number }) {
+    async create(data: { name: string; slug?: string, iconKey?: string | null; isFeatured?: boolean, featuredOrder?: number }) {
         const base = data.slug ? data.slug : slugify(data.name);
         const slug = await this.ensureUniqueSlug(base);
 
@@ -119,6 +120,7 @@ export class GenresService {
                 data: {
                     name: data.name,
                     slug,
+                    iconKey: data.iconKey ?? null,
                     isFeatured: data.isFeatured ?? false,
                     featuredOrder: data.featuredOrder ?? 0,
                 },
@@ -131,7 +133,7 @@ export class GenresService {
         }
     }
 
-    async update(id: number, data: { name?: string; slug?: string, isFeatured?: boolean, featuredOrder?: number }) {
+    async update(id: number, data: UpdateGenreDto) {
         const existing = await this.prisma.genre.findUnique({ where: { id } });
         if (!existing) throw new NotFoundException('Genre not found');
         let slug = existing.slug;
@@ -148,6 +150,7 @@ export class GenresService {
                 data: {
                     name: data.name,
                     slug,
+                    iconKey: data.iconKey === undefined ? undefined : data.iconKey,
                     featuredOrder: data.featuredOrder,
                     isFeatured: data.isFeatured,
                 }

@@ -40,11 +40,15 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag } from "lucide-react"
+import {AppIcon} from "@/components/AppIcon";
+import {IconKey} from "@/lib/iconRegistry";
+import { IconPicker } from "@/components/icon-picker";
 
 type Genre = {
     id: number
     name: string
     slug: string
+    iconKey?: string
     createdAt?: string
     isFeatured: boolean
     featuredOrder: number
@@ -53,14 +57,17 @@ type Genre = {
     }
 }
 
+
 function SortableGenreItem({
                                genre,
                                isFeaturedList,
                                onDelete,
+                               onUpdateIcon,
                            }: {
     genre: Genre
     isFeaturedList: boolean
     onDelete: (g: Genre) => void
+    onUpdateIcon: (id: number, iconKey: string) => void
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: genre.id.toString(),
@@ -106,7 +113,7 @@ function SortableGenreItem({
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                    <Tag className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <AppIcon name={genre.iconKey as IconKey} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <h3 className="font-semibold truncate text-sm text-foreground">{genre.name}</h3>
                 </div>
                 <div className="flex items-center gap-2">
@@ -118,6 +125,10 @@ function SortableGenreItem({
                 </div>
             </div>
 
+            <IconPicker
+                value={genre.iconKey}
+                onChange={(key: any) => onUpdateIcon(genre.id, key)}
+            />
             <Button
                 size="icon"
                 variant="ghost"
@@ -205,6 +216,21 @@ export default function AdminGenres() {
             setLoading(false)
         }
     }
+
+    const updateGenreIcon = async (id: number, iconKey: string) => {
+        setGenres(prev => prev.map(g => g.id === id ? { ...g, iconKey } : g))
+
+        try {
+            await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${id}`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ iconKey }),
+            })
+        } catch (error) {
+            console.error("Failed to save icon:", error)
+        }
+    };
 
     const handleDeleteClick = (genre: Genre) => {
         setGenreToDelete(genre)
@@ -411,6 +437,7 @@ export default function AdminGenres() {
                                                         genre={genre}
                                                         isFeaturedList={false}
                                                         onDelete={handleDeleteClick}
+                                                        onUpdateIcon={updateGenreIcon}
                                                     />
                                                 ))
                                             )}
@@ -458,6 +485,7 @@ export default function AdminGenres() {
                                                         genre={genre}
                                                         isFeaturedList={true}
                                                         onDelete={handleDeleteClick}
+                                                        onUpdateIcon={updateGenreIcon}
                                                     />
                                                 ))
                                             )}

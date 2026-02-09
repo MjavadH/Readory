@@ -43,7 +43,7 @@ export default function BooksPage() {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<string | undefined>();
-    const [genres, setGenres] = useState<Genre[]>([]);
+    const [genres, setGenres] = useState<BookGenre[]>([]);
     const [isLoadingGenres, setIsLoadingGenres] = useState(true);
     const [bookTypes, setBookTypes] = useState<BookType[]>([]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -279,7 +279,7 @@ export default function BooksPage() {
     const hasActiveFilters =
         selectedTypes.length > 0 ||
         selectedGenres.length > 0 ||
-        searchQuery ||
+        searchQuery.trim().length > 0 ||
         sortBy !== "recently_updated";
 
     return (

@@ -22,6 +22,7 @@ import {
   Moon,
   Monitor,
   Crown,
+
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -89,6 +90,7 @@ export function AdminSidebar() {
       items: [
         { label: "Books", icon: BookOpen, path: "/admin/books", show: has("MANAGE_BOOKS") },
         { label: "Genres", icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
+        { label: "Books Type", icon: Tag, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
         { label: "Media Library", icon: ImageIcon, path: "/admin/media", show: has("MANAGE_MEDIA") },
       ],
     },

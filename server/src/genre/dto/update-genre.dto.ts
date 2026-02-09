@@ -1,5 +1,6 @@
 import {Transform, Type} from 'class-transformer';
-import {IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength} from 'class-validator';
+import {IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength} from 'class-validator';
+import { ICON_KEYS } from "../../common/icon-keys";
 
 export class UpdateGenreDto {
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -17,6 +18,12 @@ export class UpdateGenreDto {
     })
     @MaxLength(80)
     slug?: string;
+
+    @IsOptional()
+    @IsString()
+    @MaxLength(50)
+    @IsIn(ICON_KEYS, { message: "iconKey is invalid" })
+    iconKey?: string | null;
 
     @Type(() => Boolean)
     @IsOptional()

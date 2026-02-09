@@ -1,0 +1,26 @@
+export const ICON_KEYS = [
+    "manga",
+    "manhwa",
+    "comic",
+    "novel",
+    "lightNovel",
+    "shield",
+    "action",
+    "adventure",
+    "romance",
+    "horror",
+    "comedy",
+    "fantasy",
+    "thriller",
+    "drama",
+    "sci-fi",
+    "home",
+    "bookOpen",
+    "library",
+    "layoutDashboard",
+    "timeTravel",
+    "sports",
+    "schoolLife",
+] as const;
+
+export type IconKey = (typeof ICON_KEYS)[number];
