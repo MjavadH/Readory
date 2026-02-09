@@ -39,6 +39,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 // Added type alias for StatusFilter
 type StatusFilter = "all" | "published" | "draft"
@@ -202,17 +203,12 @@ export default function AdminBooks() {
             })
             if (debouncedQ) qs.set("q", debouncedQ)
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/allBooks?${qs.toString()}`, {
-                credentials: "include",
-            })
-
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(data.message || "Failed to load books")
+            const data = await apiClient.get<{ books: Book[]; stats?: BookStats }>(`/books/allBooks?${qs.toString()}`)
 
             setBooks(Array.isArray(data.books) ? data.books : [])
             if (data.stats) setStats(data.stats)
         } catch (err: any) {
-            toast({ title: "Error fetching books", description: err.message, variant: "destructive" })
+            toast({ title: "Error fetching books", description: getApiErrorMessage(err), variant: "destructive" })
             setBooks([])
         }
     }
@@ -221,23 +217,17 @@ export default function AdminBooks() {
 
     const fetchGenres = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres`, {
-                credentials: "include",
-            })
-            const data = await res.json().catch(() => [])
+            const data = await apiClient.get<Genre[]>("/genres").catch(() => [])
             setGenres(Array.isArray(data) ? data : [])
         } catch (err: any) {
-            toast({ title: "Error fetching genres", description: err.message, variant: "destructive" })
+            toast({ title: "Error fetching genres", description: getApiErrorMessage(err), variant: "destructive" })
             setGenres([])
         }
     }
 
     const fetchTypes = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/types`, {
-                credentials: "include",
-            })
-            const data = await res.json().catch(() => [])
+            const data = await apiClient.get<BookType[]>("/books/types").catch(() => [])
             const list = Array.isArray(data) ? data : []
             setBookTypes(list)
             if (list.length > 0) {
@@ -245,7 +235,7 @@ export default function AdminBooks() {
                 setEditBook((prev) => ({ ...prev, type: prev.type || list[0].slug }))
             }
         } catch (err: any) {
-            toast({ title: "Error fetching book types", description: err.message, variant: "destructive" })
+            toast({ title: "Error fetching book types", description: getApiErrorMessage(err), variant: "destructive" })
             setBookTypes([])
         } finally {
             setIsLoadingTypes(false)
@@ -254,10 +244,7 @@ export default function AdminBooks() {
 
     const fetchMedia = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media`, {
-                credentials: "include",
-            })
-            const data = await res.json().catch(() => [])
+            const data = await apiClient.get<any[]>("/media").catch(() => [])
             const list = Array.isArray(data) ? data : []
             setMedia(
                 list
@@ -265,7 +252,7 @@ export default function AdminBooks() {
                     .sort((a: MediaItem, b: MediaItem) => a.filename.localeCompare(b.filename)),
             )
         } catch (err: any) {
-            toast({ title: "Error fetching media", description: err.message, variant: "destructive" })
+            toast({ title: "Error fetching media", description: getApiErrorMessage(err), variant: "destructive" })
             setMedia([])
         }
     }
@@ -297,14 +284,7 @@ export default function AdminBooks() {
                 return;
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${bookToDelete}`, {
-                method: "DELETE",
-                credentials: "include",
-            })
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}))
-                throw new Error(data.message || "Failed to delete book")
-            }
+            await apiClient.delete(`/books/${bookToDelete}`)
             setBooks((prevBooks) => prevBooks.filter((b) => b.id !== bookToDelete))
             if (selectedBook?.id === bookToDelete) {
                 setIsDetailsOpen(false)
@@ -313,7 +293,7 @@ export default function AdminBooks() {
             }
             toast({ title: "Deleted", description: "Book deleted successfully" })
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" })
+            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
         } finally {
             setDeleteBookDialogOpen(false)
             setBookToDelete(null)
@@ -325,17 +305,10 @@ export default function AdminBooks() {
         if (!selectedBook) return
         setIsSubmitting(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({
-                    ...newChapter,
-                    price: newChapter.isFree ? undefined : (Number(newChapter.price) || 0).toFixed(2),
-                }),
+            const data = await apiClient.post(`/books/${selectedBook.id}/chapters`, {
+                ...newChapter,
+                price: newChapter.isFree ? undefined : (Number(newChapter.price) || 0).toFixed(2),
             })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) {throw new Error(data.message || "Failed to create chapter")}
 
             setChapters([...chapters, data])
             setIsChapterDialogOpen(false)
@@ -348,7 +321,7 @@ export default function AdminBooks() {
             })
             toast({ title: "Success", description: "Chapter added successfully" })
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" })
+            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
         } finally {
             setIsSubmitting(false)
         }
@@ -363,21 +336,11 @@ export default function AdminBooks() {
         if (!chapterToDelete || !selectedBook) return
         setIsSubmitting(true)
         try {
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters/${chapterToDelete}`,
-                {
-                    method: "DELETE",
-                    credentials: "include",
-                },
-            )
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}))
-                throw new Error(data.message || "Failed to delete chapter")
-            }
+            await apiClient.delete(`/books/${selectedBook.id}/chapters/${chapterToDelete}`)
             setChapters((prevChapters) => prevChapters.filter((c) => c.id !== chapterToDelete))
             toast({ title: "Deleted", description: "Chapter deleted successfully" })
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" })
+            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
         } finally {
             setDeleteChapterDialogOpen(false)
             setChapterToDelete(null)
@@ -416,17 +379,10 @@ export default function AdminBooks() {
         }
         setIsSubmitting(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...newBook,
-                    genreIds: newBook.genreIds,
-                }),
+            const data = await apiClient.post("/books", {
+                ...newBook,
+                genreIds: newBook.genreIds,
             })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(data.message || "Failed to create book")
 
             setBooks([...books, data])
             setIsAddOpen(false)
@@ -442,7 +398,7 @@ export default function AdminBooks() {
             })
             toast({ title: "Success", description: "Book created successfully" })
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" })
+            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
         } finally {
             setIsSubmitting(false)
         }
@@ -451,13 +407,10 @@ export default function AdminBooks() {
     const loadBookDetails = async (book: Book) => {
         setSelectedBook(book)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${book.id}/chapters`, {
-                credentials: "include",
-            })
-            const data = await res.json().catch(() => [])
+            const data = await apiClient.get<Chapter[]>(`/books/${book.id}/chapters`).catch(() => [])
             setChapters(Array.isArray(data) ? data : [])
         } catch (err: any) {
-            toast({ title: "Error fetching chapters", description: err.message, variant: "destructive" })
+            toast({ title: "Error fetching chapters", description: getApiErrorMessage(err), variant: "destructive" })
             setChapters([])
         }
     }
@@ -469,24 +422,17 @@ export default function AdminBooks() {
         }
         setIsSubmitting(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}`, {
-                method: "PATCH",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...editBook,
-                    genreIds: editBook.genreIds.length > 0 ? editBook.genreIds : undefined,
-                }),
+            const data = await apiClient.patch(`/books/${selectedBook.id}`, {
+                ...editBook,
+                genreIds: editBook.genreIds.length > 0 ? editBook.genreIds : undefined,
             })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok) throw new Error(data.message || "Failed to update book")
 
             setBooks((prev) => prev.map((b) => (b.id === selectedBook.id ? { ...b, ...data } : b)))
             setSelectedBook({ ...selectedBook, ...data })
             setIsEditOpen(false)
             toast({ title: "Updated", description: "Book updated successfully" })
         } catch (err: any) {
-            toast({ title: "Error", description: err.message, variant: "destructive" })
+            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
         } finally {
             setIsSubmitting(false)
         }
@@ -1391,22 +1337,22 @@ export default function AdminBooks() {
 
                                     if (!editChapter.isFree) payload.price = Number(editChapter.price || 0).toFixed(2)
 
-                                    const res = await fetch(
-                                        `${process.env.NEXT_PUBLIC_API_BASE}/books/${selectedBook.id}/chapters/${chapterEditing.id}`,
-                                        {
-                                            method: "PATCH",
-                                            credentials: "include",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify(payload),
-                                        },
-                                    )
+                                    try {
+                                        const data = await apiClient.patch(
+                                            `/books/${selectedBook.id}/chapters/${chapterEditing.id}`,
+                                            payload,
+                                        )
 
-                                    const data = await res.json().catch(() => ({}))
-                                    if (!res.ok) return toast({ title: "Error", description: data.message || "Failed to update chapter", variant: "destructive" })
-
-                                    setChapters((prev) => prev.map((c) => (c.id === chapterEditing.id ? { ...c, ...data } : c)))
-                                    setIsEditChapterOpen(false)
-                                    setChapterEditing(null)
+                                        setChapters((prev) => prev.map((c) => (c.id === chapterEditing.id ? { ...c, ...data } : c)))
+                                        setIsEditChapterOpen(false)
+                                        setChapterEditing(null)
+                                    } catch (error) {
+                                        toast({
+                                            title: "Error",
+                                            description: getApiErrorMessage(error, "Failed to update chapter"),
+                                            variant: "destructive",
+                                        })
+                                    }
                                 }}
                             >
                                 Save Changes

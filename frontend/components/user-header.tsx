@@ -26,6 +26,7 @@ import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparat
 import {Sheet, SheetContent, SheetTitle,} from "@/components/ui/sheet"
 import {AppIcon} from "@/components/AppIcon";
 import {IconKey} from "@/lib/iconRegistry";
+import { apiClient } from "@/lib/api-client"
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName: RoleName }
@@ -264,12 +265,7 @@ export function UserHeader() {
     const loadProfile = async () => {
       setProfileLoading(true)
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, {
-          credentials: "include",
-          signal: ac.signal,
-        })
-        if (!res.ok) { setProfile(null); return }
-        const data = (await res.json()) as Profile
+        const data = await apiClient.get<Profile>("/auth/profile", { signal: ac.signal })
         if (!data?.userId) { setProfile(null); return }
         setProfile(data)
       } catch {
@@ -288,11 +284,7 @@ export function UserHeader() {
     const loadGenres = async () => {
       setGenresLoading(true)
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/featured`, {
-          credentials: "include",
-          signal: ac.signal,
-        })
-        const data = await res.json().catch(() => [])
+        const data = await apiClient.get<any[]>("/genres/featured", { signal: ac.signal }).catch(() => [])
         setGenres(
             (Array.isArray(data) ? data : []).map((g: any) => ({
               name: String(g.name),
@@ -315,11 +307,7 @@ export function UserHeader() {
     const loadBookType = async () => {
       setBookTypeLoading(true)
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/types`, {
-          credentials: "include",
-          signal: ac.signal,
-        })
-        const data = await res.json().catch(() => [])
+        const data = await apiClient.get<any[]>("/books/types", { signal: ac.signal }).catch(() => [])
         setBookType(
             (Array.isArray(data) ? data : []).map((b: any) => ({
               name: String(b.name),
@@ -351,10 +339,7 @@ export function UserHeader() {
 
   const handleLogout = async () => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      })
+      await apiClient.post("/auth/logout")
     } finally {
       setProfile(null)
       router.replace("/")

@@ -32,6 +32,7 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 type MediaItem = {
   code: string
@@ -67,12 +68,9 @@ export default function AdminMedia() {
       try {
         const q = searchQuery.trim()
         const qs = q ? `?q=${encodeURIComponent(q)}` : ""
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media${qs}`, {
-          credentials: "include",
-          signal: controller.signal,
-        })
-
-        const data = await res.json().catch(() => [])
+        const data = await apiClient
+          .get<MediaItem[] | { data: MediaItem[] }>(`/media${qs}`, { signal: controller.signal })
+          .catch(() => [])
         const list = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : []
         setFiles(list)
       } catch (e: any) {
@@ -100,29 +98,19 @@ export default function AdminMedia() {
     try {
       const formData = new FormData()
       formData.append("file", selectedFile)
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      })
-      const data = await res.json().catch(() => ({}))
-
-      if (res.ok) {
-        const created: MediaItem = { code: data.code, filename: data.filename, size: data.size }
-        setFiles((prev) => [created, ...prev])
-        setUploadSuccess(true)
-        toast({ title: "Success", description: "Image uploaded successfully" })
-        setTimeout(() => {
-          setSelectedFile(null)
-          setUploadSuccess(false)
-        }, 2000)
-      } else {
-        setUploadError(data.message || "Upload failed")
-        toast({ title: "Error", description: data.message || "Upload failed", variant: "destructive" })
-      }
+      const data = await apiClient.post<{ code: string; filename: string; size: number }>("/media", formData)
+      const created: MediaItem = { code: data.code, filename: data.filename, size: data.size }
+      setFiles((prev) => [created, ...prev])
+      setUploadSuccess(true)
+      toast({ title: "Success", description: "Image uploaded successfully" })
+      setTimeout(() => {
+        setSelectedFile(null)
+        setUploadSuccess(false)
+      }, 2000)
     } catch (error) {
-      setUploadError("Network error occurred")
-      toast({ title: "Error", description: "Network error", variant: "destructive" })
+      const message = getApiErrorMessage(error, "Network error occurred")
+      setUploadError(message)
+      toast({ title: "Error", description: message, variant: "destructive" })
     } finally {
       setIsUploading(false)
     }
@@ -144,24 +132,14 @@ export default function AdminMedia() {
 
     setRenamingCode(fileToRename.code)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media/${fileToRename.code}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: next }),
-      })
-
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        throw new Error(data.message || "Rename failed")
-      }
+      const data = await apiClient.patch<{ filename: string }>(`/media/${fileToRename.code}`, { filename: next })
 
       setFiles((prev) => prev.map((f) => (f.code === fileToRename.code ? { ...f, filename: data.filename } : f)))
       setRenameDialogOpen(false)
       setFileToRename(null)
       toast({ title: "Success", description: "File renamed successfully" })
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" })
+      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
     } finally {
       setRenamingCode(null)
     }
@@ -205,21 +183,12 @@ export default function AdminMedia() {
     setDeletingCode(fileToDelete)
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/media/${fileToDelete}`, {
-        method: "DELETE",
-        credentials: "include",
-      })
-
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        throw new Error(data.message || "Delete failed")
-      }
+      await apiClient.delete(`/media/${fileToDelete}`)
 
       setFiles((prev) => prev.filter((f) => f.code !== fileToDelete))
       toast({ title: "Deleted", description: "File deleted successfully" })
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" })
+      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
     } finally {
       setDeletingCode(null)
       setDeleteDialogOpen(false)

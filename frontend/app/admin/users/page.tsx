@@ -36,6 +36,7 @@ import {
   CheckCircle2,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 interface Transaction {
   id: number
@@ -109,23 +110,12 @@ export default function AdminUsers() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const queryParams = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: ITEMS_PER_PAGE.toString(),
-        search: searchQuery,
-      })
-
-      const [usersRes, statsRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users?${queryParams}`, {
-          credentials: "include",
+      const [usersData, statsData] = await Promise.all([
+        apiClient.get<{ data: User[]; total: number }>("/users", {
+          query: { page: currentPage, limit: ITEMS_PER_PAGE, search: searchQuery },
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/stats`, {
-          credentials: "include",
-        }),
+        apiClient.get<UserStats>("/users/stats"),
       ])
-
-      const usersData = await usersRes.json()
-      const statsData = await statsRes.json()
 
       if (usersData && Array.isArray(usersData.data)) {
         setUsers(usersData.data)
@@ -136,7 +126,7 @@ export default function AdminUsers() {
         setStats(statsData)
       }
     } catch (err: any) {
-      toast({ title: "Error fetching data", description: err.message, variant: "destructive" })
+      toast({ title: "Error fetching data", description: getApiErrorMessage(err), variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -145,13 +135,10 @@ export default function AdminUsers() {
   const fetchUserDetails = async (userId: number) => {
     setIsLoadingDetails(true)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${userId}`, {
-        credentials: "include",
-      })
-      const data = await res.json()
+      const data = await apiClient.get<UserDetails>(`/users/${userId}`)
       setSelectedUser(data)
     } catch (err: any) {
-      toast({ title: "Error fetching user details", description: err.message, variant: "destructive" })
+      toast({ title: "Error fetching user details", description: getApiErrorMessage(err), variant: "destructive" })
     } finally {
       setIsLoadingDetails(false)
     }
@@ -159,18 +146,13 @@ export default function AdminUsers() {
 
   const updateUserRole = async (userId: number, newRole: "ADMIN" | "USER") => {
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${userId}/role`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ role: newRole }),
-      })
+      await apiClient.patch(`/users/${userId}/role`, { role: newRole })
       fetchData()
       if (selectedUser) {
         fetchUserDetails(userId)
       }
     } catch (err: any) {
-      toast({ title: "Error updating role", description: err.message, variant: "destructive" })
+      toast({ title: "Error updating role", description: getApiErrorMessage(err), variant: "destructive" })
     }
   }
 
@@ -186,33 +168,22 @@ export default function AdminUsers() {
     try {
       const endpoint = type === "increase" ? "credit" : "debit";
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${selectedUser.id}/balance/${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount }),
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        setAdjustAmount("");
-        fetchUserDetails(selectedUser.id);
-        fetchData();
-        toast({ title: "Success", description: "Wallet balance updated." })
-      } else {
-        const errorData = await res.json();
-        toast({ title: "Failed", description: errorData.message || "Operation failed", variant: "destructive" })
-      }
+      await apiClient.post(`/users/${selectedUser.id}/balance/${endpoint}`, { amount })
+      setAdjustAmount("");
+      fetchUserDetails(selectedUser.id);
+      fetchData();
+      toast({ title: "Success", description: "Wallet balance updated." })
     } catch (err) {
-      toast({ title: "Error", description: "Network error", variant: "destructive" })
+      toast({ title: "Error", description: getApiErrorMessage(err, "Network error"), variant: "destructive" })
     }
   };
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, { credentials: "include" })
-        .then(res => res.json())
-        .then(data => {
-          setCurrentUserId(data.id)
-        })
+    apiClient
+      .get<{ id: number }>("/auth/profile")
+      .then((data) => {
+        setCurrentUserId(data.id)
+      })
 
     const timer = setTimeout(() => {
       fetchData()
@@ -228,19 +199,11 @@ export default function AdminUsers() {
   const toggleBanStatus = async (userId: number, currentStatus: string) => {
     const isBanned = currentStatus !== "BANNED";
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${userId}/ban`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isBanned }),
-        credentials: "include",
-      });
-
-      if (res.ok) {
-        fetchData();
-        if (selectedUser?.id === userId) fetchUserDetails(userId);
-      }
+      await apiClient.patch(`/users/${userId}/ban`, { isBanned })
+      fetchData();
+      if (selectedUser?.id === userId) fetchUserDetails(userId);
     } catch(err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" })
+      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
     }
   }
 

@@ -1,6 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState } from "react"
+import { apiClient } from "@/lib/api-client"
 
 export type Permission =
     | "MANAGE_BOOKS"
@@ -33,22 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, {
-                    credentials: "include",
-                })
-                if (res.ok) {
-                    const data = await res.json()
-
-                    const normalizedUser = {
-                        ...data,
-                        id: data.id || data.userId,
-                        permissions: data.permissions || []
-                    }
-                    if (normalizedUser.role === 'ADMIN' || data.roleName === 'ADMIN') {
-                        setUser(normalizedUser)
-                    } else {
-                        setUser(null)
-                    }
+                const data = await apiClient.get<User & { userId?: number; roleName?: string }>("/auth/profile")
+                const normalizedUser = {
+                    ...data,
+                    id: data.id || data.userId,
+                    permissions: data.permissions || []
+                }
+                if (normalizedUser.role === 'ADMIN' || data.roleName === 'ADMIN') {
+                    setUser(normalizedUser)
+                } else {
+                    setUser(null)
                 }
             } catch (error) {
                 console.error("Auth Error:", error)

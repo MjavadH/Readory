@@ -11,6 +11,7 @@ import {
     Search,     // Mystery
     LucideIcon
 } from "lucide-react"
+import { apiClient } from "@/lib/api-client"
 
 interface GenreTheme {
     primaryColor: string
@@ -68,12 +69,11 @@ function getGenreTheme(slug: string): GenreTheme {
 }
 
 async function getGenre(slug: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${slug}`, {
-        cache: "no-store",
-    })
-
-    if (!res.ok) return null
-    return res.json()
+    try {
+        return await apiClient.get(`/genres/${slug}`, { cache: "no-store" })
+    } catch {
+        return null
+    }
 }
 
 export default async function GenrePage({ params }: { params: Promise<{ slug: string }> }) {

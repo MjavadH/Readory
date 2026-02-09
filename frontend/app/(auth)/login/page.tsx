@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
+import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 const authSchema = z.object({
   email: z.string().min(1, { message: "Email or Username is required" }),
@@ -65,20 +66,7 @@ export default function AuthPage() {
         password: values.password
       }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.message || "Login failed. Please check your credentials.")
-        setIsLoading(false)
-        return
-      }
+      const data = await apiClient.post<{ user?: { roleName?: string } }>("/auth/login", payload)
 
       const roleName = data.user?.roleName;
       if (roleName === "ADMIN") {
@@ -86,8 +74,8 @@ export default function AuthPage() {
       } else {
         router.push("/dashboard")
       }
-    } catch {
-      setError("An error occurred during login. Please try again.")
+    } catch (error) {
+      setError(getApiErrorMessage(error, "An error occurred during login. Please try again."))
     } finally {
       setIsLoading(false)
     }
@@ -104,29 +92,17 @@ export default function AuthPage() {
     setError("")
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: values.email,
-          username: values.username,
-          password: values.password
-        }),
+      await apiClient.post("/auth/register", {
+        email: values.email,
+        username: values.username,
+        password: values.password
       })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.message || "Registration failed. Please try again.")
-        setIsLoading(false)
-        return
-      }
 
       setRegisteredEmail(values.email)
       setMode("otp")
       authForm.reset()
-    } catch {
-      setError("An error occurred during registration. Please try again.")
+    } catch (error) {
+      setError(getApiErrorMessage(error, "An error occurred during registration. Please try again."))
     } finally {
       setIsLoading(false)
     }
@@ -138,28 +114,15 @@ export default function AuthPage() {
     setError("")
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          email: registeredEmail,
-          otp: values.otp,
-        }),
+      await apiClient.post("/auth/verify-otp", {
+        email: registeredEmail,
+        otp: values.otp,
       })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.message || "Invalid OTP. Please try again.")
-        setIsLoading(false)
-        return
-      }
 
       alert("Account verified! Please login.");
       setMode("login");
-    } catch {
-      setError("An error occurred during verification. Please try again.")
+    } catch (error) {
+      setError(getApiErrorMessage(error, "An error occurred during verification. Please try again."))
     } finally {
       setIsLoading(false)
     }

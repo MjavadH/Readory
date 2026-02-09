@@ -5,6 +5,7 @@ import {
     User,
     LucideIcon
 } from "lucide-react"
+import { apiClient } from "@/lib/api-client"
 
 interface TypeTheme {
     label: string
@@ -46,12 +47,11 @@ function getTypeTheme(type: string) {
 }
 
 async function getBooksByType(type: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/type/${type}`, {
-        cache: "no-store",
-    })
-
-    if (!res.ok) return null
-    return res.json()
+    try {
+        return await apiClient.get(`/books/type/${type}`, { cache: "no-store" })
+    } catch {
+        return null
+    }
 }
 
 export default async function BookTypePage({ params }: { params: Promise<{ type: string }> }) {
