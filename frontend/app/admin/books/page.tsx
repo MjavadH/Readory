@@ -227,7 +227,7 @@ export default function AdminBooks() {
 
     const fetchTypes = async () => {
         try {
-            const data = await apiClient.get<BookType[]>("/books/types").catch(() => [])
+            const data = await apiClient.get<BookType[]>("/book-types").catch(() => [])
             const list = Array.isArray(data) ? data : []
             setBookTypes(list)
             if (list.length > 0) {
@@ -305,7 +305,7 @@ export default function AdminBooks() {
         if (!selectedBook) return
         setIsSubmitting(true)
         try {
-            const data = await apiClient.post(`/books/${selectedBook.id}/chapters`, {
+            const data = await apiClient.post<Chapter>(`/books/${selectedBook.id}/chapters`, {
                 ...newChapter,
                 price: newChapter.isFree ? undefined : (Number(newChapter.price) || 0).toFixed(2),
             })
@@ -379,7 +379,7 @@ export default function AdminBooks() {
         }
         setIsSubmitting(true)
         try {
-            const data = await apiClient.post("/books", {
+            const data = await apiClient.post<Book>("/books", {
                 ...newBook,
                 genreIds: newBook.genreIds,
             })
@@ -422,7 +422,7 @@ export default function AdminBooks() {
         }
         setIsSubmitting(true)
         try {
-            const data = await apiClient.patch(`/books/${selectedBook.id}`, {
+            const data = await apiClient.patch<Book>(`/books/${selectedBook.id}`, {
                 ...editBook,
                 genreIds: editBook.genreIds.length > 0 ? editBook.genreIds : undefined,
             })
@@ -1338,7 +1338,7 @@ export default function AdminBooks() {
                                     if (!editChapter.isFree) payload.price = Number(editChapter.price || 0).toFixed(2)
 
                                     try {
-                                        const data = await apiClient.patch(
+                                        const data = await apiClient.patch<Chapter>(
                                             `/books/${selectedBook.id}/chapters/${chapterEditing.id}`,
                                             payload,
                                         )

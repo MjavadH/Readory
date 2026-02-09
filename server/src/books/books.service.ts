@@ -324,40 +324,6 @@ export class BooksService {
         });
     }
 
-    async findByType(type: string) {
-        const slug = slugifyType(type);
-        if (!slug) {
-            throw new NotFoundException('book type not found');
-        }
-        const bookType = await this.prisma.bookType.findUnique({
-            where: { slug },
-        });
-        if (!bookType) {
-            throw new NotFoundException('book type not found');
-        }
-        return this.prisma.book.findMany({
-            where: {
-                typeId: bookType.id,
-                isPublished: true
-            },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                title: true,
-                coverImage: true,
-                author: true,
-                type: { select: { id: true, name: true, slug: true } },
-            },
-        });
-    }
-
-    async listTypes() {
-        return this.prisma.bookType.findMany({
-            orderBy: { name: 'asc' },
-            select: { id: true, name: true, slug: true, iconKey: true },
-        });
-    }
-
     // Admin: create a new book
     async create(data: {
         title: string;

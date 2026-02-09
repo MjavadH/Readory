@@ -1,7 +1,12 @@
+import type { IconKey } from "@/lib/iconRegistry"
+
 export interface BookType {
     id: number;
     name: string;
     slug: string;
+    iconKey: IconKey | null;
+    isActive: boolean;
+    sortOrder: number;
 }
 
 export interface BookGenre {

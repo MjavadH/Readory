@@ -176,6 +176,7 @@ export class GenresService {
 
     private async invalidateCache() {
         await this.redis.del(this.CACHE_KEY_ALL);
+        await this.redis.del(this.CACHE_KEY_ALL_ADMIN);
         await this.redis.del(this.CACHE_KEY_FEATURED);
         await this.publicService.clearHomeCache();
         await this.publicService.clearGenresPageCache();

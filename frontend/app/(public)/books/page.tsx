@@ -80,7 +80,7 @@ export default function BooksPage() {
     useEffect(() => {
         const fetchTypes = async () => {
             try {
-                const data = await apiClient.get<BookType[]>("/books/types");
+                const data = await apiClient.get<BookType[]>("/public/book-types");
                 setBookTypes(data);
             } catch (error) {
                 console.error("[v0] Failed to fetch book types:", error);

@@ -91,7 +91,6 @@ model Book {
   @@index([ratingAvg, ratingCount])
   @@index([isPublished, isFeatured])
   @@index([createdAt])
-  @@index([typeId])
 }
 
 model BookType {
@@ -99,9 +98,13 @@ model BookType {
   name      String   @unique
   slug      String   @unique
   iconKey   String?
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
   books     Book[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
 }
 
 model BookRating {

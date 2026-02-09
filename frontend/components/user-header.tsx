@@ -307,7 +307,7 @@ export function UserHeader() {
     const loadBookType = async () => {
       setBookTypeLoading(true)
       try {
-        const data = await apiClient.get<any[]>("/books/types", { signal: ac.signal }).catch(() => [])
+        const data = await apiClient.get<any[]>("/public/book-types", { signal: ac.signal }).catch(() => [])
         setBookType(
             (Array.isArray(data) ? data : []).map((b: any) => ({
               name: String(b.name),

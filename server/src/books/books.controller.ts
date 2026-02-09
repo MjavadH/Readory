@@ -37,11 +37,6 @@ export class BooksController {
         return this.booksService.browse(query);
     }
 
-    @Get('types')
-    async listTypes() {
-        return this.booksService.listTypes();
-    }
-
     // List all books
     @Get('allBooks')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -54,11 +49,6 @@ export class BooksController {
         @Query('status') status: StatusFilter = 'all',
     ) {
         return this.booksService.listAll({ page, limit, q, status });
-    }
-
-    @Get('type/:type')
-    async getBooksByType(@Param('type') type: string) {
-        return this.booksService.findByType(type);
     }
 
     // Public: get book details with chapter list

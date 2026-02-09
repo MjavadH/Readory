@@ -127,7 +127,7 @@ function SortableGenreItem({
             </div>
 
             <IconPicker
-                value={genre.iconKey}
+                value={genre.iconKey as IconKey}
                 onChange={(key: any) => onUpdateIcon(genre.id, key)}
             />
             <Button

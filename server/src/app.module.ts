@@ -11,6 +11,7 @@ import { RedisModule } from './redis/redis.module';
 import { GenresModule } from './genre/genres.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PublicModule } from './public/public.module';
+import { BookTypesModule } from './book-types/book-types.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -24,7 +25,8 @@ import { PublicModule } from './public/public.module';
     MediaModule,
     GenresModule,
     DashboardModule,
-    PublicModule
+    PublicModule,
+    BookTypesModule
   ],
   controllers: [],
   providers: [],

@@ -48,7 +48,7 @@ function getTypeTheme(type: string) {
 
 async function getBooksByType(type: string) {
     try {
-        return await apiClient.get(`/books/type/${type}`, { cache: "no-store" })
+        return await apiClient.get(`/public/book-types/${type}`, { cache: "no-store" })
     } catch {
         return null
     }
