@@ -10,6 +10,7 @@ import { TrendingSection } from "@/components/trending-section"
 import { LatestSection } from "@/components/latest-section"
 import { GenresSection } from "@/components/genres-section"
 import { bookTypeToSlug, type BookType } from "@/lib/types"
+import { apiClient } from "@/lib/api-client"
 
 interface Book {
     id: number
@@ -57,7 +58,7 @@ interface HomeContent {
     genres: Genre[]
 }
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json())
+const fetcher = (url: string) => apiClient.get<HomeContent>(url)
 
 function HeroSkeleton() {
     return (

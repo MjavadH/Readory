@@ -36,6 +36,7 @@ import {
     Check,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_MEDIA" | "MANAGE_STAFF"
 
@@ -114,10 +115,9 @@ export default function AdminStaff() {
     const fetchStaff = async () => {
         setLoading(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users?role=ADMIN&page=1&limit=50`, {
-                credentials: "include",
+            const data = await apiClient.get<{ data: StaffMember[] }>("/users", {
+                query: { role: "ADMIN", page: 1, limit: 50 },
             })
-            const data = await res.json()
             if (data && Array.isArray(data.data)) {
                 setStaff(data.data)
             }
@@ -136,10 +136,9 @@ export default function AdminStaff() {
 
         setIsSearching(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users?search=${encodeURIComponent(query)}`, {
-                credentials: "include",
+            const data = await apiClient.get<{ data: SearchUser[] }>("/users", {
+                query: { search: query },
             })
-            const data = await res.json()
             if (data && Array.isArray(data.data)) {
                 const nonAdminUsers = data.data.filter((user: SearchUser) => user.role !== "ADMIN")
                 setSearchResults(nonAdminUsers)
@@ -154,16 +153,7 @@ export default function AdminStaff() {
     const promoteToAdmin = async (userId: number) => {
         setIsSubmitting(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${userId}/role`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ role: "ADMIN" }),
-            })
-            if (!res.ok) {
-                const errorData = await res.json()
-                throw new Error(errorData.message || "Failed to promote user")
-            }
+            await apiClient.patch(`/users/${userId}/role`, { role: "ADMIN" })
             toast({ title: "Success", description: "User promoted to Admin Staff successfully." })
 
             setIsAddStaffOpen(false)
@@ -173,7 +163,7 @@ export default function AdminStaff() {
         } catch (err: any) {
             toast({
                 title: "Error",
-                description: err.message,
+                description: getApiErrorMessage(err),
                 variant: "destructive"
             })
         } finally {
@@ -186,16 +176,7 @@ export default function AdminStaff() {
         setIsSubmitting(true)
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${selectedStaff.id}/permissions`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ permissions: selectedPermissions }),
-            })
-            if (!res.ok) {
-                const errorData = await res.json()
-                throw new Error(errorData.message || "Failed to update permissions")
-            }
+            await apiClient.patch(`/users/${selectedStaff.id}/permissions`, { permissions: selectedPermissions })
             toast({ title: "Updated", description: "Staff permissions updated successfully." })
             setIsEditPermissionsOpen(false)
             setSelectedStaff(null)
@@ -204,7 +185,7 @@ export default function AdminStaff() {
         } catch (err: any) {
             toast({
                 title: "Error",
-                description: err.message,
+                description: getApiErrorMessage(err),
                 variant: "destructive"
             })
         } finally {
@@ -217,16 +198,7 @@ export default function AdminStaff() {
         setIsSubmitting(true)
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/users/${staffToRemove.id}/role`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify({ role: "USER" }),
-            })
-            if (!res.ok) {
-                const errorData = await res.json()
-                throw new Error(errorData.message || "Failed to remove staff")
-            }
+            await apiClient.patch(`/users/${staffToRemove.id}/role`, { role: "USER" })
 
             toast({ title: "Removed", description: `${staffToRemove.username} has been removed from staff.` })
 
@@ -236,7 +208,7 @@ export default function AdminStaff() {
         } catch (err: any) {
             toast({
                 title: "Error",
-                description: err.message,
+                description: getApiErrorMessage(err),
                 variant: "destructive"
             })
         } finally {
@@ -260,9 +232,9 @@ export default function AdminStaff() {
 
     useEffect(() => {
         fetchStaff()
-        fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, { credentials: "include" })
-            .then(res => res.json())
-            .then(data => setCurrentUserId(data.id || data.userId))
+        apiClient
+            .get<{ id?: number; userId?: number }>("/auth/profile")
+            .then((data) => setCurrentUserId(data.id || data.userId || null))
     }, [])
 
     useEffect(() => {

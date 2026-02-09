@@ -43,6 +43,7 @@ import { Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag } from
 import {AppIcon} from "@/components/AppIcon";
 import {IconKey} from "@/lib/iconRegistry";
 import { IconPicker } from "@/components/icon-picker";
+import { apiClient } from "@/lib/api-client"
 
 type Genre = {
     id: number
@@ -178,8 +179,7 @@ export default function AdminGenres() {
     )
 
     const load = async () => {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres`, { credentials: "include" })
-        const data = await res.json().catch(() => [])
+        const data = await apiClient.get<Genre[]>("/genres").catch(() => [])
         if (Array.isArray(data)) {
             setGenres(
                 data.map((g: any) => ({
@@ -200,18 +200,11 @@ export default function AdminGenres() {
         if (!v) return
         setLoading(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: v }),
-            })
-            if (!res.ok) {
-                const err = await res.json()
-                return alert(err.message || "Failed to create")
-            }
+            await apiClient.post("/genres", { name: v })
             setName("")
             await load()
+        } catch (error: any) {
+            alert(error?.message || "Failed to create")
         } finally {
             setLoading(false)
         }
@@ -221,12 +214,7 @@ export default function AdminGenres() {
         setGenres(prev => prev.map(g => g.id === id ? { ...g, iconKey } : g))
 
         try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${id}`, {
-                method: "PATCH",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ iconKey }),
-            })
+            await apiClient.patch(`/genres/${id}`, { iconKey })
         } catch (error) {
             console.error("Failed to save icon:", error)
         }
@@ -240,12 +228,10 @@ export default function AdminGenres() {
     const handleDeleteConfirm = async () => {
         if (!genreToDelete) return
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${genreToDelete.id}`, {
-                method: "DELETE",
-                credentials: "include",
-            })
-            if (!res.ok) return alert("Failed to delete")
+            await apiClient.delete(`/genres/${genreToDelete.id}`)
             setGenres((prev) => prev.filter((g) => g.id !== genreToDelete.id))
+        } catch (error: any) {
+            alert(error?.message || "Failed to delete")
         } finally {
             setDeleteDialogOpen(false)
             setGenreToDelete(null)
@@ -315,12 +301,7 @@ export default function AdminGenres() {
                 prev.map((g) => (g.id.toString() === activeId ? { ...g, isFeatured: false, featuredOrder: 0 } : g)),
             )
 
-            fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${activeId}`, {
-                method: "PATCH",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ isFeatured: false, featuredOrder: 0 }),
-            }).catch(console.error)
+            apiClient.patch(`/genres/${activeId}`, { isFeatured: false, featuredOrder: 0 }).catch(console.error)
 
             return
         }
@@ -350,14 +331,9 @@ export default function AdminGenres() {
 
     const saveOrder = async (items: Genre[]) => {
         const updates = items.map((g, index) => {
-            return fetch(`${process.env.NEXT_PUBLIC_API_BASE}/genres/${g.id}`, {
-                method: "PATCH",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    isFeatured: true,
-                    featuredOrder: index,
-                }),
+            return apiClient.patch(`/genres/${g.id}`, {
+                isFeatured: true,
+                featuredOrder: index,
             })
         })
         await Promise.all(updates).catch(console.error)

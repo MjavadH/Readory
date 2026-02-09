@@ -30,6 +30,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { logout } from "@/lib/logout"
+import { apiClient } from "@/lib/api-client"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,10 +63,7 @@ export function AdminSidebar() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/profile`, {
-          credentials: "include",
-        })
-        const data = await res.json()
+        const data = await apiClient.get<CurrentUser>("/auth/profile")
         if (data && data.userId) {
           setCurrentUser(data)
         }

@@ -16,6 +16,7 @@ import {
     ChevronRight,
     Activity,
 } from "lucide-react"
+import { apiClient } from "@/lib/api-client"
 
 function GrowthIndicator({ value }: { value?: number }) {
     if (value === undefined) return null
@@ -93,13 +94,12 @@ export default function AdminTransactions() {
         async function fetchTransactions() {
             setLoading(true)
             try {
-                const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_BASE}/wallet/transactions?page=${page}&limit=${ITEMS_PER_PAGE}`,
+                const data = await apiClient.get<{ transactions?: Transaction[]; stats?: TransactionStats; hasMore?: boolean }>(
+                    "/wallet/transactions",
                     {
-                        credentials: "include",
+                        query: { page, limit: ITEMS_PER_PAGE },
                     },
                 )
-                const data = await res.json()
 
                 if (data.transactions && Array.isArray(data.transactions)) {
                     setTransactions(data.transactions)

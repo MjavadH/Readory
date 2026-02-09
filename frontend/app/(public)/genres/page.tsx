@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { GenreBookRow } from "@/components/genre-book-row";
 import { AllGenresSection } from "@/components/all-genres-section";
 import { GenresPageSkeleton } from "@/components/genres-page-skeleton";
+import { apiClient } from "@/lib/api-client";
 
 interface ApiFeaturedGenre {
     id: number;
@@ -29,11 +30,7 @@ interface GenresPageResponse {
     allGenres: Array<{ id: number; name: string; slug: string }>;
 }
 
-const fetcher = (url: string) =>
-    fetch(url).then((res) => {
-        if (!res.ok) throw new Error("Failed to load genres");
-        return res.json() as Promise<GenresPageResponse>;
-    });
+const fetcher = (url: string) => apiClient.get<GenresPageResponse>(url);
 
 export default function GenresPage() {
     const { data, error, isLoading } = useSWR<GenresPageResponse>(

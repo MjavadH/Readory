@@ -8,6 +8,7 @@ import { Users, DollarSign, BookOpen, TrendingUp, ArrowUpRight, ArrowDownRight, 
 import {Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart} from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { usePermission } from "@/hooks/use-permission"
+import { apiClient } from "@/lib/api-client"
 
 // --- Types ---
 interface DashboardStats {
@@ -41,11 +42,8 @@ export default function AdminDashboard() {
     const fetchStats = async () => {
         setLoadingData(true)
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/dashboard/stats`, { credentials: "include" })
-            if (res.ok) {
-                const data = await res.json()
-                setStats(data)
-            }
+            const data = await apiClient.get<DashboardStats>("/dashboard/stats")
+            setStats(data)
         } catch (err) {
             console.error("Error fetching dashboard stats", err)
         } finally {

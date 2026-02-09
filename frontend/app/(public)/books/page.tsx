@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { apiClient } from "@/lib/api-client";
 
 interface BrowseResponse {
     items: BookCardData[];
@@ -64,13 +65,8 @@ export default function BooksPage() {
     useEffect(() => {
         const fetchGenres = async () => {
             try {
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_BASE}/genres/listAll`
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    setGenres(data);
-                }
+                const data = await apiClient.get<BookGenre[]>("/genres/listAll");
+                setGenres(data);
             } catch (error) {
                 console.error("[v0] Failed to fetch genres:", error);
             } finally {
@@ -84,13 +80,8 @@ export default function BooksPage() {
     useEffect(() => {
         const fetchTypes = async () => {
             try {
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_BASE}/books/types`
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    setBookTypes(data);
-                }
+                const data = await apiClient.get<BookType[]>("/books/types");
+                setBookTypes(data);
             } catch (error) {
                 console.error("[v0] Failed to fetch book types:", error);
             } finally {
@@ -177,14 +168,9 @@ export default function BooksPage() {
                 const queryParams = buildQueryParams(cursor);
                 abortRef.current?.abort();
                 abortRef.current = new AbortController();
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/browse?${queryParams}`,
-                    { signal: abortRef.current.signal });
-
-                if (!response.ok) {
-                    throw new Error("Failed to fetch books");
-                }
-
-                const data: BrowseResponse = await response.json();
+                const data = await apiClient.get<BrowseResponse>(`/books/browse?${queryParams}`, {
+                    signal: abortRef.current.signal,
+                });
 
                 if (isInitialLoad) {
                     setBooks(data.items);
