@@ -238,7 +238,7 @@ export class BooksService {
     }
 
     private popularSeekWhere(cursor: CursorPayload): Prisma.BookWhereInput {
-        let v: { ratingAvg: number; ratingCount: number; updatedAt: string } | null = null;
+        let v: { ratingAvg: number; ratingCount: number; updatedAt: string } | null;
         try {
             v = JSON.parse(cursor.v);
         } catch {
@@ -372,16 +372,24 @@ export class BooksService {
         const { genreIds, type, ...rest } = data;
 
         const resolvedType = await this.resolveBookType(type);
-        const created = await this.prisma.book.create({
-            data: {
-                ...rest,
-                type: { connect: { id: resolvedType.id } },
-                genres: {
-                    create: genreIds.map((genreId) => ({
-                        genre: { connect: { id: genreId } },
-                    })),
-                },
+        const payload: Prisma.BookCreateInput = {
+            title: rest.title,
+            type: { connect: { id: resolvedType.id } },
+            genres: {
+                create: genreIds.map((genreId) => ({
+                    genre: { connect: { id: genreId } },
+                })),
             },
+        };
+
+        if (rest.author !== undefined) payload.author = rest.author;
+        if (rest.description !== undefined) payload.description = rest.description;
+        if (rest.coverImage !== undefined) {payload.coverMedia = { connect: { code: rest.coverImage } };}
+        if (rest.isPublished !== undefined) payload.isPublished = rest.isPublished;
+        if (rest.isFeatured !== undefined) payload.isFeatured = rest.isFeatured;
+
+        const created = await this.prisma.book.create({
+            data: payload,
             include: {
                 coverMedia: { select: { code: true, filename: true } },
                 genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
@@ -409,11 +417,18 @@ export class BooksService {
             genreIds?: number[];
         }>,
     ) {
-        const { genreIds, type, ...rest } = data;
+        const { genreIds, type, coverImage, ...rest } = data;
         const resolvedType = type ? await this.resolveBookType(type) : null;
 
         const updateData: Prisma.BookUpdateInput = {
             ...rest,
+            ...(coverImage !== undefined
+                ? {
+                    coverMedia: coverImage
+                        ? { connect: { code: coverImage } }
+                        : { disconnect: true },
+                }
+                : {}),
             ...(resolvedType ? { type: { connect: { id: resolvedType.id } } } : {}),
             ...(genreIds
                 ? {

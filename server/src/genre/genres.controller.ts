@@ -18,6 +18,11 @@ export class GenresController {
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    async adminList() {
+        return this.genresService.adminListAll();
+    }
+
+    @Get('listAll')
     async list() {
         return this.genresService.listAll();
     }

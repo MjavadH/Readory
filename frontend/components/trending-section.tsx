@@ -15,6 +15,7 @@ interface TrendingBook {
 }
 
 export function TrendingSection({ books }: { books: TrendingBook[] }) {
+    if (books.length === 0) return;
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);

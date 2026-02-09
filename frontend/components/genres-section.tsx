@@ -42,6 +42,7 @@ const genreColors = [
 ]
 
 export function GenresSection({ genres }: { genres: Genre[] }) {
+    if (genres.length === 0) return;
     return (
         <section>
             <div className="mb-6">

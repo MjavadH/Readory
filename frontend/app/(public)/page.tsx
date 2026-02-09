@@ -81,6 +81,8 @@ function HeroSkeleton() {
 }
 
 function HeroCarousel({ books }: { books: Book[] }) {
+    if (books.length === 0) return;
+    console.log(books)
     const [current, setCurrent] = useState(0)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const [direction, setDirection] = useState<"next" | "prev">("next")

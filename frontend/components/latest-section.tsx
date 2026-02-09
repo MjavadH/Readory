@@ -46,6 +46,7 @@ function TimeAgo({ time }: { time: string }) {
 }
 
 export function LatestSection({ books }: { books: LatestBook[] }) {
+    if (books.length === 0) return;
     const filtered = books.filter((b) => b.chapters.length > 0);
 
     return (

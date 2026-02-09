@@ -16,8 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Search, X, Filter, SlidersHorizontal } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { BookCardData, BookType, SortOption, Genre } from "@/lib/types";
+import type { BookCardData, BookType, SortOption, BookGenre } from "@/lib/types";
 import { bookTypeLabel, SORT_OPTIONS } from "@/lib/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,6 +28,12 @@ interface BrowseResponse {
     nextCursor?: string;
     hasMore: boolean;
 }
+
+const arraysEqual = (a: string[], b: string[]) =>
+    a.length === b.length && a.every((v, i) => v === b[i]);
+
+const normalizeListParam = (v: string | null) =>
+    (v ? v.split(",").map(s => s.trim()).filter(Boolean) : []);
 
 export default function BooksPage() {
     const router = useRouter();
@@ -44,6 +49,8 @@ export default function BooksPage() {
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const abortRef = useRef<AbortController | null>(null);
+    const lastPushedRef = useRef<string>("");
 
     // Filter states
     const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -58,7 +65,7 @@ export default function BooksPage() {
         const fetchGenres = async () => {
             try {
                 const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_BASE}/genres`
+                    `${process.env.NEXT_PUBLIC_API_BASE}/genres/listAll`
                 );
                 if (response.ok) {
                     const data = await response.json();
@@ -96,24 +103,19 @@ export default function BooksPage() {
 
     // Initialize filters from URL params
     useEffect(() => {
-        const types = searchParams.get("types");
-        const genreParams = searchParams.get("genres");
-        const sort = searchParams.get("sort");
-        const q = searchParams.get("q");
+        const typesFromUrl = normalizeListParam(searchParams.get("types"));
+        const genresFromUrl = normalizeListParam(searchParams.get("genres"));
+        const sortFromUrl = (searchParams.get("sort") as SortOption) || "recently_updated";
+        const qFromUrl = searchParams.get("q") || "";
 
-        if (types) {
-            setSelectedTypes(types.split(","));
-        }
-        if (genreParams) {
-            setSelectedGenres(genreParams.split(","));
-        }
-        if (sort) {
-            setSortBy(sort as SortOption);
-        }
-        if (q) {
-            setSearchQuery(q);
-            setSearchInput(q);
-        }
+        // Only update state if it actually changed (prevents endless loop)
+        setSelectedTypes(prev => (arraysEqual(prev, typesFromUrl) ? prev : typesFromUrl));
+        setSelectedGenres(prev => (arraysEqual(prev, genresFromUrl) ? prev : genresFromUrl));
+
+        setSortBy(prev => (prev === sortFromUrl ? prev : sortFromUrl));
+
+        setSearchQuery(prev => (prev === qFromUrl ? prev : qFromUrl));
+        setSearchInput(prev => (prev === qFromUrl ? prev : qFromUrl));
     }, [searchParams]);
 
     // Build query params
@@ -147,23 +149,18 @@ export default function BooksPage() {
     const updateURL = useCallback(() => {
         const params = new URLSearchParams();
 
-        if (selectedTypes.length > 0) {
-            params.set("types", selectedTypes.join(","));
-        }
-        if (selectedGenres.length > 0) {
-            params.set("genres", selectedGenres.join(","));
-        }
-        if (sortBy !== "recently_updated") {
-            params.set("sort", sortBy);
-        }
-        if (searchQuery) {
-            params.set("q", searchQuery);
-        }
+        if (selectedTypes.length > 0) params.set("types", selectedTypes.join(","));
+        if (selectedGenres.length > 0) params.set("genres", selectedGenres.join(","));
+        if (sortBy !== "recently_updated") params.set("sort", sortBy);
+        if (searchQuery) params.set("q", searchQuery);
 
         const queryString = params.toString();
-        router.push(`/books${queryString ? `?${queryString}` : ""}`, {
-            scroll: false,
-        });
+        const nextUrl = `/books${queryString ? `?${queryString}` : ""}`;
+
+        if (lastPushedRef.current === nextUrl) return;
+        lastPushedRef.current = nextUrl;
+
+        router.push(nextUrl, { scroll: false });
     }, [selectedTypes, selectedGenres, sortBy, searchQuery, router]);
 
     // Fetch books
@@ -178,9 +175,10 @@ export default function BooksPage() {
 
             try {
                 const queryParams = buildQueryParams(cursor);
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_BASE}/books/browse?${queryParams}`
-                );
+                abortRef.current?.abort();
+                abortRef.current = new AbortController();
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/books/browse?${queryParams}`,
+                    { signal: abortRef.current.signal });
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch books");
@@ -195,8 +193,9 @@ export default function BooksPage() {
                 }
 
                 setNextCursor(data.nextCursor);
-                setHasMore(data.hasMore);
-            } catch (error) {
+                setHasMore(Boolean(data.hasMore && data.nextCursor));
+            } catch (error: any) {
+                if (error?.name === "AbortError") return;
                 console.error("[v0] Failed to fetch books:", error);
                 if (isInitialLoad) {
                     setBooks([]);
@@ -213,11 +212,16 @@ export default function BooksPage() {
         [buildQueryParams]
     );
 
-    // Fetch books when filters change
     useEffect(() => {
-        void fetchBooks();
+        setNextCursor(undefined);
+        setHasMore(false);
+        void fetchBooks(undefined);
+    }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchBooks]);
+
+    useEffect(() => {
         updateURL();
-    }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchBooks, updateURL]);
+    }, [selectedTypes, selectedGenres, sortBy, searchQuery, updateURL]);
+
 
     // Infinite scroll setup
     useEffect(() => {
@@ -228,7 +232,7 @@ export default function BooksPage() {
         observerRef.current = new IntersectionObserver(
             (entries) => {
                 const [entry] = entries;
-                if (entry.isIntersecting && hasMore && !isLoadingMore) {
+                if (entry.isIntersecting && hasMore && !!nextCursor && !isLoadingMore) {
                     void fetchBooks(nextCursor);
                 }
             },
@@ -515,7 +519,7 @@ export default function BooksPage() {
 interface FiltersContentProps {
     selectedTypes: string[];
     selectedGenres: string[];
-    genres: Genre[];
+    genres: BookGenre[];
     isLoadingGenres: boolean;
     isLoadingTypes: boolean;
     bookTypes: BookType[];
@@ -590,7 +594,7 @@ function FiltersContent({
                             <div key={genre.id} className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`genre-${genre.slug}`}
-                                    checked={selectedGenres.includes(genre.slug) ? true : false}
+                                    checked={selectedGenres.includes(genre.slug)}
                                     onCheckedChange={() => onGenreToggle(genre.slug)}
                                 />
                                 <Label

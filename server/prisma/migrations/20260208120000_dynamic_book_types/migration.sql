@@ -1,3 +1,6 @@
+-- Rename old enum temporarily to avoid name conflict
+ALTER TYPE "BookType" RENAME TO "BookType_old";
+
 -- Create BookType table
 CREATE TABLE "BookType" (
     "id" SERIAL PRIMARY KEY,
@@ -34,4 +37,4 @@ CREATE INDEX "Book_typeId_idx" ON "Book"("typeId");
 
 -- Drop old enum column and type
 ALTER TABLE "Book" DROP COLUMN "type";
-DROP TYPE "BookType";
+DROP TYPE "BookType_old";

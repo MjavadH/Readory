@@ -24,10 +24,24 @@ export class GenresService {
     ) {}
 
     private readonly CACHE_KEY_ALL = 'genres:all';
+    private readonly CACHE_KEY_ALL_ADMIN = 'genres:all:admin';
     private readonly CACHE_KEY_FEATURED = 'genres:featured';
 
     async listAll() {
         const cached = await this.redis.get(this.CACHE_KEY_ALL);
+        if (cached) {
+            return JSON.parse(cached);
+        }
+        const genres = await this.prisma.genre.findMany({
+            orderBy: { name: 'asc' },
+            select: {id: true, name: true, slug: true}
+        });
+        await this.redis.set(this.CACHE_KEY_ALL, JSON.stringify(genres), 'EX', 7200);
+        return genres;
+    }
+
+    async adminListAll() {
+        const cached = await this.redis.get(this.CACHE_KEY_ALL_ADMIN);
         if (cached) {
             return JSON.parse(cached);
         }
