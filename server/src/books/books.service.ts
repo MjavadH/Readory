@@ -149,14 +149,14 @@ export class BooksService {
                 id: true,
                 title: true,
                 coverImage: true,
-                type: { select: { id: true, name: true, slug: true } },
+                type: { select: { name: true, slug: true } },
                 author: true,
                 ratingAvg: true,
                 ratingCount: true,
                 isFeatured: true,
                 updatedAt: true,
                 _count: { select: { chapters: true } },
-                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                genres: { select: { genre: { select: { name: true, slug: true } } } },
             },
         });
 

@@ -149,7 +149,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
                                 </Link>
                             ))}
                         {book.type && (
-                            <Link href={`/books/${bookTypeSlug}`}>
+                            <Link href={`/${bookTypeSlug}`}>
                                 <Badge
                                     variant="outline"
                                     className="cursor-pointer border-accent-foreground/20 text-accent-foreground/70 hover:bg-accent hover:text-accent-foreground transition-all duration-200 text-xs md:text-sm px-3 py-1"
