@@ -5,21 +5,19 @@ import { GenreBookRow } from "@/components/genre-book-row";
 import { AllGenresSection } from "@/components/all-genres-section";
 import { GenresPageSkeleton } from "@/components/genres-page-skeleton";
 import { apiClient } from "@/lib/api-client";
+import {BookType} from "@/lib/types";
 
 interface ApiFeaturedGenre {
     id: number;
     name: string;
     slug: string;
+    iconKey: string;
     books: Array<{
         id: number;
         title: string;
         coverImage: string;
         author: string | null;
-        type: {
-            id: number;
-            name: string;
-            slug: string;
-        };
+        type: BookType;
         ratingAvg: number | null;
         ratingCount: number;
     }>;
@@ -27,7 +25,7 @@ interface ApiFeaturedGenre {
 
 interface GenresPageResponse {
     featured: ApiFeaturedGenre[];
-    allGenres: Array<{ id: number; name: string; slug: string }>;
+    allGenres: Array<{ id: number; name: string; slug: string; iconKey: string }>;
 }
 
 const fetcher = (url: string) => apiClient.get<GenresPageResponse>(url);
@@ -75,7 +73,7 @@ export default function GenresPage() {
                 {!isLoading && !error && (
                     <div className="flex flex-col gap-10 sm:gap-12">
                         {featured.map((genre) => (
-                            <GenreBookRow key={genre.id} genre={genre} />
+                            <GenreBookRow key={genre.slug} genre={genre} />
                         ))}
                     </div>
                 )}

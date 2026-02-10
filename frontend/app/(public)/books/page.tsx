@@ -533,9 +533,8 @@ function FiltersContent({
                 <div className="space-y-2">
                     {isLoadingTypes ? (
                         <div className="space-y-2">
-                            {Array.from({ length: 4 }).map((_, i) => (
+                            {Array.from({ length: 4 }).map(() => (
                                 <div
-                                    key={i}
                                     className="h-5 animate-pulse rounded bg-muted"
                                 />
                             ))}
@@ -577,7 +576,7 @@ function FiltersContent({
                 ) : (
                     <div className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
                         {genres.map((genre) => (
-                            <div key={genre.id} className="flex items-center space-x-2">
+                            <div key={genre.slug} className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`genre-${genre.slug}`}
                                     checked={selectedGenres.includes(genre.slug)}

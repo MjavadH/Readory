@@ -3,14 +3,8 @@
 import Link from "next/link"
 import { BookOpen, } from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
-import {IconKey, iconRegistry} from "@/lib/iconRegistry";
-
-interface Genre {
-    id: number
-    name: string
-    slug: string
-    iconKey: string
-}
+import {IconKey} from "@/lib/iconRegistry";
+import { BookGenre} from "@/lib/types"
 
 const genreColors = [
     "from-rose-500/15 to-rose-500/5 hover:from-rose-500/25 hover:to-rose-500/10 border-rose-500/20 hover:border-rose-500/40",
@@ -23,7 +17,7 @@ const genreColors = [
     "from-indigo-500/15 to-indigo-500/5 hover:from-indigo-500/25 hover:to-indigo-500/10 border-indigo-500/20 hover:border-indigo-500/40",
 ]
 
-export function GenresSection({ genres }: { genres: Genre[] }) {
+export function GenresSection({ genres }: { genres: BookGenre[] }) {
     if (genres.length === 0) return;
     return (
         <section>
@@ -44,9 +38,9 @@ export function GenresSection({ genres }: { genres: Genre[] }) {
                     const colorClass = genreColors[index % genreColors.length]
 
                     return (
-                        <Link key={genre.id} href={`/genres/${genre.slug}`}>
+                        <Link key={genre.slug} href={`/genres/${genre.slug}`}>
                             <div
-                                className={`group relative flex items-center gap-3 p-4 md:p-5 rounded-xl border bg-gradient-to-br transition-all duration-300 cursor-pointer ${colorClass}`}
+                                className={`group relative flex items-center gap-3 p-4 md:p-5 rounded-xl border bg-linear-to-br transition-all duration-300 cursor-pointer ${colorClass}`}
                             >
                                 <div className="shrink-0 p-2 rounded-lg bg-background/60 backdrop-blur-sm border border-border/50 group-hover:scale-110 transition-transform duration-300">
                                     <AppIcon name={genre.iconKey as IconKey} className="h-5 w-5 text-foreground" />

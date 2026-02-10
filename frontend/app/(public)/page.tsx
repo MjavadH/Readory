@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingSection } from "@/components/trending-section"
 import { LatestSection } from "@/components/latest-section"
 import { GenresSection } from "@/components/genres-section"
-import { bookTypeToSlug, type BookType } from "@/lib/types"
+import { BookType, BookGenre} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
 
 interface Book {
@@ -45,17 +45,11 @@ interface TrendingBook {
     ratingCount: number
 }
 
-interface Genre {
-    id: number
-    name: string
-    slug: string
-}
-
 interface HomeContent {
     hero: Book[]
     latest: LatestBook[]
     trending: TrendingBook[]
-    genres: Genre[]
+    genres: BookGenre[]
 }
 
 const fetcher = (url: string) => apiClient.get<HomeContent>(url)
@@ -101,7 +95,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
     }, [books.length])
 
     const book = books[current]
-    const bookTypeSlug = bookTypeToSlug(book.type)
+    const bookTypeSlug = book.type.slug
 
     return (
         <div className="w-full rounded-2xl bg-muted/50 border border-border/50 overflow-hidden">

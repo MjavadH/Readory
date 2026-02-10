@@ -174,7 +174,7 @@ export class PublicService {
 
         const allGenres = await this.prisma.genre.findMany({
             orderBy: { name: 'asc' },
-            select: { id: true, name: true, slug: true },
+            select: { id: true, name: true, slug: true, iconKey: true },
         });
 
         const response = { featured, allGenres };

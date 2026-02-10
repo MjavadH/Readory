@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {AppIcon} from "@/components/AppIcon";
+import {IconKey} from "@/lib/iconRegistry";
 
 interface AllGenresSectionProps {
-    genres: Array<{ id: number; name: string; slug: string }>;
+    genres: Array<{ id: number; name: string; slug: string; iconKey: string; }>;
 }
 
 export function AllGenresSection({ genres }: AllGenresSectionProps) {
@@ -47,6 +49,7 @@ export function AllGenresSection({ genres }: AllGenresSectionProps) {
                                 "active:scale-[0.97]"
                             )}
                         >
+                            <AppIcon name={g.iconKey as IconKey} className="mr-1.5 size-5"/>
                             {g.name}
                         </Link>
                     ))}

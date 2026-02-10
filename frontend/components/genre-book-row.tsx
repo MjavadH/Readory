@@ -6,6 +6,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData, BookType } from "@/lib/types";
+import {AppIcon} from "@/components/AppIcon";
+import {IconKey} from "@/lib/iconRegistry";
 
 interface GenreBook {
     id: number;
@@ -22,6 +24,7 @@ interface GenreBookRowProps {
         id: number;
         name: string;
         slug: string;
+        iconKey: string;
         books: GenreBook[];
     };
 }
@@ -75,6 +78,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                         href={`/genres/${genre.slug}`}
                         className="text-base font-bold text-foreground transition-colors duration-200 hover:text-primary sm:text-lg"
                     >
+                        <AppIcon name={genre.iconKey as IconKey} className="inline mr-1.5 align-sub size-5" />
                         {genre.name}
                     </Link>
                 </div>
@@ -128,7 +132,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                 {/* Edge fades */}
                 <div
                     className={cn(
-                        "pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-gradient-to-r from-background to-transparent transition-opacity duration-300",
+                        "pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-linear-to-r from-background to-transparent transition-opacity duration-300",
                         canScrollLeft ? "opacity-100" : "opacity-0",
                     )}
                 />

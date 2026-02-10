@@ -7,7 +7,7 @@ import { Star, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { BookCardData } from "@/lib/types";
-import { getBookUrl, bookTypeLabel } from "@/lib/types";
+import { getBookUrl } from "@/lib/types";
 
 interface BookCardProps {
     book: BookCardData;
@@ -116,7 +116,7 @@ export function BookCard({ book, priority = false, className }: BookCardProps) {
                             variant="secondary"
                             className="bg-background/80 text-foreground backdrop-blur-sm text-[10px] px-1.5 py-0.5 font-medium shadow-sm"
                         >
-                            {bookTypeLabel(book.type)}
+                            {book.type.name}
                         </Badge>
                     </div>
                 )}
@@ -198,7 +198,7 @@ export function BookCard({ book, priority = false, className }: BookCardProps) {
                         <div className="flex items-center gap-1 overflow-hidden">
                             {book.genres.slice(0, 2).map((genre) => (
                                 <span
-                                    key={genre.id}
+                                    key={genre.slug}
                                     className="shrink-0 rounded-full bg-secondary px-1.5 py-px text-[10px] text-secondary-foreground"
                                 >
                                     {genre.name}
