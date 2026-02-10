@@ -1,0 +1,36 @@
+export const ICON_KEYS = [
+  "manga",
+  "manhwa",
+  "comic",
+  "novel",
+  "lightNovel",
+  "shield",
+  "action",
+  "adventure",
+  "romance",
+  "horror",
+  "comedy",
+  "fantasy",
+  "thriller",
+  "drama",
+  "sci-fi",
+  "home",
+  "bookOpen",
+  "library",
+  "layoutDashboard",
+  "timeTravel",
+  "sports",
+  "schoolLife",
+  "Isekai",
+  "Mystery",
+  "Reincarnation",
+  "Shoujo",
+  "Shounen",
+  "Tragedy",
+  "SliceOfLife",
+] as const;
+
+export type IconKey = (typeof ICON_KEYS)[number];
+
+export const isIconKey = (value: unknown): value is IconKey =>
+  typeof value === "string" && (ICON_KEYS as readonly string[]).includes(value);

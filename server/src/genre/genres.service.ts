@@ -1,3 +1,4 @@
+import type { IconKey } from '../../../shared/icon-keys';
 import {ConflictException, Inject, Injectable, NotFoundException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
@@ -111,7 +112,7 @@ export class GenresService {
         };
     }
 
-    async create(data: { name: string; slug?: string, iconKey?: string | null; isFeatured?: boolean, featuredOrder?: number }) {
+    async create(data: { name: string; slug?: string, iconKey?: IconKey | null; isFeatured?: boolean, featuredOrder?: number }) {
         const base = data.slug ? data.slug : slugify(data.name);
         const slug = await this.ensureUniqueSlug(base);
 

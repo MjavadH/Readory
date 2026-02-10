@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useMemo, useState } from "react"
-import { iconRegistry, type IconKey } from "@/lib/iconRegistry"
+import { iconRegistry } from "@/lib/iconRegistry"
+import type { IconKey } from "@shared/icon-keys"
 import { AppIcon } from "@/components/AppIcon"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"

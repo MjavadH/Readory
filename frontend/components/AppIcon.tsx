@@ -1,4 +1,5 @@
-import { iconRegistry, IconKey } from "@/lib/iconRegistry";
+import { iconRegistry } from "@/lib/iconRegistry";
+import type { IconKey } from "@shared/icon-keys";
 
 type Props = {
     name?: IconKey | null

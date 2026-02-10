@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData, BookType } from "@/lib/types";
 import {AppIcon} from "@/components/AppIcon";
-import {IconKey} from "@/lib/iconRegistry";
+import type { IconKey } from "@shared/icon-keys";
 
 interface GenreBook {
     id: number;
@@ -24,7 +24,7 @@ interface GenreBookRowProps {
         id: number;
         name: string;
         slug: string;
-        iconKey: string;
+        iconKey: IconKey;
         books: GenreBook[];
     };
 }
