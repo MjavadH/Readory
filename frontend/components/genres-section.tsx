@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { BookOpen, } from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
-import type { IconKey } from "@shared/icon-keys";
+import type { IconKey } from "@readory/shared";
 import { BookGenre} from "@/lib/types"
 
 const genreColors = [

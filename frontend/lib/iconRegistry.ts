@@ -7,7 +7,7 @@ import {
 
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { IconKey } from "@shared/icon-keys";
+import type { IconKey } from "@readory/shared";
 
 export const iconRegistry: Record<IconKey, LucideIcon> = {
     manga: BookMarked,

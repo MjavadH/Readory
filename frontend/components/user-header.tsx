@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,} from "@/components/ui/dropdown-menu"
 import {Sheet, SheetContent, SheetTitle,} from "@/components/ui/sheet"
 import {AppIcon} from "@/components/AppIcon";
-import { isIconKey, type IconKey } from "@shared/icon-keys";
+import { isIconKey, type IconKey } from "@readory/shared";
 import { apiClient } from "@/lib/api-client"
 
 type RoleName = "USER" | "ADMIN"

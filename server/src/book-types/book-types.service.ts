@@ -1,4 +1,4 @@
-import type { IconKey } from '../../../shared/icon-keys';
+import type { IconKey } from '@readory/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 

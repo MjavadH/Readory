@@ -6,7 +6,7 @@ import { AllGenresSection } from "@/components/all-genres-section";
 import { GenresPageSkeleton } from "@/components/genres-page-skeleton";
 import { apiClient } from "@/lib/api-client";
 import {BookType} from "@/lib/types";
-import type { IconKey } from "@shared/icon-keys";
+import type { IconKey } from "@readory/shared";
 
 interface ApiFeaturedGenre {
     id: number;

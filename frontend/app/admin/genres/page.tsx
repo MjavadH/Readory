@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag } from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
-import type { IconKey } from "@shared/icon-keys";
+import type { IconKey } from "@readory/shared";
 import { IconPicker } from "@/components/icon-picker";
 import { apiClient } from "@/lib/api-client"
 

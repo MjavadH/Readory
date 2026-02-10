@@ -1,5 +1,5 @@
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
-import { ICON_KEYS, type IconKey } from '../../../../shared/icon-keys';
+import { ICON_KEYS, type IconKey } from '@readory/shared';
 
 export class UpdateBookTypeDto {
     @IsOptional()

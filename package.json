@@ -1,0 +1,13 @@
+{
+  "name": "readory-monorepo",
+  "private": true,
+  "workspaces": ["server", "frontend", "shared"],
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  },
+  "scripts": {
+    "build": "npm -ws run build",
+    "dev:shared": "npm --workspace @readory/shared run dev",
+    "build:shared": "npm --workspace @readory/shared run build"
+  }
+}

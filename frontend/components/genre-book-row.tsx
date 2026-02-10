@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData, BookType } from "@/lib/types";
 import {AppIcon} from "@/components/AppIcon";
-import type { IconKey } from "@shared/icon-keys";
+import type { IconKey } from "@readory/shared";
 
 interface GenreBook {
     id: number;

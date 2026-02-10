@@ -11,7 +11,7 @@ import {
     Min,
     MinLength
 } from 'class-validator';
-import { ICON_KEYS, type IconKey } from "../../../../shared/icon-keys";
+import { ICON_KEYS, type IconKey } from "@readory/shared";
 
 export class CreateGenreDto {
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

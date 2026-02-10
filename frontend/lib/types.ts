@@ -1,4 +1,4 @@
-import type { IconKey } from "@shared/icon-keys"
+import type { IconKey } from "@readory/shared"
 
 export interface BookType {
     id: number;
