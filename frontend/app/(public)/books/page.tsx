@@ -532,19 +532,20 @@ function FiltersContent({
                 <h3 className="mb-3 text-sm font-semibold">Category</h3>
                 <div className="space-y-2">
                     {isLoadingTypes ? (
-                        <div className="space-y-2">
-                            {Array.from({ length: 4 }).map(() => (
+                        <div key="bookTypes" className="space-y-2">
+                            {Array.from({ length: 4 }).map((_, i) => (
                                 <div
+                                    key={i}
                                     className="h-5 animate-pulse rounded bg-muted"
                                 />
                             ))}
                         </div>
                     ) : (
                         bookTypes.map((type) => (
-                            <div key={type.id} className="flex items-center space-x-2">
+                            <div key={type.slug} className="flex items-center space-x-2">
                                 <Checkbox
                                     id={`type-${type.slug}`}
-                                    checked={selectedTypes.includes(type.slug) ? true : false}
+                                    checked={selectedTypes.includes(type.slug)}
                                     onCheckedChange={() => onTypeToggle(type.slug)}
                                 />
                                 <Label

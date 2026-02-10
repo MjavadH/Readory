@@ -1,4 +1,8 @@
-import type { NextFetchRequestConfig } from "next/dist/server/web/spec-extension/request"
+
+export type NextFetchRequestConfig = {
+  revalidate?: number | false
+  tags?: string[]
+}
 
 export type ApiRequestOptions<TBody = unknown> = {
   method?: string

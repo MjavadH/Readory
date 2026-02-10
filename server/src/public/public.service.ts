@@ -1,10 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 
 @Injectable()
 export class PublicService {
-    private readonly logger = new Logger(PublicService.name);
 
     constructor(
         private prisma: PrismaService,
