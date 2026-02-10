@@ -2,10 +2,10 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {AppIcon} from "@/components/AppIcon";
-import {IconKey} from "@/lib/iconRegistry";
+import type { IconKey } from "@shared/icon-keys";
 
 interface AllGenresSectionProps {
-    genres: Array<{ id: number; name: string; slug: string; iconKey: string; }>;
+    genres: Array<{ id: number; name: string; slug: string; iconKey: IconKey; }>;
 }
 
 export function AllGenresSection({ genres }: AllGenresSectionProps) {

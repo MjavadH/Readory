@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag } from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
-import {IconKey} from "@/lib/iconRegistry";
+import type { IconKey } from "@shared/icon-keys";
 import { IconPicker } from "@/components/icon-picker";
 import { apiClient } from "@/lib/api-client"
 
@@ -49,7 +49,7 @@ type Genre = {
     id: number
     name: string
     slug: string
-    iconKey?: string
+    iconKey?: IconKey
     createdAt?: string
     isFeatured: boolean
     featuredOrder: number
@@ -68,7 +68,7 @@ function SortableGenreItem({
     genre: Genre
     isFeaturedList: boolean
     onDelete: (g: Genre) => void
-    onUpdateIcon: (id: number, iconKey: string) => void
+    onUpdateIcon: (id: number, iconKey: IconKey) => void
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: genre.id.toString(),
@@ -210,7 +210,7 @@ export default function AdminGenres() {
         }
     }
 
-    const updateGenreIcon = async (id: number, iconKey: string) => {
+    const updateGenreIcon = async (id: number, iconKey: IconKey) => {
         setGenres(prev => prev.map(g => g.id === id ? { ...g, iconKey } : g))
 
         try {

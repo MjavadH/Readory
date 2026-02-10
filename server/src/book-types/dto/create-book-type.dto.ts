@@ -1,4 +1,5 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { ICON_KEYS, type IconKey } from '../../../../shared/icon-keys';
 
 export class CreateBookTypeDto {
     @IsString()
@@ -16,7 +17,8 @@ export class CreateBookTypeDto {
     @IsOptional()
     @IsString()
     @MaxLength(50)
-    iconKey?: string | null;
+    @IsIn(ICON_KEYS, { message: "iconKey is invalid" })
+    iconKey?: IconKey | null;
 
     @IsOptional()
     @IsBoolean()

@@ -1,4 +1,4 @@
-import type { IconKey } from "@/lib/iconRegistry"
+import type { IconKey } from "@shared/icon-keys"
 
 export interface BookType {
     id: number;
@@ -12,7 +12,7 @@ export interface BookType {
 export interface BookGenre {
     name: string;
     slug: string;
-    iconKey?: string;
+    iconKey?: IconKey;
 }
 
 export interface BookCardData {

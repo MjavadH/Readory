@@ -6,8 +6,10 @@ import {
     MessageCircleHeartIcon, Sword, HeartCrack, CalendarRange,
 
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { IconKey } from "@shared/icon-keys";
 
-export const iconRegistry = {
+export const iconRegistry: Record<IconKey, LucideIcon> = {
     manga: BookMarked,
     manhwa: Sparkles,
     comic: ScrollText,
@@ -39,4 +41,3 @@ export const iconRegistry = {
     SliceOfLife: CalendarRange,
 } as const;
 
-export type IconKey = keyof typeof iconRegistry;

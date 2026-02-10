@@ -11,7 +11,7 @@ import {
     Min,
     MinLength
 } from 'class-validator';
-import { ICON_KEYS } from "../../common/icon-keys";
+import { ICON_KEYS, type IconKey } from "../../../../shared/icon-keys";
 
 export class CreateGenreDto {
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -37,7 +37,7 @@ export class CreateGenreDto {
     @IsString()
     @MaxLength(50)
     @IsIn(ICON_KEYS, { message: "iconKey is invalid" })
-    iconKey?: string;
+    iconKey?: IconKey;
 
     @Type(() => Boolean)
     @IsOptional()

@@ -1,3 +1,4 @@
+import type { IconKey } from '../../../shared/icon-keys';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -66,7 +67,7 @@ export class BookTypesService {
         });
     }
 
-    async create(dto: { name: string; slug?: string; iconKey?: string | null; isActive?: boolean; sortOrder?: number }) {
+    async create(dto: { name: string; slug?: string; iconKey?: IconKey | null; isActive?: boolean; sortOrder?: number }) {
         const slug = dto.slug?.trim() || slugify(dto.name);
         if (!slug) throw new BadRequestException('slug is invalid');
 
@@ -87,7 +88,7 @@ export class BookTypesService {
         }
     }
 
-    async update(id: number, dto: { name?: string; slug?: string; iconKey?: string | null; isActive?: boolean; sortOrder?: number }) {
+    async update(id: number, dto: { name?: string; slug?: string; iconKey?: IconKey | null; isActive?: boolean; sortOrder?: number }) {
         const exists = await this.prisma.bookType.findUnique({ where: { id }, select: { id: true } });
         if (!exists) throw new NotFoundException('book type not found');
 

@@ -27,7 +27,7 @@ import { CSS } from "@dnd-kit/utilities"
 
 import { apiClient } from "@/lib/api-client"
 import type { BookType } from "@/lib/types"
-import type { IconKey } from "@/lib/iconRegistry"
+import type { IconKey } from "@shared/icon-keys"
 
 import { AppIcon } from "@/components/AppIcon"
 import { IconPicker } from "@/components/icon-picker"

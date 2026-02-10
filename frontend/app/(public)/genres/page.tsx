@@ -6,12 +6,13 @@ import { AllGenresSection } from "@/components/all-genres-section";
 import { GenresPageSkeleton } from "@/components/genres-page-skeleton";
 import { apiClient } from "@/lib/api-client";
 import {BookType} from "@/lib/types";
+import type { IconKey } from "@shared/icon-keys";
 
 interface ApiFeaturedGenre {
     id: number;
     name: string;
     slug: string;
-    iconKey: string;
+    iconKey: IconKey;
     books: Array<{
         id: number;
         title: string;
@@ -25,7 +26,7 @@ interface ApiFeaturedGenre {
 
 interface GenresPageResponse {
     featured: ApiFeaturedGenre[];
-    allGenres: Array<{ id: number; name: string; slug: string; iconKey: string }>;
+    allGenres: Array<{ id: number; name: string; slug: string; iconKey: IconKey }>;
 }
 
 const fetcher = (url: string) => apiClient.get<GenresPageResponse>(url);

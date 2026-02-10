@@ -25,13 +25,13 @@ import { cn } from "@/lib/utils"
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel,} from "@/components/ui/dropdown-menu"
 import {Sheet, SheetContent, SheetTitle,} from "@/components/ui/sheet"
 import {AppIcon} from "@/components/AppIcon";
-import {IconKey} from "@/lib/iconRegistry";
+import { isIconKey, type IconKey } from "@shared/icon-keys";
 import { apiClient } from "@/lib/api-client"
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName: RoleName }
 type Genre = { name: string; slug: string }
-type BookType = {name: string; slug: string; iconKey: string;}
+type BookType = {name: string; slug: string; iconKey: IconKey;}
 
 function initialsFromUsername(username: string) {
   const safe = (username || "").trim()
@@ -312,7 +312,7 @@ export function UserHeader() {
             (Array.isArray(data) ? data : []).map((b: any) => ({
               name: String(b.name),
               slug: String(b.slug),
-              iconKey: String(b.iconKey),
+              iconKey: isIconKey(b.iconKey) ? b.iconKey : "bookOpen",
             }))
         )
       } catch {
