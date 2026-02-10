@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
 import { WalletsService } from '../wallets/wallets.service';
 import { PublicService } from '../public/public.service'
+import { createHash } from 'crypto';
 
 type StatusFilter = 'all' | 'published' | 'draft';
 type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated';
@@ -75,6 +76,11 @@ export class BooksService {
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
+
+    private readonly CACHE_KEY_BROWSE_DEFAULT = 'books:browse:default';
+    private readonly CACHE_KEY_STATE_BOOK = 'stats:books'
+    private readonly CACHE_KEY_STATE_CHAPTERS_COUNT = 'stats:chapters:count'
+
     async browse(args: {
         types?: string[];
         genres?: string[];
@@ -83,7 +89,22 @@ export class BooksService {
         limit?: number;
         cursor?: string;
     }) {
-        const limit = clamp(args.limit ?? 24, 1, 50);
+        const isDefaultView =
+            (!args.types || args.types.length === 0) &&
+            (!args.genres || args.genres.length === 0) &&
+            (!args.q || args.q.trim() === '') &&
+            (!args.cursor) &&
+            (args.sort === 'recently_updated' || !args.sort);
+
+        if (isDefaultView) {
+            const cached = await this.redis.get(this.CACHE_KEY_BROWSE_DEFAULT);
+            if (cached) {
+                return JSON.parse(cached);
+            }
+        }
+
+        const limitRaw = Number(args.limit) || 24;
+        const limit = clamp(limitRaw, 1, 50);
         const sort: BrowseSort = args.sort ?? 'recently_updated';
         const q = normalizeQ(args.q);
 
@@ -162,7 +183,97 @@ export class BooksService {
             nextCursor = encodeCursor({ sort, id: last.id, v: cursorValue(last) });
         }
 
-        return { items, nextCursor };
+        const result = { items, nextCursor, hasMore };
+
+        if (isDefaultView) {
+            await this.redis.set(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 'EX', 90);
+        }
+
+        return result;
+    }
+
+    async browseByType(
+        typeParam: string,
+        args: {
+            genres?: string[];
+            q?: string;
+            sort?: BrowseSort;
+            limit?: number;
+            cursor?: string;
+        },
+    ) {
+        const typeSlug = slugifyType(typeParam);
+        if (!typeSlug) throw new NotFoundException('book type not found');
+
+        // Cache: type existence (reduces DB hits for invalid slugs)
+        const existsKey = `books:browse:booktype:${typeSlug}`;
+        const existsCached = await this.redis.get(existsKey);
+
+        let exists: boolean;
+        if (existsCached === '1') {
+            exists = true;
+        } else if (existsCached === '0') {
+            exists = false;
+        } else {
+            const found = await this.prisma.bookType.findUnique({
+                where: { slug: typeSlug },
+                select: { id: true },
+            });
+            exists = Boolean(found);
+            await this.redis.set(existsKey, exists ? '1' : '0', 'EX', 3600);
+        }
+
+        if (!exists) throw new NotFoundException('book type not found');
+
+        // We cache only the first page (no cursor) to avoid huge cache growth.
+        const hasCursor = Boolean(args.cursor && args.cursor.trim().length);
+        if (!hasCursor) {
+            const cacheKey = this.buildTypeBrowseCacheKey(typeSlug, args);
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                try {
+                    return JSON.parse(cached) as { items: unknown[]; nextCursor: string | null };
+                } catch {
+                    await this.redis.del(cacheKey);
+                }
+            }
+
+            const result = await this.browse({
+                ...args,
+                types: [typeSlug], // ✅ force constant type, ignore any client type
+            });
+
+            // Short TTL keeps data fresh while cutting DB load heavily.
+            await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 90);
+            return result;
+        }
+
+        // Cursor pages: no cache
+        return this.browse({
+            ...args,
+            types: [typeSlug],
+        });
+    }
+
+    private buildTypeBrowseCacheKey(
+        typeSlug: string,
+        args: { genres?: string[]; q?: string; sort?: BrowseSort; limit?: number },
+    ) {
+        const sort = (args.sort ?? 'recently_updated') as BrowseSort;
+        const limit = clamp(args.limit ?? 24, 1, 50);
+        const q = (args.q ?? '').trim().toLowerCase();
+
+        const genres = (args.genres ?? [])
+            .map((g) => g.trim().toLowerCase())
+            .filter(Boolean)
+            .sort();
+
+        const fingerprint = createHash('sha256')
+            .update(JSON.stringify({ typeSlug, sort, limit, q, genres }))
+            .digest('hex')
+            .slice(0, 24);
+
+        return `books:type:browse:v1:${typeSlug}:${fingerprint}`;
     }
 
     private buildBrowseSort(sort: BrowseSort, cursor: CursorPayload | null): {
@@ -363,9 +474,8 @@ export class BooksService {
             },
         });
 
-        await this.publicService.clearHomeCache();
         await this.publicService.clearGenresPageCache();
-        await this.redis.del('stats:books');
+        await this.invalidateCache();
         return created;
     }
 
@@ -419,9 +529,8 @@ export class BooksService {
                 },
             });
 
-            await this.publicService.clearHomeCache();
             await this.publicService.clearGenresPageCache();
-            await this.redis.del('stats:books');
+            await this.invalidateCache();
             return updated;
         } catch (err: any) {
             if (err?.code === 'P2025') throw new NotFoundException('book not found');
@@ -505,10 +614,15 @@ export class BooksService {
 
         await this.prisma.book.delete({ where: { id } });
 
-        await this.publicService.clearHomeCache();
-        await this.redis.del('stats:books');
-        await this.redis.del('stats:chapters:count');
+        await this.invalidateCache();
 
         return { id, deleted: true };
+    }
+
+    private async invalidateCache() {
+        await this.redis.del(this.CACHE_KEY_BROWSE_DEFAULT);
+        await this.redis.del(this.CACHE_KEY_STATE_BOOK);
+        await this.redis.del(this.CACHE_KEY_STATE_CHAPTERS_COUNT);
+        await this.publicService.clearHomeCache();
     }
 }

@@ -24,6 +24,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
 import { RateBookDto } from './dto/rate-book.dto';
 import { BrowseBooksDto } from './dto/browse-books.dto';
+import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
 
 
 type StatusFilter = 'all' | 'published' | 'draft';
@@ -55,6 +56,11 @@ export class BooksController {
     @Get(':id')
     async get(@Param('id', ParseIntPipe) id: number) {
         return this.booksService.findById(id);
+    }
+
+    @Get('type/:type/browse')
+    async browseByType(@Param('type') type: string, @Query() query: BrowseTypeBooksDto) {
+        return this.booksService.browseByType(type, query);
     }
 
     // Admin: create a new book
