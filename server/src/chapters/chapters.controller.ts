@@ -54,6 +54,16 @@ export class ChaptersController {
         return this.chaptersService.deleteChapter(bookId, chapterId);
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Get('index/:index/access')
+    async getAccessibleChapterByIndex(
+        @Param('bookId', ParseIntPipe) bookId: number,
+        @Param('index', ParseIntPipe) index: number,
+        @Request() req: any,
+    ) {
+        return this.chaptersService.getAccessibleChapterByIndex(bookId, index, req.user.userId);
+    }
+
     // User: purchase a chapter
     @UseGuards(JwtAuthGuard)
     @Post(':chapterId/purchase')

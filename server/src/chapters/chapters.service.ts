@@ -120,6 +120,36 @@ export class ChaptersService {
         return { id: chapterId, deleted: true };
     }
 
+
+    async getAccessibleChapterByIndex(bookId: number, index: number, userId: number) {
+        const chapter = await this.prisma.chapter.findFirst({
+            where: { bookId, index },
+            select: {
+                id: true,
+                bookId: true,
+                title: true,
+                index: true,
+                contentPath: true,
+                isFree: true,
+                price: true,
+                updatedAt: true,
+            },
+        });
+
+        if (!chapter) throw new NotFoundException('Chapter not found');
+
+        const hasAccess = chapter.isFree || Boolean(
+            await this.prisma.accessRecord.findFirst({ where: { userId, chapterId: chapter.id }, select: { id: true } }),
+        );
+
+        if (!hasAccess) throw new NotFoundException('Chapter access not found');
+
+        return {
+            ...chapter,
+            price: chapter.price ? chapter.price.toNumber() : null,
+        };
+    }
+
     // User: purchase a chapter
     async purchaseChapter(userId: number, chapterId: number) {
         const chapter = await this.prisma.chapter.findUnique({
