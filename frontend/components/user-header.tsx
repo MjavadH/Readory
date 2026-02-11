@@ -349,7 +349,7 @@ export function UserHeader() {
 
   const submitSearch = () => {
     if (!searchQuery.trim()) return
-    router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    router.push(`/books?q=${encodeURIComponent(searchQuery.trim())}`)
     setShowSearchResults(false)
     setMobileSearchOpen(false)
   }
@@ -458,7 +458,7 @@ export function UserHeader() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Search books, genres..."
+                    placeholder="Search books..."
                     className="pl-10 bg-muted/40 border-transparent focus:border-border focus:bg-background transition-colors rounded-xl h-10"
                     value={searchQuery}
                     onChange={onSearchChange}
