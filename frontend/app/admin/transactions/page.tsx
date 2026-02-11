@@ -139,7 +139,7 @@ export default function AdminTransactions() {
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Transactions
                     </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">View and manage all wallet transactions</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">View all wallet transactions</p>
                 </div>
                 <div className="animate-pulse space-y-4">
                     <div className="grid gap-4 md:grid-cols-3">
@@ -160,7 +160,7 @@ export default function AdminTransactions() {
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Transactions
                     </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">View and manage all wallet transactions</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">View all wallet transactions</p>
                 </div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">

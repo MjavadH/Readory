@@ -221,7 +221,7 @@ export default function AdminUsers() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-              Manage user accounts, roles, and wallet balances
+              View and manage user accounts and wallet balances
             </p>
           </div>
           <div className="animate-pulse space-y-4">
@@ -242,7 +242,7 @@ export default function AdminUsers() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            Manage user accounts, roles, and wallet balances
+            View and manage user accounts and wallet balances
           </p>
         </div>
 
