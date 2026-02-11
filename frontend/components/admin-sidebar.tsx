@@ -41,6 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {BrandLogo} from "@/components/brand-logo";
 
 interface CurrentUser {
   userId: number
@@ -172,9 +173,7 @@ export function AdminSidebar() {
             {!isCollapsed && (
                 <div className="flex-1 min-w-0">
                   <div className="flex gap-2 items-center">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-md">
-                      <BookOpen className="h-5 w-5 text-primary-foreground" />
-                    </div>
+                    <BrandLogo priority className="h-8 w-8" />
                     <Link href="/" className="hover:opacity-80 transition-opacity">
                       <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
                         Readory

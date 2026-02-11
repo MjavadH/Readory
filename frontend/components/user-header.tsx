@@ -27,6 +27,7 @@ import {Sheet, SheetContent, SheetTitle,} from "@/components/ui/sheet"
 import {AppIcon} from "@/components/AppIcon";
 import { isIconKey, type IconKey } from "@readory/shared";
 import { apiClient } from "@/lib/api-client"
+import {BrandLogo} from "@/components/brand-logo";
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName: RoleName }
@@ -367,9 +368,7 @@ export function UserHeader() {
           <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-transform duration-200 group-hover:scale-105">
-                <AppIcon name={"bookOpen"} className="h-5 w-5" />
-              </div>
+              <BrandLogo priority className="h-9 w-auto" />
               <span className="font-bold text-lg tracking-tight hidden sm:block">Readory</span>
             </Link>
 
