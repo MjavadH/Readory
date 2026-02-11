@@ -5,7 +5,7 @@ import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
 
 interface AllGenresSectionProps {
-    genres: Array<{ id: number; name: string; slug: string; iconKey: IconKey; }>;
+    genres: Array<{ name: string; slug: string; iconKey?: IconKey; }>;
 }
 
 export function AllGenresSection({ genres }: AllGenresSectionProps) {
@@ -37,7 +37,7 @@ export function AllGenresSection({ genres }: AllGenresSectionProps) {
                 <div className="flex flex-wrap justify-center gap-2.5 sm:gap-3">
                     {genres.map((g) => (
                         <Link
-                            key={g.id}
+                            key={g.slug}
                             href={`/genres/${g.slug}`}
                             className={cn(
                                 "group/pill relative inline-flex items-center rounded-full px-4 py-2",
@@ -49,7 +49,7 @@ export function AllGenresSection({ genres }: AllGenresSectionProps) {
                                 "active:scale-[0.97]"
                             )}
                         >
-                            <AppIcon name={g.iconKey as IconKey} className="mr-1.5 size-5"/>
+                            {g.iconKey && <AppIcon name={g.iconKey} className="mr-1.5 size-5"/>}
                             {g.name}
                         </Link>
                     ))}
