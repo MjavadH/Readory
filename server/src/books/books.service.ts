@@ -585,10 +585,37 @@ export class BooksService {
                 type: { select: { id: true, name: true, slug: true } },
                 chapters: {
                     orderBy: { index: 'asc' },
-                    select: { id: true, title: true, index: true, isFree: true },
+                    select: {
+                        id: true,
+                        title: true,
+                        index: true,
+                        isFree: true,
+                        price: true,
+                        updatedAt: true,
+                    },
                 },
             },
         });
+    }
+
+    async getViewerState(bookId: number, userId: number) {
+        const bookExists = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
+        if (!bookExists) throw new NotFoundException('Book not found');
+
+        const [wallet, myRating, purchased] = await Promise.all([
+            this.prisma.wallet.findUnique({ where: { userId }, select: { balance: true } }),
+            this.prisma.bookRating.findUnique({ where: { userId_bookId: { userId, bookId } }, select: { rating: true } }),
+            this.prisma.accessRecord.findMany({
+                where: { userId, chapter: { bookId } },
+                select: { chapterId: true },
+            }),
+        ]);
+
+        return {
+            walletBalance: wallet?.balance ? wallet.balance.toNumber() : 0,
+            myRating: myRating?.rating ?? null,
+            purchasedChapterIds: purchased.map((row) => row.chapterId).filter((chapterId): chapterId is number => typeof chapterId === 'number'),
+        };
     }
 
     // Admin: create a new book

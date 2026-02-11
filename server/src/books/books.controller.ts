@@ -52,6 +52,13 @@ export class BooksController {
         return this.booksService.listAll({ page, limit, q, status });
     }
 
+    @Get(':id/viewer-state')
+    @UseGuards(JwtAuthGuard)
+    async getViewerState(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+        const userId = req.user.userId ?? req.user.id;
+        return this.booksService.getViewerState(id, Number(userId));
+    }
+
     // Public: get book details with chapter list
     @Get(':id')
     async get(@Param('id', ParseIntPipe) id: number) {
