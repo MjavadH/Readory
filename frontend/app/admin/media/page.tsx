@@ -19,8 +19,6 @@ import {
 import {
   Upload,
   ImageIcon,
-  Copy,
-  Check,
   Search,
   HardDrive,
   FileImage,
@@ -30,6 +28,8 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
@@ -41,44 +41,88 @@ type MediaItem = {
   size: number
 }
 
+type PagedMediaResponse = {
+  items: MediaItem[]
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+const ITEMS_PER_PAGE = 30
+const MAX_UPLOAD_FILES = 10
+
+function isAllowedImage(file: File) {
+  return file.type === "image/jpeg" || file.type === "image/webp"
+}
+
 export default function AdminMedia() {
   const { toast } = useToast()
-  const [loading, setLoading] = useState(true)
+
+  const [isGalleryLoading, setIsGalleryLoading] = useState(true)
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
   const [files, setFiles] = useState<MediaItem[]>([])
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [refreshNonce, setRefreshNonce] = useState(0)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [isDragging, setIsDragging] = useState(false)
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [fileToDelete, setFileToDelete] = useState<string | null>(null)
   const [deletingCode, setDeletingCode] = useState<string | null>(null)
+
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [fileToRename, setFileToRename] = useState<MediaItem | null>(null)
   const [renameValue, setRenameValue] = useState("")
   const [renamingCode, setRenamingCode] = useState<string | null>(null)
+
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
+  // Reset pagination when search changes
+  useEffect(() => {
+    setPage(1)
+  }, [searchQuery])
+
+  // Fetch paged data
   useEffect(() => {
     const controller = new AbortController()
-    setLoading(true)
+    setIsGalleryLoading(true)
 
     const t = setTimeout(async () => {
       try {
         const q = searchQuery.trim()
-        const qs = q ? `?q=${encodeURIComponent(q)}` : ""
+        const qs = new URLSearchParams()
+        if (q) qs.set("q", q)
+        qs.set("page", String(page))
+        qs.set("limit", String(ITEMS_PER_PAGE))
+
         const data = await apiClient
-          .get<MediaItem[] | { data: MediaItem[] }>(`/media${qs}`, { signal: controller.signal })
-          .catch(() => [])
-        const list = Array.isArray(data) ? data : Array.isArray(data.data) ? data.data : []
-        setFiles(list)
+            .get<MediaItem[] | PagedMediaResponse>(`/media?${qs.toString()}`, { signal: controller.signal })
+            .catch(() => ({ items: [], total: 0, totalPages: 1, page: 1, limit: ITEMS_PER_PAGE } as PagedMediaResponse))
+
+        if (Array.isArray(data)) {
+          // fallback compatibility
+          setFiles(data)
+          setTotal(data.length)
+          setTotalPages(1)
+        } else {
+          setFiles(Array.isArray(data.items) ? data.items : [])
+          setTotal(Number(data.total) || 0)
+          setTotalPages(Math.max(1, Number(data.totalPages) || 1))
+        }
+        if (!hasLoadedOnce) setHasLoadedOnce(true)
       } catch (e: any) {
         if (e?.name !== "AbortError") {
-          // ignore
+          toast({ title: "Error", description: getApiErrorMessage(e), variant: "destructive" })
         }
       } finally {
-        setLoading(false)
+        setIsGalleryLoading(false)
       }
     }, 250)
 
@@ -86,10 +130,18 @@ export default function AdminMedia() {
       controller.abort()
       clearTimeout(t)
     }
-  }, [searchQuery])
+  }, [searchQuery, page, refreshNonce, toast, hasLoadedOnce])
+
+  const totalSizeVisible = useMemo(() => {
+    return files.reduce((acc, item) => acc + (Number(item.size) || 0), 0)
+  }, [files])
+
+  const selectedSize = useMemo(() => {
+    return selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0)
+  }, [selectedFiles])
 
   const handleUpload = async () => {
-    if (!selectedFile) return
+    if (!selectedFiles.length) return
 
     setIsUploading(true)
     setUploadSuccess(false)
@@ -97,16 +149,33 @@ export default function AdminMedia() {
 
     try {
       const formData = new FormData()
-      formData.append("file", selectedFile)
-      const data = await apiClient.post<{ code: string; filename: string; size: number }>("/media", formData)
-      const created: MediaItem = { code: data.code, filename: data.filename, size: data.size }
-      setFiles((prev) => [created, ...prev])
+      for (const f of selectedFiles) formData.append("files", f)
+
+      const data = await apiClient.post<{ items: MediaItem[]; failed?: { name: string; reason: string }[] }>(
+          "/media",
+          formData,
+      )
+
+      toast({ title: "Success", description: `Uploaded ${data.items.length} file(s)` })
+
+      if (data.failed?.length) {
+        toast({
+          title: "Some files failed",
+          description: data.failed.slice(0, 2).map((x) => `${x.name}: ${x.reason}`).join(" • "),
+          variant: "destructive",
+        })
+      }
+
       setUploadSuccess(true)
-      toast({ title: "Success", description: "Image uploaded successfully" })
+
+      // Refresh list (even if already on page 1)
+      setPage(1)
+      setRefreshNonce((n) => n + 1)
+
       setTimeout(() => {
-        setSelectedFile(null)
+        setSelectedFiles([])
         setUploadSuccess(false)
-      }, 2000)
+      }, 1200)
     } catch (error) {
       const message = getApiErrorMessage(error, "Network error occurred")
       setUploadError(message)
@@ -145,12 +214,6 @@ export default function AdminMedia() {
     }
   }
 
-  const handleCopy = (code: string) => {
-    navigator.clipboard.writeText(code)
-    setCopiedCode(code)
-    setTimeout(() => setCopiedCode(null), 2000)
-  }
-
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -160,16 +223,28 @@ export default function AdminMedia() {
     setIsDragging(false)
   }
 
+  const applySelectedFiles = (incoming: File[]) => {
+    const allowed = incoming.filter(isAllowedImage)
+    const blockedCount = incoming.length - allowed.length
+
+    let next = allowed
+    let err: string | null = null
+
+    if (blockedCount > 0) err = "Only JPG/JPEG/WebP are allowed"
+    if (allowed.length > MAX_UPLOAD_FILES) {
+      next = allowed.slice(0, MAX_UPLOAD_FILES)
+      err = `Maximum ${MAX_UPLOAD_FILES} files per upload`
+    }
+    if (!next.length) err = err ?? "Please select valid images"
+
+    setSelectedFiles(next)
+    setUploadError(err)
+  }
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    if (file && (file.type === "image/jpeg" || file.type === "image/webp")) {
-      setSelectedFile(file)
-      setUploadError(null)
-    } else {
-      setUploadError("Please upload a JPG, JPEG, or WebP image")
-    }
+    applySelectedFiles(Array.from(e.dataTransfer.files ?? []))
   }
 
   const handleDeleteClick = (code: string) => {
@@ -179,14 +254,22 @@ export default function AdminMedia() {
 
   const handleDeleteConfirm = async () => {
     if (!fileToDelete) return
-
     setDeletingCode(fileToDelete)
 
     try {
       await apiClient.delete(`/media/${fileToDelete}`)
-
-      setFiles((prev) => prev.filter((f) => f.code !== fileToDelete))
       toast({ title: "Deleted", description: "File deleted successfully" })
+
+      // Optimistic removal + adjust pagination if page becomes empty
+      setFiles((prev) => prev.filter((f) => f.code !== fileToDelete))
+      setTotal((t) => Math.max(0, t - 1))
+
+      // If we deleted the last item on this page, go back a page
+      if (files.length === 1 && page > 1) {
+        setPage((p) => Math.max(1, p - 1))
+      } else {
+        setRefreshNonce((n) => n + 1)
+      }
     } catch (err: any) {
       toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
     } finally {
@@ -194,41 +277,6 @@ export default function AdminMedia() {
       setDeleteDialogOpen(false)
       setFileToDelete(null)
     }
-  }
-
-  const filteredFiles = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return files
-    return files.filter((file) => (file.filename || "").toLowerCase().includes(q))
-  }, [files, searchQuery])
-
-  const totalSize = useMemo(() => {
-    return files.reduce((acc, item) => {
-      const size = Number(item.size) || 0
-      return acc + size
-    }, 0)
-  }, [files])
-
-
-  if (loading) {
-    return (
-        <div className="p-4 sm:p-6 space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Media Library
-            </h1>
-            <p className="text-muted-foreground">Upload and manage your media assets</p>
-          </div>
-          <div className="animate-pulse space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="h-32 bg-muted rounded-xl" />
-              <div className="h-32 bg-muted rounded-xl" />
-            </div>
-            <div className="h-120 bg-muted rounded-xl" />
-            <div className="h-100 bg-muted rounded-xl" />
-          </div>
-        </div>
-    )
   }
 
   return (
@@ -251,7 +299,7 @@ export default function AdminMedia() {
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Images</p>
-                  <p className="text-xl sm:text-2xl font-bold">{files.length}</p>
+                  <p className="text-xl sm:text-2xl font-bold">{total}</p>
                 </div>
               </CardContent>
             </Card>
@@ -262,23 +310,25 @@ export default function AdminMedia() {
                   <HardDrive className="size-6 text-purple-600 dark:text-purple-500" />
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">Storage Used</p>
-                  <p className="text-xl sm:text-2xl font-bold">~{(totalSize / (1024 * 1024)).toFixed(1)} MB</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">Visible Storage</p>
+                  <p className="text-xl sm:text-2xl font-bold">~{(totalSizeVisible / (1024 * 1024)).toFixed(1)} MB</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
+          {/* Upload */}
           <Card className="border-primary/20 overflow-hidden">
-            <CardHeader className="">
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="size-5" />
-                Upload New Image
+                Upload New Images
               </CardTitle>
               <CardDescription>Drag & drop or click to browse. Supports JPG, JPEG, WebP</CardDescription>
             </CardHeader>
+
             <CardContent className="p-6 space-y-4">
-              {!selectedFile && (
+              {selectedFiles.length === 0 && (
                   <div
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
@@ -295,33 +345,27 @@ export default function AdminMedia() {
                     <div className="flex flex-col items-center gap-4">
                       <div
                           className={`
-                    flex size-16 md:size-20 items-center justify-center rounded-full transition-all duration-300
-                    ${isDragging ? "bg-primary/20 ring-4 ring-primary/30 scale-110" : "bg-muted ring-2 ring-border"}
-                  `}
+                      flex size-16 md:size-20 items-center justify-center rounded-full transition-all duration-300
+                      ${isDragging ? "bg-primary/20 ring-4 ring-primary/30 scale-110" : "bg-muted ring-2 ring-border"}
+                    `}
                       >
-                        <Upload
-                            className={`size-8 md:size-10 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`}
-                        />
+                        <Upload className={`size-8 md:size-10 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
                       </div>
+
                       <div className="space-y-2">
-                        <p className="text-base md:text-lg font-semibold">
-                          {isDragging ? "Drop your image here" : "Drag & drop your image"}
-                        </p>
+                        <p className="text-base md:text-lg font-semibold">{isDragging ? "Drop your images here" : "Drag & drop your images"}</p>
                         <p className="text-sm text-muted-foreground">or</p>
                       </div>
+
                       <input
                           type="file"
+                          multiple
                           accept=".jpg,.jpeg,.webp"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              setSelectedFile(file)
-                              setUploadError(null)
-                            }
-                          }}
+                          onChange={(e) => applySelectedFiles(Array.from(e.target.files ?? []))}
                           className="hidden"
                           id="file-upload"
                       />
+
                       <label htmlFor="file-upload">
                         <Button variant="default" size="lg" className="cursor-pointer" asChild>
                       <span>
@@ -331,6 +375,7 @@ export default function AdminMedia() {
                         </Button>
                       </label>
                     </div>
+
                     {uploadError && (
                         <div className="mt-4 flex items-center justify-center gap-2 text-sm text-destructive">
                           <AlertCircle className="size-4" />
@@ -340,21 +385,21 @@ export default function AdminMedia() {
                   </div>
               )}
 
-              {selectedFile && (
+              {selectedFiles.length > 0 && (
                   <div className="space-y-4">
                     <div
                         className={`
-                  relative overflow-hidden rounded-xl border-2 transition-all duration-300
-                  ${uploadSuccess ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-border bg-muted/30"}
-                  ${isUploading ? "animate-pulse" : ""}
-                `}
+                    relative overflow-hidden rounded-xl border-2 transition-all duration-300
+                    ${uploadSuccess ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-border bg-muted/30"}
+                    ${isUploading ? "animate-pulse" : ""}
+                  `}
                     >
-                      <div className="flex items-center gap-4 p-4">
+                      <div className="flex items-start gap-4 p-4">
                         <div
                             className={`
-                      relative flex size-16 items-center justify-center rounded-lg ring-2 transition-all
-                      ${uploadSuccess ? "bg-green-100 dark:bg-green-900/30 ring-green-500" : "bg-primary/10 ring-primary/30"}
-                    `}
+                        relative flex size-16 items-center justify-center rounded-lg ring-2 transition-all shrink-0
+                        ${uploadSuccess ? "bg-green-100 dark:bg-green-900/30 ring-green-500" : "bg-primary/10 ring-primary/30"}
+                      `}
                         >
                           {uploadSuccess ? (
                               <CheckCircle2 className="size-8 text-green-600 dark:text-green-400" />
@@ -362,20 +407,45 @@ export default function AdminMedia() {
                               <ImageIcon className="size-8 text-primary" />
                           )}
                         </div>
+
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{selectedFile.name}</p>
+                          <p className="text-sm font-semibold">
+                            {selectedFiles.length} file(s) selected
+                          </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            {(selectedFile.size / 1024).toFixed(1)} KB
+                            ~{(selectedSize / 1024).toFixed(1)} KB
                             {isUploading && " • Uploading..."}
                             {uploadSuccess && " • Upload complete!"}
                           </p>
+
+                          <div className="mt-3 grid gap-2">
+                            {selectedFiles.slice(0, 5).map((f) => (
+                                <div key={f.name + f.size} className="flex items-center justify-between gap-2 text-xs">
+                                  <span className="truncate">{f.name}</span>
+                                  {!isUploading && !uploadSuccess && (
+                                      <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-7 w-7"
+                                          onClick={() => setSelectedFiles((prev) => prev.filter((x) => x !== f))}
+                                      >
+                                        <X className="size-3.5" />
+                                      </Button>
+                                  )}
+                                </div>
+                            ))}
+                            {selectedFiles.length > 5 && (
+                                <p className="text-xs text-muted-foreground">+{selectedFiles.length - 5} more…</p>
+                            )}
+                          </div>
                         </div>
+
                         {!isUploading && !uploadSuccess && (
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  setSelectedFile(null)
+                                  setSelectedFiles([])
                                   setUploadError(null)
                                 }}
                                 className="shrink-0"
@@ -384,6 +454,7 @@ export default function AdminMedia() {
                             </Button>
                         )}
                       </div>
+
                       {isUploading && (
                           <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/20">
                             <div className="h-full bg-primary animate-pulse w-full" />
@@ -402,14 +473,15 @@ export default function AdminMedia() {
                             ) : (
                                 <>
                                   <Upload className="size-4 mr-2" />
-                                  Upload Image
+                                  Upload {selectedFiles.length} file(s)
                                 </>
                             )}
                           </Button>
+
                           <Button
                               variant="outline"
                               onClick={() => {
-                                setSelectedFile(null)
+                                setSelectedFiles([])
                                 setUploadError(null)
                               }}
                               disabled={isUploading}
@@ -431,9 +503,9 @@ export default function AdminMedia() {
             </CardContent>
           </Card>
 
-          {/* Search and Gallery */}
+          {/* Gallery */}
           <Card className="border-primary/20">
-            <CardHeader className="">
+            <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Media Gallery</CardTitle>
@@ -441,6 +513,7 @@ export default function AdminMedia() {
                 </div>
               </div>
             </CardHeader>
+
             <CardContent className="p-4 md:p-6 space-y-4">
               {/* Search */}
               <div className="relative">
@@ -452,86 +525,160 @@ export default function AdminMedia() {
                     className="pl-9 h-11"
                 />
               </div>
-
               {/* Image Grid */}
-              {filteredFiles.length === 0 ? (
-                  <div className="text-center py-16 md:py-20">
-                    <div className="flex size-16 md:size-20 items-center justify-center mx-auto mb-4 rounded-full bg-muted">
-                      <ImageIcon className="size-8 md:size-10 text-muted-foreground/50" />
+              <div className="relative">
+                {/* Overlay spinner only after first load */}
+                {isGalleryLoading && hasLoadedOnce && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
+                      <Loader2 className="size-6 animate-spin" />
                     </div>
-                    <p className="text-sm md:text-base font-medium text-muted-foreground mb-1">
-                      {searchQuery ? "No images found" : "No images uploaded yet"}
-                    </p>
-                    <p className="text-xs md:text-sm text-muted-foreground/70">
-                      {searchQuery ? "Try a different search term" : "Upload your first image to get started"}
-                    </p>
-                  </div>
-              ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
-                    {filteredFiles.map((file) => (
-                        <div
-                            key={file.code}
-                            className="group relative overflow-hidden rounded-xl border-2 border-border bg-card hover:shadow-xl hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
-                        >
-                          <div className="aspect-square relative bg-muted">
-                            <Image
-                                src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${file.code}/thumbnail`}
-                                alt={file.filename || "Image"}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                                unoptimized
-                            />
-                            <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/0 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <Button
-                                  size="icon"
-                                  variant="secondary"
-                                  className="size-8 bg-background/95 hover:bg-background shadow-lg backdrop-blur-sm"
-                                  onClick={() => handleRenameClick(file)}
-                                  disabled={renamingCode === file.code}
-                              >
-                                {renamingCode === file.code ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                ) : (
-                                    <Pencil className="size-3.5" />
-                                )}
-                              </Button>
-                              <Button
-                                  size="icon"
-                                  variant="secondary"
-                                  className="size-8 bg-background/95 hover:bg-background shadow-lg backdrop-blur-sm"
-                                  onClick={() => handleCopy(file.code)}
-                              >
-                                {copiedCode === file.code ? (
-                                    <Check className="size-3.5 text-green-600" />
-                                ) : (
-                                    <Copy className="size-3.5" />
-                                )}
-                              </Button>
-                              <Button
-                                  size="icon"
-                                  variant="destructive"
-                                  className="size-8 shadow-lg"
-                                  onClick={() => handleDeleteClick(file.code)}
-                                  disabled={deletingCode === file.code}
-                              >
-                                {deletingCode === file.code ? (
-                                    <Loader2 className="size-3.5 animate-spin" />
-                                ) : (
-                                    <Trash2 className="size-3.5" />
-                                )}
-                              </Button>
+                )}
+
+                {/* First load: skeleton grid */}
+                {isGalleryLoading && !hasLoadedOnce ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
+                      {Array.from({ length: 10 }).map((_, i) => (
+                          <div key={i} className="overflow-hidden rounded-xl border bg-card">
+                            <div className="aspect-square bg-muted animate-pulse" />
+                            <div className="p-2.5 space-y-2">
+                              <div className="h-3 bg-muted animate-pulse rounded" />
+                              <div className="h-3 bg-muted animate-pulse rounded w-2/3 mx-auto" />
                             </div>
                           </div>
-                          <div className="p-2.5 bg-linear-to-r from-muted/50 to-muted/30 border-t space-y-1">
-                            <div className="text-xs font-medium truncate text-center">{file.filename}</div>
-                            <code className="text-[9px] font-mono bg-background/80 px-1.5 py-0.5 rounded block truncate text-center text-muted-foreground">
-                              {file.code}
-                            </code>
+                      ))}
+                    </div>
+                ) : files.length === 0 ? (
+                    <div className="text-center py-16 md:py-20">
+                      <div className="flex size-16 md:size-20 items-center justify-center mx-auto mb-4 rounded-full bg-muted">
+                        <ImageIcon className="size-8 md:size-10 text-muted-foreground/50" />
+                      </div>
+                      <p className="text-sm md:text-base font-medium text-muted-foreground mb-1">
+                        {searchQuery ? "No images found" : "No images uploaded yet"}
+                      </p>
+                      <p className="text-xs md:text-sm text-muted-foreground/70">
+                        {searchQuery ? "Try a different search term" : "Upload your first image to get started"}
+                      </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
+                      {files.map((file) => (
+                          <div
+                              key={file.code}
+                              className="group relative overflow-hidden rounded-xl border-2 border-border bg-card hover:shadow-xl hover:border-primary/30 hover:scale-[1.02] transition-all duration-300"
+                          >
+                            <div className="aspect-2/3 relative bg-muted">
+                              <Image
+                                  src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${file.code}/thumbnail`}
+                                  alt={file.filename || "Image"}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
+                                  unoptimized
+                              />
+                              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/0 to-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              <div
+                                  className="absolute left-2 right-2 bottom-2
+                                  sm:left-auto sm:right-2 sm:top-2 sm:bottom-auto
+                                  flex flex-row sm:flex-col gap-1.5 opacity-100 sm:opacity-0
+                                  sm:group-hover:opacity-100 sm:group-focus-within:opacity-100
+                                  pointer-events-auto sm:pointer-events-none sm:group-hover:pointer-events-auto
+                                  sm:group-focus-within:pointer-events-auto transition-opacity duration-300">
+                                <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="size-8 bg-background/95 hover:bg-background shadow-lg backdrop-blur-sm"
+                                    onClick={() => handleRenameClick(file)}
+                                    disabled={renamingCode === file.code}
+                                >
+                                  {renamingCode === file.code ? (
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                      <Pencil className="size-3.5" />
+                                  )}
+                                </Button>
+                                <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    className="size-8 shadow-lg"
+                                    onClick={() => handleDeleteClick(file.code)}
+                                    disabled={deletingCode === file.code}
+                                >
+                                  {deletingCode === file.code ? (
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                      <Trash2 className="size-3.5" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="p-2.5 bg-linear-to-r from-muted/50 to-muted/30 border-t space-y-1">
+                              <div className="text-xs font-medium truncate text-center">{file.filename}</div>
+                            </div>
                           </div>
-                        </div>
-                    ))}
+                      ))}
+                    </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Showing <span className="font-semibold text-foreground">{files.length}</span> of{" "}
+                      <span className="font-semibold text-foreground">{total}</span> media items (Page{" "}
+                      <span className="font-semibold text-foreground">{page}</span> of{" "}
+                      <span className="font-semibold text-foreground">{totalPages}</span>)
+                    </p>
+
+                    <div className="flex gap-2 items-center">
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.max(1, p - 1))}
+                          disabled={isGalleryLoading || page === 1}
+                          className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <ChevronLeft className="size-4 mr-1" />
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum: number
+                          if (totalPages <= 5) {
+                            pageNum = i + 1
+                          } else if (page <= 3) {
+                            pageNum = i + 1
+                          } else if (page >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i
+                          } else {
+                            pageNum = page - 2 + i
+                          }
+                          return (
+                              <Button
+                                  key={pageNum}
+                                  variant={page === pageNum ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setPage(pageNum)}
+                                  className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
+                              >
+                                {pageNum}
+                              </Button>
+                          )
+                        })}
+                      </div>
+
+                      <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={isGalleryLoading || page >= totalPages}
+                          className="h-9 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        Next
+                        <ChevronRight className="size-4 ml-1" />
+                      </Button>
+                    </div>
                   </div>
               )}
             </CardContent>
@@ -548,16 +695,7 @@ export default function AdminMedia() {
               </AlertDialogHeader>
 
               <div className="space-y-2">
-                <Input
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    placeholder="e.g. home banner"
-                />
-                {fileToRename?.code && (
-                    <p className="text-xs text-muted-foreground">
-                      Code: <span className="font-mono">{fileToRename.code}</span>
-                    </p>
-                )}
+                <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
               </div>
 
               <AlertDialogFooter>
@@ -569,7 +707,7 @@ export default function AdminMedia() {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* Delete Confirmation Dialog */}
+          {/* Delete Dialog */}
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -580,8 +718,10 @@ export default function AdminMedia() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+                <AlertDialogCancel disabled={!!deletingCode}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteConfirm} disabled={!!deletingCode}>
+                  {deletingCode ? "Deleting..." : "Delete"}
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
