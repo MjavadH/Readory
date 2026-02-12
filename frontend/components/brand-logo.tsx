@@ -16,7 +16,7 @@ export function BrandLogo({
                           }: BrandLogoProps) {
     const logo = (
         <Image
-            src="Logo.svg"
+            src="/Logo.svg"
             alt="Readory"
             width={Math.round(height * 4)}
             height={height}
