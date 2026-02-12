@@ -10,15 +10,16 @@ export class PublicService {
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
 
-    async getHomeContent() {
-        const CACHE_KEY = 'home_content_data';
+    private readonly CACHE_KEY_HOME_CONTENT = 'home_content_data';
 
-        const cachedData = await this.redis.get(CACHE_KEY);
+    async getHomeContent() {
+
+        const cachedData = await this.redis.get(this.CACHE_KEY_HOME_CONTENT);
         if (cachedData) {
             try {
                 return JSON.parse(cachedData);
             } catch {
-                await this.redis.del(CACHE_KEY);
+                await this.redis.del(this.CACHE_KEY_HOME_CONTENT);
             }
         }
 
@@ -130,7 +131,7 @@ export class PublicService {
             genres: topGenres
         };
 
-        await this.redis.set(CACHE_KEY, JSON.stringify(response), 'EX', 900);
+        await this.redis.set(this.CACHE_KEY_HOME_CONTENT, JSON.stringify(response), 'EX', 900);
 
         return response;
     }
@@ -183,7 +184,7 @@ export class PublicService {
     }
 
     async clearHomeCache() {
-        await this.redis.del('home_content_data');
+        await this.redis.del(this.CACHE_KEY_HOME_CONTENT);
     }
 
     async clearGenresPageCache() {

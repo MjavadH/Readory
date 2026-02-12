@@ -116,7 +116,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                         {book.chapters.slice(0, 2).map((ch) => (
                                             <Link
                                                 key={ch.id}
-                                                href={`/${typeSlug}/${book.id}/chapter/${ch.num}`}
+                                                href={`/${typeSlug}/${book.id}/c/${ch.num}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-xs transition-colors hover:bg-primary/10 hover:text-primary"
                                             >

@@ -144,7 +144,7 @@ export function AdminSidebar() {
         <Button
             variant="ghost"
             size="icon"
-            className="fixed top-4 left-4 z-[60] md:hidden bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border shadow-sm hover:shadow-md transition-all"
+            className="fixed top-4 left-4 z-60 md:hidden bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-sm hover:shadow-md transition-all"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
           {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -152,14 +152,14 @@ export function AdminSidebar() {
 
         {isMobileOpen && (
             <div
-                className="fixed inset-0 bg-black/60 z-[45] md:hidden backdrop-blur-sm"
+                className="fixed inset-0 bg-black/60 z-45 md:hidden backdrop-blur-sm"
                 onClick={() => setIsMobileOpen(false)}
             />
         )}
 
         <aside
             className={cn(
-                "bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95 border-r border-sidebar-border flex flex-col h-screen transition-all duration-300 shadow-lg",
+                "bg-linear-to-b from-sidebar via-sidebar to-sidebar/95 border-r border-sidebar-border flex flex-col h-screen transition-all duration-300 shadow-lg",
                 // Desktop behavior
                 "md:sticky md:top-0",
                 isCollapsed ? "md:w-16" : "md:w-64",
@@ -169,13 +169,13 @@ export function AdminSidebar() {
             )}
         >
           {/* Header */}
-          <div className="p-6 border-b border-sidebar-border/50 flex items-center justify-center bg-gradient-to-r from-primary/5 to-transparent">
+          <div className="p-6 border-b border-sidebar-border/50 flex items-center justify-center bg-linear-to-r from-primary/5 to-transparent">
             {!isCollapsed && (
                 <div className="flex-1 min-w-0">
                   <div className="flex gap-2 items-center">
                     <BrandLogo priority className="h-8 w-8" />
                     <Link href="/" className="hover:opacity-80 transition-opacity">
-                      <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
+                      <h1 className="text-xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
                         Readory
                       </h1>
                     </Link>
@@ -222,7 +222,7 @@ export function AdminSidebar() {
                                   className={cn(
                                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                                       isActive
-                                          ? "bg-gradient-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
+                                          ? "bg-linear-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
                                           : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-1",
                                       isCollapsed && "justify-center",
                                   )}
@@ -241,7 +241,7 @@ export function AdminSidebar() {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-sidebar-border/50 space-y-2 bg-gradient-to-t from-sidebar-accent/20 to-transparent">
+          <div className="p-4 border-t border-sidebar-border/50 space-y-2 bg-linear-to-t from-sidebar-accent/20 to-transparent">
             {mounted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -290,14 +290,14 @@ export function AdminSidebar() {
                     >
                       {isCollapsed ? (
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
+                            <AvatarFallback className="bg-linear-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
                               {currentUser.username.substring(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                       ) : (
                           <div className="flex items-center gap-3 w-full">
                             <Avatar className="h-9 w-9 ring-2 ring-primary/20">
-                              <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
+                              <AvatarFallback className="bg-linear-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
                                 {currentUser.username.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
@@ -318,7 +318,7 @@ export function AdminSidebar() {
                     <div className="px-2 py-1.5 mb-1">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                          <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-sm font-semibold">
+                          <AvatarFallback className="bg-linear-to-br from-primary to-primary/70 text-primary-foreground text-sm font-semibold">
                             {currentUser.username.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>

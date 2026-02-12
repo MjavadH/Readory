@@ -77,7 +77,6 @@ function titleCase(value: string) {
 export class BooksService {
     constructor(
         private prisma: PrismaService,
-        private walletsService: WalletsService,
         private publicService: PublicService,
         @Inject('REDIS_CLIENT') private readonly redis: Redis,
     ) {}
@@ -751,7 +750,7 @@ export class BooksService {
             throw new NotFoundException('invalid rating');
         }
 
-        const book = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
+        const book = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true, updatedAt: true } });
         if (!book) throw new NotFoundException('book not found');
 
         const result = await this.prisma.$transaction(async (tx) => {
@@ -775,6 +774,7 @@ export class BooksService {
                 data: {
                     ratingAvg: new Prisma.Decimal(Number(avg).toFixed(2)),
                     ratingCount: count,
+                    updatedAt: book.updatedAt,
                 },
                 select: { id: true },
             });

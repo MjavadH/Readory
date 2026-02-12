@@ -12,7 +12,7 @@ export function BrandLogo({
                               height = 32,
                               priority = false,
                               className,
-                              withLink = true,
+                              withLink = false,
                           }: BrandLogoProps) {
     const logo = (
         <Image
