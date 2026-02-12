@@ -34,21 +34,19 @@ import {
     Search,
     CheckCircle2,
     Clock,
-    Star, ChevronLeft, ChevronRight
+    Star,
+    ChevronLeft,
+    ChevronRight,
+    ImageIcon,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
+import { MediaPicker, type MediaItem as PickerMediaItem } from "@/components/media-picker"
 
 // Added type alias for StatusFilter
 type StatusFilter = "all" | "published" | "draft"
-
-// Added type alias for MediaItem
-type MediaItem = {
-    code: string
-    filename: string
-}
 
 // Added type alias for Genre
 type Genre = {
@@ -102,7 +100,10 @@ export default function AdminBooks() {
         Published: 0,
         Drafts: 0,
     })
-    const [media, setMedia] = useState<MediaItem[]>([])
+    const [newCoverPickerOpen, setNewCoverPickerOpen] = useState(false)
+    const [editCoverPickerOpen, setEditCoverPickerOpen] = useState(false)
+    const [newCoverLabel, setNewCoverLabel] = useState<string>("")
+    const [editCoverLabel, setEditCoverLabel] = useState<string>("")
     const [genres, setGenres] = useState<Genre[]>([])
     const [bookTypes, setBookTypes] = useState<BookType[]>([])
     const [isLoadingTypes, setIsLoadingTypes] = useState(true)
@@ -179,7 +180,7 @@ export default function AdminBooks() {
     const bootstrap = async () => {
         setLoading(true)
         try {
-            await Promise.all([fetchBooks(), fetchGenres(), fetchMedia(), fetchTypes()])
+            await Promise.all([fetchBooks(), fetchGenres(), fetchTypes()])
         } finally {
             setLoading(false)
         }
@@ -239,21 +240,6 @@ export default function AdminBooks() {
             setBookTypes([])
         } finally {
             setIsLoadingTypes(false)
-        }
-    }
-
-    const fetchMedia = async () => {
-        try {
-            const data = await apiClient.get<any[]>("/media").catch(() => [])
-            const list = Array.isArray(data) ? data : []
-            setMedia(
-                list
-                    .map((x: any) => ({ code: String(x.code), filename: String(x.filename ?? x.code) }))
-                    .sort((a: MediaItem, b: MediaItem) => a.filename.localeCompare(b.filename)),
-            )
-        } catch (err: any) {
-            toast({ title: "Error fetching media", description: getApiErrorMessage(err), variant: "destructive" })
-            setMedia([])
         }
     }
 
@@ -514,22 +500,43 @@ export default function AdminBooks() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Cover Image</Label>
-                                    <Select
-                                        value={newBook.coverImage || "none"}
-                                        onValueChange={(v) => setNewBook({ ...newBook, coverImage: v === "none" ? "" : v })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select cover image..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">No cover</SelectItem>
-                                            {media.map((m) => (
-                                                <SelectItem key={m.code} value={m.code}>
-                                                    {m.filename}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+
+                                    <div className="flex items-center gap-3">
+                                        <Button type="button" variant="outline" onClick={() => setNewCoverPickerOpen(true)}>
+                                            <ImageIcon className="size-4 mr-2" />
+                                            Select cover
+                                        </Button>
+
+                                        {newBook.coverImage ? (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                onClick={() => {
+                                                    setNewBook((p) => ({ ...p, coverImage: "" }))
+                                                    setNewCoverLabel("")
+                                                }}
+                                            >
+                                                Remove
+                                            </Button>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground">No cover selected</span>
+                                        )}
+                                    </div>
+
+                                    {newBook.coverImage && (
+                                        <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/20">
+                                            <img
+                                                src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${newBook.coverImage}/thumbnail`}
+                                                alt={newCoverLabel || "image"}
+                                                className="w-14 h-14 rounded-md object-cover border"
+                                                loading="lazy"
+                                            />
+                                            <div className="min-w-0">
+                                                <div className="text-sm font-medium truncate">{newCoverLabel || "Selected cover"}</div>
+                                                <code className="text-[11px] text-muted-foreground font-mono truncate block">{newBook.coverImage}</code>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Genres *</Label>
@@ -1077,23 +1084,45 @@ export default function AdminBooks() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Cover Image</Label>
-                                        <Select
-                                            value={editBook.coverImage || "none"}
-                                            onValueChange={(v) => setEditBook({ ...editBook, coverImage: v === "none" ? "" : v })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select cover..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="none">No cover</SelectItem>
-                                                {media.map((m) => (
-                                                    <SelectItem key={m.code} value={m.code}>
-                                                        {m.filename}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+
+                                        <div className="flex items-center gap-3">
+                                            <Button type="button" variant="outline" onClick={() => setEditCoverPickerOpen(true)}>
+                                                <ImageIcon className="size-4 mr-2" />
+                                                Select cover
+                                            </Button>
+
+                                            {editBook.coverImage ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setEditBook((p) => ({ ...p, coverImage: "" }))
+                                                        setEditCoverLabel(selectedBook.coverImage ?? "")
+                                                    }}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            ) : (
+                                                <span className="text-xs text-muted-foreground">No cover selected</span>
+                                            )}
+                                        </div>
+
+                                        {editBook.coverImage && (
+                                            <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/20">
+                                                <img
+                                                    src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${editBook.coverImage}/thumbnail`}
+                                                    alt={editCoverLabel || "image"}
+                                                    className="w-14 h-14 rounded-md object-cover border"
+                                                    loading="lazy"
+                                                />
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-medium truncate">{editCoverLabel || "Selected cover"}</div>
+                                                    <code className="text-[11px] text-muted-foreground font-mono truncate block">{editBook.coverImage}</code>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
+
                                     <div className="space-y-2">
                                         <Label>Genres *</Label>
                                         <div className="grid grid-cols-2 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
@@ -1425,6 +1454,29 @@ export default function AdminBooks() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+                <MediaPicker
+                    open={newCoverPickerOpen}
+                    onOpenChange={setNewCoverPickerOpen}
+                    value={newBook.coverImage || null}
+                    onSelect={(item) => {
+                        setNewBook((p) => ({ ...p, coverImage: item?.code ?? "" }))
+                        setNewCoverLabel(item?.filename ?? "")
+                    }}
+                    title="Select cover for new book"
+                    description="Pick an image from media library"
+                />
+
+                <MediaPicker
+                    open={editCoverPickerOpen}
+                    onOpenChange={setEditCoverPickerOpen}
+                    value={editBook.coverImage || null}
+                    onSelect={(item) => {
+                        setEditBook((p) => ({ ...p, coverImage: item?.code ?? "" }))
+                        setEditCoverLabel(item?.filename ?? "")
+                    }}
+                    title="Select cover"
+                    description="Pick an image from media library"
+                />
             </div>
         </div>
     )
