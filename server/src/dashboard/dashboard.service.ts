@@ -23,7 +23,7 @@ export class DashboardService {
             totalUsers, newUsersLast30, newUsersPrev30, activeUsers,
             totalBooks, totalChapters, newBooksLast30, newBooksPrev30,
             financeStats, recentTransactions, recentUsers, recentBooks, recentChapters,
-            userChartData, genreStats
+            userChartData, genreStats, typeStats,
         ] = await Promise.all([
             // Users
             this.prisma.user.count(),
@@ -64,7 +64,8 @@ export class DashboardService {
 
             // Charts
             canViewUsers ? this.getUserRegistrationChart() : Promise.resolve([]),
-            canViewBooks ? this.getGenreStats() : Promise.resolve([])
+            canViewBooks ? this.getGenreStats() : Promise.resolve([]),
+            canViewBooks ? this.getTypeStats() : Promise.resolve([])
         ]);
 
         return {
@@ -81,7 +82,8 @@ export class DashboardService {
             },
             charts: {
                 userRegistrations: userChartData,
-                genreDistribution: genreStats
+                genreDistribution: genreStats,
+                typeDistribution: typeStats,
             },
             recent: {
                 transactions: recentTransactions.map(t => ({
@@ -179,6 +181,23 @@ export class DashboardService {
 
         const sorted = genres
             .map(g => ({ name: g.name, value: g._count.books }))
+            .sort((a, b) => b.value - a.value);
+
+        if (sorted.length <= 5) return sorted;
+
+        const top5 = sorted.slice(0, 5);
+        const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
+
+        return [...top5, { name: 'Others', value: others }];
+    }
+
+    private async getTypeStats() {
+        const types = await this.prisma.bookType.findMany({
+            include: { _count: { select: { books: true } } }
+        });
+
+        const sorted = types
+            .map(t => ({ name: t.name, value: t._count.books }))
             .sort((a, b) => b.value - a.value);
 
         if (sorted.length <= 5) return sorted;

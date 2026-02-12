@@ -20,6 +20,7 @@ interface DashboardStats {
     charts?: {
         userRegistrations: { month: string; users: number }[]
         genreDistribution: { name: string; value: number }[]
+        typeDistribution: { name: string; value: number }[]
     }
     recent: {
         transactions: Array<{ id: number; amount: number; type: "CREDIT" | "DEBIT"; username: string; createdAt: string }>
@@ -73,10 +74,10 @@ export default function AdminDashboard() {
     ]
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
+        <div className="p-4 sm:p-6 space-y-6 max-w-400 mx-auto">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
+                <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Overview of your platform's performance.</p>
             </div>
 
@@ -129,7 +130,7 @@ export default function AdminDashboard() {
                             <CardDescription>Daily revenue for the last 30 days</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={{ amount: { label: "Revenue", color: "var(--chart-1)" } }} className="h-[300px] w-full">
+                            <ChartContainer config={{ amount: { label: "Revenue", color: "var(--chart-1)" } }} className="h-75 w-full">
                                 <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
@@ -156,21 +157,27 @@ export default function AdminDashboard() {
                             <CardDescription>Breakdown of users and content</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Tabs defaultValue="genres" className="w-full">
-                                <TabsList className="grid w-full grid-cols-2 mb-4">
-                                    <TabsTrigger value="genres">Genre Dist.</TabsTrigger>
+                            <Tabs defaultValue="types" className="w-full">
+                                <TabsList className="grid w-full grid-cols-3 mb-4">
                                     <TabsTrigger value="users">User Status</TabsTrigger>
+                                    <TabsTrigger value="genres">Genre Dist.</TabsTrigger>
+                                    <TabsTrigger value="types">type Dist.</TabsTrigger>
                                 </TabsList>
-
-                                <TabsContent value="genres" className="h-[250px]">
+                                <TabsContent value="genres" className="h-62.5">
                                     {stats.charts?.genreDistribution && stats.charts.genreDistribution.length > 0 ? (
                                         <PieChartWrapper data={stats.charts.genreDistribution} />
                                     ) : (
                                         <EmptyState text="No genre data available" />
                                     )}
                                 </TabsContent>
-
-                                <TabsContent value="users" className="h-[250px]">
+                                <TabsContent value="types" className="h-62.5">
+                                    {stats.charts?.typeDistribution && stats.charts.typeDistribution.length > 0 ? (
+                                        <PieChartWrapper data={stats.charts.typeDistribution} />
+                                    ) : (
+                                        <EmptyState text="No type data available" />
+                                    )}
+                                </TabsContent>
+                                <TabsContent value="users" className="h-62.5">
                                     <PieChartWrapper data={userStatusData} />
                                 </TabsContent>
                             </Tabs>
@@ -188,7 +195,7 @@ export default function AdminDashboard() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={{ users: { label: "Users", color: "var(--chart-2)" } }} className="h-[250px] w-full">
+                        <ChartContainer config={{ users: { label: "Users", color: "var(--chart-2)" } }} className="h-62.5 w-full">
                             <BarChart data={stats.charts.userRegistrations}>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
                                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} className="text-xs" />
@@ -268,7 +275,7 @@ export default function AdminDashboard() {
                                                 stats.recent.books.map((b) => (
                                                     <TableRow key={b.id}>
                                                         <TableCell>
-                                                            <div className="font-medium text-sm truncate max-w-[200px]">{b.title}</div>
+                                                            <div className="font-medium text-sm truncate max-w-50">{b.title}</div>
                                                             <div className="text-xs text-muted-foreground">{b.author || "Unknown"}</div>
                                                         </TableCell>
                                                         <TableCell className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString()}</TableCell>
@@ -288,7 +295,7 @@ export default function AdminDashboard() {
                                                     <TableRow key={c.id}>
                                                         <TableCell className="font-medium text-sm">{c.title}</TableCell>
                                                         <TableCell>
-                                                            <div className="text-xs truncate max-w-[150px]">{c.bookTitle}</div>
+                                                            <div className="text-xs truncate max-w-37.5">{c.bookTitle}</div>
                                                             <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</div>
                                                         </TableCell>
                                                     </TableRow>
@@ -373,7 +380,7 @@ function DashboardSkeleton() {
     return (
         <div className="p-6 space-y-6">
             <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
+                <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Overview of your platform's performance.</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
