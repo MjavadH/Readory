@@ -26,9 +26,9 @@ type PagedMediaResponse = {
 
 type MediaPickerProps = {
     open: boolean
-    onOpenChange: (open: boolean) => void
+    onOpenChangeAction: (open: boolean) => void
     value?: string | null // selected media code
-    onSelect: (item: MediaItem | null) => void
+    onSelectAction: (item: MediaItem | null) => void
     title?: string
     description?: string
     itemsPerPage?: number
@@ -37,9 +37,9 @@ type MediaPickerProps = {
 
 export function MediaPicker({
                                 open,
-                                onOpenChange,
+                                onOpenChangeAction,
                                 value,
-                                onSelect,
+                                onSelectAction,
                                 title = "Select cover",
                                 description = "Choose an image from your media library",
                                 itemsPerPage = 30,
@@ -72,17 +72,17 @@ export function MediaPicker({
         if (!open) return
 
         const controller = new AbortController()
-        const qs = new URLSearchParams()
-        const query = q.trim()
-        if (query) qs.set("q", query)
-        qs.set("page", String(page))
-        qs.set("limit", String(itemsPerPage))
-
-        const cacheKey = qs.toString()
 
         const run = async () => {
             setIsLoading(true)
             try {
+                const qs = new URLSearchParams()
+                const query = q.trim()
+                if (query) qs.set("q", query)
+                qs.set("page", String(page))
+                qs.set("limit", String(itemsPerPage))
+
+                const cacheKey = qs.toString()
                 const cached = cacheRef.current.get(cacheKey)
                 if (cached) {
                     setItems(cached.items)
@@ -96,25 +96,15 @@ export function MediaPicker({
                     signal: controller.signal,
                 })
 
-                let normalized: PagedMediaResponse
-
-                if (Array.isArray(data)) {
-                    normalized = {
-                        items: data,
-                        page: 1,
-                        limit: itemsPerPage,
-                        total: data.length,
-                        totalPages: 1,
-                    }
-                } else {
-                    normalized = {
+                const normalized: PagedMediaResponse = Array.isArray(data)
+                    ? { items: data, page: 1, limit: itemsPerPage, total: data.length, totalPages: 1 }
+                    : {
                         items: Array.isArray(data.items) ? data.items : [],
                         page: Number(data.page) || page,
                         limit: Number(data.limit) || itemsPerPage,
                         total: Number(data.total) || 0,
                         totalPages: Number(data.totalPages) || 1,
                     }
-                }
 
                 cacheRef.current.set(cacheKey, normalized)
                 setItems(normalized.items)
@@ -131,7 +121,6 @@ export function MediaPicker({
         }
 
         void run()
-
         return () => controller.abort()
     }, [open, q, page, itemsPerPage, toast])
 
@@ -145,17 +134,14 @@ export function MediaPicker({
             for (let i = 1; i <= tp; i++) nums.push(i)
             return nums
         }
-
         if (p <= 3) {
             for (let i = 1; i <= len; i++) nums.push(i)
             return nums
         }
-
         if (p >= tp - 2) {
             for (let i = tp - 4; i <= tp; i++) nums.push(i)
             return nums
         }
-
         for (let i = p - 2; i <= p + 2; i++) nums.push(i)
         return nums
     }, [page, totalPages])
@@ -163,7 +149,7 @@ export function MediaPicker({
     const apiBase = process.env.NEXT_PUBLIC_API_BASE
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChangeAction}>
             <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
@@ -173,17 +159,11 @@ export function MediaPicker({
                 {/* Search */}
                 <div className="relative mt-2">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder="Search by filename..."
-                        className="pl-9 h-11"
-                    />
+                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by filename..." className="pl-9 h-11" />
                 </div>
 
                 {/* Grid */}
                 <div className="relative mt-4">
-                    {/* Overlay spinner (don’t blank the dialog while paging/searching) */}
                     {isLoading && hasLoadedOnce && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
                             <Loader2 className="size-6 animate-spin" />
@@ -216,8 +196,8 @@ export function MediaPicker({
                                         key={m.code}
                                         type="button"
                                         onClick={() => {
-                                            onSelect(m)
-                                            onOpenChange(false)
+                                            onSelectAction(m)
+                                            onOpenChangeAction(false)
                                         }}
                                         className={[
                                             "group text-left overflow-hidden rounded-xl border bg-card hover:shadow-lg transition",
@@ -239,9 +219,6 @@ export function MediaPicker({
                                         </div>
                                         <div className="p-2.5 border-t bg-muted/20 space-y-1">
                                             <div className="text-xs font-medium truncate text-center">{m.filename}</div>
-                                            <code className="text-[9px] font-mono bg-background/80 px-1.5 py-0.5 rounded block truncate text-center text-muted-foreground">
-                                                {m.code}
-                                            </code>
                                         </div>
                                     </button>
                                 )
@@ -258,8 +235,8 @@ export function MediaPicker({
                                 type="button"
                                 variant="outline"
                                 onClick={() => {
-                                    onSelect(null)
-                                    onOpenChange(false)
+                                    onSelectAction(null)
+                                    onOpenChangeAction(false)
                                 }}
                             >
                                 <X className="size-4 mr-2" />
@@ -269,7 +246,7 @@ export function MediaPicker({
                         <p className="text-xs text-muted-foreground">
                             {totalPages > 1 ? (
                                 <>
-                                    Showing page <span className="font-semibold text-foreground">{page}</span> of{" "}
+                                    Page <span className="font-semibold text-foreground">{page}</span> /{" "}
                                     <span className="font-semibold text-foreground">{totalPages}</span> • Total{" "}
                                     <span className="font-semibold text-foreground">{total}</span>
                                 </>

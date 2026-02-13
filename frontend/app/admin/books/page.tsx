@@ -43,7 +43,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
-import { MediaPicker, type MediaItem as PickerMediaItem } from "@/components/media-picker"
+import { MediaPicker } from "@/components/media-picker"
 
 // Added type alias for StatusFilter
 type StatusFilter = "all" | "published" | "draft"
@@ -442,7 +442,7 @@ export default function AdminBooks() {
                                 Add Book
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-137.5 max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle>Add New Book</DialogTitle>
                                 <DialogDescription>Create a new book in your catalog</DialogDescription>
@@ -650,7 +650,7 @@ export default function AdminBooks() {
                         />
                     </div>
                     <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-                        <SelectTrigger className="w-full sm:w-[200px] h-11 shadow-sm">
+                        <SelectTrigger className="w-full sm:w-50 h-11 shadow-sm">
                             <SelectValue placeholder="Filter by status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -882,7 +882,7 @@ export default function AdminBooks() {
                                                 <img
                                                     src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${selectedBook.coverImage}`}
                                                     alt={selectedBook.title || "Book cover"}
-                                                    className="w-full max-w-[200px] sm:max-w-[250px] aspect-2/3 object-cover rounded-lg border shadow-lg mx-auto md:mx-0"
+                                                    className="w-full max-w-50 sm:max-w-62.5 aspect-2/3 object-cover rounded-lg border shadow-lg mx-auto md:mx-0"
                                                 />
                                             </div>
                                         )}
@@ -1028,7 +1028,7 @@ export default function AdminBooks() {
 
                 {/* Edit Book Dialog */}
                 <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                    <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-137.5 max-h-[90vh] overflow-y-auto">
                         {selectedBook && (
                             <>
                                 <DialogHeader>
@@ -1190,7 +1190,7 @@ export default function AdminBooks() {
 
                 {/* Add Chapter Dialog */}
                 <Dialog open={isChapterDialogOpen} onOpenChange={setIsChapterDialogOpen}>
-                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-150 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Add New Chapter</DialogTitle>
                             <DialogDescription>Create a new chapter for this book</DialogDescription>
@@ -1272,7 +1272,7 @@ export default function AdminBooks() {
 
                 {/* Edit Chapter Dialog */}
                 <Dialog open={isEditChapterOpen} onOpenChange={setIsEditChapterOpen}>
-                    <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="sm:max-w-150 max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Edit Chapter</DialogTitle>
                             <DialogDescription>Update chapter details and pricing</DialogDescription>
@@ -1456,26 +1456,22 @@ export default function AdminBooks() {
                 </AlertDialog>
                 <MediaPicker
                     open={newCoverPickerOpen}
-                    onOpenChange={setNewCoverPickerOpen}
+                    onOpenChangeAction={setNewCoverPickerOpen}
                     value={newBook.coverImage || null}
-                    onSelect={(item) => {
+                    onSelectAction={(item) => {
                         setNewBook((p) => ({ ...p, coverImage: item?.code ?? "" }))
                         setNewCoverLabel(item?.filename ?? "")
                     }}
-                    title="Select cover for new book"
-                    description="Pick an image from media library"
                 />
 
                 <MediaPicker
                     open={editCoverPickerOpen}
-                    onOpenChange={setEditCoverPickerOpen}
+                    onOpenChangeAction={setEditCoverPickerOpen}
                     value={editBook.coverImage || null}
-                    onSelect={(item) => {
+                    onSelectAction={(item) => {
                         setEditBook((p) => ({ ...p, coverImage: item?.code ?? "" }))
                         setEditCoverLabel(item?.filename ?? "")
                     }}
-                    title="Select cover"
-                    description="Pick an image from media library"
                 />
             </div>
         </div>
