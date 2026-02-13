@@ -31,7 +31,7 @@ import {BrandLogo} from "@/components/brand-logo";
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName: RoleName }
-type Genre = { name: string; slug: string }
+type Genre = { name: string; slug: string; iconKey: IconKey; }
 type BookType = {name: string; slug: string; iconKey: IconKey;}
 
 function initialsFromUsername(username: string) {
@@ -290,6 +290,7 @@ export function UserHeader() {
             (Array.isArray(data) ? data : []).map((g: any) => ({
               name: String(g.name),
               slug: String(g.slug),
+              iconKey: g.iconKey,
             }))
         )
       } catch {
@@ -380,7 +381,7 @@ export function UserHeader() {
                   href="/books"
                   isActive={pathname.startsWith("/books")}
               >
-                <div className="w-80 rounded-xl border bg-popover p-4 shadow-xl">
+                <div className="w-94 rounded-xl border bg-popover p-4 shadow-xl">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Browse by Type
                   </p>
@@ -440,8 +441,11 @@ export function UserHeader() {
                             <Link
                                 key={g.slug}
                                 href={`/genres/${g.slug}`}
-                                className="rounded-lg px-3 py-2 text-sm transition-colors hover:bg-accent"
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
                             >
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                                <AppIcon name={g.iconKey as any} className="h-4 w-4 text-muted-foreground" />
+                              </div>
                               {g.name}
                             </Link>
                         ))}
