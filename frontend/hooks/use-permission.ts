@@ -7,7 +7,7 @@ export function usePermission() {
         if (loading || !user) return false
         if (user.id === 1) return true
         const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
-        return required.some(p => user.permissions.includes(p))
+        return required.some(p => (user.permissions || []).includes(p))
     }
 
     return {

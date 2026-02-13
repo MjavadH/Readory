@@ -5,6 +5,7 @@ import {LocalAuthGuard} from './guards/local-auth.guard';
 import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {RegisterDto} from './dto/register.dto';
 import {LoginDto} from './dto/login.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,8 +23,22 @@ export class AuthController {
     }
 
     @Post('verify-otp')
-    async verifyOtp(@Body() body: { email: string; otp: string }) {
-        return this.authService.verifyEmail(body.email, body.otp);
+    async verifyOtp(
+        @Body() body: VerifyOtpDto,
+        @Res({ passthrough: true }) response: Response,
+    ) {
+        const { access_token, user } = await this.authService.verifyEmail(body.email, body.otp);
+        response.cookie('access_token', access_token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
+        return {
+            message: 'Account verified',
+            user,
+        };
     }
 
     // User login
@@ -60,7 +75,7 @@ export class AuthController {
 
     @UseGuards(JwtAuthGuard)
     @Get('profile')
-    getProfile(@Request() req: any) {
-        return req.user;
+    async getProfile(@Request() req: any) {
+        return this.authService.getProfile(req.user.userId);
     }
 }

@@ -42,12 +42,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         if (!user) throw new UnauthorizedException('User not found');
         if (user.isBanned) throw new UnauthorizedException('Account suspended.');
 
-        const sessionUser = {
+        const sessionUser: {
+            userId: number;
+            username: string;
+            roleName?: "ADMIN";
+            permissions?: string[];
+        } = {
             userId: user.id,
             username: user.username,
-            roleName: user.role?.name,
-            permissions: user.permissions || []
         };
+
+        if (user.role?.name === "ADMIN") {
+            sessionUser.roleName = "ADMIN";
+            sessionUser.permissions = user.permissions || [];
+        }
 
         await this.redis.set(cacheKey, JSON.stringify(sessionUser), 'EX', 1800);
 

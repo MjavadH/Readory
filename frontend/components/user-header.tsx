@@ -30,7 +30,7 @@ import { apiClient } from "@/lib/api-client"
 import {BrandLogo} from "@/components/brand-logo";
 
 type RoleName = "USER" | "ADMIN"
-type Profile = { userId: number; username: string; roleName: RoleName }
+type Profile = { userId: number; username: string; roleName?: RoleName; walletBalance?: number }
 type Genre = { name: string; slug: string; iconKey: IconKey; }
 type BookType = {name: string; slug: string; iconKey: IconKey;}
 
