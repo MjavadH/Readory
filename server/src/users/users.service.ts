@@ -129,7 +129,7 @@ export class UsersService {
     async findById(id: number) {
         return this.prisma.user.findUnique({
             where: { id },
-            include: { role: true },
+            include: { role: true, wallet: true },
         });
     }
 
@@ -160,6 +160,7 @@ export class UsersService {
 
     async verifyAndCreateUser(email: string, code: string) {
         const redisKey = `temp_reg:${email}`;
+        const attemptKey = `temp_reg_attempts:${email}`;
 
         const dataString = await this.redis.get(redisKey);
         if (!dataString) {
@@ -168,6 +169,15 @@ export class UsersService {
 
         const data = JSON.parse(dataString);
         if (data.verificationCode !== code) {
+            const attempts = await this.redis.incr(attemptKey);
+            if (attempts === 1) {
+                await this.redis.expire(attemptKey, 120);
+            }
+            if (attempts >= 5) {
+                await this.redis.del(redisKey);
+                await this.redis.del(attemptKey);
+                throw new BadRequestException('Too many invalid attempts. Please register again.');
+            }
             throw new BadRequestException('Invalid verification code.');
         }
 
@@ -188,6 +198,7 @@ export class UsersService {
         });
 
         await this.redis.del(redisKey);
+        await this.redis.del(attemptKey);
         await this.redis.del('stats:users');
 
         return newUser;

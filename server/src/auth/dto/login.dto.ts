@@ -1,4 +1,4 @@
-import {IsNotEmpty, IsString} from 'class-validator';
+import {IsNotEmpty, IsString, MinLength, MaxLength} from 'class-validator';
 
 export class LoginDto {
     @IsNotEmpty()
@@ -6,5 +6,8 @@ export class LoginDto {
     identifier!: string;
 
     @IsNotEmpty()
+    @IsString()
+    @MinLength(8, { message: 'Password must be at least 8 characters long.' })
+    @MaxLength(128, { message: 'Password is too long.' })
     password!: string;
 }

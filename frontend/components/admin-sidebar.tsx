@@ -46,7 +46,7 @@ import {BrandLogo} from "@/components/brand-logo";
 interface CurrentUser {
   userId: number
   username: string
-  roleName: string
+  roleName?: "ADMIN"
 }
 
 export function AdminSidebar() {
