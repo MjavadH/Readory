@@ -27,7 +27,7 @@ import { BrowseBooksDto } from './dto/browse-books.dto';
 import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
 
 
-type StatusFilter = 'all' | 'published' | 'draft';
+type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 
 @Controller('books')
 export class BooksController {

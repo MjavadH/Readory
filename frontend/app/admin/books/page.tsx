@@ -46,7 +46,7 @@ import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { MediaPicker } from "@/components/media-picker"
 
 // Added type alias for StatusFilter
-type StatusFilter = "all" | "published" | "draft"
+type StatusFilter = "all" | "published" | "draft" | "featured"
 
 // Added type alias for Genre
 type Genre = {
@@ -657,6 +657,7 @@ export default function AdminBooks() {
                             <SelectItem value="all">All Books</SelectItem>
                             <SelectItem value="published">Published Only</SelectItem>
                             <SelectItem value="draft">Drafts Only</SelectItem>
+                            <SelectItem value="featured">Featured Only</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

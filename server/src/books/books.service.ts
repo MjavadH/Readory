@@ -7,7 +7,7 @@ import { PublicService } from '../public/public.service'
 import { createHash } from 'crypto';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-type StatusFilter = 'all' | 'published' | 'draft';
+type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated';
 
 type CursorPayload = { sort: BrowseSort; id: number; v: string };
@@ -545,6 +545,7 @@ export class BooksService {
         }
         if (args.status === 'published') where.isPublished = true;
         if (args.status === 'draft') where.isPublished = false;
+        if (args.status === 'featured') where.isFeatured = true;
 
         const skip = (page - 1) * limit;
 
