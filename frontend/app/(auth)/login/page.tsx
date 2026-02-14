@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { useToast } from "@/hooks/use-toast"
+import {BrandLogo} from "@/components/brand-logo";
 
 type RoleName = "ADMIN" | "USER"
 
@@ -145,11 +146,11 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-muted/20 to-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-4">
-            <BookOpen className="h-8 w-8 text-primary" />
+          <div className="inline-flex items-center justify-center">
+            <BrandLogo priority className="h-20 w-20" />
           </div>
           <h1 className="text-3xl font-bold text-foreground">Readory</h1>
           <p className="text-muted-foreground mt-2">
@@ -259,12 +260,7 @@ export default function AuthPage() {
                             <InputOTP
                               maxLength={6}
                               {...field}
-                              onChange={(value) => {
-                                field.onChange(value)
-                                if (value.length === 6) {
-                                  void otpForm.handleSubmit(handleOTPVerify)()
-                                }
-                              }}
+                              onComplete={() => otpForm.handleSubmit(handleOTPVerify)()}
                             >
                               <InputOTPGroup>
                                 <InputOTPSlot index={0} />
