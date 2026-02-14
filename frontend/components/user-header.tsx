@@ -533,8 +533,12 @@ export function UserHeader() {
                                 </Avatar>
                                 <div className="flex flex-col">
                                   <span className="text-sm font-semibold truncate">{profile?.username}</span>
-                                  <span className="text-xs text-muted-foreground capitalize">{profile?.roleName.toLowerCase()}</span>
+                                  <span className="text-xs text-muted-foreground capitalize">{profile?.roleName?.toLowerCase()}</span>
                                 </div>
+                              </div>
+                              <div className="flex mt-5 p-2 bg-accent rounded-xl items-center gap-2">
+                                <AppIcon name="wallet" className="size-5 text-muted-foreground"/>
+                                <p className="text-xs text-foreground truncate">{Number(profile.walletBalance).toLocaleString()}</p>
                               </div>
                             </DropdownMenuLabel>
 
@@ -584,18 +588,18 @@ export function UserHeader() {
                   onClick={() => setMobileOpen((v) => !v)}
                   aria-label="Menu"
               >
-                <div className="flex flex-col items-center justify-center gap-[5px] w-5">
+                <div className="flex flex-col items-center justify-center gap-1.25 w-5">
                 <span className={cn(
-                    "block h-[2px] w-full rounded-full bg-foreground transition-all duration-300 origin-center",
-                    mobileOpen && "translate-y-[7px] rotate-45"
+                    "block h-0.5 w-full rounded-full bg-foreground transition-all duration-300 origin-center",
+                    mobileOpen && "translate-y-1.75 rotate-45"
                 )} />
                   <span className={cn(
-                      "block h-[2px] w-full rounded-full bg-foreground transition-all duration-300",
+                      "block h-0.5 w-full rounded-full bg-foreground transition-all duration-300",
                       mobileOpen && "opacity-0 scale-x-0"
                   )} />
                   <span className={cn(
-                      "block h-[2px] w-full rounded-full bg-foreground transition-all duration-300 origin-center",
-                      mobileOpen && "-translate-y-[7px] -rotate-45"
+                      "block h-0.5 w-full rounded-full bg-foreground transition-all duration-300 origin-center",
+                      mobileOpen && "-translate-y-1.75 -rotate-45"
                   )} />
                 </div>
               </Button>
@@ -649,15 +653,21 @@ export function UserHeader() {
             {/* Profile Area */}
             <div className="p-5 pb-4">
               {authenticated && profile ? (
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
-                        {initialsFromUsername(profile.username)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold truncate">{profile.username}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{profile.roleName.toLowerCase()}</p>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
+                          {initialsFromUsername(profile.username)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-semibold truncate">{profile.username}</p>
+                        <p className="text-xs text-muted-foreground capitalize">{profile.roleName?.toLowerCase()}</p>
+                      </div>
+                    </div>
+                    <div className="flex mt-5 p-2 bg-accent rounded-xl items-center gap-2">
+                      <AppIcon name="wallet" className="size-5 text-muted-foreground"/>
+                      <p className="text-xs text-foreground truncate">{Number(profile.walletBalance).toLocaleString()}</p>
                     </div>
                   </div>
               ) : (
