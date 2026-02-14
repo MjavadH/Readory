@@ -3,7 +3,7 @@ import {
     Shield, Swords, Compass, Heart, Ghost, Laugh, Wand2,
     Skull, Flame, Globe, Home, BookOpen, Library, LayoutDashboard,
     Watch, Volleyball, GraduationCap, Rocket, Search, RefreshCcw,
-    MessageCircleHeartIcon, Sword, HeartCrack, CalendarRange,
+    MessageCircleHeartIcon, Sword, HeartCrack, CalendarRange, Wallet,
 
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -32,12 +32,13 @@ export const iconRegistry: Record<IconKey, LucideIcon> = {
     timeTravel: Watch,
     sports: Volleyball,
     schoolLife: GraduationCap,
-    Isekai: Rocket,
-    Mystery: Search,
-    Reincarnation: RefreshCcw,
-    Shoujo: MessageCircleHeartIcon,
-    Shounen: Sword,
-    Tragedy: HeartCrack,
-    SliceOfLife: CalendarRange,
+    isekai: Rocket,
+    mystery: Search,
+    reincarnation: RefreshCcw,
+    shoujo: MessageCircleHeartIcon,
+    shounen: Sword,
+    tragedy: HeartCrack,
+    sliceOfLife: CalendarRange,
+    wallet: Wallet,
 } as const;
 

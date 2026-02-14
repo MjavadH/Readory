@@ -21,13 +21,14 @@ export const ICON_KEYS = [
   "timeTravel",
   "sports",
   "schoolLife",
-  "Isekai",
-  "Mystery",
-  "Reincarnation",
-  "Shoujo",
-  "Shounen",
-  "Tragedy",
-  "SliceOfLife",
+  "isekai",
+  "mystery",
+  "reincarnation",
+  "shoujo",
+  "shounen",
+  "tragedy",
+  "sliceOfLife",
+  "wallet",
 ] as const;
 
 export type IconKey = (typeof ICON_KEYS)[number];
