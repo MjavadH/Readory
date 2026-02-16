@@ -817,6 +817,8 @@ export default function AdminBooks() {
                     pageSize={ITEMS_PER_PAGE}
                     itemLabel="books"
                     onPageChange={setPage}
+                    canGoPrevious={page > 1}
+                    canGoNext={page < totalPages}
                 />
                 <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
                     <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">

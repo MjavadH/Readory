@@ -162,7 +162,7 @@ export default function AdminTransactions() {
                 </div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
                         <CardContent className="flex items-center justify-between gap-4 py-4">
                             <div className="flex items-center gap-4">
                                 <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">

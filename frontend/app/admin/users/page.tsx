@@ -247,7 +247,7 @@ export default function AdminUsers() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+          <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
             <CardContent className="flex items-center gap-4 py-4">
               <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
                 <Users className="size-6 text-blue-600 dark:text-blue-500" />
@@ -259,7 +259,7 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-gradient-to-br from-green-500/5 to-green-500/10">
+          <Card className="border-border/50 bg-linear-to-br from-green-500/5 to-green-500/10">
             <CardContent className="flex items-center gap-4 py-4">
               <div className="flex size-12 items-center justify-center rounded-xl bg-green-500/10 ring-1 ring-green-500/20">
                 <Activity className="size-6 text-green-600 dark:text-green-500" />
@@ -271,7 +271,7 @@ export default function AdminUsers() {
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-gradient-to-br from-violet-500/5 to-violet-500/10 sm:col-span-2 lg:col-span-1">
+          <Card className="border-border/50 bg-linear-to-br from-violet-500/5 to-violet-500/10 sm:col-span-2 lg:col-span-1">
             <CardContent className="flex items-center gap-4 py-4">
               <div className="flex size-12 items-center justify-center rounded-xl bg-violet-500/10 ring-1 ring-violet-500/20">
                 <UserPlus className="size-6 text-violet-600 dark:text-violet-500" />
@@ -305,12 +305,12 @@ export default function AdminUsers() {
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-border/50">
-                    <TableHead className="min-w-[250px]">User Info</TableHead>
-                    <TableHead className="min-w-[100px]">Status</TableHead>
-                    <TableHead className="min-w-[100px]">Role</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Balance</TableHead>
-                    <TableHead className="min-w-[120px]">Joined</TableHead>
-                    <TableHead className="w-[60px]">Actions</TableHead>
+                    <TableHead className="min-w-62.5">User Info</TableHead>
+                    <TableHead className="min-w-25">Status</TableHead>
+                    <TableHead className="min-w-25">Role</TableHead>
+                    <TableHead className="text-right min-w-30">Balance</TableHead>
+                    <TableHead className="min-w-30">Joined</TableHead>
+                    <TableHead className="w-15">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -333,7 +333,7 @@ export default function AdminUsers() {
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <Avatar className="size-9 ring-2 ring-border/50">
-                                  <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
+                                  <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
                                     {user.username.substring(0, 2).toUpperCase()}
                                   </AvatarFallback>
                                 </Avatar>
@@ -442,6 +442,8 @@ export default function AdminUsers() {
           pageSize={ITEMS_PER_PAGE}
           itemLabel="users"
           onPageChange={setCurrentPage}
+          canGoPrevious={currentPage > 1}
+          canGoNext={currentPage < totalPages}
         />
 
         {/* User Details Dialog */}
@@ -464,7 +466,7 @@ export default function AdminUsers() {
                   <DialogHeader>
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <Avatar className="size-16 ring-2 ring-border">
-                        <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-foreground font-bold text-xl">
+                        <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-bold text-xl">
                           {selectedUser.username.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -509,7 +511,7 @@ export default function AdminUsers() {
 
                   <div className="space-y-6 mt-6">
                     {/* Wallet Card */}
-                    <Card className="border-border/50 bg-gradient-to-br from-green-500/5 to-green-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-green-500/5 to-green-500/10">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                           <Wallet className="size-5 text-green-600 dark:text-green-500" />
@@ -643,7 +645,7 @@ export default function AdminUsers() {
                     </Card>
 
                     {/* Library Card */}
-                    <Card className="border-border/50 bg-gradient-to-br from-blue-500/5 to-blue-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                           <BookOpen className="size-5 text-blue-600 dark:text-blue-500" />
@@ -685,7 +687,7 @@ export default function AdminUsers() {
                     </Card>
 
                     {/* Activity History Card */}
-                    <Card className="border-border/50 bg-gradient-to-br from-violet-500/5 to-violet-500/10">
+                    <Card className="border-border/50 bg-linear-to-br from-violet-500/5 to-violet-500/10">
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                           <Clock className="size-5 text-violet-600 dark:text-violet-500" />
