@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, DollarSign, BookOpen, TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Layers, ArrowDownCircle, ArrowUpCircle } from "lucide-react"
-import {Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart} from "recharts"
+import {Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart, ResponsiveContainer} from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { usePermission } from "@/hooks/use-permission"
 import { apiClient } from "@/lib/api-client"
@@ -341,30 +341,66 @@ function StatsCard({ title, value, growth, icon: Icon, color, bg, subText }: any
     )
 }
 
+function orderOthersLast(data: { name: string; value: number }[]) {
+    const isOthers = (x: { name: string }) => x.name.trim().toLowerCase() === "others"
+    const rest = data.filter((x) => !isOthers(x))
+    const others = data.filter(isOthers)
+    return [...rest, ...others]
+}
+
 function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) {
+    const ordered = orderOthersLast(Array.isArray(data) ? data : [])
+    const total = ordered.reduce((acc, cur) => acc + (Number(cur.value) || 0), 0)
+
     return (
-        <ChartContainer config={{}} className="h-full w-full">
-            <PieChart>
-                <Pie
-                    data={data}
-                    cx="50%" cy="50%"
-                    innerRadius={60} outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                >
-                    {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
-                    <tspan x="50%" dy="-0.5em" className="fill-foreground text-xl font-bold">
-                        {data.reduce((acc, cur) => acc + cur.value, 0)}
-                    </tspan>
-                    <tspan x="50%" dy="1.5em" className="fill-muted-foreground text-xs">Total</tspan>
-                </text>
-            </PieChart>
-        </ChartContainer>
+        <div className="h-full w-full flex flex-col">
+            {/* Chart */}
+            <div className="flex-1 min-h-0">
+                <ChartContainer config={{}} className="h-full w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={ordered}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={80}
+                                paddingAngle={5}
+                                dataKey="value"
+                            >
+                                {ordered.map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${entry.name}-${index}`}
+                                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                                    />
+                                ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </ChartContainer>
+            </div>
+
+            {/* Legend */}
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 text-xs">
+                {ordered.map((item, index) => (
+                    <div key={`legend-${item.name}-${index}`} className="flex items-center gap-2 min-w-0">
+                        <span
+                            className="size-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                            aria-hidden="true"
+                        />
+                        <span className="truncate">{item.name}</span>
+                        <span className="ml-auto tabular-nums font-semibold">
+                            {Number(item.value || 0).toLocaleString()}
+                        </span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                            {total > 0 ? Math.round((item.value / total) * 100) : 0}%
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
     )
 }
 
