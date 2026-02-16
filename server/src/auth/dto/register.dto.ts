@@ -17,8 +17,10 @@ export class RegisterDto {
     username!: string;
 
     @IsNotEmpty()
+    @IsString()
     @MinLength(8, {
         message: 'Password must be at least 8 characters long.',
     })
+    @MaxLength(128, { message: 'Password is too long.' })
     password!: string;
 }

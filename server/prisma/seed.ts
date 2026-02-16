@@ -29,10 +29,10 @@ async function main() {
 
     console.log('✅ Roles created/verified.');
 
-    const passwordHash = await argon2.hash('MjavadH');
+    const passwordHash = await argon2.hash('MjavadH'); // Must be more than 8 characters
 
     const admin = await prisma.user.upsert({
-        where: { email: 'MjavadH@gmail.com' },
+        where: { email: 'MjavadH@gmail.com' }, // Only @gmail.com
         update: {},
         create: {
             email: 'MjavadH@gmail.com',
