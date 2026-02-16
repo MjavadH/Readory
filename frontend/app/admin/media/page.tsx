@@ -20,8 +20,6 @@ import {
   Upload,
   ImageIcon,
   Search,
-  HardDrive,
-  FileImage,
   Trash2,
   Loader2,
   Pencil,
@@ -104,7 +102,16 @@ export default function AdminMedia() {
 
         const data = await apiClient
             .get<MediaItem[] | PagedMediaResponse>(`/media?${qs.toString()}`, { signal: controller.signal })
-            .catch(() => ({ items: [], total: 0, totalPages: 1, page: 1, limit: ITEMS_PER_PAGE } as PagedMediaResponse))
+            .catch(
+                () =>
+                    ({
+                      items: [],
+                      total: 0,
+                      totalPages: 1,
+                      page: 1,
+                      limit: ITEMS_PER_PAGE,
+                    }) as PagedMediaResponse,
+            )
 
         if (Array.isArray(data)) {
           // fallback compatibility
@@ -131,10 +138,6 @@ export default function AdminMedia() {
       clearTimeout(t)
     }
   }, [searchQuery, page, refreshNonce, toast, hasLoadedOnce])
-
-  const totalSizeVisible = useMemo(() => {
-    return files.reduce((acc, item) => acc + (Number(item.size) || 0), 0)
-  }, [files])
 
   const selectedSize = useMemo(() => {
     return selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0)
@@ -290,33 +293,6 @@ export default function AdminMedia() {
             <p className="text-muted-foreground">Upload and manage your media assets</p>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
-              <CardContent className="flex items-center gap-4 py-4">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
-                  <FileImage className="size-6 text-blue-600 dark:text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Images</p>
-                  <p className="text-xl sm:text-2xl font-bold">{total}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-linear-to-br from-purple-500/5 to-purple-500/10">
-              <CardContent className="flex items-center gap-4 py-4">
-                <div className="flex size-12 items-center justify-center rounded-xl bg-purple-500/10 ring-1 ring-purple-500/20">
-                  <HardDrive className="size-6 text-purple-600 dark:text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-xs sm:text-sm text-muted-foreground font-medium">Visible Storage</p>
-                  <p className="text-xl sm:text-2xl font-bold">~{(totalSizeVisible / (1024 * 1024)).toFixed(1)} MB</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Upload */}
           <Card className="border-primary/20 overflow-hidden">
             <CardHeader>
@@ -353,7 +329,9 @@ export default function AdminMedia() {
                       </div>
 
                       <div className="space-y-2">
-                        <p className="text-base md:text-lg font-semibold">{isDragging ? "Drop your images here" : "Drag & drop your images"}</p>
+                        <p className="text-base md:text-lg font-semibold">
+                          {isDragging ? "Drop your images here" : "Drag & drop your images"}
+                        </p>
                         <p className="text-sm text-muted-foreground">or</p>
                       </div>
 
@@ -409,9 +387,7 @@ export default function AdminMedia() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold">
-                            {selectedFiles.length} file(s) selected
-                          </p>
+                          <p className="text-sm font-semibold">{selectedFiles.length} file(s) selected</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             ~{(selectedSize / 1024).toFixed(1)} KB
                             {isUploading && " • Uploading..."}
@@ -507,8 +483,13 @@ export default function AdminMedia() {
           <Card className="border-primary/20">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <CardTitle>Media Gallery</CardTitle>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Media Gallery</CardTitle>
+                    <span className="inline-flex items-center rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs font-medium">
+                    Total: {total.toLocaleString()}
+                  </span>
+                  </div>
                   <CardDescription className="mt-1">Browse and manage your uploaded images</CardDescription>
                 </div>
               </div>
@@ -525,6 +506,7 @@ export default function AdminMedia() {
                     className="pl-9 h-11"
                 />
               </div>
+
               {/* Image Grid */}
               <div className="relative">
                 {/* Overlay spinner only after first load */}
@@ -582,7 +564,8 @@ export default function AdminMedia() {
                                   flex flex-row sm:flex-col gap-1.5 opacity-100 sm:opacity-0
                                   sm:group-hover:opacity-100 sm:group-focus-within:opacity-100
                                   pointer-events-auto sm:pointer-events-none sm:group-hover:pointer-events-auto
-                                  sm:group-focus-within:pointer-events-auto transition-opacity duration-300">
+                                  sm:group-focus-within:pointer-events-auto transition-opacity duration-300"
+                              >
                                 <Button
                                     size="icon"
                                     variant="secondary"
@@ -645,15 +628,11 @@ export default function AdminMedia() {
                       <div className="flex items-center gap-1">
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                           let pageNum: number
-                          if (totalPages <= 5) {
-                            pageNum = i + 1
-                          } else if (page <= 3) {
-                            pageNum = i + 1
-                          } else if (page >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i
-                          } else {
-                            pageNum = page - 2 + i
-                          }
+                          if (totalPages <= 5) pageNum = i + 1
+                          else if (page <= 3) pageNum = i + 1
+                          else if (page >= totalPages - 2) pageNum = totalPages - 4 + i
+                          else pageNum = page - 2 + i
+
                           return (
                               <Button
                                   key={pageNum}
