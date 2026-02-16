@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { AdminPagination } from "@/components/admin-pagination"
 import {
     Dialog,
     DialogContent,
@@ -35,8 +36,6 @@ import {
     CheckCircle2,
     Clock,
     Star,
-    ChevronLeft,
-    ChevronRight,
     ImageIcon,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
@@ -811,60 +810,14 @@ export default function AdminBooks() {
                         ))}
                     </div>
                 )}
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                            Showing {(page - 1) * ITEMS_PER_PAGE + 1} to {Math.min(page * ITEMS_PER_PAGE, stats.total)}{" "}
-                            of {stats.total} books
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                            >
-                                <ChevronLeft className="size-4 mr-1" />
-                                Previous
-                            </Button>
-                            <div className="hidden sm:flex items-center gap-1">
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    let pageNum
-                                    if (totalPages <= 5) {
-                                        pageNum = i + 1
-                                    } else if (page <= 3) {
-                                        pageNum = i + 1
-                                    } else if (page >= totalPages - 2) {
-                                        pageNum = totalPages - 4 + i
-                                    } else {
-                                        pageNum = page - 2 + i
-                                    }
-                                    return (
-                                        <Button
-                                            key={pageNum}
-                                            variant={page === pageNum ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => setPage(pageNum)}
-                                            className="w-9"
-                                        >
-                                            {pageNum}
-                                        </Button>
-                                    )
-                                })}
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                            >
-                                Next
-                                <ChevronRight className="size-4 ml-1" />
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <AdminPagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    totalItems={stats.total}
+                    pageSize={ITEMS_PER_PAGE}
+                    itemLabel="books"
+                    onPageChange={setPage}
+                />
                 <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
                     <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
                         {selectedBook && (
