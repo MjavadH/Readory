@@ -4,6 +4,7 @@ import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { AdminPagination } from "@/components/admin-pagination"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -26,8 +27,6 @@ import {
   X,
   CheckCircle2,
   AlertCircle,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
@@ -603,63 +602,16 @@ export default function AdminMedia() {
                 )}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      Showing <span className="font-semibold text-foreground">{files.length}</span> of{" "}
-                      <span className="font-semibold text-foreground">{total}</span> media items (Page{" "}
-                      <span className="font-semibold text-foreground">{page}</span> of{" "}
-                      <span className="font-semibold text-foreground">{totalPages}</span>)
-                    </p>
-
-                    <div className="flex gap-2 items-center">
-                      <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.max(1, p - 1))}
-                          disabled={isGalleryLoading || page === 1}
-                          className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        <ChevronLeft className="size-4 mr-1" />
-                        Previous
-                      </Button>
-
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum: number
-                          if (totalPages <= 5) pageNum = i + 1
-                          else if (page <= 3) pageNum = i + 1
-                          else if (page >= totalPages - 2) pageNum = totalPages - 4 + i
-                          else pageNum = page - 2 + i
-
-                          return (
-                              <Button
-                                  key={pageNum}
-                                  variant={page === pageNum ? "default" : "outline"}
-                                  size="sm"
-                                  onClick={() => setPage(pageNum)}
-                                  className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
-                              >
-                                {pageNum}
-                              </Button>
-                          )
-                        })}
-                      </div>
-
-                      <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                          disabled={isGalleryLoading || page >= totalPages}
-                          className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                      >
-                        Next
-                        <ChevronRight className="size-4 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-              )}
+              <AdminPagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={total}
+                pageSize={ITEMS_PER_PAGE}
+                itemLabel="media items"
+                onPageChange={setPage}
+                canGoPrevious={!isGalleryLoading && page > 1}
+                canGoNext={!isGalleryLoading && page < totalPages}
+              />
             </CardContent>
           </Card>
 

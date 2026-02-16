@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { AdminPagination } from "@/components/admin-pagination"
 import {
     TrendingUp,
     TrendingDown,
@@ -12,8 +12,6 @@ import {
     ArrowDownCircle,
     ArrowUpCircle,
     Wallet,
-    ChevronLeft,
-    ChevronRight,
     Activity,
 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
@@ -317,63 +315,16 @@ export default function AdminTransactions() {
                         </div>
                     </CardContent>
                 </Card>
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                            Showing <span className="font-semibold text-foreground">{transactions.length}</span> of{" "}
-                            <span className="font-semibold text-foreground">{stats.total}</span> transactions (Page {page} of{" "}
-                            {totalPages || 1})
-                        </p>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                            >
-                                <ChevronLeft className="size-4 mr-1" />
-                                Previous
-                            </Button>
-                            <div className="flex items-center gap-1">
-                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    let pageNum
-                                    if (totalPages <= 5) {
-                                        pageNum = i + 1
-                                    } else if (page <= 3) {
-                                        pageNum = i + 1
-                                    } else if (page >= totalPages - 2) {
-                                        pageNum = totalPages - 4 + i
-                                    } else {
-                                        pageNum = page - 2 + i
-                                    }
-                                    return (
-                                        <Button
-                                            key={pageNum}
-                                            variant={page === pageNum ? "default" : "outline"}
-                                            size="sm"
-                                            onClick={() => setPage(pageNum)}
-                                            className={`w-9 h-9 ${page === pageNum ? "shadow-md" : "shadow-sm hover:shadow-md"} transition-shadow`}
-                                        >
-                                            {pageNum}
-                                        </Button>
-                                    )
-                                })}
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => p + 1)}
-                                disabled={!hasMore}
-                                className="h-9 shadow-sm hover:shadow-md transition-shadow"
-                            >
-                                Next
-                                <ChevronRight className="size-4 ml-1" />
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <AdminPagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    totalItems={stats.total}
+                    pageSize={ITEMS_PER_PAGE}
+                    itemLabel="transactions"
+                    onPageChange={setPage}
+                    canGoPrevious={page > 1}
+                    canGoNext={hasMore}
+                />
             </div>
         </div>
     )
