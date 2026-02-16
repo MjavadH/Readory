@@ -198,7 +198,7 @@ export class ChaptersService {
                 index: true,
                 isFree: true,
                 price: true,
-                bookId: true,
+                book: { select: { id: true, title: true }},
             },
         });
 
@@ -216,8 +216,8 @@ export class ChaptersService {
 
         // Debit + access record in tx
         return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index}`);
-            return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.bookId } });
+            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index} from ${chapter.book.title}`);
+            return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
         });
     }
 }
