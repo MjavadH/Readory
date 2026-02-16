@@ -575,6 +575,72 @@ export class BooksService {
         };
     }
 
+    async getRelatedBooks(bookId: number, limitInput: number) {
+        const limit = clamp(limitInput || 12, 1, 24);
+        const book = await this.prisma.book.findUnique({
+            where: { id: bookId },
+            select: {
+                id: true,
+                typeId: true,
+                genres: { select: { genreId: true } },
+            },
+        });
+
+        if (!book) throw new NotFoundException('book not found');
+
+        const genreIds = book.genres.map((item) => item.genreId);
+
+        const rows = await this.prisma.book.findMany({
+            where: {
+                isPublished: true,
+                id: { not: bookId },
+            },
+            include: {
+                type: { select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true } },
+                _count: { select: { chapters: true } },
+                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+            },
+            take: 120,
+        });
+
+        const scored = rows
+            .map((row) => {
+                const genreMatchCount = row.genres.filter((g) => genreIds.includes(g.genre.id)).length;
+                const score = [
+                    genreMatchCount > 0 ? 1 : 0,
+                    row.typeId === book.typeId ? 1 : 0,
+                    Number(row.ratingAvg),
+                    row.updatedAt.getTime(),
+                ] as const;
+
+                return {
+                    id: row.id,
+                    title: row.title,
+                    coverImage: row.coverImage,
+                    type: row.type,
+                    author: row.author,
+                    ratingAvg: Number(toNumber(row.ratingAvg).toFixed(2)),
+                    ratingCount: row.ratingCount,
+                    genres: row.genres.map((g) => g.genre),
+                    isFeatured: row.isFeatured,
+                    chapterCount: row._count.chapters,
+                    updatedAt: row.updatedAt.toISOString(),
+                    _score: score,
+                };
+            })
+            .sort((a, b) => {
+                if (b._score[0] !== a._score[0]) return b._score[0] - a._score[0];
+                if (b._score[1] !== a._score[1]) return b._score[1] - a._score[1];
+                if (b._score[2] !== a._score[2]) return b._score[2] - a._score[2];
+                if (b._score[3] !== a._score[3]) return b._score[3] - a._score[3];
+                return b.id - a.id;
+            })
+            .slice(0, limit)
+            .map(({ _score, ...item }) => item);
+
+        return { items: scored };
+    }
+
     // Get book with chapters
     async findById(id: number) {
         return this.prisma.book.findUnique({

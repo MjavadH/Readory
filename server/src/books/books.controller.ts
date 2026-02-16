@@ -65,6 +65,14 @@ export class BooksController {
         return this.booksService.findById(id);
     }
 
+    @Get(':id/related')
+    async related(
+        @Param('id', ParseIntPipe) id: number,
+        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+    ) {
+        return this.booksService.getRelatedBooks(id, limit);
+    }
+
     @Get('type/:type/browse')
     async browseByType(@Param('type') type: string, @Query() query: BrowseTypeBooksDto) {
         return this.booksService.browseByType(type, query);

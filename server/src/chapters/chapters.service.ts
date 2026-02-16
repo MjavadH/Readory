@@ -6,6 +6,7 @@ import { PublicService } from '../public/public.service'
 import Redis from 'ioredis';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { ListChaptersDto } from './dto/list-chapters.dto';
 
 @Injectable()
 export class ChaptersService {
@@ -17,18 +18,56 @@ export class ChaptersService {
     ) {}
 
     // List chapters for a book (public)
-    async listChapters(bookId: number) {
-        return this.prisma.chapter.findMany({
-            where: { bookId },
-            orderBy: { index: 'asc' },
-            select: {
-                id: true,
-                title: true,
-                index: true,
-                price: true,
-                isFree: true,
+    async listChapters(bookId: number, query: ListChaptersDto) {
+        const q = query.q?.trim();
+        const page = Number.isInteger(query.page) ? Number(query.page) : 1;
+        const limit = Number.isInteger(query.limit) ? Math.min(Number(query.limit), 100) : 50;
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.max(limit, 1);
+        const skip = (safePage - 1) * safeLimit;
+
+        const where: Prisma.ChapterWhereInput = {
+            bookId,
+            ...(q
+                ? {
+                    OR: [
+                        { title: { contains: q, mode: 'insensitive' } },
+                        ...(Number.isInteger(Number(q)) ? [{ index: Number(q) }] : []),
+                    ],
+                }
+                : {}),
+        };
+
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.chapter.findMany({
+                where,
+                orderBy: { index: 'asc' },
+                skip,
+                take: safeLimit,
+                select: {
+                    id: true,
+                    title: true,
+                    index: true,
+                    price: true,
+                    isFree: true,
+                    updatedAt: true,
+                },
+            }),
+            this.prisma.chapter.count({ where }),
+        ]);
+
+        return {
+            items: items.map((item) => ({
+                ...item,
+                price: item.price ? item.price.toNumber() : null,
+            })),
+            pagination: {
+                page: safePage,
+                limit: safeLimit,
+                total,
+                totalPages: Math.max(1, Math.ceil(total / safeLimit)),
             },
-        });
+        };
     }
 
     // Admin: create a new chapter

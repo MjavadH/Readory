@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, ParseIntPipe, Patch, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Delete, Get, ParseIntPipe, Patch, Post, Param, Body, UseGuards, Request, Query } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
@@ -9,6 +9,7 @@ import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
+import { ListChaptersDto } from './dto/list-chapters.dto';
 
 @Controller('books/:bookId/chapters')
 export class ChaptersController {
@@ -16,8 +17,8 @@ export class ChaptersController {
 
     // Public: list chapters of a book
     @Get()
-    async list(@Param('bookId', ParseIntPipe) bookId: number) {
-        return this.chaptersService.listChapters(bookId);
+    async list(@Param('bookId', ParseIntPipe) bookId: number, @Query() query: ListChaptersDto) {
+        return this.chaptersService.listChapters(bookId, query);
     }
 
     // Admin: add a new chapter to a book
