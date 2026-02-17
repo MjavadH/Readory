@@ -13,6 +13,7 @@ interface BookCardProps {
     book: BookCardData;
     priority?: boolean;
     className?: string;
+    link?: string;
 }
 
 function formatTimeAgo(date: Date): string {
@@ -44,13 +45,13 @@ function formatTimeAgo(date: Date): string {
     return `${years} year${years !== 1 ? "s" : ""} ago`;
 }
 
-export function BookCard({ book, priority = false, className }: BookCardProps) {
+export function BookCard({ book, priority = false, className, link }: BookCardProps) {
     const [isImageLoaded, setIsImageLoaded] = useState(false);
     const url = getBookUrl(book);
 
     return (
         <Link
-            href={url}
+            href={link ?? url}
             className={cn(
                 "group relative flex flex-col rounded-lg outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
