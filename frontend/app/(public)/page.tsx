@@ -9,17 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { TrendingSection } from "@/components/trending-section"
 import { LatestSection } from "@/components/latest-section"
 import { GenresSection } from "@/components/genres-section"
-import { BookType, BookGenre} from "@/lib/types"
+import {BookType, BookGenre, BookCardData} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
-
-interface Book {
-    id: number
-    title: string
-    cover: string
-    desc: string
-    type: BookType
-    genres: string[]
-}
 
 interface Chapter {
     id: number
@@ -46,7 +37,7 @@ interface TrendingBook {
 }
 
 interface HomeContent {
-    hero: Book[]
+    hero: BookCardData[]
     latest: LatestBook[]
     trending: TrendingBook[]
     genres: BookGenre[]
@@ -75,7 +66,7 @@ function HeroSkeleton() {
     )
 }
 
-function HeroCarousel({ books }: { books: Book[] }) {
+function HeroCarousel({ books }: { books: BookCardData[] }) {
     if (books.length === 0) return;
     console.log(books)
     const [current, setCurrent] = useState(0)
@@ -113,7 +104,7 @@ function HeroCarousel({ books }: { books: Book[] }) {
                     <Link href={`/${bookTypeSlug}/${book.id}`} className="block">
                         <div className="relative w-44 md:w-52 aspect-2/3 rounded-xl overflow-hidden shadow-xl ring-1 ring-border/20 transition-transform duration-300 hover:scale-[1.03]">
                             <Image
-                                src={book.cover ? `/media/${book.cover}/thumbnail` : "/placeholder.svg"}
+                                src={book.coverImage ? `/media/${book.coverImage}/thumbnail` : "/placeholder.svg"}
                                 alt={book.title}
                                 fill
                                 className="object-cover"
@@ -132,19 +123,19 @@ function HeroCarousel({ books }: { books: Book[] }) {
 
                     {/* Description */}
                     <p className="text-sm md:text-base text-muted-foreground leading-relaxed mb-5 line-clamp-2">
-                        {book.desc}
+                        {book.description}
                     </p>
 
                     {/* Tags */}
                     <div className="flex flex-wrap gap-2 mb-6">
                         {book.genres &&
                             book.genres.map((genre, idx) => (
-                                <Link key={`genre-${idx}`} href={`/genres/${genre.toLowerCase()}`}>
+                                <Link key={`genre-${idx}`} href={`/genres/${genre.slug}`}>
                                     <Badge
                                         variant="secondary"
                                         className="cursor-pointer bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-all duration-200 text-xs md:text-sm px-3 py-1"
                                     >
-                                        {genre}
+                                        {genre.name}
                                     </Badge>
                                 </Link>
                             ))}

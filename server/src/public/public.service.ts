@@ -35,11 +35,14 @@ export class PublicService {
                     title: true,
                     description: true,
                     coverImage: true,
-                    type: { select: { id: true, name: true, slug: true } },
+                    author: true,
+                    type: { select: { name: true, slug: true } },
                     genres: {
-                        select: { genre: { select: { name: true } } },
+                        select: { genre: { select: { name: true, slug: true } } },
                         take: 3
-                    }
+                    },
+                    ratingAvg: true,
+                    ratingCount: true,
                 },
             }),
 
@@ -103,10 +106,13 @@ export class PublicService {
             hero: featuredBooks.map(b => ({
                 id: b.id,
                 title: b.title,
-                desc: b.description ? b.description.substring(0, 200) + '...' : '',
-                cover: b.coverImage,
+                description: b.description ? b.description.substring(0, 200) + '...' : '',
+                coverImage: b.coverImage,
                 type: b.type,
-                genres: b.genres.map(g => g.genre.name)
+                genres: b.genres.map((g) => g.genre),
+                author: b.author,
+                ratingAvg: b.ratingAvg,
+                ratingCount: b.ratingCount,
             })),
             latest: latestUpdates.map(b => ({
                 id: b.id,
