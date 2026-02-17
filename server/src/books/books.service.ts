@@ -2,7 +2,6 @@ import {Injectable, NotFoundException, BadRequestException, Inject} from '@nestj
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import Redis from 'ioredis';
-import { WalletsService } from '../wallets/wallets.service';
 import { PublicService } from '../public/public.service'
 import { createHash } from 'crypto';
 
@@ -20,9 +19,13 @@ function decodeCursor(cursor?: string): CursorPayload | null {
     if (!cursor) return null;
     try {
         const raw = Buffer.from(cursor, 'base64url').toString('utf8');
-        const obj = JSON.parse(raw) as CursorPayload;
-        if (!obj || typeof obj.id !== 'number' || typeof obj.sort !== 'string') return null;
-        return obj;
+        const obj = JSON.parse(raw);
+        if (!obj ||
+            typeof obj !== 'object' ||
+            typeof obj.id !== 'number' ||
+            typeof obj.sort !== 'string'
+        ) return null;
+        return obj as CursorPayload;
     } catch {
         return null;
     }
@@ -32,7 +35,7 @@ function toNumber(v: unknown): number {
     if (v == null) return 0;
     if (typeof v === 'number') return v;
     if (typeof v === 'string') return Number(v);
-    if (typeof v === 'object' && v !== null && 'toNumber' in v && typeof (v as any).toNumber === 'function') {
+    if (typeof v === 'object' && 'toNumber' in v && typeof (v as any).toNumber === 'function') {
         return (v as any).toNumber();
     }
     return Number(v);
@@ -668,8 +671,7 @@ export class BooksService {
         const bookExists = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
         if (!bookExists) throw new NotFoundException('Book not found');
 
-        const [wallet, myRating, purchased] = await Promise.all([
-            this.prisma.wallet.findUnique({ where: { userId }, select: { balance: true } }),
+        const [myRating, purchased] = await Promise.all([
             this.prisma.bookRating.findUnique({ where: { userId_bookId: { userId, bookId } }, select: { rating: true } }),
             this.prisma.accessRecord.findMany({
                 where: { userId, chapter: { bookId } },
@@ -678,7 +680,6 @@ export class BooksService {
         ]);
 
         return {
-            walletBalance: wallet?.balance ? wallet.balance.toNumber() : 0,
             myRating: myRating?.rating ?? null,
             purchasedChapterIds: purchased.map((row) => row.chapterId).filter((chapterId): chapterId is number => typeof chapterId === 'number'),
         };

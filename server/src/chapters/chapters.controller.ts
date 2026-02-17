@@ -17,7 +17,9 @@ export class ChaptersController {
 
     // Public: list chapters of a book
     @Get()
-    async list(@Param('bookId', ParseIntPipe) bookId: number, @Query() query: ListChaptersDto) {
+    async list(
+        @Param('bookId', ParseIntPipe) bookId: number,
+        @Query() query: ListChaptersDto) {
         return this.chaptersService.listChapters(bookId, query);
     }
 
@@ -26,7 +28,9 @@ export class ChaptersController {
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     @Post()
-    async create(@Param('bookId', ParseIntPipe) bookId: number, @Body() dto: CreateChapterDto) {
+    async create(
+        @Param('bookId', ParseIntPipe) bookId: number,
+        @Body() dto: CreateChapterDto) {
         return this.chaptersService.createChapter(bookId, dto);
     }
 
