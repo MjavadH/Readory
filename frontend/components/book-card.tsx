@@ -8,41 +8,13 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { BookCardData } from "@/lib/types";
 import { getBookUrl } from "@/lib/types";
+import { formatUpdateTime } from "@/lib/time";
 
 interface BookCardProps {
     book: BookCardData;
     priority?: boolean;
     className?: string;
     link?: string;
-}
-
-function formatTimeAgo(date: Date): string {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return "just now";
-    if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} minute${minutes !== 1 ? "s" : ""} ago`;
-    }
-    if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-    }
-    if (diffInSeconds < 604800) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days !== 1 ? "s" : ""} ago`;
-    }
-    if (diffInSeconds < 2592000) {
-        const weeks = Math.floor(diffInSeconds / 604800);
-        return `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
-    }
-    if (diffInSeconds < 31536000) {
-        const months = Math.floor(diffInSeconds / 2592000);
-        return `${months} month${months !== 1 ? "s" : ""} ago`;
-    }
-    const years = Math.floor(diffInSeconds / 31536000);
-    return `${years} year${years !== 1 ? "s" : ""} ago`;
 }
 
 export function BookCard({ book, priority = false, className, link }: BookCardProps) {
@@ -59,8 +31,8 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
             )}
             aria-label={`View ${book.title}${book.author ? ` by ${book.author}` : ""}`}
         >
-            {/* Cover Image Container - portrait aspect ratio */}
-            <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-muted">
+            {/* Cover Image Container */}
+            <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-muted">
                 {/* Skeleton / loading state */}
                 <div
                     className={cn(
@@ -173,7 +145,7 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                 {book.updatedAt && (
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span>{formatTimeAgo(new Date(book.updatedAt))}</span>
+                        <span>{formatUpdateTime(new Date(book.updatedAt))}</span>
                     </div>
                 )}
 

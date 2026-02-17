@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Clock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BookType } from "@/lib/types";
+import { formatUpdateTime } from "@/lib/time";
 
 interface Chapter {
     id: number;
@@ -19,30 +20,6 @@ interface LatestBook {
     time: string;
     type: BookType;
     chapters: Chapter[];
-}
-
-function TimeAgo({ time }: { time: string }) {
-    const diff = Date.now() - new Date(time).getTime();
-    const mins = Math.floor(diff / 60000);
-    const hours = Math.floor(mins / 60);
-    const days = Math.floor(hours / 24);
-
-    let label: string;
-    if (mins < 60) label = `${mins}m ago`;
-    else if (hours < 24) label = `${hours}h ago`;
-    else if (days < 7) label = `${days}d ago`;
-    else
-        label = new Date(time).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-        });
-
-    return (
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-      <Clock className="h-3 w-3" />
-            {label}
-    </span>
-    );
 }
 
 export function LatestSection({ books }: { books: LatestBook[] }) {
@@ -74,7 +51,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                         <Link key={book.id} href={`/${typeSlug}/${book.id}`}>
                             <div className="group flex cursor-pointer gap-4 rounded-xl border border-border bg-card p-3 transition-all duration-300 hover:border-primary/30 hover:bg-accent/50">
                                 {/* Cover */}
-                                <div className="relative aspect-[2/3] w-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 md:w-24">
+                                <div className="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 md:w-24">
                                     <Image
                                         src={
                                             book.cover
@@ -107,7 +84,10 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                             >
                                                 {typeDisplay}
                                             </Badge>
-                                            <TimeAgo time={book.time} />
+                                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                <Clock className="h-3 w-3" />
+                                                {formatUpdateTime(book.time)}
+                                            </span>
                                         </div>
                                     </div>
 
