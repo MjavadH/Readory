@@ -27,19 +27,10 @@ interface LatestBook {
     chapters: Chapter[]
 }
 
-interface TrendingBook {
-    id: number
-    title: string
-    cover: string
-    type: BookType
-    ratingAvg: number
-    ratingCount: number
-}
-
 interface HomeContent {
     hero: BookCardData[]
     latest: LatestBook[]
-    trending: TrendingBook[]
+    trending: BookCardData[]
     genres: BookGenre[]
 }
 

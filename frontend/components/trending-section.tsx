@@ -3,18 +3,9 @@
 import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { BookCard } from "@/components/book-card";
-import type { BookCardData, BookType } from "@/lib/types";
+import type { BookCardData } from "@/lib/types";
 
-interface TrendingBook {
-    id: number;
-    title: string;
-    cover: string;
-    type: BookType;
-    ratingAvg: number;
-    ratingCount: number;
-}
-
-export function TrendingSection({ books }: { books: TrendingBook[] }) {
+export function TrendingSection({ books }: { books: BookCardData[] }) {
     if (books.length === 0) return;
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -87,8 +78,8 @@ export function TrendingSection({ books }: { books: TrendingBook[] }) {
                         const bookData: BookCardData = {
                             id: book.id,
                             title: book.title,
-                            coverImage: book.cover
-                                ? `${book.cover}`
+                            coverImage: book.coverImage
+                                ? `${book.coverImage}`
                                 : "/placeholder.svg",
                             type: book.type,
                             ratingAvg: book.ratingAvg,
@@ -98,7 +89,7 @@ export function TrendingSection({ books }: { books: TrendingBook[] }) {
                         return (
                             <div
                                 key={book.id}
-                                className="w-[160px] shrink-0 snap-start first:snap-start md:w-[200px]"
+                                className="w-40 shrink-0 snap-start first:snap-start md:w-50"
                             >
                                 <div className="relative">
                                     <BookCard book={bookData} priority={index < 6} />
