@@ -129,7 +129,7 @@ export class PublicService {
             trending: trendingBooks.map(b => ({
                 id: b.id,
                 title: b.title,
-                cover: b.coverImage,
+                coverImage: b.coverImage,
                 type: b.type,
                 ratingAvg: Number(b.ratingAvg),
                 ratingCount: b.ratingCount,
