@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
+import {StatCard} from "@/components/stat-card";
 
 interface Transaction {
   id: number
@@ -247,41 +248,25 @@ export default function AdminUsers() {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
-                <Users className="size-6 text-blue-600 dark:text-blue-500" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Users</p>
-                <p className="text-xl sm:text-2xl font-bold">{(stats?.totalUsers || 0).toLocaleString()}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 bg-linear-to-br from-green-500/5 to-green-500/10">
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-green-500/10 ring-1 ring-green-500/20">
-                <Activity className="size-6 text-green-600 dark:text-green-500" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Active (30 Days)</p>
-                <p className="text-xl sm:text-2xl font-bold">{(stats?.activeUsers || 0).toLocaleString()}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 bg-linear-to-br from-violet-500/5 to-violet-500/10 sm:col-span-2 lg:col-span-1">
-            <CardContent className="flex items-center gap-4 py-4">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-violet-500/10 ring-1 ring-violet-500/20">
-                <UserPlus className="size-6 text-violet-600 dark:text-violet-500" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground font-medium">New (7 Days)</p>
-                <p className="text-xl sm:text-2xl font-bold">{(stats?.newUsers || 0).toLocaleString()}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+              title="Total Users"
+              value={(stats?.totalUsers || 0).toLocaleString()}
+              icon={Users}
+              color="blue"
+          />
+          <StatCard
+              title="Active (30 Days)"
+              value={(stats?.activeUsers || 0).toLocaleString()}
+              icon={Activity}
+              color="green"
+          />
+          <StatCard
+              title="New (7 Days)"
+              value={(stats?.newUsers || 0).toLocaleString()}
+              icon={UserPlus}
+              color="violet"
+              className="sm:col-span-2 lg:col-span-1"
+          />
         </div>
 
         {/* Search */}

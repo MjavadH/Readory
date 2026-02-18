@@ -15,6 +15,7 @@ import {
     Activity,
 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
+import {StatCard} from "@/components/stat-card";
 
 function GrowthIndicator({ value }: { value?: number }) {
     if (value === undefined) return null
@@ -161,51 +162,29 @@ export default function AdminTransactions() {
                     <p className="text-sm sm:text-base text-muted-foreground">View all wallet transactions</p>
                 </div>
 
+                {/* Stats Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
-                        <CardContent className="flex items-center justify-between gap-4 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
-                                    <Activity className="size-6 text-blue-600 dark:text-blue-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Transactions</p>
-                                    <p className="text-xl sm:text-2xl font-bold">{stats.total.toLocaleString()}</p>
-                                </div>
-                            </div>
-                            <GrowthIndicator value={stats.growth?.totalTransactions} />
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-border/50 bg-linear-to-br from-emerald-500/5 to-emerald-500/10">
-                        <CardContent className="flex items-center justify-between gap-4 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
-                                    <ArrowUpCircle className="size-6 text-emerald-600 dark:text-emerald-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">Deposits</p>
-                                    <p className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.creditAmount)}</p>
-                                </div>
-                            </div>
-                            <GrowthIndicator value={stats.growth?.creditAmount} />
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-border/50 bg-linear-to-br from-red-500/5 to-red-500/10">
-                        <CardContent className="flex items-center justify-between gap-4 py-4">
-                            <div className="flex items-center gap-4">
-                                <div className="flex size-12 items-center justify-center rounded-xl bg-red-500/10 ring-1 ring-red-500/20">
-                                    <ArrowDownCircle className="size-6 text-red-600 dark:text-red-500" />
-                                </div>
-                                <div>
-                                    <p className="text-xs sm:text-sm text-muted-foreground font-medium">Withdrawals</p>
-                                    <p className="text-xl sm:text-2xl font-bold">{formatCurrency(stats.debitAmount)}</p>
-                                </div>
-                            </div>
-                            <GrowthIndicator value={stats.growth?.debitAmount} />
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        title="Total Transactions"
+                        value={stats.total.toLocaleString()}
+                        icon={Activity}
+                        color="blue"
+                        indicator={<GrowthIndicator value={stats.growth?.totalTransactions} />}
+                    />
+                    <StatCard
+                        title="Deposits"
+                        value={formatCurrency(stats.creditAmount)}
+                        icon={ArrowUpCircle}
+                        color="emerald"
+                        indicator={<GrowthIndicator value={stats.growth?.creditAmount} />}
+                    />
+                    <StatCard
+                        title="Withdrawals"
+                        value={formatCurrency(stats.debitAmount)}
+                        icon={ArrowDownCircle}
+                        color="red"
+                        indicator={<GrowthIndicator value={stats.growth?.debitAmount} />}
+                    />
                 </div>
 
                 <Card className="border-none shadow-lg overflow-hidden bg-card">

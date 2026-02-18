@@ -43,6 +43,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { MediaPicker } from "@/components/media-picker"
+import {StatCard} from "@/components/stat-card";
 
 // Added type alias for StatusFilter
 type StatusFilter = "all" | "published" | "draft" | "featured"
@@ -602,40 +603,26 @@ export default function AdminBooks() {
                     </Dialog>
                 </div>
 
+                {/* Stats Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
-                        <CardContent className="flex items-center gap-4 py-4">
-                            <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 ring-1 ring-blue-500/20">
-                                <BookOpen className="size-6 text-blue-600 dark:text-blue-500" />
-                            </div>
-                            <div>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Total Books</p>
-                                <p className="text-xl sm:text-2xl font-bold">{stats.total.toLocaleString()}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 bg-linear-to-br from-emerald-500/5 to-emerald-500/10">
-                        <CardContent className="flex items-center gap-4 py-4">
-                            <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 ring-1 ring-emerald-500/20">
-                                <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-500" />
-                            </div>
-                            <div>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Published</p>
-                                <p className="text-xl sm:text-2xl font-bold">{stats.Published.toLocaleString()}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-border/50 bg-linear-to-br from-amber-500/5 to-amber-500/10">
-                        <CardContent className="flex items-center gap-4 py-4">
-                            <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20">
-                                <Clock className="size-6 text-amber-600 dark:text-amber-500" />
-                            </div>
-                            <div>
-                                <p className="text-xs sm:text-sm text-muted-foreground font-medium">Drafts</p>
-                                <p className="text-xl sm:text-2xl font-bold">{stats.Drafts.toLocaleString()}</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StatCard
+                        title="Total Books"
+                        value={stats.total.toLocaleString()}
+                        icon={BookOpen}
+                        color="blue"
+                    />
+                    <StatCard
+                        title="Published"
+                        value={stats.Published.toLocaleString()}
+                        icon={CheckCircle2}
+                        color="emerald"
+                    />
+                    <StatCard
+                        title="Drafts"
+                        value={stats.Drafts.toLocaleString()}
+                        icon={Clock}
+                        color="amber"
+                    />
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
