@@ -50,7 +50,7 @@ function getPaginationItems(currentPage: number, totalPages: number): Array<numb
   return items
 }
 
-export function AdminPagination({
+export function AppPagination({
   currentPage,
   totalPages,
   totalItems,

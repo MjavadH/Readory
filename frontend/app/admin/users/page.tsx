@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { AdminPagination } from "@/components/admin-pagination"
+import { AppPagination } from "@/components/app-pagination"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import {
   DropdownMenu,
@@ -420,7 +420,7 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
 
-        <AdminPagination
+        <AppPagination
           currentPage={currentPage}
           totalPages={totalPages}
           totalItems={totalListUsers}

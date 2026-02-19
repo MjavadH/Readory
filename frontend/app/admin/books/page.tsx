@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { AdminPagination } from "@/components/admin-pagination"
+import { AppPagination } from "@/components/app-pagination"
 import {
     Dialog,
     DialogContent,
@@ -797,7 +797,7 @@ export default function AdminBooks() {
                         ))}
                     </div>
                 )}
-                <AdminPagination
+                <AppPagination
                     currentPage={page}
                     totalPages={totalPages}
                     totalItems={stats.total}

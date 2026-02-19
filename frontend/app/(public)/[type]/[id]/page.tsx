@@ -14,8 +14,6 @@ import {
   Lock,
   Check,
   ShoppingCart,
-  ChevronLeft,
-  ChevronRight,
   Unlock,
   AlertCircle,
   X,
@@ -29,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
 import { formatUpdateTime } from "@/lib/time";
+import {AppPagination} from "@/components/app-pagination";
 
 type BookDetails = {
   id: number;
@@ -179,12 +178,7 @@ function Toast({
   );
 }
 
-function ConfirmDialog({
-                         chapter,
-                         onConfirm,
-                         onCancel,
-                         isPending,
-                       }: {
+function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
   chapter: ActionChapter;
   onConfirm: () => void;
   onCancel: () => void;
@@ -782,37 +776,18 @@ export default function BookDetailsPage() {
                       );
                     })}
                   </div>
-
                   {chaptersTotalPages > 1 && (
-                      <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-800">
-                        <p className="text-sm text-muted-foreground">
-                          Page <span className="font-semibold">{chaptersPage}</span> of{" "}
-                          <span className="font-semibold">{chaptersTotalPages}</span>
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={chaptersPage <= 1}
-                              onClick={() => setChaptersPage((p) => Math.max(1, p - 1))}
-                              className="gap-1"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                            Previous
-                          </Button>
-                          <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={chaptersPage >= chaptersTotalPages}
-                              onClick={() =>
-                                  setChaptersPage((p) => Math.min(chaptersTotalPages, p + 1))
-                              }
-                              className="gap-1"
-                          >
-                            Next
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <div className="border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-800">
+                        <AppPagination
+                            currentPage={chaptersPage}
+                            totalPages={chaptersTotalPages}
+                            totalItems={chaptersTotal}
+                            pageSize={CHAPTERS_PER_PAGE}
+                            itemLabel="chapter"
+                            onPageChange={setChaptersPage}
+                            canGoPrevious={!chaptersLoading && chaptersPage > 1}
+                            canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
+                        />
                       </div>
                   )}
                 </>

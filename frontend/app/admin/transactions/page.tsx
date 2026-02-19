@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { AdminPagination } from "@/components/admin-pagination"
+import { AppPagination } from "@/components/app-pagination"
 import {
     TrendingUp,
     TrendingDown,
@@ -294,7 +294,7 @@ export default function AdminTransactions() {
                         </div>
                     </CardContent>
                 </Card>
-                <AdminPagination
+                <AppPagination
                     currentPage={page}
                     totalPages={totalPages}
                     totalItems={stats.total}

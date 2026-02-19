@@ -4,7 +4,7 @@ import type React from "react"
 import { useEffect, useMemo, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { AdminPagination } from "@/components/admin-pagination"
+import { AppPagination } from "@/components/app-pagination"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import {
@@ -602,7 +602,7 @@ export default function AdminMedia() {
                 )}
               </div>
 
-              <AdminPagination
+              <AppPagination
                 currentPage={page}
                 totalPages={totalPages}
                 totalItems={total}
