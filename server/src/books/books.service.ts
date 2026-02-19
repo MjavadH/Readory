@@ -546,25 +546,43 @@ export class BooksService {
         if (q) {
             where.title = { contains: q, mode: 'insensitive' };
         }
-        if (args.status === 'published') where.isPublished = true;
-        if (args.status === 'draft') where.isPublished = false;
-        if (args.status === 'featured') where.isFeatured = true;
+        switch (args.status) {
+            case 'all':
+                break;
+            case 'published':
+                where.isPublished = true;
+                break;
+            case 'draft':
+                where.isPublished = false;
+                break;
+            case 'featured':
+                where.isFeatured = true;
+                break;
+        }
 
         const skip = (page - 1) * limit;
 
         const [total, published, drafts, books] = await this.prisma.$transaction([
-            this.prisma.book.count({ where }),
-            this.prisma.book.count({ where: { ...where, isPublished: true } }),
-            this.prisma.book.count({ where: { ...where, isPublished: false } }),
+            this.prisma.book.count(),
+            this.prisma.book.count({ where: { isPublished: true } }),
+            this.prisma.book.count({ where: { isPublished: false } }),
             this.prisma.book.findMany({
                 where,
                 orderBy: { updatedAt: 'desc' },
                 skip,
                 take: limit,
-                include: {
-                    genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+                select: {
+                    title: true,
+                    author: true,
+                    coverImage: true,
+                    isPublished: true,
+                    isFeatured: true,
+                    ratingAvg: true,
+                    ratingCount: true,
+                    updatedAt: true,
+                    genres: { include: { genre: { select: { name: true, slug: true } } }, take: 3 },
                     _count: { select: { chapters: true } },
-                    type: { select: { id: true, name: true, slug: true } },
+                    type: { select: { name: true, } },
                 },
             }),
         ]);
