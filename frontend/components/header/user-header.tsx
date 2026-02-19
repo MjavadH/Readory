@@ -28,10 +28,13 @@ import {AppIcon} from "@/components/AppIcon";
 import { isIconKey, type IconKey } from "@readory/shared";
 import { apiClient } from "@/lib/api-client"
 import {BrandLogo} from "@/components/brand-logo";
+import {BookGenre} from "@/lib/types";
+import { WalletCard } from "@/components/header/wallet-card"
+import { TypeCarousel } from "@/components/header/type-carousel"
+import { GenreCarousel } from "@/components/header/genre-carousel"
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName?: RoleName; walletBalance?: number }
-type Genre = { name: string; slug: string; iconKey: IconKey; }
 type BookType = {name: string; slug: string; iconKey: IconKey;}
 
 function initialsFromUsername(username: string) {
@@ -230,7 +233,7 @@ export function UserHeader() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
 
-  const [genres, setGenres] = useState<Genre[]>([])
+  const [genres, setGenres] = useState<BookGenre[]>([])
   const [genresLoading, setGenresLoading] = useState(true)
   const [bookType, setBookType] = useState<BookType[]>([])
   const [bookTypeLoading, setBookTypeLoading] = useState(true)
@@ -536,9 +539,13 @@ export function UserHeader() {
                                   <span className="text-xs text-muted-foreground capitalize">{profile?.roleName?.toLowerCase()}</span>
                                 </div>
                               </div>
-                              <div className="flex mt-5 p-2 bg-accent rounded-xl items-center gap-2">
-                                <AppIcon name="wallet" className="size-5 text-muted-foreground"/>
-                                <p className="text-xs text-foreground truncate">{Number(profile.walletBalance).toLocaleString()}</p>
+                              <div className="mt-5 mb-3">
+                                {/* Wallet */}
+                                <WalletCard
+                                    balance={profile.walletBalance ?? 0}
+                                    isLoading={profileLoading}
+                                    onAddFunds={() => router.push("/wallet")}
+                                />
                               </div>
                             </DropdownMenuLabel>
 
@@ -651,11 +658,12 @@ export function UserHeader() {
             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 
             {/* Profile Area */}
-            <div className="p-5 pb-4">
+            <div className="space-y-4 p-5 pb-4">
               {authenticated && profile ? (
-                  <div>
+                  <div className="space-y-4">
+                    {/* Profile Header */}
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12">
+                      <Avatar className="h-12 w-12 shrink-0">
                         <AvatarFallback className="bg-primary/10 text-primary text-base font-bold">
                           {initialsFromUsername(profile.username)}
                         </AvatarFallback>
@@ -665,14 +673,17 @@ export function UserHeader() {
                         <p className="text-xs text-muted-foreground capitalize">{profile.roleName?.toLowerCase()}</p>
                       </div>
                     </div>
-                    <div className="flex mt-5 p-2 bg-accent rounded-xl items-center gap-2">
-                      <AppIcon name="wallet" className="size-5 text-muted-foreground"/>
-                      <p className="text-xs text-foreground truncate">{Number(profile.walletBalance).toLocaleString()}</p>
-                    </div>
+
+                    {/* Wallet */}
+                    <WalletCard
+                        balance={profile.walletBalance ?? 0}
+                        isLoading={profileLoading}
+                        onAddFunds={() => router.push("/wallet")}
+                    />
                   </div>
               ) : (
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted shrink-0">
                       <User className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
@@ -712,44 +723,31 @@ export function UserHeader() {
                 />
               </MobileSection>
 
-              {/* Content Types */}
-              {!bookTypeLoading && bookType.length > 0 && (
+              {/* Content Types - Scrollable Carousel */}
+              {bookType.length > 0 && (
                   <MobileSection title="Browse by Type">
-                    <div className="flex flex-wrap gap-2 px-1">
-                      {bookType.map((b) => (
-                          <MobileNavLink
-                              key={b.name}
-                              href={`/${b.slug}`}
-                              icon={b.iconKey as IconKey}
-                              label={b.name}
-                              onClick={closeMobile}
-                              active={pathname === `/${b.slug}`}
-                          />
-                      ))}
-                    </div>
+                    <TypeCarousel
+                        types={bookType}
+                        isLoading={bookTypeLoading}
+                        activePath={pathname}
+                        onItemClick={closeMobile}
+                    />
                   </MobileSection>
               )}
 
-              {/* Genres */}
-              {!genresLoading && topGenres.length > 0 && (
+              {/* Genres - Swipeable Carousel */}
+              {topGenres.length > 0 && (
                   <MobileSection title="Popular Genres">
-                    <div className="flex flex-wrap gap-2 px-1">
-                      {topGenres.map((g) => (
-                          <Link
-                              key={g.slug}
-                              href={`/genres/${g.slug}`}
-                              onClick={closeMobile}
-                              className={cn(
-                                  "rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 active:scale-95",
-                                  pathname === `/genres/${g.slug}`
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "bg-muted/50 text-foreground border-border hover:bg-accent"
-                              )}
-                          >
-                            {g.name}
-                          </Link>
-                      ))}
-                    </div>
+                    <GenreCarousel
+                        genres={topGenres}
+                        isLoading={genresLoading}
+                        activePath={pathname}
+                        onItemClick={closeMobile}
+                        onViewAll={() => {
+                          closeMobile()
+                          router.push("/genres")
+                        }}
+                    />
                   </MobileSection>
               )}
 
