@@ -62,7 +62,7 @@ model WalletTransaction {
   reference String?
 }
 
-// Books (manga, comics, novels, etc.)
+// Books
 model Book {
   id          Int      @id @default(autoincrement())
   title       String
@@ -91,6 +91,7 @@ model Book {
   @@index([ratingAvg, ratingCount])
   @@index([isPublished, isFeatured])
   @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model BookType {
