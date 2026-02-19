@@ -31,7 +31,7 @@ export function GenresPageSkeleton() {
                                     "w-[calc((100%-12px)/2.4)] sm:w-[calc((100%-48px)/3.5)] md:w-[calc((100%-60px)/4.5)] lg:w-[calc((100%-80px)/5.5)] xl:w-[calc((100%-100px)/6)]",
                                 )}
                             >
-                                <div className="aspect-[2/3] w-full animate-pulse rounded-lg bg-muted" />
+                                <div className="aspect-2/3 w-full animate-pulse rounded-lg bg-muted" />
                                 <div className="flex flex-col gap-1.5 px-0.5 pt-2.5">
                                     <div className="h-4 w-4/5 animate-pulse rounded bg-muted" />
                                     <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />

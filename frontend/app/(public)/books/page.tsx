@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { apiClient } from "@/lib/api-client";
-import { BookGenre, BookType, BookCardData } from "@/lib/types";
+import { BookGenre, BookType } from "@/lib/types";
 import { useBookBrowser } from "@/hooks/use-book-browser";
 import { BookBrowseLayout } from "@/components/book-browse-layout";
 
 export default function BooksPage() {
-    // 1. Fetch available Filters (Genres/Types)
     const [genres, setGenres] = useState<BookGenre[]>([]);
     const [bookTypes, setBookTypes] = useState<BookType[]>([]);
     const [loadingFilters, setLoadingFilters] = useState({ genres: true, types: true });
@@ -23,13 +22,11 @@ export default function BooksPage() {
         });
     }, []);
 
-    // 2. Initialize Browser Hook
     const browser = useBookBrowser<any>({
         baseUrl: "/books",
         fetcher: (params, signal) => apiClient.get(`/books/browse?${params}`, { signal }),
     });
 
-    // 3. Render Layout
     return (
         <BookBrowseLayout
             title="Browse Books"
