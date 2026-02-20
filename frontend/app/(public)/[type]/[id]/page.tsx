@@ -34,11 +34,12 @@ type BookDetails = {
   title: string;
   author?: string | null;
   description?: string | null;
+  coverImage: string;
+  isFeatured: boolean;
   ratingAvg: number;
   ratingCount: number;
   updatedAt: string;
-  type: { id: number; name: string; slug: string };
-  coverMedia?: { code: string; filename: string } | null;
+  type: { name: string; slug: string };
   genres: Array<{ genre: { id: number; name: string; slug: string } }>;
 };
 
@@ -500,8 +501,8 @@ export default function BookDetailsPage() {
                 <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 group-hover:scale-[1.02]">
                   <Image
                       src={
-                        book.coverMedia?.code
-                            ? `/media/${book.coverMedia.code}/thumbnail`
+                        book.coverImage
+                            ? `/media/${book.coverImage}/thumbnail`
                             : "/placeholder.svg"
                       }
                       alt={`Cover of ${book.title}`}

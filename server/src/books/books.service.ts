@@ -618,9 +618,9 @@ export class BooksService {
                 id: { not: bookId },
             },
             include: {
-                type: { select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true } },
+                type: { select: { name: true, slug: true } },
                 _count: { select: { chapters: true } },
-                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                genres: { select: { genre: { select: { id: true, name: true, slug: true } } }, take: 3 },
             },
             take: 120,
         });
@@ -667,22 +667,19 @@ export class BooksService {
     async findById(id: number) {
         return this.prisma.book.findUnique({
             where: { id },
-            include: {
-                coverMedia: { select: { code: true, filename: true } },
-                genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
-                type: { select: { id: true, name: true, slug: true } },
-                chapters: {
-                    orderBy: { index: 'asc' },
-                    select: {
-                        id: true,
-                        title: true,
-                        index: true,
-                        isFree: true,
-                        price: true,
-                        updatedAt: true,
-                    },
-                },
-            },
+            select: {
+                id: true,
+                title: true,
+                author: true,
+                description: true,
+                coverImage: true,
+                isFeatured: true,
+                ratingAvg: true,
+                ratingCount: true,
+                updatedAt: true,
+                genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
+                type: { select: { name: true, slug: true } },
+            }
         });
     }
 
