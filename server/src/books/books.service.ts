@@ -572,6 +572,7 @@ export class BooksService {
                 skip,
                 take: limit,
                 select: {
+                    id: true,
                     title: true,
                     author: true,
                     coverImage: true,
@@ -580,7 +581,7 @@ export class BooksService {
                     ratingAvg: true,
                     ratingCount: true,
                     updatedAt: true,
-                    genres: { include: { genre: { select: { name: true, slug: true } } }, take: 3 },
+                    genres: { include: { genre: { select: { id: true, name: true, slug: true } } }, take: 3 },
                     _count: { select: { chapters: true } },
                     type: { select: { name: true, } },
                 },

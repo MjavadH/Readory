@@ -27,6 +27,7 @@ export interface BookCardData {
     ratingCount?: number;
     genres?: BookGenre[];
     isFeatured?: boolean;
+    isPublished?: boolean;
     chapterCount?: number;
     updatedAt?: string;
 }
