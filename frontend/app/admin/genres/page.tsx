@@ -59,12 +59,7 @@ type Genre = {
 }
 
 
-function SortableGenreItem({
-                               genre,
-                               isFeaturedList,
-                               onDelete,
-                               onUpdateIcon,
-                           }: {
+function SortableGenreItem({genre, isFeaturedList, onDelete, onUpdateIcon,}: {
     genre: Genre
     isFeaturedList: boolean
     onDelete: (g: Genre) => void
@@ -92,7 +87,7 @@ function SortableGenreItem({
                 group relative flex items-center gap-3 rounded-xl border p-4 transition-all touch-none
                 ${
                 isFeaturedList
-                    ? "bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 border-blue-500/30 shadow-sm hover:shadow-md hover:border-blue-500/50"
+                    ? "bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 border-blue-500/30 shadow-sm hover:shadow-md hover:border-blue-500/50"
                     : "bg-card border-border/40 hover:border-border hover:shadow-sm"
             }
                 ${isDragging ? "shadow-2xl ring-2 ring-blue-500 scale-105" : ""}
@@ -107,7 +102,7 @@ function SortableGenreItem({
             </div>
 
             {isFeaturedList && (
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 text-xs font-bold text-white shadow-sm shrink-0">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-blue-600 text-xs font-bold text-white shadow-sm shrink-0">
                     {genre.featuredOrder + 1}
                 </div>
             )}
@@ -133,7 +128,7 @@ function SortableGenreItem({
             <Button
                 size="icon"
                 variant="ghost"
-                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0"
                 onClick={() => onDelete(genre)}
             >
                 <Trash2 className="h-4 w-4" />
@@ -142,12 +137,7 @@ function SortableGenreItem({
     )
 }
 
-function DroppableContainer({
-                                id,
-                                items,
-                                children,
-                                className,
-                            }: {
+function DroppableContainer({id, items, children, className,}: {
     id: string
     items: string[]
     children: React.ReactNode
@@ -340,10 +330,10 @@ export default function AdminGenres() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="min-h-screen bg-linear-to-b from-background to-muted/20">
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
                 <div className="space-y-2">
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text">
                         Genres Management
                     </h1>
                     <p className="text-muted-foreground text-sm sm:text-base">
@@ -364,7 +354,7 @@ export default function AdminGenres() {
                             <Card className="border-border/40 shadow-sm">
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-xl flex items-center gap-2">
-                                        <div className="h-8 w-1 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full" />
+                                        <div className="h-8 w-1 bg-linear-to-b from-blue-500 to-purple-500 rounded-full" />
                                         Available Genres
                                     </CardTitle>
                                     <CardDescription>Create new genres or drag them to the featured list</CardDescription>
@@ -394,7 +384,7 @@ export default function AdminGenres() {
                                         />
                                     </div>
 
-                                    <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-3 border border-border/40 min-h-[450px]">
+                                    <div className="bg-linear-to-br from-muted/30 to-muted/10 rounded-xl p-3 border border-border/40 min-h-[450px]">
                                         <DroppableContainer
                                             id="unfeatured-container"
                                             items={unfeaturedIds}
@@ -425,14 +415,14 @@ export default function AdminGenres() {
 
                         {/* Right Column: Featured List */}
                         <div className="lg:col-span-5 space-y-6">
-                            <Card className="border-blue-500/30 shadow-lg bg-gradient-to-br from-card via-card to-blue-500/5">
-                                <CardHeader className="bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 border-b border-blue-500/20 pt-4">
+                            <Card className="border-blue-500/30 shadow-lg bg-linear-to-br from-card via-card to-blue-500/5">
+                                <CardHeader className="bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 border-b border-blue-500/20 pt-4">
                                     <div className="flex items-center gap-2">
-                                        <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
+                                        <div className="h-9 w-9 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-md">
                                             <Sparkles className="h-5 w-5 text-white" />
                                         </div>
                                         <div>
-                                            <CardTitle className="text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                            <CardTitle className="text-xl bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                                                 Featured Genres
                                             </CardTitle>
                                             <CardDescription className="text-xs mt-0.5">
@@ -446,7 +436,7 @@ export default function AdminGenres() {
                                         <DroppableContainer id="featured-container" items={featuredIds} className="space-y-2 min-h-[500px]">
                                             {featuredGenres.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center h-[480px] text-muted-foreground text-sm border-2 border-dashed border-blue-500/30 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 backdrop-blur-sm p-8">
-                                                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
+                                                    <div className="h-16 w-16 rounded-full bg-linear-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
                                                         <Sparkles className="h-8 w-8 text-blue-500/60" />
                                                     </div>
                                                     <p className="font-medium text-center">Drag genres here to feature</p>

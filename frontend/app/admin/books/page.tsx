@@ -318,6 +318,7 @@ export default function AdminBooks() {
                                         value={newBook.type}
                                         onValueChange={(v) => setNewBook({ ...newBook, type: v })}
                                         disabled={isLoadingTypes || bookTypes.length === 0}
+                                        required
                                     >
                                         <SelectTrigger>
                                             <SelectValue />
@@ -343,7 +344,7 @@ export default function AdminBooks() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Cover Image</Label>
+                                <Label>Cover Image *</Label>
                                 <div className="flex items-center gap-3">
                                     <Button type="button" variant="outline" onClick={() => setNewCoverPickerOpen(true)}>
                                         <ImageIcon className="size-4 mr-2" />
@@ -369,7 +370,7 @@ export default function AdminBooks() {
                                         <img
                                             src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${newBook.coverImage}/thumbnail`}
                                             alt={newCoverLabel || "image"}
-                                            className="w-14 h-14 rounded-md object-cover border"
+                                            className="w-14 aspect-3/4 rounded-md object-cover border"
                                             loading="lazy"
                                         />
                                         <div className="min-w-0">
@@ -383,7 +384,7 @@ export default function AdminBooks() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Genres *</Label>
-                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
                                     {genres.map((g) => {
                                         const checked = newBook.genreIds.includes(g.id)
                                         return (

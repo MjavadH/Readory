@@ -40,7 +40,7 @@ export function IconPicker({ value, onChange, triggerClassName }: IconPickerProp
                     variant="ghost"
                     className={
                         triggerClassName ??
-                        "h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                        "h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0"
                     }
                 >
                     <Palette className="h-4 w-4" />
