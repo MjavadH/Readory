@@ -144,7 +144,7 @@ export function AdminSidebar() {
         <Button
             variant="ghost"
             size="icon"
-            className="fixed top-4 left-4 z-60 md:hidden bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-sm hover:shadow-md transition-all"
+            className="fixed top-4 right-4 z-60 md:hidden bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 border shadow-sm hover:shadow-md transition-all"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
           {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
