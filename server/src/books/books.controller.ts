@@ -52,6 +52,15 @@ export class BooksController {
         return this.booksService.listAll({ page, limit, q, status });
     }
 
+    // Admin: get full book details
+    @Get('admin/:id')
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    async getFullBookDetails(@Param('id', ParseIntPipe) id: number) {
+        return this.booksService.fullBookDetails(id);
+    }
+
     @Get(':id/viewer-state')
     @UseGuards(JwtAuthGuard)
     async getViewerState(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
@@ -59,7 +68,7 @@ export class BooksController {
         return this.booksService.getViewerState(id, Number(userId));
     }
 
-    // Public: get book details with chapter list
+    // Public: get book details
     @Get(':id')
     async get(@Param('id', ParseIntPipe) id: number) {
         return this.booksService.findById(id);

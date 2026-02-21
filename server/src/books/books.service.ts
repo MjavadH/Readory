@@ -663,7 +663,7 @@ export class BooksService {
         return { items: scored };
     }
 
-    // Get book with chapters
+    // Get book
     async findById(id: number) {
         return this.prisma.book.findUnique({
             where: { id },
@@ -679,6 +679,28 @@ export class BooksService {
                 updatedAt: true,
                 genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
                 type: { select: { name: true, slug: true } },
+            }
+        });
+    }
+
+    // Get full book details
+    async fullBookDetails(id: number) {
+        return this.prisma.book.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                title: true,
+                author: true,
+                description: true,
+                coverImage: true,
+                isFeatured: true,
+                isPublished: true,
+                ratingAvg: true,
+                ratingCount: true,
+                updatedAt: true,
+                createdAt: true,
+                genres: { include: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
+                type: { select: { id: true, name: true, slug: true, iconKey: true } },
             }
         });
     }

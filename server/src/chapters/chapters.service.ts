@@ -18,7 +18,7 @@ export class ChaptersService {
     ) {}
 
     // List chapters for a book (public)
-    async listChapters(bookId: number, query: ListChaptersDto) {
+    async listChapters(bookId: number, query: ListChaptersDto, path: boolean = false) {
         const q = query.q?.trim();
         const page = Number.isInteger(query.page) ? Number(query.page) : 1;
         const limit = Number.isInteger(query.limit) ? Math.min(Number(query.limit), 100) : 50;
@@ -51,6 +51,7 @@ export class ChaptersService {
                     price: true,
                     isFree: true,
                     updatedAt: true,
+                    contentPath: path,
                 },
             }),
             this.prisma.chapter.count({ where }),

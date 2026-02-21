@@ -23,6 +23,17 @@ export class ChaptersController {
         return this.chaptersService.listChapters(bookId, query);
     }
 
+    // Admin: full list chapters of a book
+    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+    @Roles(RoleName.ADMIN)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+    @Get('admin')
+    async fullList(
+        @Param('bookId', ParseIntPipe) bookId: number,
+        @Query() query: ListChaptersDto) {
+        return this.chaptersService.listChapters(bookId, query, true);
+    }
+
     // Admin: add a new chapter to a book
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
