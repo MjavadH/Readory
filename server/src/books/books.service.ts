@@ -65,17 +65,6 @@ function slugifyType(value: string) {
         .replace(/^-|-$/g, '');
 }
 
-function titleCase(value: string) {
-    const trimmed = value.trim();
-    if (!trimmed) return trimmed;
-    return trimmed
-        .replace(/[_-]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .split(' ')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-}
-
 @Injectable()
 export class BooksService {
     constructor(
@@ -731,15 +720,22 @@ export class BooksService {
         coverImage?: string;
         isPublished?: boolean;
         isFeatured?: boolean;
-        type?: string;
+        typeId: number;
         genreIds: number[];
     }) {
-        const { genreIds, type, ...rest } = data;
+        const { genreIds, typeId, ...rest } = data;
+        const foundType = await this.prisma.bookType.findUnique({
+            where: { id: typeId },
+            select: { id: true },
+        });
 
-        const resolvedType = await this.resolveBookType(type);
+        if (!foundType) {
+            throw new BadRequestException('book type not found');
+        }
+
         const payload: Prisma.BookCreateInput = {
             title: rest.title,
-            type: { connect: { id: resolvedType.id } },
+            type: { connect: { id: foundType.id } },
             genres: {
                 create: genreIds.map((genreId) => ({
                     genre: { connect: { id: genreId } },
@@ -825,31 +821,6 @@ export class BooksService {
             if (err?.code === 'P2025') throw new NotFoundException('book not found');
             throw err;
         }
-    }
-
-    private async resolveBookType(type?: string) {
-        if (!type) {
-            const fallback = await this.prisma.bookType.findFirst({ orderBy: { id: 'asc' } });
-            if (!fallback) {
-                throw new BadRequestException('book type not configured');
-            }
-            return fallback;
-        }
-
-        const slug = slugifyType(type);
-        if (!slug) {
-            throw new BadRequestException('book type is invalid');
-        }
-
-        const existing = await this.prisma.bookType.findUnique({ where: { slug } });
-        if (existing) return existing;
-
-        return this.prisma.bookType.create({
-            data: {
-                name: titleCase(type),
-                slug,
-            },
-        });
     }
 
     async rateBook(userId: number, bookId: number, rating: number) {

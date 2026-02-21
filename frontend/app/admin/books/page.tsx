@@ -70,7 +70,7 @@ export default function AdminBooks() {
     const [newBook, setNewBook] = useState({
         title: "",
         author: "",
-        type: "",
+        typeId: undefined as number | undefined,
         description: "",
         coverImage: "",
         genreIds: [] as number[],
@@ -155,7 +155,7 @@ export default function AdminBooks() {
             const list = Array.isArray(data) ? data : []
             setBookTypes(list)
             if (list.length > 0) {
-                setNewBook((prev) => ({ ...prev, type: prev.type || list[0].slug }))
+                setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }))
             }
         } catch (err: any) {
             toast({ title: "Error fetching book types", description: getApiErrorMessage(err), variant: "destructive" })
@@ -172,6 +172,13 @@ export default function AdminBooks() {
         if (newBook.genreIds.length === 0) {
             return toast({ title: "Validation Error", description: "Select at least one genre", variant: "destructive" })
         }
+        if (newBook.typeId == null) {
+            return toast({
+                title: "Validation Error",
+                description: "Book type is required",
+                variant: "destructive"
+            })
+        }
         setIsSubmitting(true)
         try {
             await apiClient.post("/books", {
@@ -184,7 +191,7 @@ export default function AdminBooks() {
             setNewBook({
                 title: "",
                 author: "",
-                type: bookTypes[0]?.slug ?? "",
+                typeId: bookTypes[0]?.id,
                 description: "",
                 coverImage: "",
                 genreIds: [],
@@ -205,7 +212,7 @@ export default function AdminBooks() {
         setNewBook({
             title: "",
             author: "",
-            type: bookTypes[0]?.slug ?? "",
+            typeId: bookTypes[0]?.id,
             description: "",
             coverImage: "",
             genreIds: [],
@@ -315,8 +322,8 @@ export default function AdminBooks() {
                                 <div className="space-y-2">
                                     <Label>Type</Label>
                                     <Select
-                                        value={newBook.type}
-                                        onValueChange={(v) => setNewBook({ ...newBook, type: v })}
+                                        value={newBook.typeId != null ? String(newBook.typeId) : undefined}
+                                        onValueChange={(v) => setNewBook({ ...newBook, typeId: Number(v) })}
                                         disabled={isLoadingTypes || bookTypes.length === 0}
                                         required
                                     >
@@ -325,7 +332,7 @@ export default function AdminBooks() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             {bookTypes.map((t) => (
-                                                <SelectItem key={t.id} value={t.slug}>
+                                                <SelectItem key={t.id} value={String(t.id)}>
                                                     {t.name}
                                                 </SelectItem>
                                             ))}
@@ -442,7 +449,7 @@ export default function AdminBooks() {
                                 <Button variant="outline" onClick={handleCancelAdd} disabled={isSubmitting} className="flex-1">
                                     Cancel
                                 </Button>
-                                <Button onClick={handleAddBook} disabled={isSubmitting} className="flex-1">
+                                <Button onClick={handleAddBook} disabled={isSubmitting || bookTypes.length === 0 || newBook.typeId == null} className="flex-1">
                                     {isSubmitting ? "Creating..." : "Create Book"}
                                 </Button>
                             </div>

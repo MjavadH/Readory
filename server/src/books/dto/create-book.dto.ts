@@ -1,7 +1,7 @@
 import { Transform, Type } from 'class-transformer';
 import {
     ArrayNotEmpty, IsArray, IsBoolean,
-    IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength,
+    IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, Min, MinLength,
 } from 'class-validator';
 
 export class CreateBookDto {
@@ -37,10 +37,11 @@ export class CreateBookDto {
     @IsBoolean()
     isFeatured?: boolean;
 
-    @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    type?: string;
+    @Type(() => Number)
+    @IsInt()
+    @IsNotEmpty()
+    @Min(1)
+    typeId!: number;
 
     @IsArray()
     @ArrayNotEmpty()
