@@ -777,12 +777,13 @@ export class BooksService {
             coverImage?: string;
             isPublished?: boolean;
             isFeatured?: boolean;
-            type?: string;
+            typeId?: number;
             genreIds?: number[];
         }>,
     ) {
-        const { genreIds, type, coverImage, ...rest } = data;
-        const resolvedType = type ? await this.resolveBookType(type) : null;
+        const { genreIds, typeId, coverImage, ...rest } = data;
+        let typeConnect: Prisma.BookUpdateInput = {};
+        if (typeId !== undefined) typeConnect = { type: { connect: { id: typeId } } };
 
         const updateData: Prisma.BookUpdateInput = {
             ...rest,
@@ -793,7 +794,7 @@ export class BooksService {
                         : { disconnect: true },
                 }
                 : {}),
-            ...(resolvedType ? { type: { connect: { id: resolvedType.id } } } : {}),
+            ...typeConnect,
             ...(genreIds
                 ? {
                     genres: {

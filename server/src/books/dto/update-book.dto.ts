@@ -44,9 +44,9 @@ export class UpdateBookDto {
     isFeatured?: boolean;
 
     @IsOptional()
-    @IsString()
-    @MaxLength(100)
-    type?: string;
+    @Type(() => Number)
+    @IsInt()
+    typeId?: number;
 
     @IsOptional()
     @IsArray()
