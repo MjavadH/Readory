@@ -40,6 +40,7 @@ import {useParams} from "next/navigation";
 import Image from "next/image";
 import {MediaPicker} from "@/components/media-picker";
 import Link from "next/link";
+import {AppIcon} from "@/components/AppIcon";
 
 type BookDetails = {
     id: number;
@@ -550,7 +551,7 @@ export default function AdminBookDetail() {
                                         ) : (
                                             <>
                                                 <Badge className="gap-1.5 border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                                                    <Tag className="h-3.5 w-3.5" />
+                                                    <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
                                                     {book.type.name}
                                                 </Badge>
                                                 {book.genres.map(({ genre }) => (
@@ -559,6 +560,7 @@ export default function AdminBookDetail() {
                                                         variant="outline"
                                                         className="border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900"
                                                     >
+                                                        <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
                                                         {genre.name}
                                                     </Badge>
                                                 ))}

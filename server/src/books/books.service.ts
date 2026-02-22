@@ -666,8 +666,8 @@ export class BooksService {
                 ratingAvg: true,
                 ratingCount: true,
                 updatedAt: true,
-                genres: { include: { genre: { select: { id: true, name: true, slug: true } } } },
-                type: { select: { name: true, slug: true } },
+                genres: { include: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
+                type: { select: { name: true, slug: true, iconKey: true } },
             }
         });
     }
