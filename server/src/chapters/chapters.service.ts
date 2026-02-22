@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, ConflictException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from '../wallets/wallets.service';
-import { PublicService } from '../public/public.service'
-import Redis from 'ioredis';
+import { PublicService } from '../public/public.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ListChaptersDto } from './dto/list-chapters.dto';
-import { createHash } from 'crypto';
+import { CacheManager } from '../cache/cache.manager';
+import { ChapterCache } from '../cache/chapter-cache.service';
 
 @Injectable()
 export class ChaptersService {
@@ -15,55 +15,16 @@ export class ChaptersService {
         private prisma: PrismaService,
         private walletsService: WalletsService,
         private publicService: PublicService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis
+        private readonly cacheManager: CacheManager,
+        private readonly chapterCache: ChapterCache,
     ) {}
 
     private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
-    private readonly CHAPTERS_LIST_CACHE_PREFIX = 'chapters:list:v1';
-    private readonly CHAPTERS_LIST_VERSION_PREFIX = 'chapters:list:ver';
 
     private normalizeQ(q?: string): string | undefined {
         const s = (q ?? '').trim();
         if (!s) return undefined;
         return s.length > 80 ? s.slice(0, 80) : s;
-    }
-
-    private getListVersionKey(bookId: number): string {
-        return `${this.CHAPTERS_LIST_VERSION_PREFIX}:${bookId}`;
-    }
-
-    private async getListVersion(bookId: number): Promise<string> {
-        const v = await this.redis.get(this.getListVersionKey(bookId));
-        return v ?? '0';
-    }
-
-    private async bumpListVersion(bookId: number): Promise<void> {
-        await this.redis.incr(this.getListVersionKey(bookId));
-    }
-
-    private buildListCacheKey(args: {
-        bookId: number;
-        q?: string;
-        page: number;
-        limit: number;
-        path: boolean;
-        version: string;
-    }): string {
-        const payload = {
-            bookId: args.bookId,
-            q: args.q ?? '',
-            page: args.page,
-            limit: args.limit,
-            path: args.path ? 1 : 0,
-            v: args.version,
-        };
-
-        const fp = createHash('sha256')
-            .update(JSON.stringify(payload))
-            .digest('hex')
-            .slice(0, 24);
-
-        return `${this.CHAPTERS_LIST_CACHE_PREFIX}:${args.bookId}:${fp}`;
     }
 
     // List chapters for a book (public)
@@ -77,79 +38,75 @@ export class ChaptersService {
 
         const shouldCache = safePage <= 20;
 
-        let cacheKey: string | null = null;
-        if (shouldCache) {
-            const version = await this.getListVersion(bookId);
-            cacheKey = this.buildListCacheKey({
-                bookId,
-                q,
-                page: safePage,
-                limit: safeLimit,
-                path,
-                version,
-            });
-
-            const cached = await this.redis.get(cacheKey);
-            if (cached) {
-                try {
-                    return JSON.parse(cached) as {
-                        items: Array<any>;
-                        pagination: { page: number; limit: number; total: number; totalPages: number };
-                    };
-                } catch {
-                    await this.redis.del(cacheKey);
-                }
-            }
-        }
-
         const where: Prisma.ChapterWhereInput = {
             bookId,
             ...(q
                 ? {
-                    OR: [
-                        { title: { contains: q, mode: 'insensitive' } },
-                        ...(Number.isInteger(Number(q)) ? [{ index: Number(q) }] : []),
-                    ],
-                }
+                      OR: [
+                          { title: { contains: q, mode: 'insensitive' } },
+                          ...(Number.isInteger(Number(q)) ? [{ index: Number(q) }] : []),
+                      ],
+                  }
                 : {}),
         };
 
-        const [items, total] = await this.prisma.$transaction([
-            this.prisma.chapter.findMany({
-                where,
-                orderBy: { index: 'asc' },
-                skip,
-                take: safeLimit,
-                select: {
-                    id: true,
-                    title: true,
-                    index: true,
-                    price: true,
-                    isFree: true,
-                    updatedAt: true,
-                    contentPath: path,
-                },
-            }),
-            this.prisma.chapter.count({ where }),
-        ]);
+        const loadFromDatabase = async () => {
+            const [items, total] = await this.prisma.$transaction([
+                this.prisma.chapter.findMany({
+                    where,
+                    orderBy: { index: 'asc' },
+                    skip,
+                    take: safeLimit,
+                    select: {
+                        id: true,
+                        title: true,
+                        index: true,
+                        price: true,
+                        isFree: true,
+                        updatedAt: true,
+                        contentPath: path,
+                    },
+                }),
+                this.prisma.chapter.count({ where }),
+            ]);
 
-        const result = {
-            items: items.map((item) => ({
-                ...item,
-                price: item.price ? item.price.toNumber() : null,
-            })),
-            pagination: {
-                page: safePage,
-                limit: safeLimit,
-                total,
-                totalPages: Math.max(1, Math.ceil(total / safeLimit)),
-            },
+            return {
+                items: items.map((item) => ({
+                    ...item,
+                    price: item.price ? item.price.toNumber() : null,
+                })),
+                pagination: {
+                    page: safePage,
+                    limit: safeLimit,
+                    total,
+                    totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+                },
+            };
         };
 
-        if (cacheKey){
-            await this.redis.set(cacheKey,JSON.stringify(result), "EX", this.CHAPTERS_LIST_CACHE_TTL_SECONDS)
+        if (!shouldCache) {
+            return loadFromDatabase();
         }
-        return result
+
+        const version = await this.chapterCache.getListVersion(bookId);
+        const cacheKey = this.chapterCache.buildListKey({
+            bookId,
+            q,
+            page: safePage,
+            limit: safeLimit,
+            path,
+            version,
+        });
+
+        return this.cacheManager.getOrSet(
+            cacheKey,
+            {
+                ttlSeconds: this.CHAPTERS_LIST_CACHE_TTL_SECONDS,
+                jitterSeconds: Math.ceil(this.CHAPTERS_LIST_CACHE_TTL_SECONDS * 0.1),
+                earlyRefreshWindowSeconds: 12,
+            },
+            loadFromDatabase,
+        );
     }
 
     // Admin: create a new chapter
@@ -174,9 +131,9 @@ export class ChaptersService {
                 data: { updatedAt: new Date() },
             });
 
-            await this.redis.del('stats:chapters:count');
+            await this.cacheManager.del('stats:chapters:count');
             await this.publicService.clearHomeCache();
-            await this.bumpListVersion(bookId)
+            await this.chapterCache.bumpListVersion(bookId);
             return chapter;
         } catch (err: any) {
             if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
@@ -190,8 +147,7 @@ export class ChaptersService {
 
         const nextIsFree = dto.isFree ?? existing.isFree;
 
-        const nextPrice =
-            nextIsFree ? null : dto.price !== undefined ? new Prisma.Decimal(dto.price) : existing.price;
+        const nextPrice = nextIsFree ? null : dto.price !== undefined ? new Prisma.Decimal(dto.price) : existing.price;
 
         try {
             const chapter = await this.prisma.chapter.update({
@@ -218,9 +174,8 @@ export class ChaptersService {
             });
 
             await this.publicService.clearHomeCache();
-            await this.bumpListVersion(bookId)
-            return chapter
-
+            await this.chapterCache.bumpListVersion(bookId);
+            return chapter;
         } catch (err: any) {
             if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
             throw err;
@@ -239,11 +194,10 @@ export class ChaptersService {
         });
 
         await this.publicService.clearHomeCache();
-        await this.redis.del('stats:chapters:count');
-        await this.bumpListVersion(bookId)
+        await this.cacheManager.del('stats:chapters:count');
+        await this.chapterCache.bumpListVersion(bookId);
         return { id: chapterId, deleted: true };
     }
-
 
     async getAccessibleChapterByIndex(bookId: number, index: number, userId: number) {
         const chapter = await this.prisma.chapter.findFirst({
@@ -262,9 +216,11 @@ export class ChaptersService {
 
         if (!chapter) throw new NotFoundException('Chapter not found');
 
-        const hasAccess = chapter.isFree || Boolean(
-            await this.prisma.accessRecord.findFirst({ where: { userId, chapterId: chapter.id }, select: { id: true } }),
-        );
+        const hasAccess =
+            chapter.isFree ||
+            Boolean(
+                await this.prisma.accessRecord.findFirst({ where: { userId, chapterId: chapter.id }, select: { id: true } }),
+            );
 
         if (!hasAccess) throw new NotFoundException('Chapter access not found');
 
@@ -283,7 +239,7 @@ export class ChaptersService {
                 index: true,
                 isFree: true,
                 price: true,
-                book: { select: { id: true, title: true }},
+                book: { select: { id: true, title: true } },
             },
         });
 
@@ -301,7 +257,11 @@ export class ChaptersService {
 
         // Debit + access record in tx
         return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index} | ${chapter.book.title}`);
+            await this.walletsService.debit(
+                userId,
+                chapter.price!.toNumber(),
+                `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
+            );
             return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
         });
     }

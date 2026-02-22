@@ -1,7 +1,7 @@
 import type { IconKey } from '@readory/shared';
-import {ConflictException, Inject, Injectable, NotFoundException} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import Redis from 'ioredis';
+import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service'
 import {UpdateGenreDto} from "./dto/update-genre.dto";
 
@@ -22,7 +22,7 @@ export class GenresService {
     constructor(
         private readonly prisma: PrismaService,
         private publicService: PublicService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis,
+        private readonly cacheManager: CacheManager,
     ) {}
 
     private readonly CACHE_KEY_ALL = 'genres:all';
@@ -30,7 +30,7 @@ export class GenresService {
     private readonly CACHE_KEY_FEATURED = 'genres:featured';
 
     async listAll() {
-        const cached = await this.redis.get(this.CACHE_KEY_ALL);
+        const cached = await this.cacheManager.getString(this.CACHE_KEY_ALL);
         if (cached) {
             return JSON.parse(cached);
         }
@@ -38,12 +38,12 @@ export class GenresService {
             orderBy: { name: 'asc' },
             select: {id: true, name: true, slug: true}
         });
-        await this.redis.set(this.CACHE_KEY_ALL, JSON.stringify(genres), 'EX', 7200);
+        await this.cacheManager.setString(this.CACHE_KEY_ALL, JSON.stringify(genres), 7200);
         return genres;
     }
 
     async adminListAll() {
-        const cached = await this.redis.get(this.CACHE_KEY_ALL_ADMIN);
+        const cached = await this.cacheManager.getString(this.CACHE_KEY_ALL_ADMIN);
         if (cached) {
             return JSON.parse(cached);
         }
@@ -55,7 +55,7 @@ export class GenresService {
                 }
             }
         });
-        await this.redis.set(this.CACHE_KEY_ALL_ADMIN, JSON.stringify(genres), 'EX', 7200);
+        await this.cacheManager.setString(this.CACHE_KEY_ALL_ADMIN, JSON.stringify(genres), 7200);
         return genres;
     }
 
@@ -77,7 +77,7 @@ export class GenresService {
     }
 
     async listFeatured() {
-        const cached = await this.redis.get(this.CACHE_KEY_FEATURED);
+        const cached = await this.cacheManager.getString(this.CACHE_KEY_FEATURED);
         if (cached) {
             return JSON.parse(cached);
         }
@@ -86,7 +86,7 @@ export class GenresService {
             orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
             select: {name: true, slug: true, iconKey: true}
         });
-        await this.redis.set(this.CACHE_KEY_FEATURED, JSON.stringify(genres), 'EX', 7200);
+        await this.cacheManager.setString(this.CACHE_KEY_FEATURED, JSON.stringify(genres), 7200);
 
         return genres;
     }
@@ -176,9 +176,9 @@ export class GenresService {
     }
 
     private async invalidateCache() {
-        await this.redis.del(this.CACHE_KEY_ALL);
-        await this.redis.del(this.CACHE_KEY_ALL_ADMIN);
-        await this.redis.del(this.CACHE_KEY_FEATURED);
+        await this.cacheManager.del(this.CACHE_KEY_ALL);
+        await this.cacheManager.del(this.CACHE_KEY_ALL_ADMIN);
+        await this.cacheManager.del(this.CACHE_KEY_FEATURED);
         await this.publicService.clearHomeCache();
         await this.publicService.clearGenresPageCache();
     }

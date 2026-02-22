@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TransactionType } from '@prisma/client';
-import Redis from 'ioredis';
+import { CacheManager } from '../cache/cache.manager';
 
 @Injectable()
 export class WalletsService {
     constructor(
         private prisma: PrismaService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis
+        private readonly cacheManager: CacheManager
     ) {}
 
     // Get a user’s wallet and balance
@@ -28,7 +28,7 @@ export class WalletsService {
         const CACHE_KEY = 'stats:transactions';
         let stats = null;
 
-        const cachedStats = await this.redis.get(CACHE_KEY);
+        const cachedStats = await this.cacheManager.getString(CACHE_KEY);
 
         // Aggregate statistics for the dashboard
         if (cachedStats) {
@@ -89,7 +89,7 @@ export class WalletsService {
                     debitAmount: calculateGrowth(currentStats.debit, lastMonthStats.debit),
                 }
             };
-            await this.redis.set(CACHE_KEY, JSON.stringify(stats), 'EX', 3600);
+            await this.cacheManager.setString(CACHE_KEY, JSON.stringify(stats), 3600);
         }
         const transactions = await this.prisma.walletTransaction.findMany({
             skip,
@@ -140,7 +140,7 @@ export class WalletsService {
             });
             return updatedWallet;
         });
-        await this.redis.del('stats:transactions');
+        await this.cacheManager.del('stats:transactions');
 
         return result;
     }
@@ -173,7 +173,7 @@ export class WalletsService {
             return updatedWallet;
         });
 
-        await this.redis.del('stats:transactions');
+        await this.cacheManager.del('stats:transactions');
 
         return result;
     }

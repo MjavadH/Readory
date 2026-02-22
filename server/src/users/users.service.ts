@@ -1,6 +1,6 @@
-import {Injectable, Inject, ConflictException, BadRequestException} from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import Redis from 'ioredis';
+import { CacheManager } from '../cache/cache.manager';
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 
@@ -8,7 +8,7 @@ import * as crypto from 'crypto';
 export class UsersService {
     constructor(
         private prisma: PrismaService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis
+        private readonly cacheManager: CacheManager
     ) {}
 
     async updateLastLogin(userId: number) {
@@ -21,7 +21,7 @@ export class UsersService {
     async getUsersStats() {
         const CACHE_KEY = 'stats:users';
 
-        const cached = await this.redis.get(CACHE_KEY);
+        const cached = await this.cacheManager.getString(CACHE_KEY);
         if (cached) return JSON.parse(cached);
 
         const now = new Date();
@@ -42,7 +42,7 @@ export class UsersService {
 
         const stats = { totalUsers, newUsers, activeUsers };
 
-        await this.redis.set(CACHE_KEY, JSON.stringify(stats), 'EX', 3600);
+        await this.cacheManager.setString(CACHE_KEY, JSON.stringify(stats), 3600);
 
         return stats;
     }
@@ -145,12 +145,12 @@ export class UsersService {
         const verificationCode = crypto.randomInt(100000, 999999).toString();
         const redisKey = `temp_reg:${email}`;
 
-        if (await this.redis.get(redisKey)) {
+        if (await this.cacheManager.getString(redisKey)) {
             throw new BadRequestException('Verification code already sent. Please wait.');
         }
 
         const tempData = { email, username, passwordHash, verificationCode };
-        await this.redis.set(redisKey, JSON.stringify(tempData), 'EX', 120);
+        await this.cacheManager.setString(redisKey, JSON.stringify(tempData), 120);
 
         // TODO: Send email
         console.log(`[MOCK EMAIL] Verification code for ${email}: ${verificationCode}`);
@@ -162,20 +162,20 @@ export class UsersService {
         const redisKey = `temp_reg:${email}`;
         const attemptKey = `temp_reg_attempts:${email}`;
 
-        const dataString = await this.redis.get(redisKey);
+        const dataString = await this.cacheManager.getString(redisKey);
         if (!dataString) {
             throw new BadRequestException('Verification code expired or invalid.');
         }
 
         const data = JSON.parse(dataString);
         if (data.verificationCode !== code) {
-            const attempts = await this.redis.incr(attemptKey);
+            const attempts = await this.cacheManager.incr(attemptKey);
             if (attempts === 1) {
-                await this.redis.expire(attemptKey, 120);
+                await this.cacheManager.expire(attemptKey, 120);
             }
             if (attempts >= 5) {
-                await this.redis.del(redisKey);
-                await this.redis.del(attemptKey);
+                await this.cacheManager.del(redisKey);
+                await this.cacheManager.del(attemptKey);
                 throw new BadRequestException('Too many invalid attempts. Please register again.');
             }
             throw new BadRequestException('Invalid verification code.');
@@ -197,9 +197,9 @@ export class UsersService {
             },
         });
 
-        await this.redis.del(redisKey);
-        await this.redis.del(attemptKey);
-        await this.redis.del('stats:users');
+        await this.cacheManager.del(redisKey);
+        await this.cacheManager.del(attemptKey);
+        await this.cacheManager.del('stats:users');
 
         return newUser;
     }
@@ -210,7 +210,7 @@ export class UsersService {
             data: { isBanned }
         });
 
-        await this.redis.del(`session:user:${userId}`);
+        await this.cacheManager.del(`session:user:${userId}`);
 
         return updated;
     }
@@ -224,13 +224,13 @@ export class UsersService {
             data: { roleId: role.id }
         });
 
-        await this.redis.del(`session:user:${userId}`);
+        await this.cacheManager.del(`session:user:${userId}`);
 
         return updated;
     }
 
     async updatePermissions(userId: number, permissions: string[]) {
-        await this.redis.del(`session:user:${userId}`);
+        await this.cacheManager.del(`session:user:${userId}`);
 
         return this.prisma.user.update({
             where: { id: userId },
