@@ -1,17 +1,17 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import {Inject, Injectable, UnauthorizedException} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
-import Redis from 'ioredis';
+import { CacheManager } from '../cache/cache.manager';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         configService: ConfigService,
         private prisma: PrismaService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis
+        private readonly cacheManager: CacheManager
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     async validate(payload: any) {
         const userId = payload.sub;
         const cacheKey = `session:user:${userId}`;
-        const cachedUser = await this.redis.get(cacheKey);
+        const cachedUser = await this.cacheManager.getString(cacheKey);
         if (cachedUser) {
             const user = JSON.parse(cachedUser);
             if (user.isBanned) throw new UnauthorizedException('Account suspended.');
@@ -57,7 +57,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             sessionUser.permissions = user.permissions || [];
         }
 
-        await this.redis.set(cacheKey, JSON.stringify(sessionUser), 'EX', 1800);
+        await this.cacheManager.setString(cacheKey, JSON.stringify(sessionUser), 1800);
 
         return sessionUser
     }

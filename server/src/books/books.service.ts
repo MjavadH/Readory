@@ -1,7 +1,7 @@
-import {Injectable, NotFoundException, BadRequestException, Inject} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import Redis from 'ioredis';
+import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service'
 import { createHash } from 'crypto';
 
@@ -70,7 +70,7 @@ export class BooksService {
     constructor(
         private prisma: PrismaService,
         private publicService: PublicService,
-        @Inject('REDIS_CLIENT') private readonly redis: Redis,
+        private readonly cacheManager: CacheManager,
     ) {}
 
 
@@ -95,7 +95,7 @@ export class BooksService {
             (args.sort === 'recently_updated' || !args.sort);
 
         if (isDefaultView) {
-            const cached = await this.redis.get(this.CACHE_KEY_BROWSE_DEFAULT);
+            const cached = await this.cacheManager.getString(this.CACHE_KEY_BROWSE_DEFAULT);
             if (cached) {
                 return JSON.parse(cached);
             }
@@ -187,7 +187,7 @@ export class BooksService {
         const result = { items, nextCursor, hasMore };
 
         if (isDefaultView) {
-            await this.redis.set(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 'EX', 90);
+            await this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
         }
 
         return result;
@@ -208,7 +208,7 @@ export class BooksService {
 
         // Cache: type existence (reduces DB hits for invalid slugs)
         const existsKey = `books:browse:booktype:${typeSlug}`;
-        const existsCached = await this.redis.get(existsKey);
+        const existsCached = await this.cacheManager.getString(existsKey);
 
         let exists: boolean;
         if (existsCached === '1') {
@@ -221,7 +221,7 @@ export class BooksService {
                 select: { id: true },
             });
             exists = Boolean(found);
-            await this.redis.set(existsKey, exists ? '1' : '0', 'EX', 3600);
+            await this.cacheManager.setString(existsKey, exists ? '1' : '0', 3600);
         }
 
         if (!exists) throw new NotFoundException('book type not found');
@@ -230,12 +230,12 @@ export class BooksService {
         const hasCursor = Boolean(args.cursor && args.cursor.trim().length);
         if (!hasCursor) {
             const cacheKey = this.buildTypeBrowseCacheKey(typeSlug, args);
-            const cached = await this.redis.get(cacheKey);
+            const cached = await this.cacheManager.getString(cacheKey);
             if (cached) {
                 try {
                     return JSON.parse(cached) as { items: unknown[]; nextCursor: string | null };
                 } catch {
-                    await this.redis.del(cacheKey);
+                    await this.cacheManager.del(cacheKey);
                 }
             }
 
@@ -245,7 +245,7 @@ export class BooksService {
             });
 
             // Short TTL keeps data fresh while cutting DB load heavily.
-            await this.redis.set(cacheKey, JSON.stringify(result), 'EX', 90);
+            await this.cacheManager.setString(cacheKey, JSON.stringify(result), 90);
             return result;
         }
 
@@ -286,12 +286,12 @@ export class BooksService {
         if (!hasCursor) {
             const cacheKey = this.buildGenreBrowseCacheKey(slug, { types, q, sort, limit });
 
-            const cached = await this.redis.get(cacheKey);
+            const cached = await this.cacheManager.getString(cacheKey);
             if (cached) {
                 try {
                     return JSON.parse(cached);
                 } catch {
-                    await this.redis.del(cacheKey);
+                    await this.cacheManager.del(cacheKey);
                 }
             }
 
@@ -315,7 +315,7 @@ export class BooksService {
             };
 
             // Small TTL keeps it fresh, cuts DB load hard
-            await this.redis.set(cacheKey, JSON.stringify(response), 'EX', 90);
+            await this.cacheManager.setString(cacheKey, JSON.stringify(response), 90);
             return response;
         }
 
@@ -434,12 +434,12 @@ export class BooksService {
     }
 
     private async getAllGenresCached() {
-        const cached = await this.redis.get(this.CACHE_KEY_GENRES_ALL);
+        const cached = await this.cacheManager.getString(this.CACHE_KEY_GENRES_ALL);
         if (cached) {
             try {
                 return JSON.parse(cached) as Array<{ id: number; name: string; slug: string; iconKey: string | null }>;
             } catch {
-                await this.redis.del(this.CACHE_KEY_GENRES_ALL);
+                await this.cacheManager.del(this.CACHE_KEY_GENRES_ALL);
             }
         }
 
@@ -448,18 +448,18 @@ export class BooksService {
             select: { id: true, name: true, slug: true, iconKey: true },
         });
 
-        await this.redis.set(this.CACHE_KEY_GENRES_ALL, JSON.stringify(allGenres), 'EX', 3600);
+        await this.cacheManager.setString(this.CACHE_KEY_GENRES_ALL, JSON.stringify(allGenres), 3600);
         return allGenres;
     }
 
     private async getGenreBySlugCached(slug: string) {
         const key = `genre:slug:${slug}`;
-        const cached = await this.redis.get(key);
+        const cached = await this.cacheManager.getString(key);
         if (cached) {
             try {
                 return JSON.parse(cached) as { id: number; name: string; slug: string; iconKey: string | null };
             } catch {
-                await this.redis.del(key);
+                await this.cacheManager.del(key);
             }
         }
 
@@ -470,7 +470,7 @@ export class BooksService {
 
         if (!genre) return null;
 
-        await this.redis.set(key, JSON.stringify(genre), 'EX', 3600);
+        await this.cacheManager.setString(key, JSON.stringify(genre), 3600);
         return genre;
     }
 
@@ -881,10 +881,10 @@ export class BooksService {
     }
 
     private async invalidateCache() {
-        await this.redis.del(this.CACHE_KEY_BROWSE_DEFAULT);
-        await this.redis.del(this.CACHE_KEY_STATE_BOOK);
-        await this.redis.del(this.CACHE_KEY_STATE_CHAPTERS_COUNT);
-        await this.redis.del(this.CACHE_KEY_GENRES_ALL);
+        await this.cacheManager.del(this.CACHE_KEY_BROWSE_DEFAULT);
+        await this.cacheManager.del(this.CACHE_KEY_STATE_BOOK);
+        await this.cacheManager.del(this.CACHE_KEY_STATE_CHAPTERS_COUNT);
+        await this.cacheManager.del(this.CACHE_KEY_GENRES_ALL);
         await this.publicService.clearHomeCache();
     }
 }
