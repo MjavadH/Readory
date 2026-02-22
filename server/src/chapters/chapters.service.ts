@@ -7,6 +7,7 @@ import Redis from 'ioredis';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ListChaptersDto } from './dto/list-chapters.dto';
+import { createHash } from 'crypto';
 
 @Injectable()
 export class ChaptersService {
@@ -17,14 +18,89 @@ export class ChaptersService {
         @Inject('REDIS_CLIENT') private readonly redis: Redis
     ) {}
 
+    private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
+    private readonly CHAPTERS_LIST_CACHE_PREFIX = 'chapters:list:v1';
+    private readonly CHAPTERS_LIST_VERSION_PREFIX = 'chapters:list:ver';
+
+    private normalizeQ(q?: string): string | undefined {
+        const s = (q ?? '').trim();
+        if (!s) return undefined;
+        return s.length > 80 ? s.slice(0, 80) : s;
+    }
+
+    private getListVersionKey(bookId: number): string {
+        return `${this.CHAPTERS_LIST_VERSION_PREFIX}:${bookId}`;
+    }
+
+    private async getListVersion(bookId: number): Promise<string> {
+        const v = await this.redis.get(this.getListVersionKey(bookId));
+        return v ?? '0';
+    }
+
+    private async bumpListVersion(bookId: number): Promise<void> {
+        await this.redis.incr(this.getListVersionKey(bookId));
+    }
+
+    private buildListCacheKey(args: {
+        bookId: number;
+        q?: string;
+        page: number;
+        limit: number;
+        path: boolean;
+        version: string;
+    }): string {
+        const payload = {
+            bookId: args.bookId,
+            q: args.q ?? '',
+            page: args.page,
+            limit: args.limit,
+            path: args.path ? 1 : 0,
+            v: args.version,
+        };
+
+        const fp = createHash('sha256')
+            .update(JSON.stringify(payload))
+            .digest('hex')
+            .slice(0, 24);
+
+        return `${this.CHAPTERS_LIST_CACHE_PREFIX}:${args.bookId}:${fp}`;
+    }
+
     // List chapters for a book (public)
     async listChapters(bookId: number, query: ListChaptersDto, path: boolean = false) {
-        const q = query.q?.trim();
+        const q = this.normalizeQ(query.q);
         const page = Number.isInteger(query.page) ? Number(query.page) : 1;
         const limit = Number.isInteger(query.limit) ? Math.min(Number(query.limit), 100) : 50;
         const safePage = Math.max(page, 1);
         const safeLimit = Math.max(limit, 1);
         const skip = (safePage - 1) * safeLimit;
+
+        const shouldCache = safePage <= 20;
+
+        let cacheKey: string | null = null;
+        if (shouldCache) {
+            const version = await this.getListVersion(bookId);
+            cacheKey = this.buildListCacheKey({
+                bookId,
+                q,
+                page: safePage,
+                limit: safeLimit,
+                path,
+                version,
+            });
+
+            const cached = await this.redis.get(cacheKey);
+            if (cached) {
+                try {
+                    return JSON.parse(cached) as {
+                        items: Array<any>;
+                        pagination: { page: number; limit: number; total: number; totalPages: number };
+                    };
+                } catch {
+                    await this.redis.del(cacheKey);
+                }
+            }
+        }
 
         const where: Prisma.ChapterWhereInput = {
             bookId,
@@ -57,7 +133,7 @@ export class ChaptersService {
             this.prisma.chapter.count({ where }),
         ]);
 
-        return {
+        const result = {
             items: items.map((item) => ({
                 ...item,
                 price: item.price ? item.price.toNumber() : null,
@@ -69,6 +145,11 @@ export class ChaptersService {
                 totalPages: Math.max(1, Math.ceil(total / safeLimit)),
             },
         };
+
+        if (cacheKey){
+            await this.redis.set(cacheKey,JSON.stringify(result), "EX", this.CHAPTERS_LIST_CACHE_TTL_SECONDS)
+        }
+        return result
     }
 
     // Admin: create a new chapter
@@ -95,6 +176,7 @@ export class ChaptersService {
 
             await this.redis.del('stats:chapters:count');
             await this.publicService.clearHomeCache();
+            await this.bumpListVersion(bookId)
             return chapter;
         } catch (err: any) {
             if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
@@ -136,6 +218,7 @@ export class ChaptersService {
             });
 
             await this.publicService.clearHomeCache();
+            await this.bumpListVersion(bookId)
             return chapter
 
         } catch (err: any) {
@@ -157,6 +240,7 @@ export class ChaptersService {
 
         await this.publicService.clearHomeCache();
         await this.redis.del('stats:chapters:count');
+        await this.bumpListVersion(bookId)
         return { id: chapterId, deleted: true };
     }
 
@@ -217,7 +301,7 @@ export class ChaptersService {
 
         // Debit + access record in tx
         return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index} from ${chapter.book.title}`);
+            await this.walletsService.debit(userId, chapter.price!.toNumber(), `Purchase chapter ${chapter.index} | ${chapter.book.title}`);
             return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
         });
     }
