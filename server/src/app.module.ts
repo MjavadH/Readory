@@ -14,9 +14,11 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { PublicModule } from './public/public.module';
 import { BookTypesModule } from './book-types/book-types.module';
 import { StorageModule } from './storage/storage.module';
+import { ReaderModule } from './reader/reader.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }),
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     RedisModule,
     CacheModule,
     PrismaModule,
@@ -30,7 +32,8 @@ import { StorageModule } from './storage/storage.module';
     DashboardModule,
     PublicModule,
     BookTypesModule,
-    StorageModule
+    StorageModule,
+    ReaderModule,
   ],
   controllers: [],
   providers: [],

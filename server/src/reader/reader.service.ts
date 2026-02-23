@@ -1,0 +1,306 @@
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  HttpException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ChapterContentType } from '@prisma/client';
+import { Request } from 'express';
+import Redis from 'ioredis';
+import sharp from 'sharp';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+
+type ReaderTokenPayload = {
+  userId: number;
+  chapterId: number;
+  bookId: number;
+  chapterIndex: number;
+  contentVersion: number;
+  uaHash: string;
+  exp: number;
+};
+
+type ManifestPage = { key: string; w?: number; h?: number; sha256?: string };
+type ChapterManifest = {
+  version: 1;
+  format: 'images' | 'text';
+  pageCount: number;
+  pages: ManifestPage[];
+};
+
+@Injectable()
+export class ReaderService {
+  private readonly logger = new Logger(ReaderService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+    private readonly jwtService: JwtService,
+    private readonly cacheManager: CacheManager,
+    @Inject('REDIS_CLIENT') private readonly redis: Redis,
+  ) {}
+
+  private uaHash(req: Request): string {
+    const ua = req.headers['user-agent'] ?? 'unknown';
+    return Buffer.from(String(ua)).toString('base64url').slice(0, 24);
+  }
+
+  private async enforceRateLimit(
+    scope: string,
+    userId: number,
+    limit: number,
+    windowSeconds: number,
+  ): Promise<void> {
+    const key = `rl:${scope}:u:${userId}:${Math.floor(Date.now() / (windowSeconds * 1000))}`;
+    const count = await this.redis.incr(key);
+    if (count === 1) {
+      await this.redis.expire(key, windowSeconds);
+    }
+    if (count > limit) {
+      throw new HttpException(
+        { message: 'Rate limit exceeded', retryAfter: windowSeconds },
+        429,
+      );
+    }
+  }
+
+  async createSession(
+    userId: number,
+    bookId: number,
+    chapterIndex: number,
+    req: Request,
+  ) {
+    await this.enforceRateLimit('session', userId, 10, 60);
+
+    const chapter = await this.prisma.chapter.findFirst({
+      where: { bookId, index: chapterIndex, book: { isPublished: true } },
+      select: {
+        id: true,
+        bookId: true,
+        index: true,
+        isFree: true,
+        contentType: true,
+        pageCount: true,
+        contentVersion: true,
+      },
+    });
+    if (!chapter) throw new NotFoundException('Chapter not found');
+
+    const hasAccess =
+      chapter.isFree ||
+      Boolean(
+        await this.prisma.accessRecord.findFirst({
+          where: { userId, chapterId: chapter.id },
+          select: { id: true },
+        }),
+      );
+    if (!hasAccess) throw new ForbiddenException('Purchase required');
+
+    const resume = await this.prisma.readingProgress.findUnique({
+      where: { userId_chapterId: { userId, chapterId: chapter.id } },
+      select: { lastPage: true, percent: true },
+    });
+
+    const token = await this.jwtService.signAsync(
+      {
+        userId,
+        chapterId: chapter.id,
+        bookId,
+        chapterIndex,
+        contentVersion: chapter.contentVersion,
+        uaHash: this.uaHash(req),
+      },
+      { expiresIn: 120 },
+    );
+
+    return {
+      chapterId: chapter.id,
+      bookId,
+      chapterIndex,
+      contentType: chapter.contentType,
+      pageCount: chapter.pageCount,
+      contentVersion: chapter.contentVersion,
+      resume: resume ?? null,
+      sessionToken: token,
+    };
+  }
+
+  async verifyToken(token: string, req: Request): Promise<ReaderTokenPayload> {
+    try {
+      const decoded =
+        await this.jwtService.verifyAsync<ReaderTokenPayload>(token);
+      if (decoded.uaHash !== this.uaHash(req)) {
+        throw new UnauthorizedException('Invalid reader token context');
+      }
+      const chapter = await this.prisma.chapter.findUnique({
+        where: { id: decoded.chapterId },
+        select: { contentVersion: true, id: true },
+      });
+      if (!chapter || chapter.contentVersion !== decoded.contentVersion) {
+        throw new UnauthorizedException('Reader token expired');
+      }
+      return decoded;
+    } catch {
+      throw new UnauthorizedException('Invalid or expired reader token');
+    }
+  }
+
+  private manifestKey(chapterId: number, contentVersion: number): string {
+    return this.cacheManager.buildKey(
+      'reader:manifest',
+      chapterId,
+      contentVersion,
+    );
+  }
+
+  async getManifest(token: string, req: Request): Promise<ChapterManifest> {
+    const payload = await this.verifyToken(token, req);
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: payload.chapterId },
+      select: { contentPath: true, contentType: true, pageCount: true },
+    });
+    if (!chapter?.contentPath || !chapter.contentType)
+      throw new NotFoundException('Manifest unavailable');
+
+    const key = this.manifestKey(payload.chapterId, payload.contentVersion);
+    return this.cacheManager.getOrSet(
+      key,
+      { ttlSeconds: 900, jitterSeconds: 30 },
+      async () => {
+        const buffer = await this.storageService.getObjectBuffer(
+          `${chapter.contentPath}/manifest.json`,
+        );
+        const parsed = JSON.parse(buffer.toString('utf8')) as ChapterManifest;
+        return parsed;
+      },
+    );
+  }
+
+  async getText(token: string, req: Request): Promise<string> {
+    await this.verifyToken(token, req);
+    const manifest = await this.getManifest(token, req);
+    if (manifest.format !== 'text')
+      throw new BadRequestException('Not text chapter');
+    const page = manifest.pages[0];
+    if (!page?.key) throw new NotFoundException('Text content missing');
+    const buffer = await this.storageService.getObjectBuffer(page.key);
+    return buffer.toString('utf8');
+  }
+
+  async getPage(token: string, page: number, req: Request): Promise<Buffer> {
+    const payload = await this.verifyToken(token, req);
+    await this.enforceRateLimit('page', payload.userId, 120, 60);
+
+    const blockKey = `reader:block:${payload.userId}`;
+    const blockedUntil = await this.redis.get(blockKey);
+    if (blockedUntil) {
+      throw new HttpException(
+        'Temporarily blocked due to abnormal behavior',
+        429,
+      );
+    }
+
+    const nowSec = Math.floor(Date.now() / 1000);
+    const speedKey = `reader:speed:${payload.userId}:${payload.chapterId}`;
+    await this.redis.zadd(speedKey, nowSec, String(page));
+    await this.redis.expire(speedKey, 10);
+    await this.redis.zremrangebyscore(speedKey, 0, nowSec - 2);
+    const recent = await this.redis.zcard(speedKey);
+    if (recent >= 8) {
+      await this.redis.set(blockKey, String(nowSec + 120), 'EX', 120);
+      this.logger.warn(
+        `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
+      );
+      throw new HttpException(
+        'Temporarily blocked due to abnormal behavior',
+        429,
+      );
+    }
+
+    const manifest = await this.getManifest(token, req);
+    if (manifest.format !== 'images')
+      throw new BadRequestException('Not image chapter');
+    if (!Number.isInteger(page) || page < 1 || page > manifest.pageCount)
+      throw new BadRequestException('Invalid page');
+    const item = manifest.pages[page - 1];
+    if (!item) throw new NotFoundException('Page not found');
+
+    const source = await this.storageService.getObjectBuffer(item.key);
+    const watermarkText = `${payload.userId} ${new Date().toISOString()}`;
+    const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130" fill="rgba(255,255,255,0.18)" transform="rotate(-25 180 120)" font-size="24">${watermarkText}</text></svg>`;
+
+    return sharp(source)
+      .composite([{ input: Buffer.from(svg), tile: true, gravity: 'center' }])
+      .webp({ quality: 82 })
+      .toBuffer();
+  }
+
+  async saveProgress(userId: number, chapterId: number, lastPage: number) {
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: { id: true, bookId: true, isFree: true, pageCount: true },
+    });
+    if (!chapter) throw new NotFoundException('Chapter not found');
+
+    const hasAccess =
+      chapter.isFree ||
+      Boolean(
+        await this.prisma.accessRecord.findFirst({
+          where: { userId, chapterId },
+          select: { id: true },
+        }),
+      );
+    if (!hasAccess) throw new ForbiddenException('No access');
+
+    const maxPage = Math.max(1, chapter.pageCount || 1);
+    const clampedPage = Math.max(1, Math.min(lastPage, maxPage));
+    const percent = Math.floor((clampedPage / maxPage) * 100);
+
+    return this.prisma.readingProgress.upsert({
+      where: { userId_chapterId: { userId, chapterId } },
+      create: {
+        userId,
+        bookId: chapter.bookId,
+        chapterId,
+        lastPage: clampedPage,
+        percent,
+      },
+      update: { lastPage: clampedPage, percent },
+    });
+  }
+
+  async clearChapterManifestCache(chapterId: number): Promise<void> {
+    // versioned key naturally invalidates; best effort cleanup of current version key
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: { contentVersion: true },
+    });
+    if (!chapter) return;
+    await this.cacheManager.del(
+      this.manifestKey(chapterId, chapter.contentVersion),
+    );
+  }
+
+  chapterPrefix(bookId: number, chapterIndex: number): string {
+    return `readory-book/b${bookId}/c${chapterIndex}`;
+  }
+
+  buildManifest(
+    chapterType: ChapterContentType,
+    keys: ManifestPage[],
+  ): ChapterManifest {
+    return {
+      version: 1,
+      format: chapterType,
+      pageCount: keys.length,
+      pages: keys,
+    };
+  }
+}
