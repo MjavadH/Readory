@@ -156,7 +156,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
                         <Link href={`/${bookTypeSlug}/${book.id}`}>
                             <Button
                                 size="lg"
-                                className="rounded-full font-semibold px-7 gap-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:gap-3"
+                                className="rounded-full cursor-pointer font-semibold px-7 gap-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:gap-3"
                             >
                                 Start Reading
                                 <ArrowRight className="w-4 h-4" />
