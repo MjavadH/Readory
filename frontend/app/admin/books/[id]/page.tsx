@@ -5,7 +5,6 @@ import {
     BookOpen,
     Clock,
     Star,
-    Tag,
     User,
     Edit,
     Trash,
@@ -38,7 +37,7 @@ import {AppPagination} from "@/components/app-pagination";
 import type { IconKey } from "@readory/shared";
 import {useParams} from "next/navigation";
 import Image from "next/image";
-import {MediaPicker} from "@/components/media-picker";
+import {MediaPicker} from "@/components/admin/media-picker";
 import Link from "next/link";
 import {AppIcon} from "@/components/AppIcon";
 

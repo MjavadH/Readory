@@ -30,7 +30,7 @@ import type { BookType } from "@/lib/types"
 import type { IconKey } from "@readory/shared"
 
 import { AppIcon } from "@/components/AppIcon"
-import { IconPicker } from "@/components/icon-picker"
+import { IconPicker } from "@/components/admin/icon-picker"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"

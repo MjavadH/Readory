@@ -36,7 +36,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
-import {StatCard} from "@/components/stat-card";
+import {StatCard} from "@/components/admin/stat-card";
 
 interface Transaction {
   id: number

@@ -1,7 +1,7 @@
 'use client';
 
 import {notFound} from 'next/navigation';
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { Loader2 } from "lucide-react";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";

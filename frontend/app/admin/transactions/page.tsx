@@ -15,7 +15,7 @@ import {
     Activity,
 } from "lucide-react"
 import { apiClient } from "@/lib/api-client"
-import {StatCard} from "@/components/stat-card";
+import {StatCard} from "@/components/admin/stat-card";
 
 function GrowthIndicator({ value }: { value?: number }) {
     if (value === undefined) return null
