@@ -3,11 +3,23 @@ import { ChaptersService } from './chapters.service';
 import { ChaptersController } from './chapters.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WalletsModule } from '../wallets/wallets.module';
-import { PublicModule } from '../public/public.module'
+import { PublicModule } from '../public/public.module';
+import { ChapterContentController } from './chapter-content.controller';
+import { ChapterContentService } from './chapter-content.service';
+import { StorageModule } from '../storage/storage.module';
+import { CacheModule } from '../cache/cache.module';
+import { ReaderModule } from '../reader/reader.module';
 
 @Module({
-  imports: [PrismaModule, WalletsModule, PublicModule],
-  providers: [ChaptersService],
-  controllers: [ChaptersController]
+  imports: [
+    PrismaModule,
+    WalletsModule,
+    PublicModule,
+    StorageModule,
+    CacheModule,
+    ReaderModule,
+  ],
+  providers: [ChaptersService, ChapterContentService],
+  controllers: [ChaptersController, ChapterContentController],
 })
 export class ChaptersModule {}

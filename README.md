@@ -119,3 +119,40 @@ Readory is a simple online bookstore designed for digital manga, comics, novels 
 ## License
 
 This project is released under the MIT License. See the `LICENSE` file for details.
+
+## Chapter Reader + MinIO Content Pipeline
+
+### Required environment variables (server)
+
+```env
+S3_ENDPOINT=http://127.0.0.1:9000
+S3_REGION=us-east-1
+S3_ACCESS_KEY_ID=minioadmin
+S3_SECRET_ACCESS_KEY=minioadmin
+S3_BUCKET_CHAPTERS=readory-book
+S3_FORCE_PATH_STYLE=true
+S3_AUTO_CREATE_BUCKET=false
+```
+
+- Bucket must be **private**.
+- Reader APIs stream content through backend only (`/reader/page`, `/reader/text`) and do not expose S3 URLs.
+
+### Admin chapter content management APIs
+
+- `GET /admin/books/:bookId/chapters/:index/content`
+- `POST /admin/books/:bookId/chapters/:index/content/images` (multipart `files[]`)
+- `POST /admin/books/:bookId/chapters/:index/content/text` (multipart `file`, `.md`/`.txt`)
+- `DELETE /admin/books/:bookId/chapters/:index/content`
+
+Storage prefix is always:
+
+`readory-book/b{bookId}/c{chapterIndex}`
+
+Each chapter stores a `manifest.json` used by the reader session and ordered page loading.
+
+### Security notes
+
+- Reader session token is short-lived and includes `contentVersion`; content changes invalidate prior sessions.
+- Reader endpoints enforce access (`isFree` or purchased access record), rate limits, and anomaly blocking for aggressive page scraping.
+- Image pages are watermarked per user and streamed as `image/webp` with `no-store` headers.
+- Chapter uploads validate image magic-bytes, normalize to WebP, and update chapter content metadata atomically.
