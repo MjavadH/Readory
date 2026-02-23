@@ -137,24 +137,13 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
                     style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                     {books.map((book, index) => {
-                        const bookData: BookCardData = {
-                            id: book.id,
-                            title: book.title,
-                            coverImage: book.coverImage
-                                ? `${book.coverImage}`
-                                : "/placeholder.svg",
-                            type: book.type,
-                            ratingAvg: book.ratingAvg,
-                            ratingCount: book.ratingCount,
-                        };
-
                         return (
                             <div
                                 key={book.id}
                                 className="w-40 shrink-0 snap-start first:snap-start md:w-50"
                             >
                                 <div className="relative">
-                                    <BookCard book={bookData} priority={index < 6} />
+                                    <BookCard book={book} priority={index < 6} />
                                 </div>
                             </div>
                         );
