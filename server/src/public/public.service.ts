@@ -28,9 +28,9 @@ export class PublicService {
                             description: true,
                             coverImage: true,
                             author: true,
-                            type: { select: { name: true, slug: true } },
+                            type: { select: { name: true, slug: true, iconKey: true } },
                             genres: {
-                                select: { genre: { select: { name: true, slug: true } } },
+                                select: { genre: { select: { name: true, slug: true, iconKey: true } } },
                                 take: 3,
                             },
                             ratingAvg: true,
