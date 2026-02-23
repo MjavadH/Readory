@@ -35,7 +35,7 @@ export class ChapterContentService {
   }
 
   private chapterPrefix(bookId: number, chapterIndex: number): string {
-    return `readory-book/b${bookId}/c${chapterIndex}`;
+    return `b${bookId}/c${chapterIndex}`;
   }
 
   async getChapterContent(bookId: number, index: number) {

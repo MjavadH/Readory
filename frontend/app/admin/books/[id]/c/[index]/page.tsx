@@ -204,7 +204,7 @@ export default function AdminChapterContentPage() {
       { label: "Content Type", value: data.chapter.contentType ?? "none" },
       { label: "Page Count", value: String(data.chapter.pageCount ?? 0) },
       { label: "Content Version", value: String(data.chapter.contentVersion ?? 0) },
-      { label: "Storage Prefix", value: data.chapter.contentPath ?? `readory-book/b${bookId}/c${chapterIndex}` },
+      { label: "Storage Prefix", value: data.chapter.contentPath ?? `b${bookId}/c${chapterIndex}` },
     ];
   }, [data, bookId, chapterIndex]);
 

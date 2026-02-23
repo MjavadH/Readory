@@ -14,7 +14,7 @@ import {
     X,
     Eye,
     EyeOff,
-    Sparkles, ImageIcon,
+    Sparkles, ImageIcon, EyeIcon
 } from 'lucide-react';
 import {
     Dialog,
@@ -64,7 +64,6 @@ type ChapterItem = {
     isFree: boolean;
     price: number | null;
     updatedAt: string;
-    contentPath: string;
 };
 
 type ChaptersResponse = {
@@ -181,7 +180,6 @@ export default function AdminBookDetail() {
         index: 0,
         price: 0,
         isFree: true,
-        contentPath: "",
     });
 
     const loadOptions = useCallback(async () => {
@@ -346,7 +344,6 @@ export default function AdminBookDetail() {
             index: chapters.length + 1,
             price: 0,
             isFree: true,
-            contentPath: '',
         });
         setChapterDialog({ mode: 'add' });
     };
@@ -357,7 +354,6 @@ export default function AdminBookDetail() {
             index: chapter.index,
             isFree: chapter.isFree,
             price: chapter.price ?? 0,
-            contentPath: chapter.contentPath,
         });
         setChapterDialog({ mode: 'edit', chapter });
     };
@@ -768,6 +764,13 @@ export default function AdminBookDetail() {
                                                             {formatUpdateTime(chapter.updatedAt)}
                                                         </div>
                                                         <div className="flex items-center gap-1">
+                                                            <Link href={`/admin/books/${bookId}/c/${chapter.index}`} >
+                                                                <button
+                                                                    className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+                                                                >
+                                                                    <EyeIcon className="h-4 w-4" />
+                                                                </button>
+                                                            </Link>
                                                             <button
                                                                 onClick={() => openEditChapter(chapter)}
                                                                 className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
@@ -881,16 +884,6 @@ export default function AdminBookDetail() {
                                     setChapterForm({ ...chapterForm, index: parseInt(e.target.value) || 1 })
                                 }
                                 placeholder="Chapter number"
-                            />
-                        </div>
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Content Path
-                            </label>
-                            <Input
-                                value={chapterForm.contentPath}
-                                onChange={(e) => setChapterForm({ ...chapterForm, contentPath: e.target.value })}
-                                placeholder="Path to chapter content"
                             />
                         </div>
                         <div className="flex items-center gap-4">

@@ -288,10 +288,6 @@ export class ReaderService {
     );
   }
 
-  chapterPrefix(bookId: number, chapterIndex: number): string {
-    return `readory-book/b${bookId}/c${chapterIndex}`;
-  }
-
   buildManifest(
     chapterType: ChapterContentType,
     keys: ManifestPage[],
