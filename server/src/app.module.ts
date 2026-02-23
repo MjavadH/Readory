@@ -13,6 +13,7 @@ import { GenresModule } from './genre/genres.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PublicModule } from './public/public.module';
 import { BookTypesModule } from './book-types/book-types.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }),
@@ -28,7 +29,8 @@ import { BookTypesModule } from './book-types/book-types.module';
     GenresModule,
     DashboardModule,
     PublicModule,
-    BookTypesModule
+    BookTypesModule,
+    StorageModule
   ],
   controllers: [],
   providers: [],
