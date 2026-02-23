@@ -17,8 +17,45 @@ const genreColors = [
     "from-indigo-500/15 to-indigo-500/5 hover:from-indigo-500/25 hover:to-indigo-500/10 border-indigo-500/20 hover:border-indigo-500/40",
 ]
 
+function GenreCardSkeleton() {
+    return (
+        <div className="group relative flex items-center gap-3 rounded-xl border border-border bg-linear-to-br from-muted/70 to-muted/30 p-4 md:p-5">
+            {/* Icon placeholder */}
+            <div className="shrink-0 rounded-lg border border-border/50 bg-muted p-2">
+                <div className="h-5 w-5 animate-pulse rounded bg-muted-foreground/20" />
+            </div>
+
+            {/* Text placeholder */}
+            <div className="h-4 w-20 animate-pulse rounded bg-muted md:h-5 md:w-24" />
+        </div>
+    );
+}
+
+export function GenresSectionSkeleton({ count = 8 }: { count?: number }) {
+    return (
+        <section aria-label="Loading genres" aria-busy="true">
+            <div className="mb-6">
+                <div className="mb-1 flex items-center gap-2">
+                    <div className="rounded-md bg-muted p-1 animate-pulse">
+                        <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+                </div>
+
+                <div className="mt-2 h-8 w-52 max-w-[80vw] animate-pulse rounded bg-muted md:w-64" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {Array.from({ length: count }).map((_, index) => (
+                    <GenreCardSkeleton key={index} />
+                ))}
+            </div>
+        </section>
+    );
+}
+
 export function GenresSection({ genres }: { genres: BookGenre[] }) {
-    if (genres.length === 0) return;
+    if (genres.length === 0) return null;
     return (
         <section>
             <div className="mb-6">

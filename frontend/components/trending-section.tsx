@@ -5,8 +5,70 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
 
+function TrendingCardSkeleton() {
+    return (
+        <div className="w-40 shrink-0 md:w-50">
+            <div className="animate-pulse">
+                {/* Cover */}
+                <div className="aspect-2/3 w-full overflow-hidden rounded-xl border border-border bg-muted" />
+
+                {/* Meta */}
+                <div className="mt-3 space-y-2">
+                    <div className="h-4 w-[85%] rounded bg-muted" />
+                    <div className="h-4 w-[60%] rounded bg-muted" />
+
+                    <div className="pt-1">
+                        <div className="h-3 w-20 rounded bg-muted" />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                        <div className="h-3 w-10 rounded bg-muted" />
+                        <div className="h-3 w-14 rounded bg-muted" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function TrendingSkeleton({ count = 8 }: { count?: number }) {
+    return (
+        <section aria-label="Loading trending books" aria-busy="true">
+            <div className="mb-6 flex items-end justify-between">
+                <div>
+                    <div className="mb-1 flex items-center gap-2">
+                        <div className="rounded-md bg-muted p-1 animate-pulse">
+                            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="h-3 w-20 rounded bg-muted animate-pulse" />
+                    </div>
+
+                    <div className="mt-2 h-8 w-72 max-w-[80vw] rounded bg-muted animate-pulse md:w-96" />
+                </div>
+
+                <div className="hidden items-center gap-2 md:flex">
+                    <div className="rounded-full border border-border bg-card p-2 animate-pulse">
+                        <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="rounded-full border border-border bg-card p-2 animate-pulse">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="relative">
+                <div className="-mx-4 flex gap-3 overflow-x-hidden px-4 pb-2 sm:gap-4">
+                    {Array.from({ length: count }).map((_, index) => (
+                        <TrendingCardSkeleton key={index} />
+                    ))}
+                </div>
+            </div>
+        </section>
+    );
+}
+
 export function TrendingSection({ books }: { books: BookCardData[] }) {
-    if (books.length === 0) return;
+    if (books.length === 0) return null;
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -39,8 +101,8 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
                     <div className="mb-1 flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-primary" />
                         <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-              Trending
-            </span>
+                            Trending
+                        </span>
                     </div>
                     <h2 className="text-2xl font-bold text-foreground md:text-3xl">
                         Most Popular Right Now
