@@ -82,8 +82,8 @@ const metaIcons: Record<string, React.ReactNode> = {
 
 function ChapterContentSkeleton() {
   return (
-      <div className="min-h-screen bg-background p-6 md:p-10">
-        <div className="mx-auto max-w-6xl space-y-8">
+      <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -293,16 +293,18 @@ export default function ChapterContentManager() {
   return (
       <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
         <motion.div
-            className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8"
+            className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
         >
           {/* Header */}
-          <motion.div variants={itemVariants} className="flex flex-wrap items-end justify-between gap-4">
+          <motion.div variants={itemVariants} className="flex p-3 md:p-0 flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Chapter Content Manager</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Chapter Content Manager
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
                 Manage uploads, manifests, and preview content for your chapters.
               </p>
             </div>

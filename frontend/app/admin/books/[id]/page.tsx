@@ -119,8 +119,8 @@ function Toast({message, type, onClose,}: {
 function LoadingSkeleton() {
     return (
         <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-                <div className="mb-6 h-10 w-32 animate-pulse rounded-lg bg-slate-300 dark:bg-slate-700" />
+            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+                <div className="p-3 md:p-0 mb-6 h-10 w-32 animate-pulse rounded-lg bg-slate-300 dark:bg-slate-700" />
                 <div className="space-y-6">
                     <Card className="overflow-hidden">
                         <CardContent className="p-6 sm:p-8">
@@ -393,10 +393,10 @@ export default function AdminBookDetail() {
         <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
             {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
                 <Link
                     href="/admin/books"
-                    className="group mb-6 flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                    className="p-3 md:p-0 group mb-6 flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 >
                     <div className="rounded-lg bg-white p-2 shadow-sm transition-all group-hover:shadow-md dark:bg-slate-900">
                         <ArrowLeft className="h-5 w-5" />

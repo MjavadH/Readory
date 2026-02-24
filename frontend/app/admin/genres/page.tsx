@@ -44,6 +44,7 @@ import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
 import { IconPicker } from "@/components/admin/icon-picker";
 import { apiClient } from "@/lib/api-client"
+import { motion } from "framer-motion"
 
 type Genre = {
     id: number
@@ -182,7 +183,7 @@ export default function AdminGenres() {
     }
 
     useEffect(() => {
-        load()
+        void load()
     }, [])
 
     const create = async () => {
@@ -312,9 +313,9 @@ export default function AdminGenres() {
                     return next
                 })
 
-                saveOrder(reordered)
+                void saveOrder(reordered)
             } else if (!initialGenre.isFeatured) {
-                saveOrder(featuredGenres)
+                void saveOrder(featuredGenres)
             }
         }
     }
@@ -330,16 +331,21 @@ export default function AdminGenres() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-b from-background to-muted/20">
-            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto">
-                <div className="space-y-2">
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text">
+        <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+                <motion.div
+                    className="space-y-1 p-3 md:p-0"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.55 }}
+                >
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Genres Management
                     </h1>
-                    <p className="text-muted-foreground text-sm sm:text-base">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                         Organize your content by dragging genres between lists to feature them on the homepage
                     </p>
-                </div>
+                </motion.div>
 
                 <DndContext
                     sensors={sensors}
@@ -435,7 +441,7 @@ export default function AdminGenres() {
                                     <div className="min-h-[500px]">
                                         <DroppableContainer id="featured-container" items={featuredIds} className="space-y-2 min-h-[500px]">
                                             {featuredGenres.length === 0 ? (
-                                                <div className="flex flex-col items-center justify-center h-[480px] text-muted-foreground text-sm border-2 border-dashed border-blue-500/30 rounded-xl bg-gradient-to-br from-blue-500/5 to-purple-500/5 backdrop-blur-sm p-8">
+                                                <div className="flex flex-col items-center justify-center h-[480px] text-muted-foreground text-sm border-2 border-dashed border-blue-500/30 rounded-xl bg-linear-to-br from-blue-500/5 to-purple-500/5 backdrop-blur-sm p-8">
                                                     <div className="h-16 w-16 rounded-full bg-linear-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
                                                         <Sparkles className="h-8 w-8 text-blue-500/60" />
                                                     </div>

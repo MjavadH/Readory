@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ import { MediaPicker } from "@/components/admin/media-picker"
 import { StatCard } from "@/components/admin/stat-card"
 import { BookCard } from "@/components/book-card"
 import type { BookCardData } from "@/lib/types"
+import { motion } from "framer-motion"
 
 type StatusFilter = "all" | "published" | "draft" | "featured"
 
@@ -228,24 +229,24 @@ export default function AdminBooks() {
 
     if (loading) {
         return (
-            <div className="p-4 sm:p-6 space-y-6">
-                <div className="space-y-1">
-                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Books
-                    </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
-                </div>
-                <div className="animate-pulse space-y-4">
-                    <div className="grid gap-4 md:grid-cols-3">
-                        <div className="h-32 bg-muted rounded-xl" />
-                        <div className="h-32 bg-muted rounded-xl" />
-                        <div className="h-32 bg-muted rounded-xl" />
+            <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+                <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+                    <div className="space-y-2 p-3 md:p-0">
+                        <div className="h-8 w-72 rounded-lg bg-muted animate-pulse" />
+                        <div className="h-4 w-48 rounded-md bg-muted animate-pulse" />
                     </div>
-                    <div className="flex gap-4 md:grid-cols-2">
-                        <div className="h-10 bg-muted rounded-xl w-4/5" />
-                        <div className="h-10 bg-muted rounded-xl w-1/5" />
+                    <div className="animate-pulse space-y-4">
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <div className="h-32 bg-muted rounded-xl" />
+                            <div className="h-32 bg-muted rounded-xl" />
+                            <div className="h-32 bg-muted rounded-xl" />
+                        </div>
+                        <div className="flex gap-4 md:grid-cols-2">
+                            <div className="h-10 bg-muted rounded-xl w-4/5" />
+                            <div className="h-10 bg-muted rounded-xl w-1/5" />
+                        </div>
+                        <div className="h-96 bg-muted rounded-xl" />
                     </div>
-                    <div className="h-96 bg-muted rounded-xl" />
                 </div>
             </div>
         )
@@ -253,15 +254,18 @@ export default function AdminBooks() {
 
     return (
         <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            Books
-                        </h1>
-                        <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
-                    </div>
-                </div>
+            <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+                <motion.div
+                    className="space-y-1 p-3 md:p-0"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.55 }}
+                >
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Books
+                    </h1>
+                    <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
+                </motion.div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard

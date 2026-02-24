@@ -30,6 +30,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
+import { motion } from "framer-motion"
 
 type MediaItem = {
   code: string
@@ -282,15 +283,20 @@ export default function AdminMedia() {
   }
 
   return (
-      <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
-        <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
+      <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
           {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <motion.div
+              className="space-y-1 p-3 md:p-0"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55 }}
+          >
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Media Library
             </h1>
-            <p className="text-muted-foreground">Upload and manage your media assets</p>
-          </div>
+            <p className="text-sm sm:text-base text-muted-foreground">Upload and manage your media assets</p>
+          </motion.div>
 
           {/* Upload */}
           <Card className="border-primary/20 overflow-hidden">

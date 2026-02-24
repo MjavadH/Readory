@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import {StatCard} from "@/components/admin/stat-card";
+import { motion } from "framer-motion"
 
 interface Transaction {
   id: number
@@ -217,534 +218,543 @@ export default function AdminUsers() {
 
   if (loading && users.length === 0) {
     return (
-        <div className="p-4 sm:p-6 space-y-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-              View and manage user accounts and wallet balances
-            </p>
-          </div>
-          <div className="animate-pulse space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="h-32 bg-muted rounded-xl" />
-              <div className="h-32 bg-muted rounded-xl" />
-              <div className="h-32 bg-muted rounded-xl" />
+        <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+            <div className="space-y-2 p-3 md:p-0">
+              <div className="h-8 w-72 rounded-lg bg-muted animate-pulse" />
+              <div className="h-4 w-48 rounded-md bg-muted animate-pulse" />
             </div>
-            <div className="h-10 bg-muted rounded-xl" />
-            <div className="h-96 bg-muted rounded-xl" />
+            <div className="animate-pulse space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="h-32 bg-muted rounded-xl" />
+                <div className="h-32 bg-muted rounded-xl" />
+                <div className="h-32 bg-muted rounded-xl" />
+              </div>
+              <div className="h-10 bg-muted rounded-xl" />
+              <div className="h-96 bg-muted rounded-xl" />
+            </div>
           </div>
         </div>
     )
   }
 
   return (
-      <div className="p-4 sm:p-6 space-y-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            View and manage user accounts and wallet balances
-          </p>
-        </div>
+      <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+        <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
+          <motion.div
+              className="space-y-1 p-3 md:p-0"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.55 }}
+          >
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              User Management
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              View and manage user accounts and wallet balances
+            </p>
+          </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard
-              title="Total Users"
-              value={(stats?.totalUsers || 0).toLocaleString()}
-              icon={Users}
-              color="blue"
-              animationDelay={0}
-          />
-          <StatCard
-              title="Active (30 Days)"
-              value={(stats?.activeUsers || 0).toLocaleString()}
-              icon={Activity}
-              color="green"
-              animationDelay={0.2}
-          />
-          <StatCard
-              title="New (7 Days)"
-              value={(stats?.newUsers || 0).toLocaleString()}
-              icon={UserPlus}
-              color="violet"
-              className="sm:col-span-2 lg:col-span-1"
-              animationDelay={0.4}
-          />
-        </div>
+          {/* Stats Cards */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <StatCard
+                title="Total Users"
+                value={(stats?.totalUsers || 0).toLocaleString()}
+                icon={Users}
+                color="blue"
+                animationDelay={0}
+            />
+            <StatCard
+                title="Active (30 Days)"
+                value={(stats?.activeUsers || 0).toLocaleString()}
+                icon={Activity}
+                color="green"
+                animationDelay={0.2}
+            />
+            <StatCard
+                title="New (7 Days)"
+                value={(stats?.newUsers || 0).toLocaleString()}
+                icon={UserPlus}
+                color="violet"
+                className="sm:col-span-2 lg:col-span-1"
+                animationDelay={0.4}
+            />
+          </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-              placeholder="Search by email or username..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                setCurrentPage(1)
-              }}
-              className="pl-10"
-          />
-        </div>
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+                placeholder="Search by email or username..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
+                className="pl-10"
+            />
+          </div>
 
-        {/* Users Table */}
-        <Card className="border-border/50">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-border/50">
-                    <TableHead className="min-w-62.5">User Info</TableHead>
-                    <TableHead className="min-w-25">Status</TableHead>
-                    <TableHead className="min-w-25">Role</TableHead>
-                    <TableHead className="text-right min-w-30">Balance</TableHead>
-                    <TableHead className="min-w-30">Joined</TableHead>
-                    <TableHead className="w-15">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="h-32 text-center">
-                          <div className="flex flex-col items-center justify-center text-muted-foreground">
-                            <Search className="size-8 mb-2 opacity-50" />
-                            <p className="text-sm">No users found</p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                  ) : (
-                      users.map((user) => (
-                          <TableRow
-                              key={user.id}
-                              className="cursor-pointer hover:bg-muted/50 transition-colors"
-                              onClick={() => handleRowClick(user)}
-                          >
-                            <TableCell>
-                              <div className="flex items-center gap-3">
-                                <Avatar className="size-9 ring-2 ring-border/50">
-                                  <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
-                                    {user.username.substring(0, 2).toUpperCase()}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-medium truncate">{user.username}</span>
-                                  <span className="text-xs text-muted-foreground truncate">{user.email}</span>
-                                </div>
-                              </div>
-                            </TableCell>
-
-                            <TableCell>
-                              <Badge
-                                  variant={user.status === "ACTIVE" ? "default" : "destructive"}
-                                  className={
-                                    user.status === "ACTIVE"
-                                        ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20"
-                                        : ""
-                                  }
-                              >
-                                {user.status === "ACTIVE" ? (
-                                    <CheckCircle2 className="size-3 mr-1" />
-                                ) : (
-                                    <Ban className="size-3 mr-1" />
-                                )}
-                                {user.status}
-                              </Badge>
-                            </TableCell>
-
-                            <TableCell>
-                              <Badge
-                                  variant="outline"
-                                  className={
-                                    isAdminRole(user.role)
-                                        ? "border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-400"
-                                        : "border-border/50"
-                                  }
-                              >
-                                {isAdminRole(user.role) && <Shield className="size-3 mr-1" />}
-                                {getRoleName(user.role)}
-                              </Badge>
-                            </TableCell>
-
-                            <TableCell className="text-right">
-                        <span className="font-semibold text-base">
-                          $
-                          {user.balance.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                            </TableCell>
-
-                            <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {new Date(user.joinedAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                            </TableCell>
-
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="size-8">
-                                    <MoreVertical className="size-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                  <DropdownMenuItem onClick={() => handleRowClick(user)}>
-                                    <Users className="size-4 mr-2" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                      onClick={() => updateUserRole(user.id, isAdminRole(user.role) ? "USER" : "ADMIN")}
-                                  >
-                                    <Shield className="size-4 mr-2" />
-                                    {isAdminRole(user.role) ? "Remove Admin" : "Make Admin"}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                      onClick={() => toggleBanStatus(user.id, user.status)}
-                                      disabled={user.id === currentUserId}
-                                      className={user.status === "BANNED" ? "text-green-600" : "text-red-600"}
-                                  >
-                                    <Ban className="size-4 mr-2" />
-                                    {user.status === "BANNED" ? "Unban User" : "Ban User"}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                      ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <AppPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalListUsers}
-          pageSize={ITEMS_PER_PAGE}
-          itemLabel="users"
-          onPageChange={setCurrentPage}
-          canGoPrevious={currentPage > 1}
-          canGoNext={currentPage < totalPages}
-        />
-
-        {/* User Details Dialog */}
-        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-          <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
-            {isLoadingDetails || !selectedUser ? (
-                <div className="py-12 space-y-4">
-                  <DialogTitle className="sr-only">Loading User Details</DialogTitle>
-                  <div className="animate-pulse space-y-4">
-                    <div className="h-20 bg-muted rounded" />
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="h-32 bg-muted rounded" />
-                      <div className="h-32 bg-muted rounded" />
-                    </div>
-                    <div className="h-64 bg-muted rounded" />
-                  </div>
-                </div>
-            ) : (
-                <>
-                  <DialogHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                      <Avatar className="size-16 ring-2 ring-border">
-                        <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-bold text-xl">
-                          {selectedUser.username.substring(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <DialogTitle className="text-xl sm:text-2xl">{selectedUser.username}</DialogTitle>
-                        <DialogDescription className="text-sm sm:text-base">{selectedUser.email}</DialogDescription>
-                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <Badge
-                              variant={selectedUser.status === "ACTIVE" ? "default" : "destructive"}
-                              className={
-                                selectedUser.status === "ACTIVE"
-                                    ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
-                                    : ""
-                              }
-                          >
-                            {selectedUser.status}
-                          </Badge>
-                          <Badge
-                              variant="outline"
-                              className={
-                                isAdminRole(selectedUser.role)
-                                    ? "border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-400"
-                                    : ""
-                              }
-                          >
-                            {getRoleName(selectedUser.role)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Restricted to="MANAGE_USERS">
-                        <Button
-                            variant={selectedUser.status === "BANNED" ? "default" : "destructive"}
-                            size="sm"
-                            onClick={() => toggleBanStatus(selectedUser.id, selectedUser.status)}
-                        >
-                          <Ban className="size-4 mr-2" />
-                          {selectedUser.status === "BANNED" ? "Unban" : "Ban User"}
-                        </Button>
-                      </Restricted>
-                    </div>
-                  </DialogHeader>
-
-                  <div className="space-y-6 mt-6">
-                    {/* Wallet Card */}
-                    <Card className="border-border/50 bg-linear-to-br from-green-500/5 to-green-500/10">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <Wallet className="size-5 text-green-600 dark:text-green-500" />
-                          Wallet
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-3">
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Current Balance</p>
-                            <p className="text-2xl font-bold">
-                              $
-                              {selectedUser.wallet.balance.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Total Deposits</p>
-                            <p className="text-xl font-semibold text-green-600 dark:text-green-500">
-                              +$
-                              {totalDeposits.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Total Spent</p>
-                            <p className="text-xl font-semibold text-red-600 dark:text-red-500">
-                              -$
-                              {totalSpent.toLocaleString(undefined, {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}
-                            </p>
-                          </div>
-                        </div>
-
-                        <Restricted to="MANAGE_FINANCE">
-                            <div className="border-t border-border/50 pt-4">
-                              <p className="text-sm font-medium mb-3">Manually Adjust Balance</p>
-                              <div className="flex flex-col sm:flex-row gap-2">
-                                <Input
-                                    type="number"
-                                    placeholder="Amount"
-                                    value={adjustAmount}
-                                    onChange={(e) => setAdjustAmount(e.target.value)}
-                                    className="flex-1"
-                                />
-                                <div className="flex gap-2">
-                                  <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleBalanceAdjustment("increase")}
-                                      className="flex-1 sm:flex-none border-green-500/30 hover:bg-green-500/10"
-                                  >
-                                    <Plus className="size-4 mr-1" />
-                                    Add
-                                  </Button>
-                                  <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleBalanceAdjustment("decrease")}
-                                      className="flex-1 sm:flex-none border-red-500/30 hover:bg-red-500/10"
-                                  >
-                                    <Minus className="size-4 mr-1" />
-                                    Deduct
-                                  </Button>
-                                </div>
-                              </div>
+          {/* Users Table */}
+          <Card className="border-border/50">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent border-border/50">
+                      <TableHead className="min-w-62.5">User Info</TableHead>
+                      <TableHead className="min-w-25">Status</TableHead>
+                      <TableHead className="min-w-25">Role</TableHead>
+                      <TableHead className="text-right min-w-30">Balance</TableHead>
+                      <TableHead className="min-w-30">Joined</TableHead>
+                      <TableHead className="w-15">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-32 text-center">
+                            <div className="flex flex-col items-center justify-center text-muted-foreground">
+                              <Search className="size-8 mb-2 opacity-50" />
+                              <p className="text-sm">No users found</p>
                             </div>
-                        </Restricted>
-
-                        {selectedUser.wallet.transactions.length > 0 && (
-                            <div className="border-t border-border/50 pt-4">
-                              <p className="text-sm font-medium mb-3">Recent Transactions</p>
-                              <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {selectedUser.wallet.transactions.slice(0, 10).map((transaction) => (
-                                    <div
-                                        key={transaction.id}
-                                        className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-muted/30"
-                                    >
-                                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                                        {transaction.type === "CREDIT" ? (
-                                            <div className="flex size-8 items-center justify-center rounded-full bg-green-500/10 shrink-0">
-                                              <TrendingUp className="size-4 text-green-600 dark:text-green-500" />
-                                            </div>
-                                        ) : (
-                                            <div className="flex size-8 items-center justify-center rounded-full bg-red-500/10 shrink-0">
-                                              <TrendingDown className="size-4 text-red-600 dark:text-red-500" />
-                                            </div>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                          <p
-                                              className={`text-sm font-medium ${
-                                                  transaction.type === "CREDIT"
-                                                      ? "text-green-600 dark:text-green-500"
-                                                      : "text-red-600 dark:text-red-500"
-                                              }`}
-                                          >
-                                            {transaction.type === "CREDIT" ? "+" : "-"}$
-                                            {transaction.amount.toLocaleString(undefined, {
-                                              minimumFractionDigits: 2,
-                                              maximumFractionDigits: 2,
-                                            })}
-                                          </p>
-                                          <p className="text-xs text-muted-foreground">
-                                            {new Date(transaction.createdAt).toLocaleString("en-US", {
-                                              month: "short",
-                                              day: "numeric",
-                                              year: "numeric",
-                                              hour: "2-digit",
-                                              minute: "2-digit",
-                                            })}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      {transaction.reference && (
-                                          <Badge variant="outline" className="text-xs shrink-0">
-                                            {transaction.reference}
-                                          </Badge>
-                                      )}
-                                    </div>
-                                ))}
-                              </div>
-                            </div>
-                        )}
-                      </CardContent>
-                    </Card>
-
-                    {/* Library Card */}
-                    <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <BookOpen className="size-5 text-blue-600 dark:text-blue-500" />
-                          Purchased Chapter ({selectedUser.accessRecords.length})
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {selectedUser.accessRecords.length === 0 ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <BookOpen className="size-12 mx-auto mb-2 opacity-30" />
-                              <p className="text-sm">No books purchased yet</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {selectedUser.accessRecords.map((chapter) => (
-                                  <div
-                                      key={chapter.id}
-                                      className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
-                                  >
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-medium truncate">{chapter.chapterTitle}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        Purchased{" "}
-                                        {new Date(chapter.purchasedAt).toLocaleDateString("en-US", {
-                                          month: "short",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })}
-                                      </p>
-                                    </div>
-                                    <div className="text-right shrink-0">
-                                      <p className="font-semibold text-sm">${(chapter.price || 0).toFixed(2)}</p>
-                                    </div>
+                          </TableCell>
+                        </TableRow>
+                    ) : (
+                        users.map((user) => (
+                            <TableRow
+                                key={user.id}
+                                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                onClick={() => handleRowClick(user)}
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="size-9 ring-2 ring-border/50">
+                                    <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
+                                      {user.username.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="font-medium truncate">{user.username}</span>
+                                    <span className="text-xs text-muted-foreground truncate">{user.email}</span>
                                   </div>
-                              ))}
-                            </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                                </div>
+                              </TableCell>
 
-                    {/* Activity History Card */}
-                    <Card className="border-border/50 bg-linear-to-br from-violet-500/5 to-violet-500/10">
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg">
-                          <Clock className="size-5 text-violet-600 dark:text-violet-500" />
-                          Activity History
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Last Login</p>
-                            <p className="text-sm font-medium">
-                              {selectedUser.lastLoginAt
-                                  ? new Date(selectedUser.lastLoginAt).toLocaleString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })
-                                  : "Never logged in"}
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground font-medium">Member Since</p>
-                            <p className="text-sm font-medium">
-                              {new Date(selectedUser.createdAt).toLocaleString("en-US", {
-                                month: "long",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </p>
+                              <TableCell>
+                                <Badge
+                                    variant={user.status === "ACTIVE" ? "default" : "destructive"}
+                                    className={
+                                      user.status === "ACTIVE"
+                                          ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20"
+                                          : ""
+                                    }
+                                >
+                                  {user.status === "ACTIVE" ? (
+                                      <CheckCircle2 className="size-3 mr-1" />
+                                  ) : (
+                                      <Ban className="size-3 mr-1" />
+                                  )}
+                                  {user.status}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell>
+                                <Badge
+                                    variant="outline"
+                                    className={
+                                      isAdminRole(user.role)
+                                          ? "border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-400"
+                                          : "border-border/50"
+                                    }
+                                >
+                                  {isAdminRole(user.role) && <Shield className="size-3 mr-1" />}
+                                  {getRoleName(user.role)}
+                                </Badge>
+                              </TableCell>
+
+                              <TableCell className="text-right">
+                          <span className="font-semibold text-base">
+                            $
+                            {user.balance.toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                              </TableCell>
+
+                              <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(user.joinedAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                              </TableCell>
+
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="size-8">
+                                      <MoreVertical className="size-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem onClick={() => handleRowClick(user)}>
+                                      <Users className="size-4 mr-2" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={() => updateUserRole(user.id, isAdminRole(user.role) ? "USER" : "ADMIN")}
+                                    >
+                                      <Shield className="size-4 mr-2" />
+                                      {isAdminRole(user.role) ? "Remove Admin" : "Make Admin"}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => toggleBanStatus(user.id, user.status)}
+                                        disabled={user.id === currentUserId}
+                                        className={user.status === "BANNED" ? "text-green-600" : "text-red-600"}
+                                    >
+                                      <Ban className="size-4 mr-2" />
+                                      {user.status === "BANNED" ? "Unban User" : "Ban User"}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                        ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          <AppPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalListUsers}
+            pageSize={ITEMS_PER_PAGE}
+            itemLabel="users"
+            onPageChange={setCurrentPage}
+            canGoPrevious={currentPage > 1}
+            canGoNext={currentPage < totalPages}
+          />
+
+          {/* User Details Dialog */}
+          <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+            <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
+              {isLoadingDetails || !selectedUser ? (
+                  <div className="py-12 space-y-4">
+                    <DialogTitle className="sr-only">Loading User Details</DialogTitle>
+                    <div className="animate-pulse space-y-4">
+                      <div className="h-20 bg-muted rounded" />
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="h-32 bg-muted rounded" />
+                        <div className="h-32 bg-muted rounded" />
+                      </div>
+                      <div className="h-64 bg-muted rounded" />
+                    </div>
+                  </div>
+              ) : (
+                  <>
+                    <DialogHeader>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <Avatar className="size-16 ring-2 ring-border">
+                          <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-bold text-xl">
+                            {selectedUser.username.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <DialogTitle className="text-xl sm:text-2xl">{selectedUser.username}</DialogTitle>
+                          <DialogDescription className="text-sm sm:text-base">{selectedUser.email}</DialogDescription>
+                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <Badge
+                                variant={selectedUser.status === "ACTIVE" ? "default" : "destructive"}
+                                className={
+                                  selectedUser.status === "ACTIVE"
+                                      ? "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20"
+                                      : ""
+                                }
+                            >
+                              {selectedUser.status}
+                            </Badge>
+                            <Badge
+                                variant="outline"
+                                className={
+                                  isAdminRole(selectedUser.role)
+                                      ? "border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-400"
+                                      : ""
+                                }
+                            >
+                              {getRoleName(selectedUser.role)}
+                            </Badge>
                           </div>
                         </div>
+                        <Restricted to="MANAGE_USERS">
+                          <Button
+                              variant={selectedUser.status === "BANNED" ? "default" : "destructive"}
+                              size="sm"
+                              onClick={() => toggleBanStatus(selectedUser.id, selectedUser.status)}
+                          >
+                            <Ban className="size-4 mr-2" />
+                            {selectedUser.status === "BANNED" ? "Unban" : "Ban User"}
+                          </Button>
+                        </Restricted>
+                      </div>
+                    </DialogHeader>
 
-                        {selectedUser.accessRecords.length > 0 && (
-                            <div className="border-t border-border/50 pt-4">
-                              <p className="text-sm font-medium mb-3">Chapter Purchase History</p>
-                              <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {selectedUser.accessRecords.map((record) => (
+                    <div className="space-y-6 mt-6">
+                      {/* Wallet Card */}
+                      <Card className="border-border/50 bg-linear-to-br from-green-500/5 to-green-500/10">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <Wallet className="size-5 text-green-600 dark:text-green-500" />
+                            Wallet
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground font-medium">Current Balance</p>
+                              <p className="text-2xl font-bold">
+                                $
+                                {selectedUser.wallet.balance.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground font-medium">Total Deposits</p>
+                              <p className="text-xl font-semibold text-green-600 dark:text-green-500">
+                                +$
+                                {totalDeposits.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground font-medium">Total Spent</p>
+                              <p className="text-xl font-semibold text-red-600 dark:text-red-500">
+                                -$
+                                {totalSpent.toLocaleString(undefined, {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Restricted to="MANAGE_FINANCE">
+                              <div className="border-t border-border/50 pt-4">
+                                <p className="text-sm font-medium mb-3">Manually Adjust Balance</p>
+                                <div className="flex flex-col sm:flex-row gap-2">
+                                  <Input
+                                      type="number"
+                                      placeholder="Amount"
+                                      value={adjustAmount}
+                                      onChange={(e) => setAdjustAmount(e.target.value)}
+                                      className="flex-1"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleBalanceAdjustment("increase")}
+                                        className="flex-1 sm:flex-none border-green-500/30 hover:bg-green-500/10"
+                                    >
+                                      <Plus className="size-4 mr-1" />
+                                      Add
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleBalanceAdjustment("decrease")}
+                                        className="flex-1 sm:flex-none border-red-500/30 hover:bg-red-500/10"
+                                    >
+                                      <Minus className="size-4 mr-1" />
+                                      Deduct
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                          </Restricted>
+
+                          {selectedUser.wallet.transactions.length > 0 && (
+                              <div className="border-t border-border/50 pt-4">
+                                <p className="text-sm font-medium mb-3">Recent Transactions</p>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                  {selectedUser.wallet.transactions.slice(0, 10).map((transaction) => (
+                                      <div
+                                          key={transaction.id}
+                                          className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-muted/30"
+                                      >
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                                          {transaction.type === "CREDIT" ? (
+                                              <div className="flex size-8 items-center justify-center rounded-full bg-green-500/10 shrink-0">
+                                                <TrendingUp className="size-4 text-green-600 dark:text-green-500" />
+                                              </div>
+                                          ) : (
+                                              <div className="flex size-8 items-center justify-center rounded-full bg-red-500/10 shrink-0">
+                                                <TrendingDown className="size-4 text-red-600 dark:text-red-500" />
+                                              </div>
+                                          )}
+                                          <div className="flex-1 min-w-0">
+                                            <p
+                                                className={`text-sm font-medium ${
+                                                    transaction.type === "CREDIT"
+                                                        ? "text-green-600 dark:text-green-500"
+                                                        : "text-red-600 dark:text-red-500"
+                                                }`}
+                                            >
+                                              {transaction.type === "CREDIT" ? "+" : "-"}$
+                                              {transaction.amount.toLocaleString(undefined, {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                              })}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {new Date(transaction.createdAt).toLocaleString("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                              })}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        {transaction.reference && (
+                                            <Badge variant="outline" className="text-xs shrink-0">
+                                              {transaction.reference}
+                                            </Badge>
+                                        )}
+                                      </div>
+                                  ))}
+                                </div>
+                              </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Library Card */}
+                      <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-blue-500/10">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <BookOpen className="size-5 text-blue-600 dark:text-blue-500" />
+                            Purchased Chapter ({selectedUser.accessRecords.length})
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          {selectedUser.accessRecords.length === 0 ? (
+                              <div className="text-center py-8 text-muted-foreground">
+                                <BookOpen className="size-12 mx-auto mb-2 opacity-30" />
+                                <p className="text-sm">No books purchased yet</p>
+                              </div>
+                          ) : (
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {selectedUser.accessRecords.map((chapter) => (
                                     <div
-                                        key={record.id}
-                                        className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
+                                        key={chapter.id}
+                                        className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
                                     >
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm truncate">{record.chapterTitle}</p>
-                                        <p className="text-xs text-muted-foreground truncate">{record.bookTitle}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">
-                                          {new Date(record.purchasedAt).toLocaleDateString("en-US", {
+                                        <p className="font-medium truncate">{chapter.chapterTitle}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Purchased{" "}
+                                          {new Date(chapter.purchasedAt).toLocaleDateString("en-US", {
                                             month: "short",
                                             day: "numeric",
                                             year: "numeric",
                                           })}
                                         </p>
                                       </div>
-                                      <div className="shrink-0">
-                                        <p className="font-semibold text-sm">${(record.price || 0).toFixed(2)}</p>
+                                      <div className="text-right shrink-0">
+                                        <p className="font-semibold text-sm">${(chapter.price || 0).toFixed(2)}</p>
                                       </div>
                                     </div>
                                 ))}
                               </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Activity History Card */}
+                      <Card className="border-border/50 bg-linear-to-br from-violet-500/5 to-violet-500/10">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2 text-lg">
+                            <Clock className="size-5 text-violet-600 dark:text-violet-500" />
+                            Activity History
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground font-medium">Last Login</p>
+                              <p className="text-sm font-medium">
+                                {selectedUser.lastLoginAt
+                                    ? new Date(selectedUser.lastLoginAt).toLocaleString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
+                                    : "Never logged in"}
+                              </p>
                             </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </>
-            )}
-          </DialogContent>
-        </Dialog>
+                            <div className="space-y-1">
+                              <p className="text-xs text-muted-foreground font-medium">Member Since</p>
+                              <p className="text-sm font-medium">
+                                {new Date(selectedUser.createdAt).toLocaleString("en-US", {
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+
+                          {selectedUser.accessRecords.length > 0 && (
+                              <div className="border-t border-border/50 pt-4">
+                                <p className="text-sm font-medium mb-3">Chapter Purchase History</p>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                  {selectedUser.accessRecords.map((record) => (
+                                      <div
+                                          key={record.id}
+                                          className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm truncate">{record.chapterTitle}</p>
+                                          <p className="text-xs text-muted-foreground truncate">{record.bookTitle}</p>
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {new Date(record.purchasedAt).toLocaleDateString("en-US", {
+                                              month: "short",
+                                              day: "numeric",
+                                              year: "numeric",
+                                            })}
+                                          </p>
+                                        </div>
+                                        <div className="shrink-0">
+                                          <p className="font-semibold text-sm">${(record.price || 0).toFixed(2)}</p>
+                                        </div>
+                                      </div>
+                                  ))}
+                                </div>
+                              </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
   )
 }
