@@ -30,7 +30,6 @@ import {
     BookOpen,
     Users,
     DollarSign,
-    ImageIcon,
     UserCog,
     Crown,
     Check,
@@ -38,7 +37,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
-type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_MEDIA" | "MANAGE_STAFF"
+type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF"
 
 interface StaffMember {
     id: number
@@ -77,12 +76,6 @@ const PERMISSIONS_META: Record<
         description: "Can view transactions and adjust balances",
         icon: DollarSign,
         color: "text-yellow-600 dark:text-yellow-500",
-    },
-    MANAGE_MEDIA: {
-        label: "Manage Media",
-        description: "Can upload or delete files",
-        icon: ImageIcon,
-        color: "text-purple-600 dark:text-purple-500",
     },
     MANAGE_STAFF: {
         label: "Manage Staff",
@@ -159,7 +152,7 @@ export default function AdminStaff() {
             setIsAddStaffOpen(false)
             setSearchQuery("")
             setSearchResults([])
-            fetchStaff()
+            void fetchStaff()
         } catch (err: any) {
             toast({
                 title: "Error",
@@ -181,7 +174,7 @@ export default function AdminStaff() {
             setIsEditPermissionsOpen(false)
             setSelectedStaff(null)
             setSelectedPermissions([])
-            fetchStaff()
+            void fetchStaff()
         } catch (err: any) {
             toast({
                 title: "Error",
@@ -204,7 +197,7 @@ export default function AdminStaff() {
 
             setIsRemoveDialogOpen(false)
             setStaffToRemove(null)
-            fetchStaff()
+            void fetchStaff()
         } catch (err: any) {
             toast({
                 title: "Error",
@@ -231,7 +224,7 @@ export default function AdminStaff() {
     const isSuperAdmin = (staffMember: StaffMember) => staffMember.id === 1
 
     useEffect(() => {
-        fetchStaff()
+        void fetchStaff()
         apiClient
             .get<{ id?: number; userId?: number }>("/auth/profile")
             .then((data) => setCurrentUserId(data.id || data.userId || null))
@@ -239,7 +232,7 @@ export default function AdminStaff() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            searchUsers(searchQuery)
+            void searchUsers(searchQuery)
         }, 300)
         return () => clearTimeout(timer)
     }, [searchQuery])
@@ -294,9 +287,9 @@ export default function AdminStaff() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="hover:bg-transparent border-border/50">
-                                    <TableHead className="min-w-[250px]">Staff Member</TableHead>
-                                    <TableHead className="min-w-[300px]">Permissions</TableHead>
-                                    <TableHead className="w-[100px]">Actions</TableHead>
+                                    <TableHead className="min-w-62.5">Staff Member</TableHead>
+                                    <TableHead className="min-w-75">Permissions</TableHead>
+                                    <TableHead className="w-25">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -318,8 +311,8 @@ export default function AdminStaff() {
                                                         <AvatarFallback
                                                             className={
                                                                 isSuperAdmin(member)
-                                                                    ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-foreground font-semibold"
-                                                                    : "bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold"
+                                                                    ? "bg-linear-to-br from-amber-500/20 to-orange-500/20 text-foreground font-semibold"
+                                                                    : "bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold"
                                                             }
                                                         >
                                                             {member.username.substring(0, 2).toUpperCase()}
@@ -435,7 +428,7 @@ export default function AdminStaff() {
                                     >
                                         <div className="flex items-center gap-3 min-w-0 flex-1">
                                             <Avatar className="size-9 ring-2 ring-border/50">
-                                                <AvatarFallback className="bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
+                                                <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
                                                     {user.username.substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -537,7 +530,7 @@ export default function AdminStaff() {
                         <AlertDialogAction
                             onClick={(e) => {
                                 e.preventDefault()
-                                demoteStaff()
+                                void demoteStaff()
                             }}
                             className="bg-red-600 hover:bg-red-700"
                             disabled={isSubmitting}

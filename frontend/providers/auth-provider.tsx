@@ -7,7 +7,6 @@ export type Permission =
   | "MANAGE_BOOKS"
   | "MANAGE_USERS"
   | "MANAGE_FINANCE"
-  | "MANAGE_MEDIA"
   | "MANAGE_STAFF"
 
 interface User {

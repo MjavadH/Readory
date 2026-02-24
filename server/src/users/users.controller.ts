@@ -48,7 +48,11 @@ export class UsersController {
     @Get('stats')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_USERS)
+    @RequirePermissions(
+        AdminPermissions.MANAGE_USERS,
+        AdminPermissions.MANAGE_FINANCE,
+        AdminPermissions.MANAGE_STAFF
+    )
     async getUserStats() {
         return this.usersService.getUsersStats();
     }

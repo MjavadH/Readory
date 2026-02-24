@@ -37,7 +37,7 @@ export class MediaController {
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_MEDIA)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     async listMedia(
         @Query('q') q?: string,
         @Query('page', new DefaultValuePipe(1), ParseIntPipe) page = 1,
@@ -71,7 +71,7 @@ export class MediaController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_MEDIA)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     @UseInterceptors(
         FileFieldsInterceptor(
             [
@@ -139,7 +139,7 @@ export class MediaController {
     @Patch(':code')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_MEDIA)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     async rename(@Param('code') code: string, @Body() body: RenameMediaBody) {
         const filename = body?.filename?.trim();
         if (!filename) throw new BadRequestException('filename is required');
@@ -156,7 +156,7 @@ export class MediaController {
     @Delete(':code')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_MEDIA)
+    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
     async delete(@Param('code') code: string) {
         return this.mediaService.deleteByCode(code);
     }
