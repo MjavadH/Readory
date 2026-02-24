@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, DollarSign, BookOpen, TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Layers, ArrowDownCircle, ArrowUpCircle } from "lucide-react"
-import {Bar, BarChart, Pie, PieChart, Cell, XAxis, YAxis, CartesianGrid, Area, AreaChart, ResponsiveContainer} from "recharts"
+import {Bar, BarChart, Pie, PieChart, XAxis, YAxis, CartesianGrid, Area, AreaChart, ResponsiveContainer} from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { usePermission } from "@/hooks/use-permission"
 import { apiClient } from "@/lib/api-client"
+import { motion } from "framer-motion"
 
 // --- Types ---
 interface DashboardStats {
@@ -53,7 +54,7 @@ export default function AdminDashboard() {
     }
 
     useEffect(() => {
-        if (!permissionLoading) fetchStats()
+        if (!permissionLoading) void fetchStats()
     }, [permissionLoading])
 
     if (loadingData || permissionLoading) {
@@ -76,10 +77,14 @@ export default function AdminDashboard() {
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-400 mx-auto">
             {/* Header */}
-            <div>
+            <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.55 }}
+            >
                 <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Overview of your platform's performance.</p>
-            </div>
+            </motion.div>
 
             {/* --- Summary Cards --- */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -91,6 +96,7 @@ export default function AdminDashboard() {
                         icon={DollarSign}
                         color="text-emerald-500"
                         bg="bg-emerald-500/10"
+                        animationDelay={0}
                     />
                 )}
                 {(isSuperAdmin || has(["MANAGE_USERS", "MANAGE_STAFF"])) && stats.summary.users && (
@@ -102,6 +108,7 @@ export default function AdminDashboard() {
                         color="text-blue-500"
                         bg="bg-blue-500/10"
                         subText="new users this month"
+                        animationDelay={0.2}
                     />
                 )}
                 {(isSuperAdmin || has("MANAGE_BOOKS")) && stats.summary.content && (
@@ -113,12 +120,19 @@ export default function AdminDashboard() {
                         color="text-orange-500"
                         bg="bg-orange-500/10"
                         subText={`${stats.summary.content.chapters} total chapters`}
+                        animationDelay={0.4}
                     />
                 )}
             </div>
 
             {/* --- Charts Section --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+            <motion.div
+                className="grid grid-cols-1 lg:grid-cols-7 gap-6"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+            >
 
                 {/* Revenue Trend (Big Chart) */}
                 {(isSuperAdmin || has("MANAGE_FINANCE")) && stats.summary.finance && (
@@ -142,7 +156,18 @@ export default function AdminDashboard() {
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} className="text-xs font-medium" />
                                     <YAxis tickLine={false} axisLine={false} tickMargin={8} className="text-xs" />
                                     <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Area type="monotone" dataKey="amount" stroke="var(--chart-1)" fillOpacity={1} fill="url(#fillAmount)" strokeWidth={2} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="amount"
+                                        stroke="var(--chart-1)"
+                                        fillOpacity={1}
+                                        fill="url(#fillAmount)"
+                                        strokeWidth={2}
+                                        isAnimationActive={true}
+                                        animationBegin={600}
+                                        animationDuration={1200}
+                                        animationEasing="ease-in-out"
+                                    />
                                 </AreaChart>
                             </ChartContainer>
                         </CardContent>
@@ -159,185 +184,237 @@ export default function AdminDashboard() {
                         <CardContent>
                             <Tabs defaultValue="types" className="w-full">
                                 <TabsList className="grid w-full grid-cols-3 mb-4">
-                                    <TabsTrigger value="users">User Status</TabsTrigger>
-                                    <TabsTrigger value="genres">Genre Dist.</TabsTrigger>
-                                    <TabsTrigger value="types">type Dist.</TabsTrigger>
+                                    <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="users">User Status</TabsTrigger>
+                                    <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="genres">Genre Dist.</TabsTrigger>
+                                    <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="types">type Dist.</TabsTrigger>
                                 </TabsList>
-                                <TabsContent value="genres" className="h-62.5">
-                                    {stats.charts?.genreDistribution && stats.charts.genreDistribution.length > 0 ? (
-                                        <PieChartWrapper data={stats.charts.genreDistribution} />
-                                    ) : (
-                                        <EmptyState text="No genre data available" />
-                                    )}
+                                <TabsContent value="genres" className="h-62.5 outline-hidden">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        {stats.charts?.genreDistribution && stats.charts.genreDistribution.length > 0 ? (
+                                            <PieChartWrapper data={stats.charts.genreDistribution} />
+                                        ) : (
+                                            <EmptyState text="No genre data available" />
+                                        )}
+                                    </motion.div>
                                 </TabsContent>
-                                <TabsContent value="types" className="h-62.5">
-                                    {stats.charts?.typeDistribution && stats.charts.typeDistribution.length > 0 ? (
-                                        <PieChartWrapper data={stats.charts.typeDistribution} />
-                                    ) : (
-                                        <EmptyState text="No type data available" />
-                                    )}
+                                <TabsContent value="types" className="h-62.5 outline-hidden">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        {stats.charts?.typeDistribution && stats.charts.typeDistribution.length > 0 ? (
+                                            <PieChartWrapper data={stats.charts.typeDistribution} />
+                                        ) : (
+                                            <EmptyState text="No type data available" />
+                                        )}
+                                    </motion.div>
                                 </TabsContent>
-                                <TabsContent value="users" className="h-62.5">
-                                    <PieChartWrapper data={userStatusData} />
+                                <TabsContent value="users" className="h-62.5 outline-hidden">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <PieChartWrapper data={userStatusData} />
+                                    </motion.div>
                                 </TabsContent>
                             </Tabs>
                         </CardContent>
                     </Card>
                 )}
-            </div>
+            </motion.div>
 
             {/* User Growth Bar Chart */}
             {(isSuperAdmin || has(["MANAGE_USERS", "MANAGE_STAFF"])) && stats.charts?.userRegistrations && (
-                <Card className="border-border/60 shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <UserPlus className="size-5 text-blue-500" /> New User Registrations
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ChartContainer config={{ users: { label: "Users", color: "var(--chart-2)" } }} className="h-62.5 w-full">
-                            <BarChart data={stats.charts.userRegistrations}>
-                                <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
-                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} className="text-xs" />
-                                <ChartTooltip cursor={{ fill: 'transparent' }} content={<ChartTooltipContent />} />
-                                <Bar dataKey="users" fill="var(--chart-2)" radius={[4, 4, 0, 0]} barSize={40} />
-                            </BarChart>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                    <Card className="border-border/60 shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <UserPlus className="size-5 text-blue-500" /> New User Registrations
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{ users: { label: "Users", color: "var(--chart-2)" } }} className="h-62.5 w-full">
+                                <BarChart data={stats.charts.userRegistrations}>
+                                    <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
+                                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} className="text-xs" />
+                                    <ChartTooltip cursor={{ fill: 'var(--muted)', opacity: 0.4 }} content={<ChartTooltipContent />} />
+                                    <Bar
+                                        dataKey="users"
+                                        fill="var(--chart-2)"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={40}
+                                        isAnimationActive={true}
+                                        animationBegin={1000}
+                                        animationDuration={1500}
+                                    />
+                                </BarChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             )}
 
             {/* --- Detailed Lists --- */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <motion.div
+                className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } }
+                }}
+            >
 
                 {/* Recent Transactions */}
                 {(isSuperAdmin || has("MANAGE_FINANCE")) && (
-                    <Card className="border-border/60 shadow-sm h-full">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg">
-                                <DollarSign className="size-5 text-emerald-500" /> Recent Transactions
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-border/50 hover:bg-transparent"><TableHead>User</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {stats.recent.transactions.length === 0 ? <EmptyRow text="No transactions" /> : (
-                                        stats.recent.transactions.map((t) => (
-                                            <TableRow key={t.id} className="hover:bg-muted/50">
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium text-sm">{t.username}</span>
-                                                        <span className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <span className={`font-semibold flex items-center justify-end gap-1 ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                        {t.type === 'CREDIT' ? <ArrowUpCircle className="size-3"/> : <ArrowDownCircle className="size-3"/>}
-                                                        {t.type === 'CREDIT' ? '+' : '-'}${t.amount.toLocaleString()}
-                                                    </span>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
+                        <Card className="border-border/60 shadow-sm h-full">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-lg">
+                                    <DollarSign className="size-5 text-emerald-500" /> Recent Transactions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="border-border/50 hover:bg-transparent"><TableHead>User</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {stats.recent.transactions.length === 0 ? <EmptyRow text="No transactions" /> : (
+                                            stats.recent.transactions.map((t) => (
+                                                <TableRow key={t.id} className="hover:bg-muted/50">
+                                                    <TableCell>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium text-sm">{t.username}</span>
+                                                            <span className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <span className={`font-semibold flex items-center justify-end gap-1 ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                            {t.type === 'CREDIT' ? <ArrowUpCircle className="size-3"/> : <ArrowDownCircle className="size-3"/>}
+                                                            {t.type === 'CREDIT' ? '+' : '-'}${t.amount.toLocaleString()}
+                                                        </span>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {/* Recent Content (Books & Chapters) */}
                 {(isSuperAdmin || has("MANAGE_BOOKS")) && (
-                    <Card className="border-border/60 shadow-sm h-full">
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <CardTitle className="flex items-center gap-2 text-lg">
-                                    <Layers className="size-5 text-orange-500" /> Recent Content
-                                </CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-0">
-                            <Tabs defaultValue="books" className="w-full">
-                                <div className="px-6 pb-2">
-                                    <TabsList className="w-full grid grid-cols-2">
-                                        <TabsTrigger value="books">New Books</TabsTrigger>
-                                        <TabsTrigger value="chapters">New Chapters</TabsTrigger>
-                                    </TabsList>
+                    <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}>
+                        <Card className="border-border/60 shadow-sm h-full">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="flex items-center gap-2 text-lg">
+                                        <Layers className="size-5 text-orange-500" /> Recent Content
+                                    </CardTitle>
                                 </div>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <Tabs defaultValue="books" className="w-full">
+                                    <div className="px-6 pb-2">
+                                        <TabsList className="w-full grid grid-cols-2">
+                                            <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="books">New Books</TabsTrigger>
+                                            <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="chapters">New Chapters</TabsTrigger>
+                                        </TabsList>
+                                    </div>
 
-                                <TabsContent value="books" className="mt-0">
-                                    <Table>
-                                        <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Title</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {stats.recent.books.length === 0 ? <EmptyRow text="No new books" /> : (
-                                                stats.recent.books.map((b) => (
-                                                    <TableRow key={b.id}>
-                                                        <TableCell>
-                                                            <div className="font-medium text-sm truncate max-w-50">{b.title}</div>
-                                                            <div className="text-xs text-muted-foreground">{b.author || "Unknown"}</div>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString()}</TableCell>
-                                                    </TableRow>
-                                                ))
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </TabsContent>
+                                    <TabsContent value="books" className="mt-0">
+                                        <Table>
+                                            <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Title</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {stats.recent.books.length === 0 ? <EmptyRow text="No new books" /> : (
+                                                    stats.recent.books.map((b) => (
+                                                        <TableRow key={b.id}>
+                                                            <TableCell>
+                                                                <div className="font-medium text-sm truncate max-w-50">{b.title}</div>
+                                                                <div className="text-xs text-muted-foreground">{b.author || "Unknown"}</div>
+                                                            </TableCell>
+                                                            <TableCell className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString()}</TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </TabsContent>
 
-                                <TabsContent value="chapters" className="mt-0">
-                                    <Table>
-                                        <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Chapter</TableHead><TableHead>Book</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {stats.recent.chapters.length === 0 ? <EmptyRow text="No new chapters" /> : (
-                                                stats.recent.chapters.map((c) => (
-                                                    <TableRow key={c.id}>
-                                                        <TableCell className="font-medium text-sm">{c.title}</TableCell>
-                                                        <TableCell>
-                                                            <div className="text-xs truncate max-w-37.5">{c.bookTitle}</div>
-                                                            <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </TabsContent>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
+                                    <TabsContent value="chapters" className="mt-0">
+                                        <Table>
+                                            <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Chapter</TableHead><TableHead>Book</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {stats.recent.chapters.length === 0 ? <EmptyRow text="No new chapters" /> : (
+                                                    stats.recent.chapters.map((c) => (
+                                                        <TableRow key={c.id}>
+                                                            <TableCell className="font-medium text-sm">{c.title}</TableCell>
+                                                            <TableCell>
+                                                                <div className="text-xs truncate max-w-37.5">{c.bookTitle}</div>
+                                                                <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </TabsContent>
+                                </Tabs>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
         </div>
     )
 }
 
 // --- Sub Components ---
 
-function StatsCard({ title, value, growth, icon: Icon, color, bg, subText }: any) {
+function StatsCard({ title, value, growth, icon: Icon, color, bg, subText, animationDelay }: any) {
     const isPositive = growth >= 0
     return (
-        <Card className="border-border/60 shadow-sm hover:border-border transition-colors">
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-                    <div className={`size-10 rounded-full ${bg} flex items-center justify-center`}>
-                        <Icon className={`size-5 ${color}`} />
+        <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: animationDelay, duration: 0.35 }}
+        >
+            <Card className="border-border/60 shadow-sm hover:border-border transition-colors">
+                <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+                        <div className={`size-10 rounded-full ${bg} flex items-center justify-center`}>
+                            <Icon className={`size-5 ${color}`} />
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold">{value}</div>
-                <div className="flex items-center gap-1 mt-2 text-xs">
-                    <div className={`flex items-center ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {isPositive ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
-                        <span className="font-medium">{Math.abs(growth)}%</span>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{value}</div>
+                    <div className="flex items-center gap-1 mt-2 text-xs">
+                        <div className={`flex items-center ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {isPositive ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
+                            <span className="font-medium">{Math.abs(growth)}%</span>
+                        </div>
+                        <span className="text-muted-foreground ml-1">{subText || "from last month"}</span>
                     </div>
-                    <span className="text-muted-foreground ml-1">{subText || "from last month"}</span>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </motion.div>
     )
 }
 
@@ -349,7 +426,10 @@ function orderOthersLast(data: { name: string; value: number }[]) {
 }
 
 function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) {
-    const ordered = orderOthersLast(Array.isArray(data) ? data : [])
+    const ordered = orderOthersLast(Array.isArray(data) ? data : []).map((item, index) => ({
+        ...item,
+        fill: CHART_COLORS[index % CHART_COLORS.length]
+    }));
     const total = ordered.reduce((acc, cur) => acc + (Number(cur.value) || 0), 0)
 
     return (
@@ -367,14 +447,10 @@ function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) 
                                 outerRadius={80}
                                 paddingAngle={5}
                                 dataKey="value"
-                            >
-                                {ordered.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${entry.name}-${index}`}
-                                        fill={CHART_COLORS[index % CHART_COLORS.length]}
-                                    />
-                                ))}
-                            </Pie>
+                                isAnimationActive={true}
+                                animationBegin={200}
+                                animationDuration={800}
+                            />
                             <ChartTooltip content={<ChartTooltipContent />} />
                         </PieChart>
                     </ResponsiveContainer>
@@ -382,9 +458,24 @@ function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) 
             </div>
 
             {/* Legend */}
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 text-xs">
+            <motion.div
+                className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 text-xs"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.2 } }
+                }}
+            >
                 {ordered.map((item, index) => (
-                    <div key={`legend-${item.name}-${index}`} className="flex items-center gap-2 min-w-0">
+                    <motion.div
+                        key={`legend-${item.name}-${index}`}
+                        className="flex items-center gap-2 min-w-0"
+                        variants={{
+                            hidden: { opacity: 0, y: 10 },
+                            visible: { opacity: 1, y: 0 }
+                        }}
+                    >
                         <span
                             className="size-2.5 rounded-sm shrink-0"
                             style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
@@ -397,9 +488,9 @@ function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) 
                         <span className="text-xs text-muted-foreground tabular-nums">
                             {total > 0 ? Math.round((item.value / total) * 100) : 0}%
                         </span>
-                    </div>
+                    </motion.div>
                 ))}
-            </div>
+            </motion.div>
         </div>
     )
 }
@@ -415,9 +506,9 @@ function EmptyState({ text }: { text: string }) {
 function DashboardSkeleton() {
     return (
         <div className="p-6 space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">Dashboard</h1>
-                <p className="text-muted-foreground mt-1">Overview of your platform's performance.</p>
+            <div className="space-y-2">
+                <div className="h-8 w-1/5 bg-muted rounded-xl animate-pulse" />
+                <div className="h-6 w-1/6 bg-muted rounded-xl animate-pulse" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[1, 2, 3].map(i => <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />)}
