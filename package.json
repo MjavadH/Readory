@@ -9,5 +9,8 @@
     "build": "npm -ws run build",
     "dev:shared": "npm --workspace @readory/shared run dev",
     "build:shared": "npm --workspace @readory/shared run build"
+  },
+  "dependencies": {
+    "framer-motion": "^12.34.3"
   }
 }

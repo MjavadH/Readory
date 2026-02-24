@@ -1,8 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { AlertCircle, FileText, ImageIcon, Loader2, RefreshCcw, Trash2, Upload } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertCircle,
+  FileText,
+  ImageIcon,
+  Loader2,
+  RefreshCcw,
+  Trash2,
+  Upload,
+  BookOpen,
+  Layers,
+  Hash,
+  GitBranch,
+  FolderOpen,
+  FileStack,
+} from "lucide-react";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +26,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { UploadProgressBar } from "@/components/admin/upload-progress-bar";
+import {useParams} from "next/navigation";
+import {AppPagination} from "@/components/app-pagination";
 
 type ChapterMeta = {
   id: number;
@@ -37,15 +54,66 @@ type ChapterContentResponse = {
   textPreviewHtml?: string | null;
 };
 
-function UploadProgressBar({ value }: { value: number }) {
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] as const } },
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] as const } },
+};
+
+const metaIcons: Record<string, React.ReactNode> = {
+  Chapter: <BookOpen className="h-4 w-4" />,
+  "Content Type": <Layers className="h-4 w-4" />,
+  "Page Count": <Hash className="h-4 w-4" />,
+  "Content Version": <GitBranch className="h-4 w-4" />,
+  "Storage Prefix": <FolderOpen className="h-4 w-4" />,
+  Manifest: <FileStack className="h-4 w-4" />,
+};
+
+function ChapterContentSkeleton() {
   return (
-    <div className="h-2 w-full rounded-full bg-muted">
-      <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
-    </div>
+      <div className="min-h-screen bg-background p-6 md:p-10">
+        <div className="mx-auto max-w-6xl space-y-8">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-72 rounded-lg bg-muted animate-pulse" />
+              <Skeleton className="h-4 w-48 rounded-md bg-muted animate-pulse" />
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-28 rounded-lg bg-muted animate-pulse" />
+              <Skeleton className="h-10 w-40 rounded-lg bg-muted animate-pulse" />
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+            ))}
+          </div>
+
+          {/* Upload */}
+          <Skeleton className="h-64 rounded-xl bg-muted animate-pulse" />
+
+          {/* Content */}
+          <Skeleton className="h-96 rounded-xl bg-muted animate-pulse" />
+        </div>
+      </div>
   );
 }
 
-export default function AdminChapterContentPage() {
+export default function ChapterContentManager() {
   const params = useParams<{ id: string; index: string }>();
   const { toast } = useToast();
 
@@ -219,187 +287,280 @@ export default function AdminChapterContentPage() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-4 p-6">
-        <Skeleton className="h-28 w-full" />
-        <Skeleton className="h-80 w-full" />
-      </div>
-    );
+    return <ChapterContentSkeleton />;
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Chapter Content Manager</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => void loadContent()} disabled={loading || uploading || deleting}>
-            <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" disabled={deleting || uploading}>
-                {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Delete all content
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete chapter content?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This removes every object under the chapter prefix and resets manifest-backed content.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => void handleDeleteAll()}>Confirm delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Chapter Metadata</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {metadataRows.map((row) => (
-            <div key={row.label} className="rounded-lg border bg-muted/30 p-3">
-              <p className="text-xs text-muted-foreground">{row.label}</p>
-              <p className="truncate text-sm font-medium">{row.value}</p>
-            </div>
-          ))}
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <p className="text-xs text-muted-foreground">Manifest</p>
-            {data?.manifest ? (
-              <div className="flex items-center gap-2 text-sm">
-                <Badge variant="secondary">v{data.manifest.version}</Badge>
-                <Badge>{data.manifest.format}</Badge>
-                <span>{data.manifest.pageCount} pages</span>
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No manifest available</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Upload Content</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "images" | "text")}> 
-            <TabsList>
-              <TabsTrigger value="images"><ImageIcon className="mr-2 h-4 w-4" /> Images</TabsTrigger>
-              <TabsTrigger value="text"><FileText className="mr-2 h-4 w-4" /> Text</TabsTrigger>
-            </TabsList>
-            <TabsContent value="images" className="space-y-4 pt-4">
-              <p className="text-sm text-muted-foreground">
-                Upload either multiple image files (jpg/png/webp) or one ZIP archive. Files are normalized server-side to WebP and manifest order.
+      <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
+        <motion.div
+            className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+          {/* Header */}
+          <motion.div variants={itemVariants} className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Chapter Content Manager</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage uploads, manifests, and preview content for your chapters.
               </p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 rounded-lg border p-3">
-                  <label className="text-sm font-medium">Multiple image files</label>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/png,image/jpeg,image/webp"
-                    disabled={uploading}
-                    onChange={(event) => setImageFiles(Array.from(event.target.files ?? []))}
-                  />
-                  <p className="text-xs text-muted-foreground">Selected: {imageFiles.length} file(s)</p>
-                </div>
-                <div className="space-y-2 rounded-lg border p-3">
-                  <label className="text-sm font-medium">ZIP upload</label>
-                  <input
-                    type="file"
-                    accept=".zip,application/zip"
-                    disabled={uploading}
-                    onChange={(event) => setZipFile(event.target.files?.[0] ?? null)}
-                  />
-                  <p className="truncate text-xs text-muted-foreground">{zipFile?.name ?? "No ZIP selected"}</p>
-                </div>
-              </div>
-              {uploading && <UploadProgressBar value={progress} />}
-              <Button onClick={() => void handleUploadImages()} disabled={uploading || deleting}>
-                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Upload image content
-              </Button>
-            </TabsContent>
-            <TabsContent value="text" className="space-y-4 pt-4">
-              <p className="text-sm text-muted-foreground">Upload chapter text as markdown or plain text (MVP format support).</p>
-              <div className="space-y-2 rounded-lg border p-3">
-                <label className="text-sm font-medium">Text file (.md/.txt)</label>
-                <input
-                  type="file"
-                  accept=".md,.txt,text/plain,text/markdown"
-                  disabled={uploading}
-                  onChange={(event) => setTextFile(event.target.files?.[0] ?? null)}
-                />
-                <p className="truncate text-xs text-muted-foreground">{textFile?.name ?? "No text file selected"}</p>
-              </div>
-              {uploading && <UploadProgressBar value={progress} />}
-              <Button onClick={() => void handleUploadText()} disabled={uploading || deleting}>
-                {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                Upload text content
-              </Button>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Content</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!data?.manifest && (
-            <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-muted-foreground">
-              <AlertCircle className="h-4 w-4" /> No manifest/content uploaded yet.
             </div>
-          )}
+            <div className="flex items-center gap-3">
+              <Button
+                  variant="outline"
+                  className="gap-2 border-border/60 hover:bg-secondary"
+                  onClick={loadContent}
+                  disabled={loading || uploading || deleting}
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refresh
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={deleting || uploading}
+                  >
+                    {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    Delete all content
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete chapter content?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes every object under the chapter prefix and resets manifest-backed content. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAll}>Confirm delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </motion.div>
 
-          {data?.manifest?.format === "images" && (
-            <div className="space-y-4">
-              <ScrollArea className="h-[520px] rounded-lg border p-3">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  {pagedImages.map((page, idx) => (
-                    <div key={page.key} className="rounded-lg border bg-muted/20 p-3">
-                      <div className="mb-2 flex aspect-[3/4] items-center justify-center rounded bg-muted text-muted-foreground">
-                        <ImageIcon className="h-6 w-6" />
+          {/* Metadata Grid */}
+          <motion.div variants={itemVariants}>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-base font-semibold">Chapter Metadata</CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                {metadataRows.map((row, i) => (
+                    <motion.div
+                        key={row.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + i * 0.06, duration: 0.35 }}
+                        className="group rounded-xl border border-border/40 bg-secondary/30 p-4 transition-colors hover:bg-secondary/60"
+                    >
+                      <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                        {metaIcons[row.label]}
+                        {row.label}
                       </div>
-                      <p className="text-xs font-medium">Page {(imagePage - 1) * pageSize + idx + 1}</p>
-                      <p className="truncate text-[11px] text-muted-foreground" title={page.key}>{page.key}</p>
-                      <p className="text-[11px] text-muted-foreground">{page.w && page.h ? `${page.w}×${page.h}` : "size unknown"}</p>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">Showing {pagedImages.length} / {imagePages.length} pages</p>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" disabled={imagePage <= 1} onClick={() => setImagePage((prev) => Math.max(1, prev - 1))}>Prev</Button>
-                  <Badge variant="secondary">{imagePage}/{totalImagePages}</Badge>
-                  <Button variant="outline" size="sm" disabled={imagePage >= totalImagePages} onClick={() => setImagePage((prev) => Math.min(totalImagePages, prev + 1))}>Next</Button>
-                </div>
-              </div>
-            </div>
-          )}
+                      <p className="truncate text-sm font-semibold">{row.value}</p>
+                    </motion.div>
+                ))}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 + 5 * 0.06, duration: 0.35 }}
+                    className="group rounded-xl border border-border/40 bg-secondary/30 p-4 transition-colors hover:bg-secondary/60"
+                >
+                  <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    {metaIcons.Manifest}
+                    Manifest
+                  </div>
+                  {data?.manifest ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="secondary" className="font-mono text-xs">v{data.manifest.version}</Badge>
+                        <Badge className="bg-primary/15 text-primary border-primary/20 font-mono text-xs">{data.manifest.format}</Badge>
+                        <span className="font-semibold">{data.manifest.pageCount} pages</span>
+                      </div>
+                  ) : (
+                      <p className="text-sm text-muted-foreground">No manifest</p>
+                  )}
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-          {data?.manifest?.format === "text" && (
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">Read-only preview of sanitized HTML content.</p>
-              <iframe
-                title="chapter-text-preview"
-                className="h-[500px] w-full rounded-lg border bg-background"
-                sandbox="allow-same-origin"
-                srcDoc={`<!doctype html><html><head><meta charset=\"utf-8\" /><style>body{font-family:Inter,system-ui,sans-serif;padding:16px;line-height:1.6;}img{max-width:100%;}</style></head><body>${data.textPreviewHtml ?? "No text preview available."}</body></html>`}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          {/* Upload Card */}
+          <motion.div variants={cardVariants}>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-base font-semibold">Upload Content</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5">
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "images" | "text")}>
+                  <TabsList className="bg-secondary/50 mb-5">
+                    <TabsTrigger value="images" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                      <ImageIcon className="h-4 w-4" /> Images
+                    </TabsTrigger>
+                    <TabsTrigger value="text" className="gap-2 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                      <FileText className="h-4 w-4" /> Text
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <AnimatePresence mode="wait">
+                    <TabsContent value="images" key="images" asChild>
+                      <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 8 }}
+                          transition={{ duration: 0.25 }}
+                          className="space-y-5"
+                      >
+                        <p className="text-sm text-muted-foreground">
+                          Upload multiple image files (jpg/png/webp) or one ZIP archive. Files are normalized server-side to WebP.
+                        </p>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-3 rounded-xl border border-dashed border-border/60 bg-secondary/20 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/40">
+                            <label className="text-sm font-medium">Multiple image files</label>
+                            <input
+                                type="file"
+                                multiple
+                                accept="image/png,image/jpeg,image/webp"
+                                disabled={uploading}
+                                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/20"
+                                onChange={(e) => setImageFiles(Array.from(e.target.files ?? []))}
+                            />
+                            <p className="text-xs text-muted-foreground">Selected: {imageFiles.length} file(s)</p>
+                          </div>
+                          <div className="space-y-3 rounded-xl border border-dashed border-border/60 bg-secondary/20 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/40">
+                            <label className="text-sm font-medium">ZIP upload</label>
+                            <input
+                                type="file"
+                                accept=".zip,application/zip"
+                                disabled={uploading}
+                                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/20"
+                                onChange={(e) => setZipFile(e.target.files?.[0] ?? null)}
+                            />
+                            <p className="truncate text-xs text-muted-foreground">{zipFile?.name ?? "No ZIP selected"}</p>
+                          </div>
+                        </div>
+                        {uploading && <UploadProgressBar value={progress} />}
+                        <Button
+                            className="gap-2 glow-primary"
+                            onClick={handleUploadImages}
+                            disabled={uploading || deleting}
+                        >
+                          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          Upload image content
+                        </Button>
+                      </motion.div>
+                    </TabsContent>
+
+                    <TabsContent value="text" key="text" asChild>
+                      <motion.div
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 8 }}
+                          transition={{ duration: 0.25 }}
+                          className="space-y-5"
+                      >
+                        <p className="text-sm text-muted-foreground">Upload chapter text as markdown or plain text.</p>
+                        <div className="space-y-3 rounded-xl border border-dashed border-border/60 bg-secondary/20 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/40">
+                          <label className="text-sm font-medium">Text file (.md/.txt)</label>
+                          <input
+                              type="file"
+                              accept=".md,.txt,text/plain,text/markdown"
+                              disabled={uploading}
+                              className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/20"
+                              onChange={(e) => setTextFile(e.target.files?.[0] ?? null)}
+                          />
+                          <p className="truncate text-xs text-muted-foreground">{textFile?.name ?? "No text file selected"}</p>
+                        </div>
+                        {uploading && <UploadProgressBar value={progress} />}
+                        <Button
+                            className="gap-2 glow-primary"
+                            onClick={handleUploadText}
+                            disabled={uploading || deleting}
+                        >
+                          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                          Upload text content
+                        </Button>
+                      </motion.div>
+                    </TabsContent>
+                  </AnimatePresence>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Current Content */}
+          <motion.div variants={cardVariants}>
+            <Card className="overflow-hidden">
+              <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-base font-semibold">Current Content</CardTitle>
+              </CardHeader>
+              <CardContent className="p-5">
+                {!data?.manifest && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center gap-3 rounded-xl border border-dashed border-border/60 p-6 text-muted-foreground"
+                    >
+                      <AlertCircle className="h-5 w-5 text-warning" />
+                      <span>No manifest or content uploaded yet.</span>
+                    </motion.div>
+                )}
+
+                {data?.manifest?.format === "images" && (
+                    <div className="space-y-5">
+                      <ScrollArea className="h-130 rounded-xl border border-border/40 bg-secondary/10 p-4">
+                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
+                          {pagedImages.map((page, idx) => (
+                              <motion.div
+                                  key={page.key}
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ delay: idx * 0.02, duration: 0.3 }}
+                                  className="group rounded-xl border border-border/40 bg-secondary/20 p-3 transition-all hover:border-primary/30 hover:bg-secondary/40 hover:shadow-lg hover:shadow-primary/5"
+                              >
+                                <div className="mb-2.5 flex aspect-3/4 items-center justify-center rounded-lg bg-muted/40">
+                                  <ImageIcon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary/60" />
+                                </div>
+                                <p className="text-xs font-semibold">Page {(imagePage - 1) * pageSize + idx + 1}</p>
+                                <p className="truncate font-mono text-[11px] text-muted-foreground" title={page.key}>
+                                  {page.key}
+                                </p>
+                                <p className="font-mono text-[11px] text-muted-foreground">
+                                  {page.w && page.h ? `${page.w}×${page.h}` : "size unknown"}
+                                </p>
+                              </motion.div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+
+                      {/* pagination */}
+                      <AppPagination currentPage={imagePage} totalPages={totalImagePages} totalItems={imagePages.length} pageSize={pageSize} itemLabel="images" onPageChange={setImagePage} />
+                    </div>
+                )}
+
+                {data?.manifest?.format === "text" && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="space-y-3"
+                    >
+                      <p className="text-xs text-muted-foreground">Read-only preview of sanitized HTML content.</p>
+                      <iframe
+                          title="chapter-text-preview"
+                          className="h-125 w-full rounded-xl border border-border/40 bg-muted/20"
+                          sandbox="allow-same-origin"
+                          srcDoc={`<!doctype html><html lang="en"><head><meta charset="utf-8"><style>body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;padding:24px;line-height:1.7;color:#c8d0dd;background:#0d1117;}img{max-width:100%;border-radius:8px;}</style></head><body>${data.textPreviewHtml ?? "No text preview available."}</body></html>`}
+                      />
+                    </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </div>
   );
 }
