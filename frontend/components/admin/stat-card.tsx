@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 // Pre-defined color variants to ensure Tailwind generates the classes
 const colorVariants = {
@@ -43,32 +44,39 @@ interface StatCardProps {
     color?: keyof typeof colorVariants;
     className?: string;
     indicator?: React.ReactNode;
+    animationDelay?: number;
 }
 
-export function StatCard({title, value, icon: Icon, color = "blue", className, indicator,}: StatCardProps) {
+export function StatCard({title, value, icon: Icon, color = "blue", className, indicator, animationDelay = 0}: StatCardProps) {
     const styles = colorVariants[color] || colorVariants.blue;
 
     return (
-        <Card className={cn("border-border/50 bg-linear-to-br", styles.card, className)}>
-            <CardContent className="flex items-center justify-between gap-4 py-4">
-                <div className="flex items-center gap-4">
-                    <div
-                        className={cn(
-                            "flex size-12 items-center justify-center rounded-xl ring-1",
-                            styles.iconBg
-                        )}
-                    >
-                        <Icon className={cn("size-6", styles.icon)} />
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: animationDelay, duration: 0.35 }}
+            >
+            <Card className={cn("border-border/50 bg-linear-to-br", styles.card, className)}>
+                <CardContent className="flex items-center justify-between gap-4 py-4">
+                    <div className="flex items-center gap-4">
+                        <div
+                            className={cn(
+                                "flex size-12 items-center justify-center rounded-xl ring-1",
+                                styles.iconBg
+                            )}
+                        >
+                            <Icon className={cn("size-6", styles.icon)} />
+                        </div>
+                        <div>
+                            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+                                {title}
+                            </p>
+                            <p className="text-xl sm:text-2xl font-bold">{value}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                            {title}
-                        </p>
-                        <p className="text-xl sm:text-2xl font-bold">{value}</p>
-                    </div>
-                </div>
-                {indicator && <div>{indicator}</div>}
-            </CardContent>
-        </Card>
+                    {indicator && <div>{indicator}</div>}
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }

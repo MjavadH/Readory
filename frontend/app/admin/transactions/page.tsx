@@ -121,7 +121,7 @@ export default function AdminTransactions() {
                 setLoading(false)
             }
         }
-        fetchTransactions()
+        void fetchTransactions()
     }, [page])
 
     const formatCurrency = (amount: number) => {
@@ -170,6 +170,7 @@ export default function AdminTransactions() {
                         icon={Activity}
                         color="blue"
                         indicator={<GrowthIndicator value={stats.growth?.totalTransactions} />}
+                        animationDelay={0}
                     />
                     <StatCard
                         title="Deposits"
@@ -177,6 +178,7 @@ export default function AdminTransactions() {
                         icon={ArrowUpCircle}
                         color="emerald"
                         indicator={<GrowthIndicator value={stats.growth?.creditAmount} />}
+                        animationDelay={0.2}
                     />
                     <StatCard
                         title="Withdrawals"
@@ -184,6 +186,7 @@ export default function AdminTransactions() {
                         icon={ArrowDownCircle}
                         color="red"
                         indicator={<GrowthIndicator value={stats.growth?.debitAmount} />}
+                        animationDelay={0.4}
                     />
                 </div>
 

@@ -72,7 +72,7 @@ export function AdminSidebar() {
         console.error("Error fetching current user", err)
       }
     }
-    fetchCurrentUser()
+    void fetchCurrentUser()
   }, [])
 
   useEffect(() => {

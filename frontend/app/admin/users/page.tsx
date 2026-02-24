@@ -253,12 +253,14 @@ export default function AdminUsers() {
               value={(stats?.totalUsers || 0).toLocaleString()}
               icon={Users}
               color="blue"
+              animationDelay={0}
           />
           <StatCard
               title="Active (30 Days)"
               value={(stats?.activeUsers || 0).toLocaleString()}
               icon={Activity}
               color="green"
+              animationDelay={0.2}
           />
           <StatCard
               title="New (7 Days)"
@@ -266,6 +268,7 @@ export default function AdminUsers() {
               icon={UserPlus}
               color="violet"
               className="sm:col-span-2 lg:col-span-1"
+              animationDelay={0.4}
           />
         </div>
 

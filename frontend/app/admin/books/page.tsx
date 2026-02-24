@@ -269,18 +269,21 @@ export default function AdminBooks() {
                         value={stats.total.toLocaleString()}
                         icon={BookOpen}
                         color="blue"
+                        animationDelay={0}
                     />
                     <StatCard
                         title="Published"
                         value={stats.Published.toLocaleString()}
                         icon={CheckCircle2}
                         color="emerald"
+                        animationDelay={0.2}
                     />
                     <StatCard
                         title="Drafts"
                         value={stats.Drafts.toLocaleString()}
                         icon={Clock}
                         color="amber"
+                        animationDelay={0.4}
                     />
                 </div>
 
