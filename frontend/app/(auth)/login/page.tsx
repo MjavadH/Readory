@@ -7,12 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { BookOpen, Loader2, ArrowLeft, Mail, Lock, User } from "lucide-react"
+import { Loader2, ArrowLeft, Mail, Lock, User } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 import {BrandLogo} from "@/components/brand-logo";
 
 type RoleName = "ADMIN" | "USER"
@@ -37,7 +37,7 @@ type ViewMode = "login" | "register" | "otp"
 
 export default function AuthPage() {
   const router = useRouter()
-  const { toast } = useToast()
+  const toast = useToast()
   const [mode, setMode] = useState<ViewMode>("login")
   const [isLoading, setIsLoading] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState("")
@@ -75,11 +75,7 @@ export default function AuthPage() {
 
       router.push(data.user?.roleName === "ADMIN" ? "/admin" : "/")
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: getApiErrorMessage(error, "An error occurred during login."),
-        variant: "destructive",
-      })
+      toast.error(getApiErrorMessage(error, "An error occurred during login."),"Login failed")
     } finally {
       setIsLoading(false)
     }
@@ -102,13 +98,9 @@ export default function AuthPage() {
       setRegisteredEmail(values.email.trim())
       setMode("otp")
       authForm.reset()
-      toast({ title: "Verification sent", description: "Enter the 6-digit OTP code sent to your email." })
+      toast.info("Enter the 6-digit OTP code sent to your email.","Verification sent")
     } catch (error) {
-      toast({
-        title: "Registration failed",
-        description: getApiErrorMessage(error, "An error occurred during registration."),
-        variant: "destructive",
-      })
+      toast.error(getApiErrorMessage(error, "An error occurred during registration."),"Registration failed")
     } finally {
       setIsLoading(false)
     }
@@ -123,15 +115,10 @@ export default function AuthPage() {
         email: registeredEmail,
         otp: values.otp,
       })
-
-      toast({ title: "Verified", description: "Your account is now active and signed in." })
+      toast.success("Your account is now active and signed in.","Verified")
       router.push(data.user?.roleName === "ADMIN" ? "/admin" : "/")
     } catch (error) {
-      toast({
-        title: "Verification failed",
-        description: getApiErrorMessage(error, "An error occurred during verification."),
-        variant: "destructive",
-      })
+      toast.error(getApiErrorMessage(error, "An error occurred during verification."),"Verification failed")
     } finally {
       setIsLoading(false)
     }
