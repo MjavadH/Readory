@@ -6,8 +6,8 @@ import { Loader2 } from "lucide-react";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { AuthProvider, useAuth } from "@/providers/auth-provider";
-import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { ToastProvider } from "@/providers/toast-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,8 +49,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             disableTransitionOnChange
         >
             <AuthProvider>
-                <AdminContent>{children}</AdminContent>
-                <Toaster />
+                <AdminContent>
+                    <ToastProvider>
+                        {children}
+                    </ToastProvider>
+                </AdminContent>
             </AuthProvider>
         </ThemeProvider>
         </body>

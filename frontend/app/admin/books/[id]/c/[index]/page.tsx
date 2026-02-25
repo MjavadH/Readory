@@ -18,7 +18,7 @@ import {
   FileStack,
 } from "lucide-react";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/providers/toast-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,7 +115,7 @@ function ChapterContentSkeleton() {
 
 export default function ChapterContentManager() {
   const params = useParams<{ id: string; index: string }>();
-  const { toast } = useToast();
+  const toast = useToast();
 
   const bookId = Number(Array.isArray(params.id) ? params.id[0] : params.id);
   const chapterIndex = Number(Array.isArray(params.index) ? params.index[0] : params.index);
@@ -144,11 +144,7 @@ export default function ChapterContentManager() {
       const response = await apiClient.get<ChapterContentResponse>(`/admin/books/${bookId}/chapters/${chapterIndex}/content`);
       setData(response);
     } catch (error) {
-      toast({
-        title: "Failed to load chapter content",
-        description: getApiErrorMessage(error, "Unable to fetch chapter content."),
-        variant: "destructive",
-      });
+      toast.error(getApiErrorMessage(error, "Unable to fetch chapter content."))
     } finally {
       setLoading(false);
     }
@@ -190,7 +186,7 @@ export default function ChapterContentManager() {
 
   const handleUploadImages = async () => {
     if (imageFiles.length === 0 && !zipFile) {
-      toast({ title: "No files selected", description: "Select multiple images or one ZIP file.", variant: "destructive" });
+      toast.error("Select multiple images or one ZIP file.", "No files selected")
       return;
     }
 
@@ -204,17 +200,12 @@ export default function ChapterContentManager() {
       }
 
       await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/images`, formData);
-
-      toast({ title: "Image content uploaded", description: "Manifest and chapter metadata were updated." });
+      toast.success("Image content uploaded")
       setImageFiles([]);
       setZipFile(null);
       await loadContent();
     } catch (error) {
-      toast({
-        title: "Image upload failed",
-        description: getApiErrorMessage(error, "Please verify file count/size/type and try again."),
-        variant: "destructive",
-      });
+      toast.error(getApiErrorMessage(error, "Please verify file count/size/type and try again."), "Image upload failed")
     } finally {
       setUploading(false);
       setProgress(0);
@@ -223,7 +214,7 @@ export default function ChapterContentManager() {
 
   const handleUploadText = async () => {
     if (!textFile) {
-      toast({ title: "No file selected", description: "Select a .md or .txt file.", variant: "destructive" });
+      toast.error("Select a .md or .txt file.", "No file selected")
       return;
     }
 
@@ -233,15 +224,11 @@ export default function ChapterContentManager() {
       const formData = new FormData();
       formData.append("file", textFile);
       await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/text`, formData);
-      toast({ title: "Text content uploaded", description: "Text content saved and manifest was regenerated." });
+      toast.success("Text content uploaded")
       setTextFile(null);
       await loadContent();
     } catch (error) {
-      toast({
-        title: "Text upload failed",
-        description: getApiErrorMessage(error, "Unable to upload text content."),
-        variant: "destructive",
-      });
+      toast.error(getApiErrorMessage(error, "Unable to upload text content."), "Text upload failed")
     } finally {
       setUploading(false);
       setProgress(0);
@@ -252,14 +239,10 @@ export default function ChapterContentManager() {
     setDeleting(true);
     try {
       await apiClient.delete(`/admin/books/${bookId}/chapters/${chapterIndex}/content`);
-      toast({ title: "Content deleted", description: "All chapter content has been removed." });
+      toast.success("All chapter content has been removed.")
       await loadContent();
     } catch (error) {
-      toast({
-        title: "Delete failed",
-        description: getApiErrorMessage(error, "Could not delete chapter content."),
-        variant: "destructive",
-      });
+      toast.error(getApiErrorMessage(error, "Could not delete chapter content."), "Delete failed")
     } finally {
       setDeleting(false);
     }

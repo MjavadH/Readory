@@ -40,7 +40,7 @@ import Image from "next/image";
 import {MediaPicker} from "@/components/admin/media-picker";
 import Link from "next/link";
 import {AppIcon} from "@/components/AppIcon";
-import { Toast } from "@/components/toast";
+import { useToast } from "@/providers/toast-provider";
 
 type BookDetails = {
     id: number;
@@ -110,13 +110,13 @@ function LoadingSkeleton() {
 }
 
 export default function AdminBookDetail() {
+    const toast = useToast();
     const params = useParams<{ id: string }>();
     const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
     const bookId = Number(idParam);
 
     const [book, setBook] = useState<BookDetails | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
     const [newCoverPickerOpen, setNewCoverPickerOpen] = useState(false)
 
     // Load available types and genres for edit mode
@@ -163,7 +163,7 @@ export default function AdminBookDetail() {
 
     const loadBook = useCallback(async () => {
         if (!Number.isInteger(bookId) || bookId <= 0) {
-            setToast({ message: "Invalid book link.", type: "error" });
+            toast.error("Invalid book link.")
             setIsLoading(false);
             return;
         }
@@ -178,10 +178,7 @@ export default function AdminBookDetail() {
                 genreIds: data.genres?.map(g => g.genre.id) || []
             });
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to load book details.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to load book details.'))
         } finally {
             setIsLoading(false);
         }
@@ -199,10 +196,7 @@ export default function AdminBookDetail() {
             setChaptersTotal(data.pagination.total);
             setChaptersTotalPages(data.pagination.totalPages);
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to load chapters.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to load chapters.'))
         } finally {
             setChaptersLoading(false);
         }
@@ -231,14 +225,11 @@ export default function AdminBookDetail() {
                 typeId: editedBook.typeId,
                 genreIds: editedBook.genreIds,
             });
-            setToast({ message: 'Book updated successfully!', type: 'success' });
+            toast.success('Book updated successfully!')
             setEditMode(false);
             await loadBook();
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to update book.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to update book.'))
         }
     };
 
@@ -247,15 +238,12 @@ export default function AdminBookDetail() {
 
         try {
             await apiClient.delete(`/books/${book.id}`);
-            setToast({ message: 'Book deleted successfully!', type: 'success' });
+            toast.success('Book deleted successfully!')
             setTimeout(() => {
                 window.history.back();
             }, 1500);
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to delete book.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to delete book.'))
         }
         setDeleteBookDialog(false);
     };
@@ -265,13 +253,10 @@ export default function AdminBookDetail() {
 
         try {
             await apiClient.delete(`/books/${book.id}/chapters/${chapterId}`);
-            setToast({ message: 'Chapter deleted successfully!', type: 'success' });
+            toast.success('Chapter deleted successfully!')
             await loadChapters();
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to delete chapter.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to delete chapter.'))
         }
         setDeleteChapterDialog(null);
     };
@@ -285,21 +270,18 @@ export default function AdminBookDetail() {
                 ...chapterForm,
                         price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
                 });
-                setToast({ message: 'Chapter added successfully!', type: 'success' });
+                toast.success('Chapter added successfully!')
             } else if (chapterDialog?.mode === 'edit' && chapterDialog.chapter) {
                 await apiClient.patch(`/books/${book.id}/chapters/${chapterDialog.chapter.id}`, {
                     ...chapterForm,
                     price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
                 });
-                setToast({ message: 'Chapter updated successfully!', type: 'success' });
+                toast.success('Chapter updated successfully!')
             }
             setChapterDialog(null);
             await loadChapters();
         } catch (error) {
-            setToast({
-                message: getApiErrorMessage(error, 'Failed to save chapter.'),
-                type: 'error',
-            });
+            toast.error(getApiErrorMessage(error, 'Failed to save chapter.'))
         }
     };
 
@@ -356,8 +338,6 @@ export default function AdminBookDetail() {
 
     return (
         <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
                 <Link
                     href="/admin/books"

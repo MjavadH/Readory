@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { MediaPicker } from "@/components/admin/media-picker"
 import { StatCard } from "@/components/admin/stat-card"
@@ -47,7 +47,7 @@ interface BookStats {
 const ITEMS_PER_PAGE = 24
 
 export default function AdminBooks() {
-    const { toast } = useToast()
+    const toast = useToast();
     const [books, setBooks] = useState<BookCardData[]>([])
     const [stats, setStats] = useState<BookStats>({
         total: 0,
@@ -131,7 +131,7 @@ export default function AdminBooks() {
             setBooks(transformedBooks)
             if (data.stats) setStats(data.stats)
         } catch (err: any) {
-            toast({ title: "Error fetching books", description: getApiErrorMessage(err), variant: "destructive" })
+            toast.error("Error fetching books")
             setBooks([])
         }
     }
@@ -145,7 +145,7 @@ export default function AdminBooks() {
             const data = await apiClient.get<Genre[]>("/genres").catch(() => [])
             setGenres(Array.isArray(data) ? data : [])
         } catch (err: any) {
-            toast({ title: "Error fetching genres", description: getApiErrorMessage(err), variant: "destructive" })
+            toast.error("Error fetching genres")
             setGenres([])
         }
     }
@@ -159,7 +159,7 @@ export default function AdminBooks() {
                 setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }))
             }
         } catch (err: any) {
-            toast({ title: "Error fetching book types", description: getApiErrorMessage(err), variant: "destructive" })
+            toast.error("Error fetching book types")
             setBookTypes([])
         } finally {
             setIsLoadingTypes(false)
@@ -168,17 +168,13 @@ export default function AdminBooks() {
 
     const handleAddBook = async () => {
         if (!newBook.title.trim()) {
-            return toast({ title: "Validation Error", description: "Title is required", variant: "destructive" })
+            return toast.error("Title is required", "Validation Error")
         }
         if (newBook.genreIds.length === 0) {
-            return toast({ title: "Validation Error", description: "Select at least one genre", variant: "destructive" })
+            return toast.error("Select at least one genre", "Validation Error")
         }
         if (newBook.typeId == null) {
-            return toast({
-                title: "Validation Error",
-                description: "Book type is required",
-                variant: "destructive"
-            })
+            return toast.error("Book type is required", "Validation Error")
         }
         setIsSubmitting(true)
         try {
@@ -200,9 +196,9 @@ export default function AdminBooks() {
                 isFeatured: false,
             })
             setNewCoverLabel("")
-            toast({ title: "Success", description: "Book created successfully" })
+            toast.success("Book created successfully")
         } catch (err: any) {
-            toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
+            toast.error(getApiErrorMessage(err))
         } finally {
             setIsSubmitting(false)
         }
