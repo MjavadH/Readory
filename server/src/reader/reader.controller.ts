@@ -65,6 +65,17 @@ export class ReaderController {
     return { html };
   }
 
+  @Get('context')
+  async getContext(
+      @Query('bookId', ParseIntPipe) bookId: number,
+      @Req() req: AuthRequest,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) throw new UnauthorizedException();
+
+    return this.readerService.getReaderContext(userId, bookId);
+  }
+
   @Post('progress')
   async saveProgress(@Body() body: SaveProgressDto, @Req() req: AuthRequest) {
     const userId = req.user?.userId;

@@ -94,14 +94,13 @@ export class ReaderService {
     if (!chapter) throw new NotFoundException('Chapter not found');
 
     const hasAccess =
-      chapter.isFree ||
       Boolean(
         await this.prisma.accessRecord.findFirst({
           where: { userId, chapterId: chapter.id },
           select: { id: true },
         }),
       );
-    if (!hasAccess) throw new ForbiddenException('Purchase required');
+    if (!hasAccess) throw new ForbiddenException('Purchase or access required');
 
     const resume = await this.prisma.readingProgress.findUnique({
       where: { userId_chapterId: { userId, chapterId: chapter.id } },
@@ -213,7 +212,7 @@ export class ReaderService {
     await this.redis.expire(speedKey, 10);
     await this.redis.zremrangebyscore(speedKey, 0, nowSec - 2);
     const recent = await this.redis.zcard(speedKey);
-    if (recent >= 8) {
+    if (recent >= 10) {
       await this.redis.set(blockKey, String(nowSec + 120), 'EX', 120);
       this.logger.warn(
         `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
@@ -242,6 +241,62 @@ export class ReaderService {
       .toBuffer();
   }
 
+  async getReaderContext(userId: number, bookId: number) {
+
+    const chapters = await this.prisma.chapter.findMany({
+      where: {
+        bookId,
+        contentType: { not: null }
+      },
+      orderBy: {
+        index: 'asc',
+      },
+      select: {
+        id: true,
+        index: true,
+        title: true,
+        isFree: true,
+        price: true,
+        pageCount: true,
+      },
+    });
+
+    const accessRows = chapters.length
+        ? await this.prisma.accessRecord.findMany({
+          where: {
+            userId,
+            chapterId: {
+              in: chapters.map((c) => c.id),
+            },
+          },
+          select: {
+            chapterId: true,
+          },
+        })
+        : [];
+
+    const accessibleChapterIds = new Set(
+        accessRows
+            .map((r) => r.chapterId)
+            .filter((id): id is number => typeof id === 'number'),
+    );
+
+    return {
+      chapters: chapters.map((ch) => {
+        const hasAccess = accessibleChapterIds.has(ch.id);
+
+        return {
+          id: ch.id,
+          index: ch.index,
+          title: ch.title,
+          pageCount: ch.pageCount ?? 0,
+          locked: !hasAccess,
+          price: ch.price != null ? Number(ch.price) : null,
+        };
+      }),
+    };
+  }
+
   async saveProgress(userId: number, chapterId: number, lastPage: number) {
     const chapter = await this.prisma.chapter.findUnique({
       where: { id: chapterId },
@@ -249,9 +304,7 @@ export class ReaderService {
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
 
-    const hasAccess =
-      chapter.isFree ||
-      Boolean(
+    const hasAccess = Boolean(
         await this.prisma.accessRecord.findFirst({
           where: { userId, chapterId },
           select: { id: true },
