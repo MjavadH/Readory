@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { Search, Loader2, ChevronLeft, ChevronRight, Check, X } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 
 export type MediaItem = {
     code: string
@@ -45,7 +45,7 @@ export function MediaPicker({
                                 itemsPerPage = 30,
                                 allowClear = true,
                             }: MediaPickerProps) {
-    const { toast } = useToast()
+    const toast = useToast()
     const [q, setQ] = useState("")
     const [page, setPage] = useState(1)
 
@@ -113,7 +113,7 @@ export function MediaPicker({
                 setHasLoadedOnce(true)
             } catch (e: any) {
                 if (e?.name !== "AbortError") {
-                    toast({ title: "Error", description: getApiErrorMessage(e), variant: "destructive" })
+                    toast.error(getApiErrorMessage(e))
                 }
             } finally {
                 setIsLoading(false)

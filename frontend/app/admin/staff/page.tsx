@@ -34,7 +34,7 @@ import {
     Crown,
     Check,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 
 type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF"
@@ -86,7 +86,7 @@ const PERMISSIONS_META: Record<
 }
 
 export default function AdminStaff() {
-    const { toast } = useToast()
+    const toast = useToast()
     const [staff, setStaff] = useState<StaffMember[]>([])
     const [loading, setLoading] = useState(true)
     const [searchResults, setSearchResults] = useState<SearchUser[]>([])
@@ -147,18 +147,14 @@ export default function AdminStaff() {
         setIsSubmitting(true)
         try {
             await apiClient.patch(`/users/${userId}/role`, { role: "ADMIN" })
-            toast({ title: "Success", description: "User promoted to Admin Staff successfully." })
+            toast.success("User promoted to Admin Staff successfully.")
 
             setIsAddStaffOpen(false)
             setSearchQuery("")
             setSearchResults([])
             void fetchStaff()
         } catch (err: any) {
-            toast({
-                title: "Error",
-                description: getApiErrorMessage(err),
-                variant: "destructive"
-            })
+            toast.error(getApiErrorMessage(err))
         } finally {
             setIsSubmitting(false)
         }
@@ -170,17 +166,13 @@ export default function AdminStaff() {
 
         try {
             await apiClient.patch(`/users/${selectedStaff.id}/permissions`, { permissions: selectedPermissions })
-            toast({ title: "Updated", description: "Staff permissions updated successfully." })
+            toast.success("Staff permissions updated successfully.")
             setIsEditPermissionsOpen(false)
             setSelectedStaff(null)
             setSelectedPermissions([])
             void fetchStaff()
         } catch (err: any) {
-            toast({
-                title: "Error",
-                description: getApiErrorMessage(err),
-                variant: "destructive"
-            })
+            toast.error(getApiErrorMessage(err))
         } finally {
             setIsSubmitting(false)
         }
@@ -192,18 +184,13 @@ export default function AdminStaff() {
 
         try {
             await apiClient.patch(`/users/${staffToRemove.id}/role`, { role: "USER" })
-
-            toast({ title: "Removed", description: `${staffToRemove.username} has been removed from staff.` })
+            toast.success(`${staffToRemove.username} has been removed from staff.`)
 
             setIsRemoveDialogOpen(false)
             setStaffToRemove(null)
             void fetchStaff()
         } catch (err: any) {
-            toast({
-                title: "Error",
-                description: getApiErrorMessage(err),
-                variant: "destructive"
-            })
+            toast.error(getApiErrorMessage(err))
         } finally {
             setIsSubmitting(false)
         }

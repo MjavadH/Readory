@@ -28,7 +28,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { motion } from "framer-motion"
 
@@ -55,7 +55,7 @@ function isAllowedImage(file: File) {
 }
 
 export default function AdminMedia() {
-  const { toast } = useToast()
+  const toast = useToast()
 
   const [isGalleryLoading, setIsGalleryLoading] = useState(true)
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
@@ -126,7 +126,7 @@ export default function AdminMedia() {
         if (!hasLoadedOnce) setHasLoadedOnce(true)
       } catch (e: any) {
         if (e?.name !== "AbortError") {
-          toast({ title: "Error", description: getApiErrorMessage(e), variant: "destructive" })
+          toast.error(getApiErrorMessage(e))
         }
       } finally {
         setIsGalleryLoading(false)
@@ -158,15 +158,10 @@ export default function AdminMedia() {
           "/media",
           formData,
       )
-
-      toast({ title: "Success", description: `Uploaded ${data.items.length} file(s)` })
+      toast.success(`Uploaded ${data.items.length} file(s)`)
 
       if (data.failed?.length) {
-        toast({
-          title: "Some files failed",
-          description: data.failed.slice(0, 2).map((x) => `${x.name}: ${x.reason}`).join(" • "),
-          variant: "destructive",
-        })
+        toast.error(data.failed.slice(0, 2).map((x) => `${x.name}: ${x.reason}`).join(" • "),"Some files failed")
       }
 
       setUploadSuccess(true)
@@ -182,7 +177,7 @@ export default function AdminMedia() {
     } catch (error) {
       const message = getApiErrorMessage(error, "Network error occurred")
       setUploadError(message)
-      toast({ title: "Error", description: message, variant: "destructive" })
+      toast.error(message)
     } finally {
       setIsUploading(false)
     }
@@ -199,7 +194,7 @@ export default function AdminMedia() {
 
     const next = renameValue.trim()
     if (!next) {
-      return toast({ title: "Error", description: "Filename is required", variant: "destructive" })
+      return toast.error("Filename is required")
     }
 
     setRenamingCode(fileToRename.code)
@@ -209,9 +204,9 @@ export default function AdminMedia() {
       setFiles((prev) => prev.map((f) => (f.code === fileToRename.code ? { ...f, filename: data.filename } : f)))
       setRenameDialogOpen(false)
       setFileToRename(null)
-      toast({ title: "Success", description: "File renamed successfully" })
+      toast.success("File renamed successfully")
     } catch (err: any) {
-      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err))
     } finally {
       setRenamingCode(null)
     }
@@ -261,7 +256,7 @@ export default function AdminMedia() {
 
     try {
       await apiClient.delete(`/media/${fileToDelete}`)
-      toast({ title: "Deleted", description: "File deleted successfully" })
+      toast.success("File deleted successfully")
 
       // Optimistic removal + adjust pagination if page becomes empty
       setFiles((prev) => prev.filter((f) => f.code !== fileToDelete))
@@ -274,7 +269,7 @@ export default function AdminMedia() {
         setRefreshNonce((n) => n + 1)
       }
     } catch (err: any) {
-      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err))
     } finally {
       setDeletingCode(null)
       setDeleteDialogOpen(false)

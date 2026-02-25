@@ -34,7 +34,7 @@ import {
   Ban,
   CheckCircle2,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
@@ -94,7 +94,7 @@ const isAdminRole = (role: User["role"]): boolean => {
 }
 
 export default function AdminUsers() {
-  const { toast } = useToast()
+  const toast = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -127,7 +127,7 @@ export default function AdminUsers() {
         setStats(statsData)
       }
     } catch (err: any) {
-      toast({ title: "Error fetching data", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err), "Error fetching data")
     } finally {
       setLoading(false)
     }
@@ -139,7 +139,7 @@ export default function AdminUsers() {
       const data = await apiClient.get<UserDetails>(`/users/${userId}`)
       setSelectedUser(data)
     } catch (err: any) {
-      toast({ title: "Error fetching user details", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err), "Error fetching user details")
     } finally {
       setIsLoadingDetails(false)
     }
@@ -153,7 +153,7 @@ export default function AdminUsers() {
         fetchUserDetails(userId)
       }
     } catch (err: any) {
-      toast({ title: "Error updating role", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err), "Error updating role")
     }
   }
 
@@ -162,7 +162,7 @@ export default function AdminUsers() {
 
     const amount = Number.parseFloat(adjustAmount)
     if (isNaN(amount) || amount <= 0) {
-      toast({ title: "Invalid Input", description: "Please enter a valid positive number", variant: "destructive" })
+      toast.error("Please enter a valid positive number", "Invalid Input")
       return;
     }
 
@@ -173,9 +173,9 @@ export default function AdminUsers() {
       setAdjustAmount("");
       fetchUserDetails(selectedUser.id);
       fetchData();
-      toast({ title: "Success", description: "Wallet balance updated." })
+      toast.success("Wallet balance updated.")
     } catch (err) {
-      toast({ title: "Error", description: getApiErrorMessage(err, "Network error"), variant: "destructive" })
+      toast.error(getApiErrorMessage(err, "Network error"))
     }
   };
 
@@ -204,7 +204,7 @@ export default function AdminUsers() {
       fetchData();
       if (selectedUser?.id === userId) fetchUserDetails(userId);
     } catch(err: any) {
-      toast({ title: "Error", description: getApiErrorMessage(err), variant: "destructive" })
+      toast.error(getApiErrorMessage(err))
     }
   }
 
