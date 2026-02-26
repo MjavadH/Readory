@@ -31,20 +31,20 @@ model Role {
 
 // Application users
 model User {
-  id            Int            @id @default(autoincrement())
-  email         String         @unique
-  username      String         @unique
-  passwordHash  String
-  roleId        Int?
-  role          Role?          @relation(fields: [roleId], references: [id])
-  wallet        Wallet?
-  accessRecords AccessRecord[]
-  lastLoginAt   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  isBanned      Boolean        @default(false)
-  permissions   String[]
-  BookRating    BookRating[]
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  username        String            @unique
+  passwordHash    String
+  roleId          Int?
+  role            Role?             @relation(fields: [roleId], references: [id])
+  wallet          Wallet?
+  accessRecords   AccessRecord[]
+  lastLoginAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  isBanned        Boolean           @default(false)
+  permissions     String[]
+  BookRating      BookRating[]
   readingProgress ReadingProgress[]
 }
 
@@ -90,9 +90,9 @@ model Book {
 
   ratings BookRating[]
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  AccessRecord AccessRecord[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  AccessRecord    AccessRecord[]
   readingProgress ReadingProgress[]
 
   @@index([ratingAvg, ratingCount])
@@ -155,20 +155,20 @@ model BookGenre {
 
 // Chapters of each book
 model Chapter {
-  id            Int            @id @default(autoincrement())
-  bookId        Int
-  book          Book           @relation(fields: [bookId], references: [id])
-  title         String
-  index         Int
-  price         Decimal?       @db.Decimal(12, 2)
-  isFree        Boolean        @default(false)
-  contentPath   String? // path to stored images or PDF
-  contentType   ChapterContentType?
-  pageCount     Int               @default(0)
-  contentVersion Int              @default(0)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  accessRecords AccessRecord[]
+  id              Int                 @id @default(autoincrement())
+  bookId          Int
+  book            Book                @relation(fields: [bookId], references: [id])
+  title           String
+  index           Int
+  price           Decimal?            @db.Decimal(12, 2)
+  isFree          Boolean             @default(false)
+  contentPath     String? // path to stored images or PDF
+  contentType     ChapterContentType?
+  pageCount       Int                 @default(0)
+  contentVersion  Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  accessRecords   AccessRecord[]
   readingProgress ReadingProgress[]
 
   @@unique([bookId, index])
@@ -195,15 +195,16 @@ model ReadingProgress {
 model AccessRecord {
   id          Int      @id @default(autoincrement())
   userId      Int
-  chapterId   Int?
+  chapterId   Int
   user        User     @relation(fields: [userId], references: [id])
-  chapter     Chapter? @relation(fields: [chapterId], references: [id])
+  chapter     Chapter  @relation(fields: [chapterId], references: [id])
   purchasedAt DateTime @default(now())
-  Book        Book?    @relation(fields: [bookId], references: [id])
-  bookId      Int?
+  Book        Book     @relation(fields: [bookId], references: [id])
+  bookId      Int
 
   @@unique([userId, chapterId])
   @@index([userId, purchasedAt])
+  @@index([userId, bookId])
 }
 
 model Media {
