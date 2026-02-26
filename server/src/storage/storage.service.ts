@@ -150,19 +150,61 @@ export class StorageService implements OnModuleInit {
   }
 
   async deletePrefix(prefix: string): Promise<number> {
-    const keys = await this.listPrefix(prefix);
+    const normalizedPrefix = prefix.endsWith('/') ? prefix : `${prefix}/`;
+    const keys = await this.listPrefix(normalizedPrefix);
     if (keys.length === 0) return 0;
 
     let deleted = 0;
     for (let idx = 0; idx < keys.length; idx += 1000) {
       const batch = keys.slice(idx, idx + 1000);
-      await this.s3.send(
-        new DeleteObjectsCommand({
-          Bucket: this.bucket,
-          Delete: { Objects: batch.map((k) => ({ Key: k })) },
-        }),
+
+      const out = await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: batch.map((k) => ({ Key: k })) },
+          }),
       );
-      deleted += batch.length;
+
+      if (out.Errors && out.Errors.length > 0) {
+        this.logger.error(
+            `Partial delete failure in deletePrefix(${normalizedPrefix}): ${out.Errors
+                .map((e) => `${e.Key}:${e.Code}`)
+                .join(', ')}`,
+        );
+        throw new Error('S3 partial delete failure');
+      }
+
+      deleted += out.Deleted?.length ?? 0;
+    }
+
+    return deleted;
+  }
+
+  async deleteKeys(keys: string[]): Promise<number> {
+    const valid = [...new Set(keys.filter(Boolean))];
+    if (valid.length === 0) return 0;
+
+    let deleted = 0;
+    for (let i = 0; i < valid.length; i += 1000) {
+      const batch = valid.slice(i, i + 1000);
+
+      const out = await this.s3.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: batch.map((Key) => ({ Key })) },
+          }),
+      );
+
+      if (out.Errors && out.Errors.length > 0) {
+        this.logger.error(
+            `Partial delete failure in deleteKeys(): ${out.Errors
+                .map((e) => `${e.Key}:${e.Code}`)
+                .join(', ')}`,
+        );
+        throw new Error('S3 partial delete failure');
+      }
+
+      deleted += out.Deleted?.length ?? 0;
     }
 
     return deleted;

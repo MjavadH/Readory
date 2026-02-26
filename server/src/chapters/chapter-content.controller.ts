@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -19,7 +20,28 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { ChapterContentService } from './chapter-content.service';
+import {
+  ChapterContentService,
+  IMAGE_UPLOAD_MAX_FILE_BYTES,
+  IMAGE_UPLOAD_MAX_FILES,
+  TEXT_UPLOAD_MAX_FILE_BYTES,
+} from './chapter-content.service';
+
+const IMAGE_UPLOAD_MULTER = {
+  storage: multer.memoryStorage(),
+  limits: {
+    files: IMAGE_UPLOAD_MAX_FILES,
+    fileSize: IMAGE_UPLOAD_MAX_FILE_BYTES,
+  },
+};
+
+const TEXT_UPLOAD_MULTER = {
+  storage: multer.memoryStorage(),
+  limits: {
+    files: 1,
+    fileSize: TEXT_UPLOAD_MAX_FILE_BYTES,
+  },
+};
 
 @Controller('admin/books/:bookId/chapters/:index/content')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -37,9 +59,7 @@ export class ChapterContentController {
   }
 
   @Post('images')
-  @UseInterceptors(
-    FilesInterceptor('files', 300, { storage: multer.memoryStorage() }),
-  )
+  @UseInterceptors(FilesInterceptor('files', IMAGE_UPLOAD_MAX_FILES, IMAGE_UPLOAD_MULTER))
   uploadImages(
     @Param('bookId', ParseIntPipe) bookId: number,
     @Param('index', ParseIntPipe) index: number,
@@ -48,8 +68,18 @@ export class ChapterContentController {
     return this.service.uploadImages(bookId, index, files);
   }
 
+  @Post('images/append')
+  @UseInterceptors(FilesInterceptor('files', IMAGE_UPLOAD_MAX_FILES, IMAGE_UPLOAD_MULTER))
+  appendImages(
+      @Param('bookId', ParseIntPipe) bookId: number,
+      @Param('index', ParseIntPipe) index: number,
+      @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.service.appendImages(bookId, index, files);
+  }
+
   @Post('text')
-  @UseInterceptors(FileInterceptor('file', { storage: multer.memoryStorage() }))
+  @UseInterceptors(FileInterceptor('file', TEXT_UPLOAD_MULTER))
   uploadText(
     @Param('bookId', ParseIntPipe) bookId: number,
     @Param('index', ParseIntPipe) index: number,
@@ -64,5 +94,23 @@ export class ChapterContentController {
     @Param('index', ParseIntPipe) index: number,
   ) {
     return this.service.deleteContent(bookId, index);
+  }
+
+  @Delete('images/:pageNumber')
+  deleteImage(
+      @Param('bookId', ParseIntPipe) bookId: number,
+      @Param('index', ParseIntPipe) index: number,
+      @Param('pageNumber', ParseIntPipe) pageNumber: number,
+  ) {
+    return this.service.deleteImage(bookId, index, pageNumber);
+  }
+
+  @Delete('images')
+  deleteImages(
+      @Param('bookId', ParseIntPipe) bookId: number,
+      @Param('index', ParseIntPipe) index: number,
+      @Body() body: { pageNumbers: number[] },
+  ) {
+    return this.service.deleteImages(bookId, index, body?.pageNumbers ?? []);
   }
 }

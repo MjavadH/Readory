@@ -16,6 +16,12 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateReaderSessionDto } from './dto/create-reader-session.dto';
 import { SaveProgressDto } from './dto/save-progress.dto';
 import { ReaderService } from './reader.service';
+import { RoleName } from '@prisma/client';
+import { RequirePermissions } from '../auth/permissions.decorator';
+import { AdminPermissions } from '../auth/permissions.enum';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 type AuthRequest = Request & { user?: { userId?: number } };
 
@@ -36,6 +42,25 @@ export class ReaderController {
       body.bookId,
       body.chapterIndex,
       req,
+    );
+  }
+
+  @Post('admin/session')
+  @UseGuards(RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async createAdminPreviewSession(
+      @Body() body: CreateReaderSessionDto,
+      @Req() req: AuthRequest,
+  ) {
+    const userId = req.user?.userId;
+    if (!userId) throw new UnauthorizedException();
+
+    return this.readerService.createAdminPreviewSession(
+        userId,
+        body.bookId,
+        body.chapterIndex,
+        req,
     );
   }
 

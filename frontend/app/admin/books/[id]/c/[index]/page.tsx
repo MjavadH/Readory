@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertCircle,
+  Check,
   FileText,
   ImageIcon,
   Loader2,
   RefreshCcw,
   Trash2,
   Upload,
+  X,
   BookOpen,
   Layers,
   Hash,
@@ -52,6 +54,14 @@ type ChapterContentResponse = {
   chapter: ChapterMeta;
   manifest: Manifest | null;
   textPreviewHtml?: string | null;
+};
+
+type AdminPreviewSessionResponse = {
+  sessionToken: string;
+  pageCount: number;
+  contentType: "images" | "text" | null;
+  contentVersion: number;
+  adminPreview: true;
 };
 
 const containerVariants = {
@@ -127,9 +137,12 @@ export default function ChapterContentManager() {
   const [progress, setProgress] = useState(0);
   const [activeTab, setActiveTab] = useState<"images" | "text">("images");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [zipFile, setZipFile] = useState<File | null>(null);
   const [textFile, setTextFile] = useState<File | null>(null);
   const [imagePage, setImagePage] = useState(1);
+  const [adminPreviewToken, setAdminPreviewToken] = useState<string | null>(null);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
+  const [deletingImages, setDeletingImages] = useState(false);
 
   const canLoad = Number.isInteger(bookId) && bookId > 0 && Number.isInteger(chapterIndex) && chapterIndex > 0;
 
@@ -141,10 +154,36 @@ export default function ChapterContentManager() {
 
     setLoading(true);
     try {
-      const response = await apiClient.get<ChapterContentResponse>(`/admin/books/${bookId}/chapters/${chapterIndex}/content`);
+      const response = await apiClient.get<ChapterContentResponse>(
+          `/admin/books/${bookId}/chapters/${chapterIndex}/content`
+      );
+
       setData(response);
+
+      // reset selection state after reload
+      setDeleteMode(false);
+      setSelectedImagePages([]);
+
+      // create admin preview session only when image content exists
+      if (response.manifest?.format === "images" && response.manifest.pageCount > 0) {
+        try {
+          const preview = await apiClient.post<AdminPreviewSessionResponse>("/reader/admin/session", {
+            bookId,
+            chapterIndex,
+          });
+          setAdminPreviewToken(preview.sessionToken);
+        } catch (error) {
+          setAdminPreviewToken(null);
+          toast.error(
+              getApiErrorMessage(error, "Unable to create admin preview session."),
+              "Preview unavailable"
+          );
+        }
+      } else {
+        setAdminPreviewToken(null);
+      }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to fetch chapter content."))
+      toast.error(getApiErrorMessage(error, "Unable to fetch chapter content."));
     } finally {
       setLoading(false);
     }
@@ -184,28 +223,34 @@ export default function ChapterContentManager() {
       request.send(formData);
     });
 
-  const handleUploadImages = async () => {
-    if (imageFiles.length === 0 && !zipFile) {
-      toast.error("Select multiple images or one ZIP file.", "No files selected")
+  const handleUploadImages = async (mode: "replace" | "append") => {
+    if (imageFiles.length === 0) {
+      toast.error("Select one or more image files.", "No files selected");
       return;
     }
 
     setUploading(true);
     setProgress(0);
+
     try {
       const formData = new FormData();
       imageFiles.forEach((file) => formData.append("files", file));
-      if (zipFile) {
-        formData.append("zip", zipFile);
-      }
 
-      await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/images`, formData);
-      toast.success("Image content uploaded")
+      const url =
+          mode === "append"
+              ? `/admin/books/${bookId}/chapters/${chapterIndex}/content/images/append`
+              : `/admin/books/${bookId}/chapters/${chapterIndex}/content/images`;
+
+      await uploadWithXhr(url, formData);
+
+      toast.success(mode === "append" ? "Images appended successfully." : "Image content replaced successfully.");
       setImageFiles([]);
-      setZipFile(null);
       await loadContent();
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Please verify file count/size/type and try again."), "Image upload failed")
+      toast.error(
+          getApiErrorMessage(error, "Please verify file count/size/type and try again."),
+          mode === "append" ? "Append failed" : "Image upload failed"
+      );
     } finally {
       setUploading(false);
       setProgress(0);
@@ -247,6 +292,87 @@ export default function ChapterContentManager() {
       setDeleting(false);
     }
   };
+
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? "";
+
+  const buildAdminPreviewImageUrl = (pageNumber: number) =>
+      `${apiBase}/reader/page?token=${encodeURIComponent(adminPreviewToken ?? "")}&p=${pageNumber}`;
+
+  const absolutePageNumber = (pageIndexInCurrentPage: number) =>
+      (imagePage - 1) * pageSize + pageIndexInCurrentPage + 1;
+
+  const selectedImagePageSet = useMemo(
+      () => new Set(selectedImagePages),
+      [selectedImagePages]
+  );
+
+  const toggleImageSelection = (pageNumber: number) => {
+    setSelectedImagePages((prev) =>
+        prev.includes(pageNumber)
+            ? prev.filter((p) => p !== pageNumber)
+            : [...prev, pageNumber].sort((a, b) => a - b)
+    );
+  };
+
+  const currentPagedPageNumbers = useMemo(
+      () => pagedImages.map((_, idx) => absolutePageNumber(idx)),
+      [pagedImages, imagePage]
+  );
+
+  const selectedCountOnCurrentPage = useMemo(
+      () => currentPagedPageNumbers.filter((p) => selectedImagePageSet.has(p)).length,
+      [currentPagedPageNumbers, selectedImagePageSet]
+  );
+
+  const toggleSelectCurrentPage = () => {
+    const allSelected =
+        currentPagedPageNumbers.length > 0 &&
+        currentPagedPageNumbers.every((p) => selectedImagePageSet.has(p));
+
+    if (allSelected) {
+      setSelectedImagePages((prev) => prev.filter((p) => !currentPagedPageNumbers.includes(p)));
+      return;
+    }
+
+    setSelectedImagePages((prev) =>
+        Array.from(new Set([...prev, ...currentPagedPageNumbers])).sort((a, b) => a - b)
+    );
+  };
+
+  const handleDeleteSelectedImages = async () => {
+    if (selectedImagePages.length === 0) {
+      toast.error("No images selected.", "Nothing to delete");
+      return;
+    }
+
+    setDeletingImages(true);
+    try {
+      await apiClient.delete(
+          `/admin/books/${bookId}/chapters/${chapterIndex}/content/images`,
+          {
+            body: { pageNumbers: selectedImagePages },
+          }
+      );
+
+      toast.success(`${selectedImagePages.length} image(s) deleted.`);
+      setDeleteMode(false);
+      setSelectedImagePages([]);
+      await loadContent();
+    } catch (error) {
+      toast.error(
+          getApiErrorMessage(error, "Could not delete selected images."),
+          "Delete failed"
+      );
+    } finally {
+      setDeletingImages(false);
+    }
+  };
+
+  useEffect(() => {
+    if (imagePage > totalImagePages) {
+      setImagePage(totalImagePages);
+    }
+  }, [imagePage, totalImagePages]);
 
   const metadataRows = useMemo(() => {
     if (!data) return [];
@@ -296,7 +422,7 @@ export default function ChapterContentManager() {
                   variant="outline"
                   className="gap-2 border-border/60 hover:bg-secondary"
                   onClick={loadContent}
-                  disabled={loading || uploading || deleting}
+                  disabled={loading || uploading || deleting || deletingImages}
               >
                 <RefreshCcw className="h-4 w-4" />
                 Refresh
@@ -306,7 +432,7 @@ export default function ChapterContentManager() {
                   <Button
                       variant="destructive"
                       className="gap-2"
-                      disabled={deleting || uploading}
+                      disabled={loading || uploading || deleting || deletingImages}
                   >
                     {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     Delete all content
@@ -401,9 +527,9 @@ export default function ChapterContentManager() {
                           className="space-y-5"
                       >
                         <p className="text-sm text-muted-foreground">
-                          Upload multiple image files (jpg/png/webp) or one ZIP archive. Files are normalized server-side to WebP.
+                          Upload image files (jpg/png/webp). Files are normalized server-side to WebP. You can replace all content or append new pages.
                         </p>
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="grid gap-4">
                           <div className="space-y-3 rounded-xl border border-dashed border-border/60 bg-secondary/20 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/40">
                             <label className="text-sm font-medium">Multiple image files</label>
                             <input
@@ -416,27 +542,39 @@ export default function ChapterContentManager() {
                             />
                             <p className="text-xs text-muted-foreground">Selected: {imageFiles.length} file(s)</p>
                           </div>
-                          <div className="space-y-3 rounded-xl border border-dashed border-border/60 bg-secondary/20 p-4 transition-colors hover:border-primary/30 hover:bg-secondary/40">
-                            <label className="text-sm font-medium">ZIP upload</label>
-                            <input
-                                type="file"
-                                accept=".zip,application/zip"
-                                disabled={uploading}
-                                className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary hover:file:bg-primary/20"
-                                onChange={(e) => setZipFile(e.target.files?.[0] ?? null)}
-                            />
-                            <p className="truncate text-xs text-muted-foreground">{zipFile?.name ?? "No ZIP selected"}</p>
-                          </div>
                         </div>
                         {uploading && <UploadProgressBar value={progress} />}
-                        <Button
-                            className="gap-2 glow-primary"
-                            onClick={handleUploadImages}
-                            disabled={uploading || deleting}
-                        >
-                          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                          Upload image content
-                        </Button>
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                              className="gap-2 glow-primary"
+                              onClick={() => handleUploadImages("append")}
+                              disabled={
+                                  uploading ||
+                                  deleting ||
+                                  deletingImages ||
+                                  (data?.chapter.contentType === "text")
+                              }
+                          >
+                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                            Append images
+                          </Button>
+
+                          <Button
+                              variant="outline"
+                              className="gap-2"
+                              onClick={() => handleUploadImages("replace")}
+                              disabled={uploading || deleting || deletingImages}
+                          >
+                            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+                            Replace all images
+                          </Button>
+                        </div>
+
+                        {data?.chapter.contentType === "text" && (
+                            <p className="text-xs text-warning">
+                              This chapter currently contains text content. Append is disabled. Use "Replace all images" if you want to switch content type.
+                            </p>
+                        )}
                       </motion.div>
                     </TabsContent>
 
@@ -497,33 +635,175 @@ export default function ChapterContentManager() {
 
                 {data?.manifest?.format === "images" && (
                     <div className="space-y-5">
+                      {/* Toolbar */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/40 bg-secondary/10 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {!deleteMode ? (
+                              <Button
+                                  variant="outline"
+                                  className="gap-2"
+                                  onClick={() => {
+                                    setDeleteMode(true);
+                                    setSelectedImagePages([]);
+                                  }}
+                                  disabled={uploading || deleting || deletingImages || imagePages.length === 0}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                Delete images
+                              </Button>
+                          ) : (
+                              <>
+                                <Badge variant="secondary">
+                                  Delete mode • {selectedImagePages.length} selected
+                                </Badge>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={toggleSelectCurrentPage}
+                                    disabled={deletingImages || currentPagedPageNumbers.length === 0}
+                                >
+                                  {selectedCountOnCurrentPage === currentPagedPageNumbers.length &&
+                                  currentPagedPageNumbers.length > 0
+                                      ? "Unselect this page"
+                                      : "Select this page"}
+                                </Button>
+                              </>
+                          )}
+                        </div>
+
+                        {deleteMode && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                  variant="ghost"
+                                  className="gap-2"
+                                  onClick={() => {
+                                    setDeleteMode(false);
+                                    setSelectedImagePages([]);
+                                  }}
+                                  disabled={deletingImages}
+                              >
+                                <X className="h-4 w-4" />
+                                Cancel
+                              </Button>
+
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                      variant="destructive"
+                                      className="gap-2"
+                                      disabled={deletingImages || selectedImagePages.length === 0}
+                                  >
+                                    {deletingImages ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                    )}
+                                    Delete selected ({selectedImagePages.length})
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete selected images?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {selectedImagePages.length} selected page(s) will be removed from this chapter.
+                                      This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel disabled={deletingImages}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteSelectedImages}>
+                                      Confirm delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                        )}
+                      </div>
+
                       <ScrollArea className="h-130 rounded-xl border border-border/40 bg-secondary/10 p-4">
                         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-                          {pagedImages.map((page, idx) => (
-                              <motion.div
-                                  key={page.key}
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  transition={{ delay: idx * 0.02, duration: 0.3 }}
-                                  className="group rounded-xl border border-border/40 bg-secondary/20 p-3 transition-all hover:border-primary/30 hover:bg-secondary/40 hover:shadow-lg hover:shadow-primary/5"
-                              >
-                                <div className="mb-2.5 flex aspect-3/4 items-center justify-center rounded-lg bg-muted/40">
-                                  <ImageIcon className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary/60" />
-                                </div>
-                                <p className="text-xs font-semibold">Page {(imagePage - 1) * pageSize + idx + 1}</p>
-                                <p className="truncate font-mono text-[11px] text-muted-foreground" title={page.key}>
-                                  {page.key}
-                                </p>
-                                <p className="font-mono text-[11px] text-muted-foreground">
-                                  {page.w && page.h ? `${page.w}×${page.h}` : "size unknown"}
-                                </p>
-                              </motion.div>
-                          ))}
+                          {pagedImages.map((page, idx) => {
+                            const pageNumber = absolutePageNumber(idx);
+                            const isSelected = selectedImagePageSet.has(pageNumber);
+
+                            return (
+                                <motion.button
+                                    type="button"
+                                    key={page.key}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: idx * 0.02, duration: 0.25 }}
+                                    onClick={() => {
+                                      if (!deleteMode) return;
+                                      toggleImageSelection(pageNumber);
+                                    }}
+                                    disabled={deletingImages}
+                                    className={[
+                                      "group relative text-left rounded-xl border p-3 transition-all",
+                                      "bg-secondary/20 hover:bg-secondary/40",
+                                      deleteMode ? "cursor-pointer" : "cursor-default",
+                                      isSelected
+                                          ? "border-destructive ring-2 ring-destructive/30"
+                                          : "border-border/40 hover:border-primary/30",
+                                    ].join(" ")}
+                                >
+                                  {/* thumbnail */}
+                                  <div className="relative mb-2.5 aspect-3/4 overflow-hidden rounded-lg bg-muted/40">
+                                    {adminPreviewToken ? (
+                                        <img
+                                            src={buildAdminPreviewImageUrl(pageNumber)}
+                                            alt={`Page ${pageNumber}`}
+                                            loading="lazy"
+                                            crossOrigin="use-credentials"
+                                            className="h-full w-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex h-full w-full items-center justify-center">
+                                          <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                        </div>
+                                    )}
+
+                                    {deleteMode && (
+                                        <div className="absolute inset-0 bg-black/10 pointer-events-none" />
+                                    )}
+
+                                    {deleteMode && (
+                                        <div
+                                            className={[
+                                              "absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border shadow-sm",
+                                              isSelected
+                                                  ? "border-destructive bg-destructive text-destructive-foreground"
+                                                  : "border-white/60 bg-black/40 text-white",
+                                            ].join(" ")}
+                                        >
+                                          {isSelected ? <Check className="h-3.5 w-3.5" /> : null}
+                                        </div>
+                                    )}
+                                  </div>
+
+                                  <p className="text-xs font-semibold">Page {pageNumber}</p>
+                                  <p className="truncate font-mono text-[11px] text-muted-foreground" title={page.key}>
+                                    {page.key}
+                                  </p>
+                                  <p className="font-mono text-[11px] text-muted-foreground">
+                                    {page.w && page.h ? `${page.w}×${page.h}` : "size unknown"}
+                                  </p>
+                                </motion.button>
+                            );
+                          })}
                         </div>
                       </ScrollArea>
 
-                      {/* pagination */}
-                      <AppPagination currentPage={imagePage} totalPages={totalImagePages} totalItems={imagePages.length} pageSize={pageSize} itemLabel="images" onPageChange={setImagePage} />
+                      <AppPagination
+                          currentPage={imagePage}
+                          totalPages={totalImagePages}
+                          totalItems={imagePages.length}
+                          pageSize={pageSize}
+                          itemLabel="images"
+                          onPageChange={setImagePage}
+                      />
                     </div>
                 )}
 
