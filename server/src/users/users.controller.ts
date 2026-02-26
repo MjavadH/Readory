@@ -137,6 +137,16 @@ export class UsersController {
         };
     }
 
+    @UseGuards(JwtAuthGuard)
+    @Patch('profile')
+    async updateProfile(
+        @Request() req: any,
+        @Body()
+        body: { username?: string; currentPassword?: string; newPassword?: string },
+    ) {
+        return this.usersService.updateUser(req.user.userId, body);
+    }
+
     @Patch(':id/role')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)

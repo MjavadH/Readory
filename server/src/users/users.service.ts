@@ -1,8 +1,9 @@
-import { Injectable, ConflictException, BadRequestException } from '@nestjs/common';
+import {Injectable, ConflictException, BadRequestException, NotFoundException} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class UsersService {
@@ -140,7 +141,7 @@ export class UsersService {
 
         if (existingUser) {
             if (existingUser.email === email) throw new ConflictException('Email already exists');
-            if (existingUser.username === username) throw new ConflictException('Username already taken');
+            if (existingUser.username.toLowerCase() === username.toLowerCase()) throw new ConflictException('Username already taken');
         }
         const verificationCode = crypto.randomInt(100000, 999999).toString();
         const redisKey = `temp_reg:${email}`;
@@ -190,7 +191,7 @@ export class UsersService {
         const newUser = await this.prisma.user.create({
             data: {
                 email: data.email,
-                username: data.username,
+                username: data.username.toLowerCase(),
                 passwordHash: data.passwordHash,
                 roleId: role.id,
                 wallet: { create: { balance: 0 } },
@@ -236,5 +237,73 @@ export class UsersService {
             where: { id: userId },
             data: { permissions }
         });
+    }
+
+    async updateUser(
+        userId: number,
+        body: { username?: string; currentPassword?: string; newPassword?: string },
+    ) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { id: true, email: true, username: true, passwordHash: true },
+        });
+        if (!user) throw new NotFoundException('User not found');
+
+        const data: any = {};
+
+        // username update
+        if (body.username != null) {
+            const nextUsername = String(body.username).trim().toLowerCase();
+
+            if (nextUsername.length < 3 || nextUsername.length > 32) {
+                throw new BadRequestException('Username must be 3-32 characters');
+            }
+
+            // simple safe charset (adjust to your needs)
+            if (!/^[a-zA-Z0-9._-]+$/.test(nextUsername)) {
+                throw new BadRequestException('Username contains invalid characters');
+            }
+
+            const exists = await this.prisma.user.findFirst({
+                where: { username: nextUsername, NOT: { id: userId } },
+                select: { id: true },
+            });
+            if (exists) throw new ConflictException('Username already taken');
+
+            data.username = nextUsername;
+        }
+
+        // password update
+        if (body.newPassword != null) {
+            const currentPassword = body.currentPassword;
+            const newPassword = String(body.newPassword);
+
+            if (!currentPassword) {
+                throw new BadRequestException('currentPassword is required to change password');
+            }
+            const ok = await argon2.verify(user.passwordHash, currentPassword);
+            if (!ok) throw new BadRequestException('Current password is incorrect');
+
+            if (newPassword.length < 8) {
+                throw new BadRequestException('New password must be at least 8 characters');
+            }
+
+            data.passwordHash = await argon2.hash(newPassword);
+        }
+
+        if (Object.keys(data).length === 0) {
+            throw new BadRequestException('Nothing to update');
+        }
+
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data,
+            select: { id: true, email: true, username: true, updatedAt: true },
+        });
+
+        // clear jwt-session cache so new username/permissions are reflected
+        await this.cacheManager.del(`session:user:${userId}`);
+
+        return { success: true, user: updated };
     }
 }
