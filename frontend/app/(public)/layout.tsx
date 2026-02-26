@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import { UserHeader } from "@/components/header/user-header";
 import { UserFooter } from "@/components/user-footer";
  import { ThemeProvider } from "@/providers/theme-provider";
+ import { ToastProvider } from "@/providers/toast-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,7 +26,9 @@ export default function RootLayout({children,}: Readonly<{ children: React.React
             <UserHeader />
 
             <main className="min-h-screen">
-                {children}
+                <ToastProvider>
+                    {children}
+                </ToastProvider>
             </main>
             <UserFooter />
         </ThemeProvider>

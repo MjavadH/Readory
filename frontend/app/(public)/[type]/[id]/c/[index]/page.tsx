@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { ReaderToolbar } from "@/components/reader/reader-toolbar";
 import {Loader2} from "lucide-react";
-import { Toast } from "@/components/toast";
+import { useToast } from "@/providers/toast-provider";
 import {ReaderContextMenu} from "@/components/reader/reader-context-menu";
 
 type SessionResponse = {
@@ -42,7 +42,7 @@ type ReaderContextResponse = {
 };
 
 export default function ChapterPage() {
-    const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
+    const toast = useToast();
     const router = useRouter();
     const params = useParams<{ type: string; id: string; index: string }>();
 
@@ -67,14 +67,11 @@ export default function ChapterPage() {
     const [brightness, setBrightness] = useState(100);
     const [readMode, setReadMode] = useState<"scroll" | "page">("page");
     const [currentPage, setCurrentPage] = useState(1);
-    const pageCanvasRef = useRef<HTMLCanvasElement | null>(null); // page mode
     const scrollCanvasRefs = useRef<Array<HTMLCanvasElement | null>>([]); // scroll mode
     const loadedPagesRef = useRef<Set<number>>(new Set());
     const pageBlobCacheRef = useRef<Map<number, Blob>>(new Map()); // key: page number (1-based)
-    const drawingSetRef = useRef<Set<number>>(new Set());
     const [loadedPages, setLoadedPages] = useState<Set<number>>(new Set());
     const [pageCanvasEl, setPageCanvasEl] = useState<HTMLCanvasElement | null>(null);
-    const [visiblePageDrawn, setVisiblePageDrawn] = useState<number | null>(null);
     const inFlightPagesRef = useRef<Map<number, Promise<void>>>(new Map());
     const [pageTransitionLoading, setPageTransitionLoading] = useState(false);
     const pageDrawRequestIdRef = useRef(0);
@@ -84,6 +81,12 @@ export default function ChapterPage() {
     const progressCompletedRef = useRef(false);
     const readerRootRef = useRef<HTMLDivElement | null>(null);
     const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+    const sessionRef = useRef<SessionResponse | null>(null);
+    const refreshingSessionRef = useRef<Promise<SessionResponse> | null>(null);
+
+    useEffect(() => {
+        sessionRef.current = session;
+    }, [session]);
 
     const currentChapter =
         readerCtx?.chapters.find((c) => c.index === chapterIndex) ??
@@ -107,21 +110,61 @@ export default function ChapterPage() {
         setMenuPos({ x, y });
     }, []);
 
+    const refreshReaderSession = useCallback(async (): Promise<SessionResponse> => {
+        if (refreshingSessionRef.current) {
+            return refreshingSessionRef.current;
+        }
+
+        const task = (async () => {
+            const nextSession = await apiClient.post<
+                SessionResponse,
+                { bookId: number; chapterIndex: number }
+            >("/reader/session", { bookId, chapterIndex });
+
+            setSession(nextSession);
+            sessionRef.current = nextSession;
+
+            // refresh manifest/text with new token (important if old token expired)
+            if (nextSession.contentType === "images") {
+                const nextManifest = await apiClient.get<Manifest>("/reader/manifest", {
+                    query: { token: nextSession.sessionToken },
+                });
+                setManifest(nextManifest);
+                setTextHtml("");
+                setCurrentPage((prev) => Math.max(1, Math.min(prev, nextManifest.pageCount || 1)));
+            } else if (nextSession.contentType === "text") {
+                const nextText = await apiClient.get<{ html: string }>("/reader/text", {
+                    query: { token: nextSession.sessionToken },
+                });
+                setTextHtml(nextText.html);
+                setManifest(null);
+            }
+
+            return nextSession;
+        })();
+
+        refreshingSessionRef.current = task;
+
+        try {
+            return await task;
+        } finally {
+            refreshingSessionRef.current = null;
+        }
+    }, [bookId, chapterIndex]);
+
     const resetChapterRenderState = useCallback(() => {
         pageBlobCacheRef.current.clear();
-        drawingSetRef.current.clear();
         inFlightPagesRef.current.clear();
         loadedPagesRef.current = new Set();
         setLoadedPages(new Set());
-        setVisiblePageDrawn(null);
         setPageCanvasEl(null);
         scrollCanvasRefs.current = [];
-        pageCanvasRef.current = null;
     }, []);
 
     const fetchPageBlob = useCallback(
         async (page: number): Promise<Blob> => {
-            if (!session) throw new Error("No reader session");
+            const activeSession = sessionRef.current;
+            if (!activeSession) throw new Error("No reader session");
 
             // Limit cache size to 10 items
             if (pageBlobCacheRef.current.size > 10) {
@@ -134,21 +177,33 @@ export default function ChapterPage() {
             const cached = pageBlobCacheRef.current.get(page);
             if (cached) return cached;
 
-            const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE}/reader/page?token=${encodeURIComponent(
-                    session.sessionToken
-                )}&p=${page}`,
-                {
-                    credentials: "include",
-                    cache: "no-store",
+            const requestPage = (token: string) =>
+                fetch(
+                    `${process.env.NEXT_PUBLIC_API_BASE}/reader/page?token=${encodeURIComponent(token)}&p=${page}`,
+                    {
+                        credentials: "include",
+                        cache: "no-store",
+                    }
+                );
+
+            let res = await requestPage(activeSession.sessionToken);
+
+            // token expired -> refresh session once and retry
+            if (res.status === 401) {
+                try {
+                    const refreshed = await refreshReaderSession();
+                    res = await requestPage(refreshed.sessionToken);
+                } catch {
+                    toast.error("Session expired. Please refresh the page.");
+                    throw new Error("Reader session refresh failed");
                 }
-            );
+            }
 
             if (!res.ok) {
-                if (res.status === 401) {
-                    setToast({ message: "token expired, Please refresh the page.", type: "error" });
-                } else if (res.status === 429) {
-                    setToast({ message: "Temporarily blocked due to abnormal behavior. Please try again in 1 minute.", type: "error" });
+                if (res.status === 429) {
+                    toast.error("Temporarily blocked due to abnormal behavior. Please try again in 1 minute.");
+                } else if (res.status === 401) {
+                    toast.error("Session expired. Please refresh the page.");
                 }
                 throw new Error(`Failed page ${page} (${res.status})`);
             }
@@ -157,7 +212,7 @@ export default function ChapterPage() {
             pageBlobCacheRef.current.set(page, blob);
             return blob;
         },
-        [session]
+        [refreshReaderSession, toast]
     );
 
     const drawBlobToCanvas = useCallback(async (blob: Blob, canvas: HTMLCanvasElement) => {
@@ -268,7 +323,7 @@ export default function ChapterPage() {
                 maxReachedPageRef.current = startPage;
                 lastSavedPageRef.current = s.resume?.lastPage ?? 0;
                 progressCompletedRef.current = (s.resume?.lastPage ?? 0) >= (s.pageCount || 1);
-                setCurrentPage(progressCompletedRef ? 1 : startPage);
+                setCurrentPage(progressCompletedRef.current ? 1 : startPage);
 
                 if (s.contentType === "images") {
                     const m = await apiClient.get<Manifest>("/reader/manifest", {
@@ -323,10 +378,6 @@ export default function ChapterPage() {
         const run = async () => {
             try {
                 await drawPageToCanvas(currentPage, pageCanvasEl);
-
-                if (!cancelled && reqId === pageDrawRequestIdRef.current) {
-                    setVisiblePageDrawn(currentPage);
-                }
             } catch {
                 // ignore page-level error
             } finally {
@@ -548,7 +599,11 @@ export default function ChapterPage() {
     if (session.contentType === "text") {
         return (
             <div ref={readerRootRef} className="min-h-screen bg-reader-bg">
-                <main onContextMenu={handleContextMenu} className="pt-20 pb-10">
+                <main
+                    onContextMenu={handleContextMenu}
+                    className="pt-20 pb-10"
+                    style={{ filter: `brightness(${brightness}%)` }}
+                >
                     <div className="max-w-3xl mx-auto px-4">
                         <article
                             className="prose select-none prose-invert max-w-none rounded-2xl border bg-card/60 p-6"
@@ -580,12 +635,16 @@ export default function ChapterPage() {
     return (
         <div ref={readerRootRef} className="min-h-screen bg-reader-bg">
             {/* Main content */}
-            <main onContextMenu={handleContextMenu} className="pt-16 pb-24">
+            <main
+                onContextMenu={handleContextMenu}
+                className="pt-16 pb-24"
+                style={{ filter: `brightness(${brightness}%)` }}
+            >
                 {readMode === "page" ? (
                     <div className="max-w-2xl mx-auto px-4 pt-8 flex items-center justify-center min-h-[calc(100vh-10rem)]">
                         <div className="w-full">
                             <div className="relative">
-                                {pageTransitionLoading && visiblePageDrawn !== null && (
+                                {pageTransitionLoading && (
                                     <div className="absolute flex w-full h-full justify-center items-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
                                         <Loader2 className="h-20 w-20 animate-spin text-primary" />
                                     </div>
@@ -669,10 +728,7 @@ export default function ChapterPage() {
                                 if (!document.fullscreenElement) {
                                     // Enter fullscreen for the specific reader container
                                     element.requestFullscreen().catch(() => {
-                                        setToast({
-                                            message: "Fullscreen was blocked by your browser.",
-                                            type: "error"
-                                        });
+                                        toast.error("Fullscreen was blocked by your browser.")
                                     });
                                 } else {
                                     if (document.exitFullscreen) {
@@ -685,14 +741,6 @@ export default function ChapterPage() {
                                 console.warn(`Action ${action} not implemented.`);
                         }
                     }}
-                />
-            )}
-
-            {toast && (
-                <Toast
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={() => setToast(null)}
                 />
             )}
         </div>
