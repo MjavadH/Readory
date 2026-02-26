@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { Restricted } from "@/components/auth/restricted"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -38,6 +37,7 @@ import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
+import { usePermission } from "@/hooks/use-permission"
 
 interface Transaction {
   id: number
@@ -94,6 +94,7 @@ const isAdminRole = (role: User["role"]): boolean => {
 }
 
 export default function AdminUsers() {
+  const { has } = usePermission()
   const toast = useToast()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -493,16 +494,16 @@ export default function AdminUsers() {
                             </Badge>
                           </div>
                         </div>
-                        <Restricted to="MANAGE_USERS">
-                          <Button
-                              variant={selectedUser.status === "BANNED" ? "default" : "destructive"}
-                              size="sm"
-                              onClick={() => toggleBanStatus(selectedUser.id, selectedUser.status)}
-                          >
-                            <Ban className="size-4 mr-2" />
-                            {selectedUser.status === "BANNED" ? "Unban" : "Ban User"}
-                          </Button>
-                        </Restricted>
+                        {has("MANAGE_USERS") ? (
+                            <Button
+                                variant={selectedUser.status === "BANNED" ? "default" : "destructive"}
+                                size="sm"
+                                onClick={() => toggleBanStatus(selectedUser.id, selectedUser.status)}
+                            >
+                              <Ban className="size-4 mr-2" />
+                              {selectedUser.status === "BANNED" ? "Unban" : "Ban User"}
+                            </Button>
+                        ) : null}
                       </div>
                     </DialogHeader>
 
@@ -548,8 +549,7 @@ export default function AdminUsers() {
                               </p>
                             </div>
                           </div>
-
-                          <Restricted to="MANAGE_FINANCE">
+                          {has("MANAGE_FINANCE") ? (
                               <div className="border-t border-border/50 pt-4">
                                 <p className="text-sm font-medium mb-3">Manually Adjust Balance</p>
                                 <div className="flex flex-col sm:flex-row gap-2">
@@ -582,8 +582,7 @@ export default function AdminUsers() {
                                   </div>
                                 </div>
                               </div>
-                          </Restricted>
-
+                          ) : null}
                           {selectedUser.wallet.transactions.length > 0 && (
                               <div className="border-t border-border/50 pt-4">
                                 <p className="text-sm font-medium mb-3">Recent Transactions</p>
