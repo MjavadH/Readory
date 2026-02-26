@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DashboardService {
     constructor(private prisma: PrismaService) {}
 
-    async getDashboardStats(permissions: string[], userId: number) {
+    async getAdminDashboardStats(permissions: string[], userId: number) {
         const isSuperAdmin = userId === 1;
 
         const canViewFinance = isSuperAdmin || permissions.includes('MANAGE_FINANCE');

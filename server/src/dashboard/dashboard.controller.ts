@@ -6,15 +6,16 @@ import { RoleName } from '@prisma/client';
 import { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class DashboardController {
     constructor(private dashboardService: DashboardService) {}
 
-    @Get('stats')
+    @Get('admin')
+    @UseGuards(RolesGuard)
     @Roles(RoleName.ADMIN)
-    async getStats(@Request() req: any) {
+    async getAdminStats(@Request() req: any) {
         const userId = req.user.id || req.user.userId;
 
-        return this.dashboardService.getDashboardStats(req.user.permissions, Number(userId));
+        return this.dashboardService.getAdminDashboardStats(req.user.permissions, Number(userId));
     }
 }
