@@ -249,7 +249,7 @@ export class ChaptersService {
         if (chapter.isFree || chapter.price == null) {
             const existing = await this.prisma.accessRecord.findFirst({ where: { userId, chapterId } });
             if (existing) return existing;
-            return this.prisma.accessRecord.create({ data: { userId, chapterId } });
+            return this.prisma.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
         }
 
         const existing = await this.prisma.accessRecord.findFirst({ where: { userId, chapterId } });
