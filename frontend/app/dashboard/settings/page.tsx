@@ -94,9 +94,91 @@ export default function SettingsPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">Loading settings...</p>
+            <div className="space-y-12 pb-24 animate-pulse">
+                {/* Header */}
+                <section className="px-2">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-muted rounded-2xl">
+                                <div className="w-8 h-8 bg-muted-foreground/20 rounded-md" />
+                            </div>
+                            <div className="h-10 w-72 bg-muted rounded-xl" />
+                        </div>
+                        <div className="h-5 w-96 bg-muted rounded-lg ml-16" />
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Sidebar Profile Card */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="bg-card border border-border rounded-[2rem] p-8 shadow-xl shadow-black/5 space-y-6">
+                            <div className="flex flex-col items-center text-center space-y-6">
+                                <div className="w-32 h-32 rounded-[2rem] bg-muted" />
+                                <div className="space-y-2 w-full flex flex-col items-center">
+                                    <div className="h-6 w-40 bg-muted rounded-lg" />
+                                    <div className="h-4 w-56 bg-muted rounded-lg" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Forms */}
+                    <div className="lg:col-span-8 space-y-10">
+                        {/* Profile Form Skeleton */}
+                        <section className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 space-y-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 bg-muted rounded-2xl">
+                                    <div className="w-6 h-6 bg-muted-foreground/20 rounded-md" />
+                                </div>
+                                <div className="h-6 w-48 bg-muted rounded-lg" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {Array.from({ length: 2 }).map((_, i) => (
+                                    <div key={i} className="space-y-3">
+                                        <div className="h-4 w-32 bg-muted rounded-lg" />
+                                        <div className="h-14 w-full bg-muted rounded-2xl" />
+                                        <div className="h-3 w-40 bg-muted rounded-lg" />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <div className="h-14 w-44 bg-muted rounded-2xl" />
+                            </div>
+                        </section>
+
+                        {/* Password Form Skeleton */}
+                        <section className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 space-y-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-2.5 bg-muted rounded-2xl">
+                                    <div className="w-6 h-6 bg-muted-foreground/20 rounded-md" />
+                                </div>
+                                <div className="h-6 w-56 bg-muted rounded-lg" />
+                            </div>
+
+                            <div className="space-y-6 max-w-md">
+                                <div className="space-y-3">
+                                    <div className="h-4 w-40 bg-muted rounded-lg" />
+                                    <div className="h-14 w-full bg-muted rounded-2xl" />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {Array.from({ length: 2 }).map((_, i) => (
+                                    <div key={i} className="space-y-3">
+                                        <div className="h-4 w-40 bg-muted rounded-lg" />
+                                        <div className="h-14 w-full bg-muted rounded-2xl" />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex justify-end pt-4">
+                                <div className="h-14 w-52 bg-muted rounded-2xl" />
+                            </div>
+                        </section>
+                    </div>
+                </div>
             </div>
         );
     }
