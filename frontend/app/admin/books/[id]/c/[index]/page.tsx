@@ -40,6 +40,7 @@ import { useParams } from "next/navigation";
 import { AppPagination } from "@/components/app-pagination";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { FileUploadPicker } from "@/components/admin/file-upload-picker";
 
 type ChapterMeta = {
   id: number;
@@ -120,50 +121,6 @@ function StatCard({icon, label, value, mono = false, delay = 0,}: {
         </div>
         <div className={cn("text-sm font-semibold truncate", mono && "font-mono text-xs")}>{value}</div>
       </motion.div>
-  );
-}
-
-// Upload zone
-function DropZone({label, hint, accept, multiple, disabled, fileName, fileCount, onChange,}: {
-  label: string;
-  hint: string;
-  accept: string;
-  multiple?: boolean;
-  disabled?: boolean;
-  fileName?: string;
-  fileCount?: number;
-  onChange: (files: FileList | null) => void;
-}) {
-  return (
-      <label
-          className={cn(
-              "relative flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/30 px-6 py-8 text-center cursor-pointer transition-all duration-200",
-              !disabled && "hover:border-primary/50 hover:bg-primary/3",
-              disabled && "opacity-50 cursor-not-allowed"
-          )}
-      >
-        <input
-            type="file"
-            accept={accept}
-            multiple={multiple}
-            disabled={disabled}
-            className="sr-only"
-            onChange={(e) => onChange(e.target.files)}
-        />
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Upload className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-foreground">{label}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
-        </div>
-        {(fileName || fileCount !== undefined) && (
-            <div className="flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs text-primary">
-              <Check className="h-3 w-3" />
-              {fileName ?? `${fileCount} file${fileCount !== 1 ? "s" : ""} selected`}
-            </div>
-        )}
-      </label>
   );
 }
 
@@ -654,14 +611,16 @@ export default function ChapterContentManager() {
                       You can replace all content or append new pages to the end.
                     </p>
 
-                    <DropZone
-                        label="Select image files"
-                        hint="JPG, PNG or WebP — multiple allowed"
+                    <FileUploadPicker
+                        kind="image"
+                        files={imageFiles}
+                        onFilesChange={setImageFiles}
                         accept="image/png,image/jpeg,image/webp"
                         multiple
                         disabled={uploading}
-                        fileCount={imageFiles.length || undefined}
-                        onChange={(files) => setImageFiles(Array.from(files ?? []))}
+                        allowAddMore
+                        blockedErrorText="Only JPG/PNG/WebP are allowed"
+                        helperText="JPG, PNG or WebP — multiple allowed"
                     />
 
                     {uploading && <UploadProgressBar value={progress} />}
@@ -673,7 +632,8 @@ export default function ChapterContentManager() {
                           onClick={() => handleUploadImages("append")}
                           disabled={
                               isBusy ||
-                              data?.chapter.contentType === "text"
+                              data?.chapter.contentType === "text" ||
+                              !data?.chapter.contentType
                           }
                       >
                         {uploading ? (
@@ -721,13 +681,17 @@ export default function ChapterContentManager() {
                       Upload chapter text as Markdown or plain text (.md / .txt).
                     </p>
 
-                    <DropZone
-                        label="Select text file"
-                        hint=".md or .txt"
+                    <FileUploadPicker
+                        kind="file"
+                        files={textFile ? [textFile] : []}
+                        onFilesChange={(arr) => setTextFile(arr[0] ?? null)}
                         accept=".md,.txt,text/plain,text/markdown"
+                        multiple={false}
+                        maxFiles={1}
                         disabled={uploading}
-                        fileName={textFile?.name}
-                        onChange={(files) => setTextFile(files?.[0] ?? null)}
+                        blockedErrorText="Only .md or .txt are allowed"
+                        dropTitleIdle="Drag & drop your text file"
+                        helperText=".md or .txt"
                     />
 
                     {uploading && <UploadProgressBar value={progress} />}

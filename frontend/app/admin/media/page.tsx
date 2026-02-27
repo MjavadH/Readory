@@ -31,6 +31,7 @@ import {
 import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { motion } from "framer-motion"
+import { FileUploadPicker } from "@/components/admin/file-upload-picker";
 
 type MediaItem = {
   code: string
@@ -67,7 +68,6 @@ export default function AdminMedia() {
   const [refreshNonce, setRefreshNonce] = useState(0)
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [isDragging, setIsDragging] = useState(false)
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [fileToDelete, setFileToDelete] = useState<string | null>(null)
@@ -212,38 +212,8 @@ export default function AdminMedia() {
     }
   }
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
 
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
 
-  const applySelectedFiles = (incoming: File[]) => {
-    const allowed = incoming.filter(isAllowedImage)
-    const blockedCount = incoming.length - allowed.length
-
-    let next = allowed
-    let err: string | null = null
-
-    if (blockedCount > 0) err = "Only JPG/JPEG/WebP are allowed"
-    if (allowed.length > MAX_UPLOAD_FILES) {
-      next = allowed.slice(0, MAX_UPLOAD_FILES)
-      err = `Maximum ${MAX_UPLOAD_FILES} files per upload`
-    }
-    if (!next.length) err = err ?? "Please select valid images"
-
-    setSelectedFiles(next)
-    setUploadError(err)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    applySelectedFiles(Array.from(e.dataTransfer.files ?? []))
-  }
 
   const handleDeleteClick = (code: string) => {
     setFileToDelete(code)
@@ -304,152 +274,37 @@ export default function AdminMedia() {
             </CardHeader>
 
             <CardContent className="p-6 space-y-4">
-              {selectedFiles.length === 0 && (
-                  <div
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      className={`
-                  relative border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all duration-300
-                  ${
-                          isDragging
-                              ? "border-primary bg-primary/10 scale-[1.02] shadow-lg"
-                              : "border-border hover:border-primary/50 hover:bg-muted/30"
-                      }
-                `}
-                  >
-                    <div className="flex flex-col items-center gap-4">
-                      <div
-                          className={`
-                      flex size-16 md:size-20 items-center justify-center rounded-full transition-all duration-300
-                      ${isDragging ? "bg-primary/20 ring-4 ring-primary/30 scale-110" : "bg-muted ring-2 ring-border"}
-                    `}
-                      >
-                        <Upload className={`size-8 md:size-10 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`} />
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-base md:text-lg font-semibold">
-                          {isDragging ? "Drop your images here" : "Drag & drop your images"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">or</p>
-                      </div>
-
-                      <input
-                          type="file"
-                          multiple
-                          accept=".jpg,.jpeg,.webp"
-                          onChange={(e) => applySelectedFiles(Array.from(e.target.files ?? []))}
-                          className="hidden"
-                          id="file-upload"
-                      />
-
-                      <label htmlFor="file-upload">
-                        <Button variant="default" size="lg" className="cursor-pointer" asChild>
-                      <span>
-                        <ImageIcon className="size-4 mr-2" />
-                        Browse Files
-                      </span>
-                        </Button>
-                      </label>
-                    </div>
-
-                    {uploadError && (
-                        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-destructive">
-                          <AlertCircle className="size-4" />
-                          {uploadError}
-                        </div>
-                    )}
-                  </div>
-              )}
-
-              {selectedFiles.length > 0 && (
-                  <div className="space-y-4">
-                    <div
-                        className={`
-                    relative overflow-hidden rounded-xl border-2 transition-all duration-300
-                    ${uploadSuccess ? "border-green-500 bg-green-50 dark:bg-green-950/20" : "border-border bg-muted/30"}
-                    ${isUploading ? "animate-pulse" : ""}
-                  `}
-                    >
-                      <div className="flex items-start gap-4 p-4">
-                        <div
-                            className={`
-                        relative flex size-16 items-center justify-center rounded-lg ring-2 transition-all shrink-0
-                        ${uploadSuccess ? "bg-green-100 dark:bg-green-900/30 ring-green-500" : "bg-primary/10 ring-primary/30"}
-                      `}
-                        >
-                          {uploadSuccess ? (
-                              <CheckCircle2 className="size-8 text-green-600 dark:text-green-400" />
-                          ) : (
-                              <ImageIcon className="size-8 text-primary" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold">{selectedFiles.length} file(s) selected</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            ~{(selectedSize / 1024).toFixed(1)} KB
-                            {isUploading && " • Uploading..."}
-                            {uploadSuccess && " • Upload complete!"}
-                          </p>
-
-                          <div className="mt-3 grid gap-2">
-                            {selectedFiles.slice(0, 5).map((f) => (
-                                <div key={f.name + f.size} className="flex items-center justify-between gap-2 text-xs">
-                                  <span className="truncate">{f.name}</span>
-                                  {!isUploading && !uploadSuccess && (
-                                      <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-7 w-7"
-                                          onClick={() => setSelectedFiles((prev) => prev.filter((x) => x !== f))}
-                                      >
-                                        <X className="size-3.5" />
-                                      </Button>
-                                  )}
-                                </div>
-                            ))}
-                            {selectedFiles.length > 5 && (
-                                <p className="text-xs text-muted-foreground">+{selectedFiles.length - 5} more…</p>
-                            )}
-                          </div>
-                        </div>
-
-                        {!isUploading && !uploadSuccess && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => {
-                                  setSelectedFiles([])
-                                  setUploadError(null)
-                                }}
-                                className="shrink-0"
-                            >
-                              <X className="size-4" />
-                            </Button>
-                        )}
-                      </div>
-
-                      {isUploading && (
-                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary/20">
-                            <div className="h-full bg-primary animate-pulse w-full" />
-                          </div>
-                      )}
-                    </div>
-
-                    {!uploadSuccess && (
-                        <div className="flex gap-3">
-                          <Button onClick={handleUpload} disabled={isUploading} className="flex-1" size="lg">
+              <FileUploadPicker
+                  kind="image"
+                  files={selectedFiles}
+                  onFilesChange={setSelectedFiles}
+                  accept=".jpg,.jpeg,.webp"
+                  multiple
+                  maxFiles={MAX_UPLOAD_FILES}
+                  isAllowedFile={isAllowedImage}
+                  disabled={isUploading || uploadSuccess}
+                  uploading={isUploading}
+                  success={uploadSuccess}
+                  error={uploadError}
+                  onErrorChange={setUploadError}
+                  dropTitleIdle="Drag & drop your images"
+                  dropTitleActive="Drop your images here"
+                  helperText="Supports JPG, JPEG, WebP"
+                  blockedErrorText="Only JPG/JPEG/WebP are allowed"
+                  maxFilesErrorText={(m) => `Maximum ${m} files per upload`}
+                  actions={
+                    !uploadSuccess && selectedFiles.length > 0 ? (
+                        <>
+                          <Button onClick={handleUpload} disabled={isUploading} className="gap-2" size="sm">
                             {isUploading ? (
                                 <>
-                                  <Loader2 className="size-4 mr-2 animate-spin" />
+                                  <Loader2 className="size-4 animate-spin" />
                                   Uploading...
                                 </>
                             ) : (
                                 <>
-                                  <Upload className="size-4 mr-2" />
-                                  Upload {selectedFiles.length} file(s)
+                                  <Upload className="size-4" />
+                                  Upload {selectedFiles.length}
                                 </>
                             )}
                           </Button>
@@ -457,25 +312,18 @@ export default function AdminMedia() {
                           <Button
                               variant="outline"
                               onClick={() => {
-                                setSelectedFiles([])
-                                setUploadError(null)
+                                setSelectedFiles([]);
+                                setUploadError(null);
                               }}
                               disabled={isUploading}
-                              size="lg"
+                              size="sm"
                           >
                             Cancel
                           </Button>
-                        </div>
-                    )}
-
-                    {uploadError && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                          <AlertCircle className="size-4 shrink-0" />
-                          <span>{uploadError}</span>
-                        </div>
-                    )}
-                  </div>
-              )}
+                        </>
+                    ) : null
+                  }
+              />
             </CardContent>
           </Card>
 
