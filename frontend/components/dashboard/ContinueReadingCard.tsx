@@ -4,7 +4,6 @@ import { ReadingProgress } from "@/lib/types";
 import { BookOpen, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatUpdateTime } from "@/lib/time";
-import Image from "next/image";
 import Link from "next/link";
 
 interface Props {

@@ -23,7 +23,7 @@ export function TransactionList({ transactions, limit, className }: Props) {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="group flex flex-wrap items-center justify-between p-4 bg-muted/40 hover:bg-muted/80 border border-border/50 rounded-2xl transition-all hover:scale-[1.01] active:scale-100 hover:shadow-lg shadow-black/5"
+                    className="group flex flex-wrap items-center gap-3 justify-between p-4 bg-muted/40 hover:bg-muted/80 border border-border/50 rounded-2xl transition-all hover:scale-[1.01] active:scale-100 hover:shadow-lg shadow-black/5"
                 >
                     <div className="flex items-center gap-4">
                         <div className={cn(

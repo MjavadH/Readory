@@ -2,8 +2,6 @@
 "use client";
 
 import { Sidebar } from "./Sidebar";
-import { motion, AnimatePresence } from "framer-motion";
-import { usePathname } from "next/navigation";
 import {ReactNode, useEffect} from "react";
 import { Search, Menu } from "lucide-react";
 import { useState } from "react";
@@ -21,7 +19,6 @@ function initialsFromUsername(username: string) {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-    const pathname = usePathname();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [profile, setProfile] = useState<UserProfile | null>(null)
     const [profileLoading, setProfileLoading] = useState(true)
@@ -92,18 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
                 {/* Page Content */}
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 bg-background custom-scrollbar">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={pathname}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                            className="max-w-[1400px] mx-auto"
-                        >
-                            {children}
-                        </motion.div>
-                    </AnimatePresence>
+                    {children}
                 </div>
             </main>
 
