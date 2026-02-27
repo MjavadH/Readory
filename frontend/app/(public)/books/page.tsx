@@ -1,46 +1,19 @@
-"use client";
+import { Suspense } from "react";
+import { getInitialBooksData } from "./books-api";
+import BooksClient from "./BooksClient";
 
-import React, { useState, useEffect } from "react";
-import { apiClient } from "@/lib/api-client";
-import { BookGenre, BookType } from "@/lib/types";
-import { useBookBrowser } from "@/hooks/use-book-browser";
-import { BookBrowseLayout } from "@/components/book-browse-layout";
+export default async function Page({
+                                       searchParams,
+                                   }: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+    const resolvedSearchParams = await searchParams;
 
-export default function BooksPage() {
-    const [genres, setGenres] = useState<BookGenre[]>([]);
-    const [bookTypes, setBookTypes] = useState<BookType[]>([]);
-    const [loadingFilters, setLoadingFilters] = useState({ genres: true, types: true });
-
-    useEffect(() => {
-        apiClient.get<BookGenre[]>("/genres/listAll").then(data => {
-            setGenres(data);
-            setLoadingFilters(prev => ({ ...prev, genres: false }));
-        });
-        apiClient.get<BookType[]>("/public/book-types").then(data => {
-            setBookTypes(data);
-            setLoadingFilters(prev => ({ ...prev, types: false }));
-        });
-    }, []);
-
-    const browser = useBookBrowser<any>({
-        baseUrl: "/books",
-        fetcher: (params, signal) => apiClient.get(`/books/browse?${params}`, { signal }),
-    });
+    const initialData = await getInitialBooksData(resolvedSearchParams);
 
     return (
-        <BookBrowseLayout
-            title="Browse Books"
-            description="Discover your next favorite manga, novel, or comic"
-            books={browser.items}
-            isLoading={browser.isLoading}
-            isLoadingMore={browser.isLoadingMore}
-            hasMore={browser.hasMore}
-            loadMoreRef={browser.loadMoreRef}
-            filters={browser.filters}
-            availableTypes={bookTypes}
-            availableGenres={genres}
-            isLoadingTypes={loadingFilters.types}
-            isLoadingGenres={loadingFilters.genres}
-        />
+        <Suspense fallback={<div>Loading...</div>}>
+            <BooksClient initialData={initialData} />
+        </Suspense>
     );
 }
