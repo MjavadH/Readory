@@ -16,6 +16,7 @@ import sharp from 'sharp';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import {createHash} from "crypto";
 
 type ReaderTokenPayload = {
   userId: number;
@@ -36,6 +37,16 @@ type ChapterManifest = {
   pageCount: number;
   pages: ManifestPage[];
 };
+
+function escapeXml(s: string) {
+  return s.replace(/[<>&'"]/g, (c) => ({
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+    "'": '&apos;',
+    '"': '&quot;',
+  }[c]!));
+}
 
 @Injectable()
 export class ReaderService {
@@ -221,11 +232,11 @@ export class ReaderService {
 
       const requestUserId = this.getRequestUserId(req);
       if (decoded.userId !== requestUserId) {
-        throw new UnauthorizedException('Reader token user mismatch');
+        new UnauthorizedException('Reader token user mismatch');
       }
 
       if (decoded.uaHash !== this.uaHash(req)) {
-        throw new UnauthorizedException('Invalid reader token context');
+        new UnauthorizedException('Invalid reader token context');
       }
 
       const chapter = await this.prisma.chapter.findUnique({
@@ -234,7 +245,7 @@ export class ReaderService {
       });
 
       if (!chapter || chapter.contentVersion !== decoded.contentVersion) {
-        throw new UnauthorizedException('Reader token expired');
+        new UnauthorizedException('Reader token expired');
       }
 
       return decoded;
@@ -322,15 +333,26 @@ export class ReaderService {
 
     const source = await this.storageService.getObjectBuffer(item.key);
 
-    if (isAdminPreview) {
-      return source;
-    }
+    if (isAdminPreview) return source;
 
-    const watermarkText = `${payload.userId} ${new Date().toISOString()}`;
-    const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130" fill="rgba(255,255,255,0.18)" transform="rotate(-25 180 120)" font-size="24">${watermarkText}</text></svg>`;
+    const trace = createHash('sha256')
+        .update(token)
+        .digest('hex')
+        .slice(0, 8);
+
+    const watermarkText = `u${payload.userId} c${payload.chapterId} #${trace}`;
+    const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130"
+        fill="white" fill-opacity="0.35"
+        transform="rotate(-25 180 120)"
+        font-size="24"
+        font-family="Arial, sans-serif"
+        font-weight="600">
+    ${escapeXml(watermarkText)}
+  </text>
+</svg>`;
 
     return sharp(source)
-        .composite([{ input: Buffer.from(svg), tile: true, gravity: 'center' }])
+        .composite([{ input: Buffer.from(svg), tile: true, gravity: 'center', blend: 'exclusion', }])
         .webp({ quality: 82 })
         .toBuffer();
   }
