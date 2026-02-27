@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BookTypesService } from './book-types.service';
 
 describe('BookTypesService', () => {
-  let service: BookTypesService;
+  let target: BookTypesService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [BookTypesService],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<BookTypesService>(BookTypesService);
+    target = module.get<BookTypesService>(BookTypesService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(target).toBeDefined();
   });
 });

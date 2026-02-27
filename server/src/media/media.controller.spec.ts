@@ -1,4 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
+jest.mock(
+  'file-type',
+  () => ({
+    fileTypeFromBuffer: jest.fn(),
+  }),
+  { virtual: true },
+);
+
 import { MediaController } from './media.controller';
 
 describe('MediaController', () => {
@@ -7,7 +17,9 @@ describe('MediaController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MediaController],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<MediaController>(MediaController);
   });

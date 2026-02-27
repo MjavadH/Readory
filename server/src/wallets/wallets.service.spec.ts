@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { WalletsService } from './wallets.service';
 
 describe('WalletsService', () => {
-  let service: WalletsService;
+  let target: WalletsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [WalletsService],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<WalletsService>(WalletsService);
+    target = module.get<WalletsService>(WalletsService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(target).toBeDefined();
   });
 });

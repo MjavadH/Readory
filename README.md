@@ -156,3 +156,72 @@ Each chapter stores a `manifest.json` used by the reader session and ordered pag
 - Reader endpoints enforce access (`isFree` or purchased access record), rate limits, and anomaly blocking for aggressive page scraping.
 - Image pages are watermarked per user and streamed as `image/webp` with `no-store` headers.
 - Chapter uploads validate image magic-bytes, normalize to WebP, and update chapter content metadata atomically.
+
+
+## Testing (NestJS + Jest + Prisma)
+
+### 1) Create a dedicated local test database
+
+Use a separate database for tests so no test can touch your development/production data.
+
+```bash
+psql -U postgres -c "CREATE DATABASE readory_test;"
+```
+
+### 2) Create `server/.env.test`
+
+Copy the sample file and update values for your machine:
+
+```bash
+cd server
+cp .env.test.example .env.test
+```
+
+Minimum required value:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/readory_test?schema=public"
+```
+
+> Safety guard: test helpers refuse to run if `DATABASE_URL` does not look like a test database URL.
+
+### 3) Apply Prisma schema to the test database
+
+Run this from `server/`:
+
+```bash
+npx prisma migrate deploy
+```
+
+If this is your first local setup and there are no applied migrations yet, you can use:
+
+```bash
+npx prisma migrate dev
+```
+
+### 4) Run tests
+
+From `server/`:
+
+```bash
+npm test
+npm run test:watch
+npm run test:cov
+npm run test:e2e
+```
+
+### Test DB cleanup strategy
+
+- E2E setup uses Prisma utilities in `server/test/utils`.
+- Before each E2E test, all public tables are truncated with `RESTART IDENTITY CASCADE` (excluding `_prisma_migrations`).
+- This keeps tests deterministic and isolated.
+
+### Troubleshooting
+
+- **Error: Refusing to run tests against a non-test database URL**
+  - Ensure `server/.env.test` points to `readory_test` (or any DB name containing `test`).
+- **Connection errors to Postgres**
+  - Verify Postgres is running and `DATABASE_URL` credentials are correct.
+- **Redis/S3 in unit/controller tests**
+  - Unit/controller tests should override Nest providers and fully mock external services (`REDIS_CLIENT`, `S3Client`/`StorageService`).
+
