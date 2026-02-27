@@ -3,6 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TransactionType } from '@prisma/client';
 import { CacheManager } from '../cache/cache.manager';
 
+type GetWalletOptions = {
+    includeTransactions?: boolean;
+
+    take?: number;
+
+    page?: number;
+    limit?: number;
+};
+
 @Injectable()
 export class WalletsService {
     constructor(
@@ -10,16 +19,139 @@ export class WalletsService {
         private readonly cacheManager: CacheManager
     ) {}
 
-    // Get a user’s wallet and balance
-    async getWallet(userId: number) {
-        const wallet = await this.prisma.wallet.findUnique({
+    private clampInt(value: number, min: number, max: number, fallback: number) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.min(max, Math.max(min, Math.trunc(n)));
+    }
+
+    private async ensureWallet(userId: number) {
+        return this.prisma.wallet.upsert({
             where: { userId },
-            include: { transactions: { orderBy: { createdAt: 'desc' } } },
+            update: {},
+            create: { userId, balance: 0 },
+            select: { id: true, userId: true, balance: true },
         });
-        if (!wallet) {
-            throw new NotFoundException('Wallet not found');
+    }
+
+    /**
+     * Wallet getter used by dashboard:
+     * - always returns wallet (creates if missing)
+     * - includes totals: deposits/withdrawals
+     * - optional transactions:
+     *   - recent: { take }
+     *   - history: { page, limit }
+     */
+    async getWallet(userId: number, options: GetWalletOptions = {}) {
+        const includeTransactions = options.includeTransactions !== false;
+
+        const wallet = await this.ensureWallet(userId);
+
+        const [depositAgg, withdrawalAgg] = await Promise.all([
+            this.prisma.walletTransaction.aggregate({
+                where: { walletId: wallet.id, type: TransactionType.CREDIT },
+                _sum: { amount: true },
+            }),
+            this.prisma.walletTransaction.aggregate({
+                where: { walletId: wallet.id, type: TransactionType.DEBIT },
+                _sum: { amount: true },
+            }),
+        ]);
+
+        const totals = {
+            deposits: Number(depositAgg._sum.amount || 0),
+            withdrawals: Number(withdrawalAgg._sum.amount || 0),
+        };
+
+        if (!includeTransactions) {
+            return {
+                id: wallet.id,
+                userId: wallet.userId,
+                balance: Number(wallet.balance),
+                totals,
+            };
         }
-        return wallet;
+
+        const total = await this.prisma.walletTransaction.count({
+            where: { walletId: wallet.id },
+        });
+
+        // recent mode
+        if (options.take != null) {
+            const take = this.clampInt(options.take, 1, 50, 10);
+
+            const rows = await this.prisma.walletTransaction.findMany({
+                where: { walletId: wallet.id },
+                orderBy: { createdAt: 'desc' },
+                take,
+                select: {
+                    id: true,
+                    amount: true,
+                    type: true,
+                    reference: true,
+                    createdAt: true,
+                },
+            });
+
+            return {
+                id: wallet.id,
+                userId: wallet.userId,
+                balance: Number(wallet.balance),
+                totals,
+                transactions: {
+                    data: rows.map((t) => ({
+                        id: t.id,
+                        amount: Number(t.amount),
+                        type: t.type,
+                        reference: t.reference,
+                        createdAt: t.createdAt,
+                    })),
+                    total,
+                    hasMore: total > take,
+                },
+            };
+        }
+
+        // history mode (paginated)
+        const page = this.clampInt(options.page ?? 1, 1, 1_000_000, 1);
+        const limit = this.clampInt(options.limit ?? 30, 1, 100, 30);
+        const skip = (page - 1) * limit;
+
+        const rows = await this.prisma.walletTransaction.findMany({
+            where: { walletId: wallet.id },
+            orderBy: { createdAt: 'desc' },
+            skip,
+            take: limit,
+            select: {
+                id: true,
+                amount: true,
+                type: true,
+                reference: true,
+                createdAt: true,
+            },
+        });
+
+        const lastPage = Math.max(1, Math.ceil(total / limit));
+
+        return {
+            id: wallet.id,
+            userId: wallet.userId,
+            balance: Number(wallet.balance),
+            totals,
+            transactions: {
+                data: rows.map((t) => ({
+                    id: t.id,
+                    amount: Number(t.amount),
+                    type: t.type,
+                    reference: t.reference,
+                    createdAt: t.createdAt,
+                })),
+                total,
+                page,
+                lastPage,
+                hasMore: page < lastPage,
+            },
+        };
     }
 
     async getAllTransactions(page: number, limit: number) {
