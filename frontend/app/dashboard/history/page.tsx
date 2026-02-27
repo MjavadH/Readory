@@ -9,7 +9,6 @@ import {
     History,
     Wallet,
     Download,
-    Loader2,
     AlertCircle,
     ArrowDownLeft,
     ArrowUpRight,
@@ -46,9 +45,66 @@ export default function HistoryPage() {
 
     if (loading && !data) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">Loading transaction history...</p>
+            <div className="space-y-10 pb-12 animate-pulse">
+                {/* Header */}
+                <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-muted rounded-2xl">
+                                <div className="w-8 h-8 bg-muted-foreground/20 rounded-md" />
+                            </div>
+                            <div className="h-10 w-64 bg-muted rounded-xl" />
+                        </div>
+                        <div className="h-5 w-96 bg-muted rounded-lg ml-16" />
+                    </div>
+
+                    <div className="h-12 w-40 bg-muted rounded-2xl" />
+                </section>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 space-y-6"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-muted rounded-xl">
+                                    <div className="w-5 h-5 bg-muted-foreground/20 rounded-md" />
+                                </div>
+                                <div className="h-4 w-40 bg-muted rounded-lg" />
+                            </div>
+
+                            <div className="h-10 w-32 bg-muted rounded-xl" />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Transaction Table */}
+                <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 overflow-x-auto space-y-8">
+                    <div className="h-8 w-56 bg-muted rounded-xl" />
+
+                    <div className="space-y-4">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center justify-between gap-4 py-4 border-b border-border last:border-0"
+                            >
+                                <div className="space-y-2">
+                                    <div className="h-4 w-40 bg-muted rounded-lg" />
+                                    <div className="h-3 w-24 bg-muted rounded-lg" />
+                                </div>
+
+                                <div className="h-4 w-20 bg-muted rounded-lg" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center">
+                    <div className="h-12 w-72 bg-muted rounded-2xl" />
+                </div>
             </div>
         );
     }
