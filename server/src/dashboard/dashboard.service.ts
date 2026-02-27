@@ -1,9 +1,259 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {AuthService} from "../auth/auth.service";
+import {WalletsService} from "../wallets/wallets.service";
+
+type OverviewOptions = {
+    txLimit: number;
+    libraryLimit: number;
+};
 
 @Injectable()
 export class DashboardService {
-    constructor(private prisma: PrismaService) {}
+    constructor(
+        private prisma: PrismaService,
+        private readonly authService: AuthService,
+        private readonly walletsService: WalletsService,
+    ) {}
+
+    private normalizePagination(page: number, limit: number, maxLimit: number) {
+        const pageSafe = this.clampInt(page, 1, 1_000_000, 1);
+        const limitSafe = this.clampInt(limit, 1, maxLimit, 20);
+        const skip = (pageSafe - 1) * limitSafe;
+        return { pageSafe, limitSafe, skip };
+    }
+
+    private clampInt(value: number, min: number, max: number, fallback: number) {
+        const n = Number(value);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.min(max, Math.max(min, Math.trunc(n)));
+    }
+
+    private async countDistinctBooks(userId: number) {
+        const rows = await this.prisma.$queryRaw<{ count: bigint }[]>
+            `SELECT COUNT(DISTINCT "bookId") AS count FROM "AccessRecord" WHERE "userId" = ${userId} AND "bookId" IS NOT NULL`;
+        return Number(rows[0]?.count ?? 0n);
+    }
+
+    async getUserDashboardOverview(userId: number, options: OverviewOptions) {
+        const txLimit = this.clampInt(options.txLimit, 1, 20, 6);
+        const libraryLimit = this.clampInt(options.libraryLimit, 1, 30, 8);
+
+        const [profile, continueReading, walletWithRecentTx, recentLibrary] =
+            await Promise.all([
+                this.authService.getProfile(userId),
+                this.getContinueReading(userId),
+                this.walletsService.getWallet(userId, { take: txLimit }),
+                this.getRecentLibrary(userId, libraryLimit),
+            ]);
+
+        return {
+            profile,
+            wallet: { balance: walletWithRecentTx.balance },
+            recentTransactions: walletWithRecentTx.transactions,
+            continueReading,
+            recentLibrary,
+        };
+    }
+
+    async getUserLibrary(userId: number, page = 1, limit = 24) {
+        const { pageSafe, limitSafe, skip } = this.normalizePagination(page, limit, 100);
+
+        // group purchases by book
+        const [totalBooks, groups] = await Promise.all([
+            this.countDistinctBooks(userId),
+            this.prisma.accessRecord.groupBy({
+                by: ['bookId'],
+                where: { userId },
+                _count: { _all: true },
+                _max: { purchasedAt: true },
+                orderBy: { _max: { purchasedAt: 'desc' } },
+                skip,
+                take: limitSafe,
+            }),
+        ]);
+
+        const bookIds = groups
+            .map((g) => g.bookId)
+            .filter((id): id is number => typeof id === 'number');
+
+        const [books, chapterCounts] = await Promise.all([
+            this.prisma.book.findMany({
+                where: { id: { in: bookIds } },
+                select: {
+                    id: true,
+                    title: true,
+                    author: true,
+                    coverImage: true,
+                    updatedAt: true,
+                    type: { select: { slug: true, } },
+                },
+            }),
+            this.prisma.chapter.groupBy({
+                by: ['bookId'],
+                where: { bookId: { in: bookIds } },
+                _count: { _all: true },
+            }),
+        ]);
+
+        const byBookId = new Map<number, (typeof books)[number]>();
+        books.forEach((b) => byBookId.set(b.id, b));
+
+        const chaptersByBookId = new Map<number, number>();
+        chapterCounts.forEach((row) => chaptersByBookId.set(row.bookId, row._count._all));
+
+        const items = groups
+            .map((g) => {
+                const bookId = g.bookId as number;
+                const book = byBookId.get(bookId);
+                if (!book) return null;
+
+                const purchasedChapters = g._count._all;
+                const totalChapters = chaptersByBookId.get(bookId) ?? 0;
+                const purchasedPercent =
+                    totalChapters <= 0 ? 0 : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+
+                return {
+                    book: {
+                        id: book.id,
+                        title: book.title,
+                        author: book.author,
+                        coverImage: book.coverImage,
+                        updatedAt: book.updatedAt,
+                        type: book.type,
+                    },
+                    purchasedChapters,
+                    totalChapters,
+                    purchasedPercent,
+                    lastPurchasedAt: g._max.purchasedAt,
+                };
+            })
+            .filter(Boolean);
+
+        return {
+            data: items,
+            total: totalBooks,
+            page: pageSafe,
+            lastPage: Math.max(1, Math.ceil(totalBooks / limitSafe)),
+        };
+    }
+
+    private async getRecentLibrary(userId: number, take: number) {
+        const groups = await this.prisma.accessRecord.groupBy({
+            by: ['bookId'],
+            where: { userId },
+            _count: { _all: true },
+            _max: { purchasedAt: true },
+            orderBy: { _max: { purchasedAt: 'desc' } },
+            take,
+        });
+
+        const bookIds = groups
+            .map((g) => g.bookId)
+            .filter((id): id is number => typeof id === 'number');
+
+        const [books, chapterCounts] = await Promise.all([
+            this.prisma.book.findMany({
+                where: { id: { in: bookIds } },
+                select: {
+                    id: true,
+                    title: true,
+                    author: true,
+                    coverImage: true,
+                    updatedAt: true,
+                    type: { select: { slug: true, } },
+                },
+            }),
+            this.prisma.chapter.groupBy({
+                by: ['bookId'],
+                where: { bookId: { in: bookIds } },
+                _count: { _all: true },
+            }),
+        ]);
+
+        const byBookId = new Map<number, (typeof books)[number]>();
+        books.forEach((b) => byBookId.set(b.id, b));
+
+        const chaptersByBookId = new Map<number, number>();
+        chapterCounts.forEach((row) => chaptersByBookId.set(row.bookId, row._count._all));
+
+        const items = groups
+            .map((g) => {
+                const bookId = g.bookId as number;
+                const book = byBookId.get(bookId);
+                if (!book) return null;
+
+                const purchasedChapters = g._count._all;
+                const totalChapters = chaptersByBookId.get(bookId) ?? 0;
+                const purchasedPercent =
+                    totalChapters <= 0 ? 0 : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+
+                return {
+                    book: {
+                        id: book.id,
+                        title: book.title,
+                        author: book.author,
+                        coverImage: book.coverImage,
+                        updatedAt: book.updatedAt,
+                        type: book.type,
+                    },
+                    purchasedChapters,
+                    totalChapters,
+                    purchasedPercent,
+                    lastPurchasedAt: g._max.purchasedAt,
+                };
+            })
+            .filter(Boolean);
+
+        return {
+            data: items,
+        };
+    }
+
+    private async getContinueReading(userId: number) {
+        const row = await this.prisma.readingProgress.findFirst({
+            where: { userId, percent: { lt: 100 } },
+            orderBy: { updatedAt: 'desc' },
+            select: {
+                lastPage: true,
+                percent: true,
+                updatedAt: true,
+                chapterId: true,
+                bookId: true,
+                book: {
+                    select: {
+                        id: true,
+                        type: {select: {slug: true}},
+                        title: true,
+                        author: true,
+                    },
+                },
+                chapter: {
+                    select: {
+                        title: true,
+                        index: true,
+                        pageCount: true,
+                    },
+                },
+            },
+        });
+
+        if (!row) return null;
+
+        return {
+            book: row.book,
+            chapter: {
+                title: row.chapter.title,
+                index: row.chapter.index,
+                pageCount: row.chapter.pageCount,
+            },
+            progress: {
+                lastPage: row.lastPage,
+                percent: row.percent,
+            },
+            lastReadAt: row.updatedAt,
+        };
+    }
 
     async getAdminDashboardStats(permissions: string[], userId: number) {
         const isSuperAdmin = userId === 1;
