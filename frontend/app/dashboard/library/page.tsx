@@ -5,13 +5,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { LibraryResponse } from "@/lib/types";
 import { LibraryCard } from "@/components/dashboard/LibraryCard";
-import {
-    Library,
-    Search,
-    Filter,
-    Loader2,
-    AlertCircle
-} from "lucide-react";
+import {Library, Search, AlertCircle} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 
@@ -43,9 +37,46 @@ export default function LibraryPage() {
 
     if (loading && !data) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-muted-foreground font-medium animate-pulse">Loading your library...</p>
+            <div className="space-y-10 pb-12 animate-pulse">
+                {/* Header */}
+                <section className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-muted rounded-2xl">
+                                <div className="w-8 h-8 bg-muted-foreground/20 rounded-md" />
+                            </div>
+                            <div className="h-10 w-56 bg-muted rounded-xl" />
+                        </div>
+                        <div className="h-5 w-80 bg-muted rounded-lg ml-16" />
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <div className="relative min-w-[300px]">
+                            <div className="h-12 w-full bg-muted rounded-2xl" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="min-h-[420px] bg-muted rounded-2xl p-4 space-y-4"
+                        >
+                            <div className="aspect-3/4 bg-muted-foreground/20 rounded-xl" />
+                            <div className="space-y-2">
+                                <div className="h-5 bg-muted-foreground/20 rounded-lg w-3/4" />
+                                <div className="h-4 bg-muted-foreground/20 rounded-lg w-1/2" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Pagination */}
+                <div className="flex justify-center">
+                    <div className="h-12 w-72 bg-muted rounded-2xl" />
+                </div>
             </div>
         );
     }
@@ -96,9 +127,6 @@ export default function LibraryPage() {
                             className="pl-12 pr-4 py-3 bg-muted/50 border border-border rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium"
                         />
                     </div>
-                    <button className="p-3 bg-muted/50 hover:bg-muted-foreground/10 border border-border rounded-2xl transition-all group">
-                        <Filter className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </button>
                 </div>
             </section>
 
