@@ -32,6 +32,83 @@ export interface BookCardData {
     updatedAt?: string;
 }
 
+
+export interface UserProfile {
+    id: number;
+    username: string;
+    email: string;
+    avatar?: string;
+}
+
+export interface LibraryItem {
+    book: BookCardData;
+    purchasedChapters: number;
+    totalChapters: number;
+    purchasedPercent: number;
+    lastPurchasedAt: string;
+}
+
+export interface Transaction {
+    id: number;
+    amount: number;
+    type: 'CREDIT' | 'DEBIT';
+    reference?: string;
+    createdAt: string;
+}
+
+export interface ReadingProgress {
+    book: {
+        id: number;
+        title: string;
+        author: string;
+        coverImage?: string;
+        type: { slug: string };
+    };
+    chapter: {
+        title: string;
+        index: number;
+        pageCount: number;
+    };
+    progress: {
+        lastPage: number;
+        percent: number;
+    };
+    lastReadAt: string;
+}
+
+export interface DashboardOverview {
+    profile: UserProfile;
+    wallet: {
+        balance: number;
+    };
+    recentTransactions: {
+        data: Transaction[];
+        total: number;
+        hasMore: boolean;
+    };
+    continueReading: ReadingProgress | null;
+    recentLibrary: {
+        data: LibraryItem[];
+    };
+}
+
+export interface LibraryResponse {
+    data: LibraryItem[];
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
+export interface HistoryResponse {
+    balance: number;
+    data: Transaction[];
+    total: number;
+    totals: { deposits: number; withdrawals: number };
+    page: number;
+    lastPage: number;
+    hasMore: boolean;
+}
+
 /**
  * Returns a human-readable label for a BookType.
  * e.g. LIGHT_NOVEL -> "Light Novel"
