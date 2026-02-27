@@ -15,23 +15,31 @@ interface UseBookBrowserOptions<T> {
     fetcher: (params: string, abortSignal: AbortSignal) => Promise<T>;
     baseUrl: string; // The base URL for router.push (e.g. "/books" or "/manga")
     defaultSort?: SortOption;
+    initialData?: T;
 }
 
-export function useBookBrowser<T extends { items: any[]; nextCursor?: string; hasMore?: boolean }>({
-                                                                                                       fetcher,
-                                                                                                       baseUrl,
-                                                                                                       defaultSort = "recently_updated",
-                                                                                                   }: UseBookBrowserOptions<T>) {
+export function useBookBrowser<T extends { items: any[]; nextCursor?: string; hasMore?: boolean }>(
+    {
+        fetcher,
+        baseUrl,
+        defaultSort = "recently_updated",
+        initialData,
+    }: UseBookBrowserOptions<T>) {
+
     const router = useRouter();
     const searchParams = useSearchParams();
 
     // Data State
-    const [data, setData] = useState<T | null>(null); // Store full response to access extra metadata if needed
-    const [items, setItems] = useState<T["items"]>([]);
+    const [data, setData] = useState<T | null>(initialData ?? null); // Store full response to access extra metadata if needed
+    const [items, setItems] = useState<T["items"]>(initialData?.items ?? []);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [nextCursor, setNextCursor] = useState<string | undefined>();
-    const [hasMore, setHasMore] = useState(false);
+    const [nextCursor, setNextCursor] = useState<string | undefined>(
+        initialData?.nextCursor
+    );
+    const [hasMore, setHasMore] = useState(
+        initialData?.hasMore ?? !!initialData?.nextCursor
+    );
     const [error, setError] = useState(false)
     const [isNotFound, setIsNotFound] = useState(false);
 
@@ -49,6 +57,7 @@ export function useBookBrowser<T extends { items: any[]; nextCursor?: string; ha
     const [searchInput, setSearchInput] = useState("");
 
     const fetcherRef = useRef(fetcher);
+    const didInitRef = useRef(false);
 
     useEffect(() => {
         fetcherRef.current = fetcher;
@@ -148,10 +157,15 @@ export function useBookBrowser<T extends { items: any[]; nextCursor?: string; ha
 
     // Trigger fetch on filter change
     useEffect(() => {
+        if (!didInitRef.current) {
+            didInitRef.current = true;
+            if (initialData) return;
+        }
+
         setNextCursor(undefined);
         setHasMore(false);
         void fetchItems(undefined);
-    }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchItems]);
+    }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchItems, initialData]);
 
     // Infinite Scroll Observer
     useEffect(() => {
