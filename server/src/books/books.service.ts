@@ -825,7 +825,7 @@ export class BooksService {
 
     async rateBook(userId: number, bookId: number, rating: number) {
         if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-            throw new NotFoundException('invalid rating');
+            throw new BadRequestException('invalid rating');
         }
 
         const book = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true, updatedAt: true } });

@@ -81,6 +81,7 @@ describe('ReaderService', () => {
       lastPage: 10,
       percent: 100,
     });
+    prismaMock.accessRecord.findFirst.mockResolvedValue({ id: 99 });
 
     const saved = await service.saveProgress(2, 1, 100);
     expect(prismaMock.readingProgress.upsert).toHaveBeenCalled();

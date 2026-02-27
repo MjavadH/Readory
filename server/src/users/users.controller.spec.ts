@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from './users.controller';
 
 describe('UsersController', () => {
-  let controller: UsersController;
+  let target: UsersController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    controller = module.get<UsersController>(UsersController);
+    target = module.get<UsersController>(UsersController);
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(target).toBeDefined();
   });
 });

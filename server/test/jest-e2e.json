@@ -1,9 +1,24 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
+  "setupFiles": [
+    "<rootDir>/utils/load-test-env.ts"
+  ],
+  "setupFilesAfterEnv": [
+    "<rootDir>/setup-e2e.ts"
+  ],
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@readory/shared$": "<rootDir>/mocks/readory-shared.ts",
+    "^file-type$": "<rootDir>/mocks/file-type.ts",
+    "^uuid$": "<rootDir>/mocks/uuid.ts"
   }
 }

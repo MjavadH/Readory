@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardController } from './dashboard.controller';
 
 describe('DashboardController', () => {
-  let controller: DashboardController;
+  let target: DashboardController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DashboardController],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    controller = module.get<DashboardController>(DashboardController);
+    target = module.get<DashboardController>(DashboardController);
   });
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
+    expect(target).toBeDefined();
   });
 });

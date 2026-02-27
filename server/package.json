@@ -99,6 +99,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@readory/shared$": "<rootDir>/../../shared/icon-keys.ts"
+    }
   }
 }

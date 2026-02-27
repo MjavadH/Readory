@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MediaService } from './media.service';
 
 describe('MediaService', () => {
-  let service: MediaService;
+  let target: MediaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [MediaService],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<MediaService>(MediaService);
+    target = module.get<MediaService>(MediaService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(target).toBeDefined();
   });
 });

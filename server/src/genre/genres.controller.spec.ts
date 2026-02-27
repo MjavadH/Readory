@@ -1,4 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
+jest.mock('@readory/shared', () => ({
+  ICON_KEYS: ['book-open'],
+}), { virtual: true });
+
 import { GenresController } from './genres.controller';
 
 describe('GenresController', () => {
@@ -7,7 +12,9 @@ describe('GenresController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GenresController],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
     controller = module.get<GenresController>(GenresController);
   });

@@ -2,17 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
-  let service: DashboardService;
+  let target: DashboardService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [DashboardService],
-    }).compile();
+    })
+      .useMocker(() => ({}))
+      .compile();
 
-    service = module.get<DashboardService>(DashboardService);
+    target = module.get<DashboardService>(DashboardService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(target).toBeDefined();
   });
 });
