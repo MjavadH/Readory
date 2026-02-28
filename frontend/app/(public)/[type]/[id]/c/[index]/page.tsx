@@ -568,6 +568,21 @@ export default function ChapterPage() {
             if (readMode === "scroll") {
                 const target = scrollCanvasRefs.current[nextPage - 1];
                 target?.scrollIntoView({ behavior: "smooth", block: "start" });
+            } else {
+                const container = readerRootRef.current;
+                if (!container) return;
+
+                if (document.fullscreenElement === container) {
+                    container.scrollTo({
+                        top: 0,
+                        behavior: "smooth",
+                    });
+                } else {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: "smooth",
+                    });
+                }
             }
         },
         [manifest, session, chapters, currentChapter.index, handleChapterChange, handlePurchase, readMode]
@@ -633,7 +648,7 @@ export default function ChapterPage() {
     }
 
     return (
-        <div ref={readerRootRef} className="min-h-screen bg-reader-bg">
+        <div ref={readerRootRef} className="min-h-screen bg-reader-bg overflow-y-auto">
             {/* Main content */}
             <main
                 onContextMenu={handleContextMenu}
