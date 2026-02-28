@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react"
 import { usePermission } from "@/hooks/use-permission"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
 import {
   Home,
   BookOpen,
@@ -18,9 +17,6 @@ import {
   ChevronLeft,
   Menu,
   X,
-  Sun,
-  Moon,
-  Monitor,
   Crown,
   SquareLibrary,
 } from "lucide-react"
@@ -42,6 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {BrandLogo} from "@/components/brand-logo";
+import {ThemeSwitcher} from "@/components/theme-toggle";
 
 interface CurrentUser {
   userId: number
@@ -52,11 +49,9 @@ interface CurrentUser {
 export function AdminSidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { theme, setTheme } = useTheme()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
-  const [mounted, setMounted] = useState(false)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
 
   const { has, loading, isSuperAdmin } = usePermission()
@@ -73,10 +68,6 @@ export function AdminSidebar() {
       }
     }
     void fetchCurrentUser()
-  }, [])
-
-  useEffect(() => {
-    setMounted(true)
   }, [])
 
   const sidebarData = [
@@ -242,41 +233,7 @@ export function AdminSidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-sidebar-border/50 space-y-2 bg-linear-to-t from-sidebar-accent/20 to-transparent">
-            {mounted && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        size={isCollapsed ? "icon" : "default"}
-                        className={cn("w-full hover:bg-sidebar-accent", isCollapsed ? "justify-center" : "justify-start")}
-                        title={isCollapsed ? "Change theme" : undefined}
-                    >
-                      {theme === "light" ? (
-                          <Sun className="h-4 w-4 shrink-0" />
-                      ) : theme === "dark" ? (
-                          <Moon className="h-4 w-4 shrink-0" />
-                      ) : (
-                          <Monitor className="h-4 w-4 shrink-0" />
-                      )}
-                      {!isCollapsed && <span className="ml-2">Theme</span>}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="top" align="end" className="w-40">
-                    <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer">
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer">
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer">
-                      <Monitor className="h-4 w-4 mr-2" />
-                      System
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-            )}
+            <ThemeSwitcher variant="sidebar" isCollapsed={isCollapsed} />
 
             {currentUser && (
                 <DropdownMenu>

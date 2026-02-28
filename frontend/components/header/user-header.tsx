@@ -4,15 +4,11 @@ import type React from "react"
 import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
 import {
   Search,
   User,
   LayoutDashboard,
   LogOut,
-  Sun,
-  Moon,
-  Monitor,
   ChevronRight,
   X,
 } from "lucide-react"
@@ -32,6 +28,7 @@ import {BookGenre} from "@/lib/types";
 import { WalletCard } from "@/components/header/wallet-card"
 import { TypeCarousel } from "@/components/header/type-carousel"
 import { GenreCarousel } from "@/components/header/genre-carousel"
+import { ThemeSwitcher } from "@/components/theme-toggle";
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName?: RoleName; walletBalance?: number }
@@ -41,75 +38,6 @@ function initialsFromUsername(username: string) {
   const safe = (username || "").trim()
   if (!safe) return "U"
   return safe.slice(0, 2).toUpperCase()
-}
-
-/* Theme Toggle (Desktop) */
-function ThemeToggleDesktop() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return <div className="h-9 w-9" />
-
-  return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label="Toggle theme">
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          <DropdownMenuItem onClick={() => setTheme("light")} className={cn(theme === "light" && "bg-accent")}>
-            <Sun className="mr-2 h-4 w-4" /> Light
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")} className={cn(theme === "dark" && "bg-accent")}>
-            <Moon className="mr-2 h-4 w-4" /> Dark
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("system")} className={cn(theme === "system" && "bg-accent")}>
-            <Monitor className="mr-2 h-4 w-4" /> System
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-  )
-}
-
-/* Theme Picker (Mobile) */
-function ThemePickerMobile() {
-  const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-  if (!mounted) return null
-
-  const options = [
-    { value: "light", icon: Sun, label: "Light" },
-    { value: "dark", icon: Moon, label: "Dark" },
-    { value: "system", icon: Monitor, label: "Auto" },
-  ] as const
-
-  return (
-      <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1">
-        {options.map((opt) => {
-          const Icon = opt.icon
-          const active = theme === opt.value
-          return (
-              <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTheme(opt.value)}
-                  className={cn(
-                      "flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200",
-                      active
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                  )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {opt.label}
-              </button>
-          )
-        })}
-      </div>
-  )
 }
 
 /* Desktop Mega-dropdown */
@@ -509,7 +437,7 @@ export function UserHeader() {
 
               {/* Desktop theme toggle */}
               <div className="hidden lg:block">
-                <ThemeToggleDesktop />
+                <ThemeSwitcher />
               </div>
 
               {/* Desktop User Menu */}
@@ -776,7 +704,7 @@ export function UserHeader() {
 
               {/* Theme */}
               <MobileSection title="Appearance">
-                <ThemePickerMobile />
+                <ThemeSwitcher variant="mobile" />
               </MobileSection>
             </div>
 

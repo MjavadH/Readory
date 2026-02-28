@@ -2,44 +2,17 @@
 "use client";
 
 import { Sidebar } from "./Sidebar";
-import {ReactNode, useEffect} from "react";
+import { ReactNode } from "react";
 import { Search, Menu } from "lucide-react";
 import { useState } from "react";
-import {apiClient} from "@/lib/api-client";
-import {UserProfile} from "@/lib/types";
+import { ThemeSwitcher } from "@/components/theme-toggle";
 
 interface DashboardLayoutProps {
     children: ReactNode;
 }
 
-function initialsFromUsername(username: string) {
-    const safe = (username || "").trim()
-    if (!safe) return "U"
-    return safe.slice(0, 2).toUpperCase()
-}
-
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [profile, setProfile] = useState<UserProfile | null>(null)
-    const [profileLoading, setProfileLoading] = useState(true)
-
-    useEffect(() => {
-        const ac = new AbortController()
-        const loadProfile = async () => {
-            setProfileLoading(true)
-            try {
-                const data = await apiClient.get<UserProfile>("/auth/profile", { signal: ac.signal })
-                if (!data.username) { setProfile(null); return }
-                setProfile(data)
-            } catch {
-                setProfile(null)
-            } finally {
-                setProfileLoading(false)
-            }
-        }
-        void loadProfile()
-        return () => ac.abort()
-    }, [])
 
     return (
         <div className="flex h-screen bg-background overflow-hidden">
@@ -70,20 +43,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex">
-                            {!profileLoading ? (
-                                <span className="text-sm font-semibold tracking-tight">
-                                    {profile?.username}
-                                </span>
-                            ) : (
-                                <div className="bg-muted h-5 rounded-xl w-32 animate-pulse" />
-                            )}
-                        </div>
-                        <div className="w-10 h-10 rounded-2xl bg-linear-to-tr from-primary to-primary-foreground/30 flex items-center justify-center border-2 border-background shadow-lg overflow-hidden ring-4 ring-primary/5">
-                            <p className="text-sm text-center text-muted">
-                                {initialsFromUsername(profile?.username || "")}
-                            </p>
-                        </div>
+                        <ThemeSwitcher />
                     </div>
                 </header>
 
