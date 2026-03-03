@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
@@ -24,9 +24,6 @@ import {
   Trash2,
   Loader2,
   Pencil,
-  X,
-  CheckCircle2,
-  AlertCircle,
 } from "lucide-react"
 import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
@@ -138,10 +135,6 @@ export default function AdminMedia() {
       clearTimeout(t)
     }
   }, [searchQuery, page, refreshNonce, toast, hasLoadedOnce])
-
-  const selectedSize = useMemo(() => {
-    return selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0)
-  }, [selectedFiles])
 
   const handleUpload = async () => {
     if (!selectedFiles.length) return
