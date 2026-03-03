@@ -9,14 +9,12 @@ import {
   Search,
   Sparkles,
   Star,
-  Tag,
   User,
   Lock,
   Check,
   ShoppingCart,
   Unlock,
   AlertCircle,
-  X,
   Send,
 } from "lucide-react";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
@@ -30,6 +28,7 @@ import { formatUpdateTime } from "@/lib/time";
 import {AppPagination} from "@/components/app-pagination";
 import type { IconKey } from "@readory/shared";
 import {AppIcon} from "@/components/AppIcon";
+import {useToast} from "@/providers/toast-provider";
 
 type BookDetails = {
   id: number;
@@ -143,44 +142,6 @@ function BrowseChaptersSkeleton() {
   );
 }
 
-function Toast({
-                 message,
-                 type,
-                 onClose,
-               }: {
-  message: string;
-  type: "error" | "success";
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 5000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  return (
-      <div
-          className={`fixed right-4 top-4 z-50 flex max-w-md animate-in slide-in-from-top-5 items-start gap-3 rounded-xl border p-4 shadow-lg ${
-              type === "error"
-                  ? "border-red-200 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100"
-                  : "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-100"
-          }`}
-      >
-        {type === "error" ? (
-            <AlertCircle className="h-5 w-5 shrink-0" />
-        ) : (
-            <Check className="h-5 w-5 shrink-0" />
-        )}
-        <p className="flex-1 text-sm font-medium">{message}</p>
-        <button
-            onClick={onClose}
-            className="shrink-0 rounded-lg p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-  );
-}
-
 function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
   chapter: ActionChapter;
   onConfirm: () => void;
@@ -237,6 +198,7 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
 }
 
 export default function BookDetailsPage() {
+  const toast = useToast();
   const params = useParams<{ type: string; id: string }>();
   const router = useRouter();
 
@@ -248,10 +210,6 @@ export default function BookDetailsPage() {
   const [viewer, setViewer] = useState<ViewerState | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "error" | "success";
-  } | null>(null);
 
   const [selectedRating, setSelectedRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -277,7 +235,7 @@ export default function BookDetailsPage() {
 
   const loadBase = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      setToast({ message: "Invalid book link.", type: "error" });
+      toast.error("Invalid book link.")
       setIsLoading(false);
       return;
     }
@@ -291,7 +249,7 @@ export default function BookDetailsPage() {
       ]);
 
       if (!bookData || bookData.type.slug !== typeSlug) {
-        setToast({ message: "Book not found for this category.", type: "error" });
+        toast.error("Book not found for this category.")
         return;
       }
 
@@ -315,10 +273,7 @@ export default function BookDetailsPage() {
       );
       setRelatedBooks(relatedResponse.items ?? []);
     } catch (loadError) {
-      setToast({
-        message: getApiErrorMessage(loadError, "Failed to load book details."),
-        type: "error",
-      });
+      toast.error(getApiErrorMessage(loadError, "Failed to load book details."))
     } finally {
       setIsLoading(false);
     }
@@ -336,10 +291,7 @@ export default function BookDetailsPage() {
       setChaptersTotal(data.pagination.total);
       setChaptersTotalPages(data.pagination.totalPages);
     } catch (chapterError) {
-      setToast({
-        message: getApiErrorMessage(chapterError, "Failed to load chapters."),
-        type: "error",
-      });
+      toast.error(getApiErrorMessage(chapterError, "Failed to load chapters."))
     } finally {
       setChaptersLoading(false);
     }
@@ -359,10 +311,7 @@ export default function BookDetailsPage() {
 
   const handleSubmitRating = async () => {
     if (!book || !isAuthenticated || selectedRating === 0) {
-      setToast({
-        message: "Please select a rating before submitting.",
-        type: "error",
-      });
+      toast.error("Please select a rating before submitting.")
       return;
     }
 
@@ -383,12 +332,9 @@ export default function BookDetailsPage() {
               }
               : prev
       );
-      setToast({ message: "Rating saved successfully!", type: "success" });
+      toast.success("Rating saved successfully!")
     } catch (rateError) {
-      setToast({
-        message: getApiErrorMessage(rateError, "Unable to save your rating."),
-        type: "error",
-      });
+      toast.error(getApiErrorMessage(rateError, "Unable to save your rating."))
     } finally {
       setIsRatingPending(false);
     }
@@ -397,10 +343,7 @@ export default function BookDetailsPage() {
   const onChapterSelect = (chapter: ChapterItem) => {
     if (!book) return;
     if (!isAuthenticated) {
-      setToast({
-        message: "Only registered users can view and access chapters.",
-        type: "error",
-      });
+      toast.error("Only registered users can view and access chapters.")
       return;
     }
 
@@ -435,25 +378,14 @@ export default function BookDetailsPage() {
         next.add(actionChapter.id);
         return { ...prev, purchasedChapterIds: [...next] };
       });
-
-      setToast({
-        message:
-            actionChapter.mode === "access"
-                ? "Chapter is now accessible!"
-                : "Chapter purchased successfully!",
-        type: "success",
-      });
+      toast.success(actionChapter.mode === "access"
+          ? "Chapter is now accessible!"
+          : "Chapter purchased successfully!",)
 
       setActionChapter(null);
       router.push(chapterUrl);
     } catch (purchaseError) {
-      setToast({
-        message: getApiErrorMessage(
-            purchaseError,
-            "Purchase failed. Please check your balance and try again."
-        ),
-        type: "error",
-      });
+      toast.error(getApiErrorMessage(purchaseError, "Purchase failed. Please check your balance and try again."))
     } finally {
       setActionPending(false);
     }
@@ -488,14 +420,6 @@ export default function BookDetailsPage() {
 
   return (
       <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        {toast && (
-            <Toast
-                message={toast.message}
-                type={toast.type}
-                onClose={() => setToast(null)}
-            />
-        )}
-
         <Card className="overflow-hidden border-0 bg-linear-to-br from-slate-50 to-slate-100/50 shadow-xl transition-all duration-300 hover:shadow-2xl dark:from-slate-900 dark:to-slate-800/50">
           <CardContent className="p-6 sm:p-8">
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
