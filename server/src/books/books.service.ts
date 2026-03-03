@@ -654,7 +654,7 @@ export class BooksService {
 
     // Get book
     async findById(id: number) {
-        return this.prisma.book.findUnique({
+        const book = await this.prisma.book.findUnique({
             where: { id },
             select: {
                 id: true,
@@ -666,15 +666,22 @@ export class BooksService {
                 ratingAvg: true,
                 ratingCount: true,
                 updatedAt: true,
-                genres: { include: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
+                genres: { select: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
                 type: { select: { name: true, slug: true, iconKey: true } },
             }
         });
+
+        if (!book) throw new NotFoundException('book not found');
+
+        return {
+            ...book,
+            genres: book.genres.map((g) => g.genre)
+        };
     }
 
     // Get full book details
     async fullBookDetails(id: number) {
-        return this.prisma.book.findUnique({
+        const book = await this.prisma.book.findUnique({
             where: { id },
             select: {
                 id: true,
@@ -688,10 +695,17 @@ export class BooksService {
                 ratingCount: true,
                 updatedAt: true,
                 createdAt: true,
-                genres: { include: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
+                genres: { select: { genre: { select: { id: true, name: true, slug: true, iconKey: true } } } },
                 type: { select: { id: true, name: true, slug: true, iconKey: true } },
             }
         });
+
+        if (!book) throw new NotFoundException('book not found');
+
+        return {
+            ...book,
+            genres: book.genres.map((g) => g.genre)
+        };
     }
 
     async getViewerState(bookId: number, userId: number) {

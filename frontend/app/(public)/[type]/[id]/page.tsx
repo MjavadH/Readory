@@ -41,7 +41,7 @@ type BookDetails = {
   ratingCount: number;
   updatedAt: string;
   type: { name: string; slug: string; iconKey: IconKey };
-  genres: Array<{ genre: { id: number; name: string; slug: string; iconKey: IconKey } }>;
+  genres: Array<{ id: number; name: string; slug: string; iconKey: IconKey }>;
 };
 
 type ChapterItem = {
@@ -460,7 +460,7 @@ export default function BookDetailsPage() {
                     <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
                     {book.type.name}
                   </Badge>
-                  {book.genres.map(({ genre }) => (
+                  {book.genres.map((genre) => (
                       <Badge
                           key={genre.id}
                           variant="outline"
