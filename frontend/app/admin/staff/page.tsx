@@ -36,6 +36,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
+import { motion } from "framer-motion";
 
 type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF"
 
@@ -230,12 +231,8 @@ export default function AdminStaff() {
                 <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div className="space-y-1 p-3 md:p-0">
-                            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                                Staff Management
-                            </h1>
-                            <p className="text-sm sm:text-base text-muted-foreground">
-                                Manage admin staff and their specific permissions
-                            </p>
+                            <div className="h-8 w-72 rounded-lg bg-muted animate-pulse" />
+                            <div className="h-4 w-48 rounded-md bg-muted animate-pulse" />
                         </div>
                         <Button disabled={true} className="gap-2 w-full sm:w-auto">
                             <UserPlus className="size-4" />
@@ -254,14 +251,20 @@ export default function AdminStaff() {
         <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
             <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="space-y-1 p-3 md:p-0">
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    <motion.div
+                        className="space-y-1 p-3 md:p-0"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.55 }}
+                    >
+                        <h1
+                            className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                             Staff Management
                         </h1>
                         <p className="text-sm sm:text-base text-muted-foreground">
                             Manage admin staff and their specific permissions
                         </p>
-                    </div>
+                    </motion.div>
                     <Button onClick={() => setIsAddStaffOpen(true)} className="gap-2 w-full sm:w-auto">
                         <UserPlus className="size-4" />
                         Add Staff
