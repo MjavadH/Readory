@@ -5,17 +5,61 @@ import { BookOpen, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatUpdateTime } from "@/lib/time";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Props {
     progress: ReadingProgress;
 }
 
+export function ContinueReadingCardSkeleton() {
+    return (
+        <div className="bg-card rounded-3xl p-6 border border-border shadow-sm relative overflow-hidden">
+            <div className="flex flex-col md:flex-row gap-6 relative z-10">
+                {/* Book Cover */}
+                <div className="relative aspect-2/3 w-32 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50">
+                    <div className="absolute inset-0 bg-linear-to-br from-muted-foreground/10 to-muted-foreground/20 animate-pulse" />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 flex flex-col justify-between py-1">
+                    <div className="space-y-4">
+                        <div className="h-8 w-3/4 rounded-xl bg-muted-foreground/20 animate-pulse" />
+                        <div className="h-5 w-1/2 rounded-lg bg-muted-foreground/20 animate-pulse" />
+
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="h-9 w-48 rounded-xl bg-muted-foreground/20 animate-pulse" />
+                            <div className="h-5 w-24 rounded-lg bg-muted-foreground/20 animate-pulse" />
+                        </div>
+                    </div>
+
+                    <div className="mt-6 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="h-4 w-24 rounded bg-muted-foreground/20 animate-pulse" />
+                            <div className="h-4 w-16 rounded bg-muted-foreground/20 animate-pulse" />
+                        </div>
+
+                        <div className="h-3 bg-muted rounded-full overflow-hidden border border-border/50 ring-2 ring-primary/5">
+                            <div className="h-full bg-linear-to-r from-primary to-primary-foreground/30 animate-pulse" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Button */}
+                <div className="flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-muted-foreground/20 animate-pulse" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function ContinueReadingCard({ progress }: Props) {
-    const url = `${progress.book.type.slug}/${progress.book.id}/c/${progress.chapter.index}`
+    const url = `/${progress.book.type.slug}/${progress.book.id}/c/${progress.chapter.index}`
     return (
         <motion.div
             initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
             className="bg-card rounded-3xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
         >
             <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -23,16 +67,24 @@ export function ContinueReadingCard({ progress }: Props) {
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 relative z-10">
+                <div className="relative aspect-2/3 w-32 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50">
+                    <Image
+                        src={
+                            progress.book.coverImage
+                                ? `/media/${progress.book.coverImage}/thumbnail`
+                                : "/placeholder.svg"
+                        }
+                        alt={progress.book.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                </div>
                 <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
-                        <div className="flex items-center gap-2 text-primary font-bold text-sm mb-1 uppercase tracking-wider">
-                            <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                            Continue Reading
-                        </div>
                         <h3 className="text-2xl font-bold tracking-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">{progress.book.title}</h3>
                         <p className="text-muted-foreground font-medium mb-3">{progress.book.author}</p>
 
-                        <div className="flex items-center gap-4 text-sm font-medium">
+                        <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                             <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-xl border border-border/50">
                                 <span className="text-foreground">Chapter {progress.chapter.index}</span>
                                 <span className="text-muted-foreground/50 mx-1">•</span>

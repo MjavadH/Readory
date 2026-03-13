@@ -226,6 +226,7 @@ export class DashboardService {
                         type: {select: {slug: true}},
                         title: true,
                         author: true,
+                        coverImage: true,
                     },
                 },
                 chapter: {
