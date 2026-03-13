@@ -67,6 +67,17 @@ export class DashboardController {
         return this.dashboardService.getUserLibrary(userId, Number(page), Number(limit));
     }
 
+    // Full reading progress
+    @Get('progress')
+    async getReadingProgress(
+        @Request() req: any,
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '24',
+    ) {
+        const userId = req.user.id || req.user.userId;
+        return this.dashboardService.getReadingProgress(userId, Number(page), Number(limit));
+    }
+
     @Get('admin')
     @UseGuards(RolesGuard)
     @Roles(RoleName.ADMIN)

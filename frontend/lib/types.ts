@@ -61,7 +61,7 @@ export interface ReadingProgress {
         id: number;
         title: string;
         author: string;
-        coverImage?: string;
+        coverImage: string;
         type: { slug: string };
     };
     chapter: {
@@ -94,6 +94,13 @@ export interface DashboardOverview {
 
 export interface LibraryResponse {
     data: LibraryItem[];
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
+export interface ReadingProgressResponse {
+    data: ReadingProgress[];
     total: number;
     page: number;
     lastPage: number;

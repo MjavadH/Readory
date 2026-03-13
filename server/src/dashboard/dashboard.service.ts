@@ -256,6 +256,61 @@ export class DashboardService {
         };
     }
 
+    async getReadingProgress(userId: number, page = 1, limit = 24) {
+        const { pageSafe, limitSafe, skip } = this.normalizePagination(page, limit, 100);
+
+        const total = await this.prisma.readingProgress.count({
+            where: { userId, percent: { lt: 100 } }
+        });
+
+        const progressEntries = await this.prisma.readingProgress.findMany({
+            where: {
+                userId,
+                percent: { lt: 100 }
+            },
+            include: {
+                book: {
+                    select: {
+                        id: true,
+                        title: true,
+                        author: true,
+                        coverImage: true,
+                        type: { select: { slug: true } }
+                    }
+                },
+                chapter: {
+                    select: {
+                        title: true,
+                        index: true,
+                        pageCount: true
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+            skip,
+            take: limitSafe,
+        });
+
+        return {
+            data: progressEntries.map(p => ({
+                book: p.book,
+                chapter: {
+                    title: p.chapter.title,
+                    index: p.chapter.index,
+                    pageCount: p.chapter.pageCount
+                },
+                progress: {
+                    lastPage: p.lastPage,
+                    percent: p.percent
+                },
+                lastReadAt: p.updatedAt,
+            })),
+            total,
+            page: pageSafe,
+            lastPage: Math.max(1, Math.ceil(total / limitSafe)),
+        };
+    }
+
     async getAdminDashboardStats(permissions: string[], userId: number) {
         const isSuperAdmin = userId === 1;
 

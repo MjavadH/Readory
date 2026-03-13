@@ -9,6 +9,7 @@ import {
     History,
     Settings,
     LogOut,
+    BookOpenText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -19,6 +20,7 @@ import React from "react";
 const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Library", href: "/dashboard/library", icon: Library },
+    { name: "Reading Progress", href: "/dashboard/reading_progress", icon: BookOpenText },
     { name: "History", href: "/dashboard/history", icon: History },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
