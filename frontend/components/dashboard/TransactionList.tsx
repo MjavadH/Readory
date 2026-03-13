@@ -12,6 +12,35 @@ interface Props {
     className?: string;
 }
 
+export function TransactionListSkeleton({ limit }: { limit?: number }) {
+    const skeletonItems = Array.from({ length: limit || 5 }).map((_, idx) => idx);
+
+    return (
+        <div className="space-y-4">
+            {skeletonItems.map((idx) => (
+                <div
+                    key={idx}
+                    className="flex flex-wrap items-center gap-3 justify-between p-4 bg-muted border border-border/50 rounded-2xl"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 p-3 rounded-2xl bg-muted-foreground/20 animate-pulse" />
+
+                        <div className="flex flex-col gap-2">
+                            <div className="h-5 w-24 rounded-lg bg-muted-foreground/20 animate-pulse" />
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="h-5 w-20 rounded-lg bg-muted-foreground/20 animate-pulse" />
+                                <div className="h-5 w-16 rounded-lg bg-muted-foreground/20 animate-pulse" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="h-9 w-24 rounded-2xl bg-muted-foreground/20 animate-pulse" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export function TransactionList({ transactions, limit, className }: Props) {
     const displayTx = limit ? transactions.slice(0, limit) : transactions;
 
