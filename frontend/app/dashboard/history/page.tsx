@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { HistoryResponse } from "@/lib/types";
-import { TransactionList } from "@/components/dashboard/TransactionList";
+import {TransactionList, TransactionListSkeleton} from "@/components/dashboard/TransactionList";
 import {
     History,
     Wallet,
@@ -35,7 +35,7 @@ export default function HistoryPage() {
                 });
                 setData(res);
             } catch (err: any) {
-                setError(err.message || "Failed to load history");
+                setError("Failed to load history");
             } finally {
                 setLoading(false);
             }
@@ -83,27 +83,7 @@ export default function HistoryPage() {
                 {/* Transaction Table */}
                 <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 overflow-x-auto space-y-8">
                     <div className="h-8 w-56 bg-muted rounded-xl" />
-
-                    <div className="space-y-4">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center justify-between gap-4 py-4 border-b border-border last:border-0"
-                            >
-                                <div className="space-y-2">
-                                    <div className="h-4 w-40 bg-muted rounded-lg" />
-                                    <div className="h-3 w-24 bg-muted rounded-lg" />
-                                </div>
-
-                                <div className="h-4 w-20 bg-muted rounded-lg" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Pagination */}
-                <div className="flex justify-center">
-                    <div className="h-12 w-72 bg-muted rounded-2xl" />
+                    <TransactionListSkeleton limit={6} />
                 </div>
             </div>
         );

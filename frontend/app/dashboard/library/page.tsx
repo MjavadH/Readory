@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { LibraryResponse } from "@/lib/types";
-import { LibraryCard } from "@/components/dashboard/LibraryCard";
+import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCard";
 import {Library, Search, AlertCircle} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
@@ -27,7 +27,7 @@ export default function LibraryPage() {
                 });
                 setData(res);
             } catch (err: any) {
-                setError(err.message || "Failed to load library");
+                setError("Failed to load library");
             } finally {
                 setLoading(false);
             }
@@ -51,7 +51,7 @@ export default function LibraryPage() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                        <div className="relative min-w-[300px]">
+                        <div className="relative min-w-75">
                             <div className="h-12 w-full bg-muted rounded-2xl" />
                         </div>
                     </div>
@@ -59,23 +59,7 @@ export default function LibraryPage() {
 
                 {/* Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="min-h-[420px] bg-muted rounded-2xl p-4 space-y-4"
-                        >
-                            <div className="aspect-3/4 bg-muted-foreground/20 rounded-xl" />
-                            <div className="space-y-2">
-                                <div className="h-5 bg-muted-foreground/20 rounded-lg w-3/4" />
-                                <div className="h-4 bg-muted-foreground/20 rounded-lg w-1/2" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Pagination */}
-                <div className="flex justify-center">
-                    <div className="h-12 w-72 bg-muted rounded-2xl" />
+                    <LibraryCardSkeleton limit={12} />
                 </div>
             </div>
         );
@@ -117,7 +101,7 @@ export default function LibraryPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="relative group min-w-[300px]">
+                    <div className="relative group min-w-75">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
@@ -136,7 +120,7 @@ export default function LibraryPage() {
                         <LibraryCard
                             key={item.book.id}
                             item={item}
-                            className="min-h-[420px]"
+                            className="min-h-105"
                         />
                     ))}
                 </AnimatePresence>
