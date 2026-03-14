@@ -223,7 +223,7 @@ export class DashboardService {
                 book: {
                     select: {
                         id: true,
-                        type: {select: {slug: true}},
+                        type: {select: { slug: true, iconKey: true}},
                         title: true,
                         author: true,
                         coverImage: true,
@@ -275,7 +275,7 @@ export class DashboardService {
                         title: true,
                         author: true,
                         coverImage: true,
-                        type: { select: { slug: true } }
+                        type: { select: { slug: true, iconKey: true } }
                     }
                 },
                 chapter: {

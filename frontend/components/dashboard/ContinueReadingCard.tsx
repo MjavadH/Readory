@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { formatUpdateTime } from "@/lib/time";
 import Link from "next/link";
 import Image from "next/image";
+import {AppIcon} from "@/components/AppIcon";
 
 interface Props {
     progress: ReadingProgress;
@@ -63,7 +64,11 @@ export function ContinueReadingCard({ progress }: Props) {
             className="bg-card rounded-3xl p-6 border border-border shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group"
         >
             <div className="absolute top-0 right-0 p-4 opacity-10">
-                <BookOpen className="w-24 h-24" />
+                {progress.book.type.iconKey ? (
+                    <AppIcon name={progress.book.type.iconKey} className="m-1.5 w-24 h-24" />
+                ) : (
+                    <BookOpen className="w-24 h-24" />
+                )}
             </div>
 
             <div className="flex flex-col md:flex-row gap-6 relative z-10">

@@ -62,7 +62,7 @@ export interface ReadingProgress {
         title: string;
         author: string;
         coverImage: string;
-        type: { slug: string };
+        type: { slug: string, iconKey?: IconKey };
     };
     chapter: {
         title: string;
