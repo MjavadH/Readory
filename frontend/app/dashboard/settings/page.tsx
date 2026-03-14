@@ -16,7 +16,7 @@ import {
     Save,
     KeyRound,
     Eye,
-    EyeOff
+    EyeOff, AlertCircle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/providers/toast-provider";
@@ -31,6 +31,7 @@ export default function SettingsPage() {
     const toast = useToast();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
@@ -47,7 +48,7 @@ export default function SettingsPage() {
                 setProfile(res);
                 setUsername(res.username);
             } catch (err: any) {
-                console.error("Failed to load profile", err);
+                setError("Failed to load profile")
             } finally {
                 setLoading(false);
             }
@@ -137,14 +138,14 @@ export default function SettingsPage() {
                                 {Array.from({ length: 2 }).map((_, i) => (
                                     <div key={i} className="space-y-3">
                                         <div className="h-4 w-32 bg-muted rounded-lg" />
-                                        <div className="h-14 w-full bg-muted rounded-2xl" />
+                                        <div className="h-16 w-full bg-muted rounded-2xl" />
                                         <div className="h-3 w-40 bg-muted rounded-lg" />
                                     </div>
                                 ))}
                             </div>
 
                             <div className="flex justify-end pt-4">
-                                <div className="h-14 w-44 bg-muted rounded-2xl" />
+                                <div className="h-16 w-44 bg-muted rounded-2xl" />
                             </div>
                         </section>
 
@@ -160,7 +161,7 @@ export default function SettingsPage() {
                             <div className="space-y-6 max-w-md">
                                 <div className="space-y-3">
                                     <div className="h-4 w-40 bg-muted rounded-lg" />
-                                    <div className="h-14 w-full bg-muted rounded-2xl" />
+                                    <div className="h-16 w-full bg-muted rounded-2xl" />
                                 </div>
                             </div>
 
@@ -168,17 +169,37 @@ export default function SettingsPage() {
                                 {Array.from({ length: 2 }).map((_, i) => (
                                     <div key={i} className="space-y-3">
                                         <div className="h-4 w-40 bg-muted rounded-lg" />
-                                        <div className="h-14 w-full bg-muted rounded-2xl" />
+                                        <div className="h-16 w-full bg-muted rounded-2xl" />
                                     </div>
                                 ))}
                             </div>
 
                             <div className="flex justify-end pt-4">
-                                <div className="h-14 w-52 bg-muted rounded-2xl" />
+                                <div className="h-16 w-52 bg-muted rounded-2xl" />
                             </div>
                         </section>
                     </div>
                 </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center max-w-md mx-auto">
+                <div className="p-4 bg-destructive/10 rounded-full">
+                    <AlertCircle className="w-12 h-12 text-destructive" />
+                </div>
+                <div className="space-y-2">
+                    <h2 className="text-2xl font-bold">Something went wrong</h2>
+                    <p className="text-muted-foreground">{error}</p>
+                </div>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
+                >
+                    Try Again
+                </button>
             </div>
         );
     }
