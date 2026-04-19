@@ -197,7 +197,7 @@ model AccessRecord {
   userId      Int
   chapterId   Int
   user        User     @relation(fields: [userId], references: [id])
-  chapter     Chapter  @relation(fields: [chapterId], references: [id])
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   purchasedAt DateTime @default(now())
   Book        Book     @relation(fields: [bookId], references: [id])
   bookId      Int
