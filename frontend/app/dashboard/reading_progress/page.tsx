@@ -110,7 +110,10 @@ export default function ReadingProgressPage() {
                     totalItems={data.total}
                     pageSize={ITEMS_PER_PAGE}
                     itemLabel="Chapter"
-                    onPageChange={setPage} />
+                    onPageChange={setPage}
+                    canGoPrevious={!loading && page > 1}
+                    canGoNext={!loading && page < data.lastPage}
+                />
             ) : null}
         </div>
     );
