@@ -613,7 +613,7 @@ export default function ChapterPage() {
     // Text mode
     if (session.contentType === "text") {
         return (
-            <div ref={readerRootRef} className="min-h-screen bg-reader-bg">
+            <div ref={readerRootRef} className="min-h-screen bg-reader-bg overflow-y-auto">
                 <main
                     onContextMenu={handleContextMenu}
                     className="pt-20 pb-10"
