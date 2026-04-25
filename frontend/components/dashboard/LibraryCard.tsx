@@ -55,7 +55,8 @@ export function LibraryCard({ item, className }: Props) {
         <Link href={url}>
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
                 className={cn("bg-card border border-border rounded-3xl p-4 hover:shadow-xl hover:border-primary/50 transition-all group overflow-hidden relative", className)}
             >
                 <div className="absolute inset-0 bg-linear-to-tr from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
