@@ -23,6 +23,7 @@ import { StatCard } from "@/components/admin/stat-card"
 import { BookCard } from "@/components/book-card"
 import type { BookCardData } from "@/lib/types"
 import { motion } from "framer-motion"
+import {useTranslations} from "next-intl";
 
 type StatusFilter = "all" | "published" | "draft" | "featured"
 
@@ -47,6 +48,8 @@ interface BookStats {
 const ITEMS_PER_PAGE = 24
 
 export default function AdminBooks() {
+    const t = useTranslations('Books');
+    const g = useTranslations('General');
     const toast = useToast();
     const [books, setBooks] = useState<BookCardData[]>([])
     const [stats, setStats] = useState<BookStats>({
@@ -131,7 +134,7 @@ export default function AdminBooks() {
             setBooks(transformedBooks)
             if (data.stats) setStats(data.stats)
         } catch (err: any) {
-            toast.error("Error fetching books")
+            toast.error(t("ErrorFetchingBooks"))
             setBooks([])
         }
     }
@@ -145,7 +148,7 @@ export default function AdminBooks() {
             const data = await apiClient.get<Genre[]>("/genres").catch(() => [])
             setGenres(Array.isArray(data) ? data : [])
         } catch (err: any) {
-            toast.error("Error fetching genres")
+            toast.error(t("ErrorFetchingGenres"))
             setGenres([])
         }
     }
@@ -159,7 +162,7 @@ export default function AdminBooks() {
                 setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }))
             }
         } catch (err: any) {
-            toast.error("Error fetching book types")
+            toast.error(t("ErrorFetchingTypes"))
             setBookTypes([])
         } finally {
             setIsLoadingTypes(false)
@@ -168,13 +171,13 @@ export default function AdminBooks() {
 
     const handleAddBook = async () => {
         if (!newBook.title.trim()) {
-            return toast.error("Title is required", "Validation Error")
+            return toast.error(t("TitleRequired"), t("Validation Error"))
         }
         if (newBook.genreIds.length === 0) {
-            return toast.error("Select at least one genre", "Validation Error")
+            return toast.error(t("SelectOneGenre"), t("Validation Error"))
         }
         if (newBook.typeId == null) {
-            return toast.error("Book type is required", "Validation Error")
+            return toast.error(t("BookTypeRequired"), t("Validation Error"))
         }
         setIsSubmitting(true)
         try {
@@ -196,7 +199,7 @@ export default function AdminBooks() {
                 isFeatured: false,
             })
             setNewCoverLabel("")
-            toast.success("Book created successfully")
+            toast.success(t("BookCreatedSuccessfully"))
         } catch (err: any) {
             toast.error(getApiErrorMessage(err))
         } finally {
@@ -258,28 +261,28 @@ export default function AdminBooks() {
                     transition={{ duration: 0.55 }}
                 >
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Books
+                        {t("Title")}
                     </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">Manage your book catalog and chapters</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{t("Description")}</p>
                 </motion.div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard
-                        title="Total Books"
+                        title={t("TotalBooks")}
                         value={stats.total.toLocaleString()}
                         icon={BookOpen}
                         color="blue"
                         animationDelay={0}
                     />
                     <StatCard
-                        title="Published"
+                        title={t("Published")}
                         value={stats.Published.toLocaleString()}
                         icon={CheckCircle2}
                         color="emerald"
                         animationDelay={0.2}
                     />
                     <StatCard
-                        title="Drafts"
+                        title={t("Drafts")}
                         value={stats.Drafts.toLocaleString()}
                         icon={Clock}
                         color="amber"
@@ -290,7 +293,7 @@ export default function AdminBooks() {
                 {showAddCard ? (
                     <Card className="border-2 border-primary/20 shadow-lg">
                         <CardHeader className="flex flex-row items-center justify-between pb-4">
-                            <CardTitle className="text-xl">Add New Book</CardTitle>
+                            <CardTitle className="text-xl">{t("AddNewBook")}</CardTitle>
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -304,26 +307,26 @@ export default function AdminBooks() {
                         <CardContent className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="add-title">Title *</Label>
+                                    <Label htmlFor="add-title">{t("BookTitle")} *</Label>
                                     <Input
                                         id="add-title"
                                         value={newBook.title}
                                         onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-                                        placeholder="Enter book title"
+                                        placeholder={t("BookTitlePlaceholder")}
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="add-author">Author</Label>
+                                    <Label htmlFor="add-author">{t("BookAuthor")}</Label>
                                     <Input
                                         id="add-author"
                                         value={newBook.author}
                                         onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-                                        placeholder="Author name"
+                                        placeholder={t("BookAuthorPlaceholder")}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Type</Label>
+                                    <Label>{t("BookType")}</Label>
                                     <Select
                                         value={newBook.typeId != null ? String(newBook.typeId) : undefined}
                                         onValueChange={(v) => setNewBook({ ...newBook, typeId: Number(v) })}
@@ -344,21 +347,21 @@ export default function AdminBooks() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="add-description">Description</Label>
+                                <Label htmlFor="add-description">{t("BookDescription")}</Label>
                                 <Textarea
                                     id="add-description"
                                     value={newBook.description}
                                     onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
-                                    placeholder="Enter book description"
+                                    placeholder={t("BookDescriptionPlaceholder")}
                                     rows={3}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Cover Image *</Label>
+                                <Label>{t("BookCover")} *</Label>
                                 <div className="flex items-center gap-3">
                                     <Button type="button" variant="outline" onClick={() => setNewCoverPickerOpen(true)}>
-                                        <ImageIcon className="size-4 mr-2" />
-                                        Select cover
+                                        <ImageIcon className="size-4 me-2" />
+                                        {t("BookSelectCover")}
                                     </Button>
                                     {newBook.coverImage ? (
                                         <Button
@@ -369,10 +372,10 @@ export default function AdminBooks() {
                                                 setNewCoverLabel("")
                                             }}
                                         >
-                                            Remove
+                                            {g("Remove")}
                                         </Button>
                                     ) : (
-                                        <span className="text-xs text-muted-foreground">No cover selected</span>
+                                        <span className="text-xs text-muted-foreground">{t("NoCover")}</span>
                                     )}
                                 </div>
                                 {newBook.coverImage && (
@@ -393,7 +396,7 @@ export default function AdminBooks() {
                                 )}
                             </div>
                             <div className="space-y-2">
-                                <Label>Genres *</Label>
+                                <Label>{t("BookGenres")} *</Label>
                                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
                                     {genres.map((g) => {
                                         const checked = newBook.genreIds.includes(g.id)
@@ -421,7 +424,7 @@ export default function AdminBooks() {
                                     })}
                                 </div>
                                 {genres.length === 0 && (
-                                    <p className="text-xs text-muted-foreground">Create genres first in the Genres page.</p>
+                                    <p className="text-xs text-muted-foreground">{t("CreateGenresFirst")}</p>
                                 )}
                             </div>
                             <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
@@ -433,7 +436,7 @@ export default function AdminBooks() {
                                     className="w-4 h-4"
                                 />
                                 <Label htmlFor="add-published" className="cursor-pointer">
-                                    Publish immediately
+                                    {t("PublishImmediately")}
                                 </Label>
                             </div>
                             <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
@@ -445,15 +448,15 @@ export default function AdminBooks() {
                                     className="w-4 h-4"
                                 />
                                 <Label htmlFor="is-featured" className="cursor-pointer">
-                                    Mark as featured
+                                    {t("MarkFeatured")}
                                 </Label>
                             </div>
                             <div className="flex gap-3 pt-2">
                                 <Button variant="outline" onClick={handleCancelAdd} disabled={isSubmitting} className="flex-1">
-                                    Cancel
+                                    {g("Cancel")}
                                 </Button>
                                 <Button onClick={handleAddBook} disabled={isSubmitting || bookTypes.length === 0 || newBook.typeId == null} className="flex-1">
-                                    {isSubmitting ? "Creating..." : "Create Book"}
+                                    {isSubmitting ? t("CreatingBook") : t("CreateBook")}
                                 </Button>
                             </div>
                         </CardContent>
@@ -467,31 +470,31 @@ export default function AdminBooks() {
                             <div className="size-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
                                 <Plus className="w-8 h-8 text-primary" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-1">Add New Book</h3>
-                            <p className="text-sm text-muted-foreground">Click to create a new book entry</p>
+                            <h3 className="text-lg font-semibold mb-1">{t("AddNewBook")}</h3>
+                            <p className="text-sm text-muted-foreground">{t("ClickToCreate")}</p>
                         </CardContent>
                     </Card>
                 )}
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                     <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <Input
-                            placeholder="Search books by title..."
+                            placeholder={t("SearchByTitle")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 h-11 shadow-sm"
+                            className="ps-10 h-11 shadow-sm"
                         />
                     </div>
                     <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
                         <SelectTrigger className="w-full sm:w-50 h-11 shadow-sm">
-                            <SelectValue placeholder="Filter by status" />
+                            <SelectValue placeholder={t("FilterByStatus")} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Books</SelectItem>
-                            <SelectItem value="published">Published Only</SelectItem>
-                            <SelectItem value="draft">Drafts Only</SelectItem>
-                            <SelectItem value="featured">Featured Only</SelectItem>
+                            <SelectItem value="all">{t("AllBooks")}</SelectItem>
+                            <SelectItem value="published">{t("PublishedOnly")}</SelectItem>
+                            <SelectItem value="draft">{t("DraftsOnly")}</SelectItem>
+                            <SelectItem value="featured">{t("FeaturedOnly")}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -502,16 +505,16 @@ export default function AdminBooks() {
                             <div className="size-16 sm:size-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-4 sm:mb-6">
                                 <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
                             </div>
-                            <h3 className="text-lg sm:text-xl font-semibold mb-2">No books found</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold mb-2">{t("NoBooksFound")}</h3>
                             <p className="text-sm sm:text-base text-muted-foreground mb-6 max-w-md">
                                 {stats.total === 0
-                                    ? "Get started by creating your first book"
-                                    : "Try adjusting your search or filter"}
+                                    ? t("GetStarted")
+                                    : t("AdjustingFilter")}
                             </p>
                             {stats.total === 0 && (
                                 <Button size="lg" onClick={() => setShowAddCard(true)} className="shadow-lg">
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Your First Book
+                                    <Plus className="w-4 h-4 me-2" />
+                                    {t("AddFirstBook")}
                                 </Button>
                             )}
                         </CardContent>
@@ -532,7 +535,7 @@ export default function AdminBooks() {
                         totalPages={totalPages}
                         totalItems={stats.total}
                         pageSize={ITEMS_PER_PAGE}
-                        itemLabel="books"
+                        itemLabel={t("Title")}
                         onPageChange={setPage}
                         canGoPrevious={page > 1}
                         canGoNext={page < totalPages}
