@@ -34,6 +34,7 @@ function Switch({
                 "bg-background dark:data-[state=unchecked]:bg-foreground dark:data-[state=checked]:bg-primary-foreground",
                 "group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3",
                 "group-data-[size=default]/switch:data-[state=checked]:translate-x-[calc(100%-2px)]",
+                "rtl:group-data-[size=default]/switch:data-[state=checked]:-translate-x-[calc(100%-2px)]",
                 "group-data-[size=sm]/switch:data-[state=checked]:translate-x-[calc(100%-2px)]",
                 "group-data-[size=default]/switch:data-[state=unchecked]:translate-x-0",
                 "group-data-[size=sm]/switch:data-[state=unchecked]:translate-x-0"

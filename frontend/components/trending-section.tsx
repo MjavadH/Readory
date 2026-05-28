@@ -4,6 +4,7 @@ import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState, useEffect, useCallback } from "react";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
+import {useTranslations} from "next-intl";
 
 function TrendingCardSkeleton() {
     return (
@@ -69,6 +70,7 @@ export function TrendingSkeleton({ count = 8 }: { count?: number }) {
 
 export function TrendingSection({ books }: { books: BookCardData[] }) {
     if (books.length === 0) return null;
+    const t = useTranslations('HomePage');
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
@@ -101,11 +103,11 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
                     <div className="mb-1 flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-primary" />
                         <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-                            Trending
+                            {t("Trending")}
                         </span>
                     </div>
                     <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                        Most Popular Right Now
+                        {t("MostPopular")}
                     </h2>
                 </div>
                 <div className="hidden items-center gap-2 md:flex">
@@ -116,7 +118,7 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
                         aria-label="Scroll left"
                         type="button"
                     >
-                        <ChevronLeft className="h-4 w-4" />
+                        <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                     </button>
                     <button
                         onClick={() => scroll("right")}
@@ -125,7 +127,7 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
                         aria-label="Scroll right"
                         type="button"
                     >
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                     </button>
                 </div>
             </div>

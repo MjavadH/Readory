@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from "react"
 import { AppIcon } from "@/components/AppIcon"
 import { cn } from "@/lib/utils"
 import type { IconKey } from "@readory/shared"
+import {useTranslations} from "next-intl";
 
 interface BookType {
     name: string
@@ -25,6 +26,7 @@ export function TypeCarousel({
                                  activePath,
                                  onItemClick,
                              }: TypeCarouselProps) {
+    const t = useTranslations('UserHeader');
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
@@ -75,7 +77,7 @@ export function TypeCarousel({
     if (types.length === 0) {
         return (
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
-                No book types available.
+                {t("NoBookType")}
             </p>
         )
     }
