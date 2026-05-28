@@ -5,6 +5,7 @@ import { BookOpen, } from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
 import { BookGenre} from "@/lib/types"
+import {useTranslations} from "next-intl";
 
 const genreColors = [
     "from-rose-500/15 to-rose-500/5 hover:from-rose-500/25 hover:to-rose-500/10 border-rose-500/20 hover:border-rose-500/40",
@@ -56,17 +57,19 @@ export function GenresSectionSkeleton({ count = 8 }: { count?: number }) {
 
 export function GenresSection({ genres }: { genres: BookGenre[] }) {
     if (genres.length === 0) return null;
+    const t = useTranslations('HomePage');
+
     return (
         <section>
             <div className="mb-6">
                 <div className="flex items-center gap-2 mb-1">
                     <BookOpen className="h-5 w-5 text-primary" />
                     <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-            Explore
-          </span>
+                        {t("Explore")}
+                    </span>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground">
-                    Browse by Genre
+                    {t("BrowseGenre")}
                 </h2>
             </div>
 
@@ -83,8 +86,8 @@ export function GenresSection({ genres }: { genres: BookGenre[] }) {
                                     <AppIcon name={genre.iconKey as IconKey} className="h-5 w-5 text-foreground" />
                                 </div>
                                 <span className="text-sm md:text-base font-semibold text-foreground group-hover:translate-x-0.5 transition-transform duration-300">
-                  {genre.name}
-                </span>
+                                    {genre.name}
+                                </span>
                             </div>
                         </Link>
                     )

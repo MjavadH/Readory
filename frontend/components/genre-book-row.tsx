@@ -8,6 +8,7 @@ import { BookCard } from "@/components/book-card";
 import type { BookCardData, BookType } from "@/lib/types";
 import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
+import {useTranslations} from "next-intl";
 
 interface GenreBook {
     id: number;
@@ -33,6 +34,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+    const t = useTranslations('Genres');
 
     function checkScroll() {
         const el = scrollRef.current;
@@ -78,7 +80,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                         href={`/genres/${genre.slug}`}
                         className="text-base font-bold text-foreground transition-colors duration-200 hover:text-primary sm:text-lg"
                     >
-                        <AppIcon name={genre.iconKey as IconKey} className="inline mr-1.5 align-sub size-5" />
+                        <AppIcon name={genre.iconKey as IconKey} className="inline me-1.5 align-sub size-5" />
                         {genre.name}
                     </Link>
                 </div>
@@ -86,8 +88,8 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                     href={`/genres/${genre.slug}`}
                     className="group/link flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors duration-200 hover:text-primary sm:text-sm"
                 >
-                    See all
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover/link:translate-x-0.5" />
+                    {t("SeeAll")}
+                    <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180 transition-transform duration-200 group-hover/link:translate-x-0.5 rtl:group-hover/link:-translate-x-0.5" />
                 </Link>
             </div>
 
@@ -108,7 +110,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                             : "pointer-events-none opacity-0",
                     )}
                 >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                 </button>
 
                 {/* Right arrow (desktop) */}
@@ -126,7 +128,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                             : "pointer-events-none opacity-0",
                     )}
                 >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </button>
 
                 {/* Edge fades */}

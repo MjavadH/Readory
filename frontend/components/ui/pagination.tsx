@@ -3,6 +3,7 @@ import * as React from "react"
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
+import {useTranslations} from "next-intl";
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
@@ -68,6 +69,7 @@ function PaginationPrevious({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const t = useTranslations('General');
   return (
     <PaginationLink
       aria-label="Go to previous page"
@@ -75,9 +77,9 @@ function PaginationPrevious({
       className={cn("pl-2!", className)}
       {...props}
     >
-      <ChevronLeftIcon data-icon="inline-start" />
+      <ChevronLeftIcon className="rtl:rotate-180" data-icon="inline-start" />
       <span className="hidden sm:block">
-        Previous
+        {t("Prev")}
       </span>
     </PaginationLink>
   )
@@ -87,6 +89,7 @@ function PaginationNext({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const t = useTranslations('General');
   return (
     <PaginationLink
       aria-label="Go to next page"
@@ -94,8 +97,8 @@ function PaginationNext({
       className={cn("pr-2!", className)}
       {...props}
     >
-      <span className="hidden sm:block">Next</span>
-      <ChevronRightIcon data-icon="inline-end" />
+      <span className="hidden sm:block">{t("Next")}</span>
+      <ChevronRightIcon className="rtl:rotate-180" data-icon="inline-end" />
     </PaginationLink>
   )
 }
@@ -104,6 +107,7 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const t = useTranslations('General');
   return (
     <span
       aria-hidden
@@ -116,7 +120,7 @@ function PaginationEllipsis({
     >
       <MoreHorizontalIcon
       />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{t("MorePages")}</span>
     </span>
   )
 }

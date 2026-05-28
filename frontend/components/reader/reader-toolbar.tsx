@@ -12,6 +12,7 @@ import {
     Maximize,
     Minimize,
 } from "lucide-react";
+import {useTranslations} from "next-intl";
 
 export type ReaderChapterItem = {
     id: number;
@@ -53,6 +54,7 @@ export function ReaderToolbar({
                                   showReadModeToggle = true,
                                   fullscreenTarget = null,
                               }: ReaderToolbarProps) {
+    const t = useTranslations('Books');
     const [showBrightness, setShowBrightness] = useState(false);
     const [showChapters, setShowChapters] = useState(false);
     const [visible, setVisible] = useState(true);
@@ -139,7 +141,7 @@ export function ReaderToolbar({
                                 <>
                                     <ToolbarButton
                                         icon={readMode === "scroll" ? <Layers className="w-4 h-4" /> : <ScrollText className="w-4 h-4" />}
-                                        label={readMode === "scroll" ? "Page mode" : "Scroll mode"}
+                                        label={readMode === "scroll" ? t("PageMode") : t("ScrollMode")}
                                         onClick={() => onReadModeChange(readMode === "scroll" ? "page" : "scroll")}
                                     />
                                     <Divider />
@@ -148,8 +150,8 @@ export function ReaderToolbar({
 
                             {/* Page navigation */}
                             <ToolbarButton
-                                icon={<ChevronLeft className="w-4 h-4" />}
-                                label="Previous page"
+                                icon={<ChevronLeft className="w-4 h-4 rtl:rotate-180" />}
+                                label={t("PreviousPage")}
                                 onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                                 disabled={currentPage <= 1 && !prevChapter}
                             />
@@ -159,8 +161,8 @@ export function ReaderToolbar({
                             </span>
 
                             <ToolbarButton
-                                icon={<ChevronRight className="w-4 h-4" />}
-                                label="Next page"
+                                icon={<ChevronRight className="w-4 h-4 rtl:rotate-180" />}
+                                label={t("NextPage")}
                                 onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                                 disabled={currentPage >= totalPages && !nextChapter}
                             />
@@ -176,7 +178,7 @@ export function ReaderToolbar({
                                         <Maximize className="w-4 h-4" />
                                     )
                                 }
-                                label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                                label={isFullscreen ? t("ExitFullscreen") : t("Fullscreen")}
                                 onClick={toggleFullscreen}
                             />
 
@@ -186,7 +188,7 @@ export function ReaderToolbar({
                             <div className="relative">
                                 <ToolbarButton
                                     icon={<Sun className="w-4 h-4" />}
-                                    label="Brightness"
+                                    label={t("Brightness")}
                                     onClick={() => { setShowBrightness(!showBrightness); setShowChapters(false); }}
                                     active={showBrightness}
                                 />
@@ -220,7 +222,7 @@ export function ReaderToolbar({
                             {/* Chapters */}
                             <ToolbarButton
                                 icon={<BookOpen className="w-4 h-4" />}
-                                label="Chapters"
+                                label={t("Chapters")}
                                 onClick={() => { setShowChapters(!showChapters); setShowBrightness(false); }}
                                 active={showChapters}
                             />
@@ -248,7 +250,7 @@ export function ReaderToolbar({
                             className="fixed right-0 top-0 bottom-0 w-80 max-w-[85vw] z-80 toolbar-glass border-l border-border overflow-y-auto"
                         >
                             <div className="p-4 flex items-center justify-between border-b border-border">
-                                <h3 className="font-serif font-semibold text-foreground">Chapters</h3>
+                                <h3 className="font-semibold text-foreground">{t("Chapters")}</h3>
                                 <button onClick={() => setShowChapters(false)} className="p-1 rounded-md hover:bg-secondary transition-colors">
                                     <X className="w-4 h-4" />
                                 </button>

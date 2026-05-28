@@ -5,6 +5,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, Star } from "lucide-react";
 import {BookCardData} from "@/lib/types";
 import Link from "next/link";
 import {AppIcon} from "@/components/AppIcon";
+import {useTranslations} from "next-intl";
 
 export function HeroSkeleton() {
     return (
@@ -36,6 +37,7 @@ export function HeroSkeleton() {
 }
 
 export function HeroCarousel({ books }: { books: BookCardData[] }) {
+    const t = useTranslations('HomePage');
     const [current, setCurrent] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -108,7 +110,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
                     {/* Label */}
                     <div className="flex items-center gap-2 mb-4">
                         <span className="text-xl font-medium text-muted-foreground/80">
-                            <AppIcon name={book.type.iconKey} className="h-5 inline mr-1.5" />
+                            <AppIcon name={book.type.iconKey} className="h-5 inline me-1.5" />
                             {book.type.name}
                         </span>
                     </div>
@@ -121,7 +123,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
                     {/* Author & Rating */}
                     <div className="flex items-center gap-3 mb-4">
                         <span className="text-sm font-medium text-secondary-foreground/70">
-                            by {book.author}
+                            {t("By")} {book.author}
                         </span>
                         <span className="w-1 h-1 rounded-full bg-secondary-foreground/30" />
                         <div className="flex items-center gap-1">
@@ -158,8 +160,8 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
                                 size="lg"
                                 className="rounded-full cursor-pointer font-semibold px-7 gap-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:gap-3"
                             >
-                                Start Reading
-                                <ArrowRight className="w-4 h-4" />
+                                {t("StartReading")}
+                                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                             </Button>
                         </Link>
                     </div>

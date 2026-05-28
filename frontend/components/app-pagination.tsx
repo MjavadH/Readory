@@ -11,6 +11,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination"
+import {useTranslations} from "next-intl";
 
 type AdminPaginationProps = {
   currentPage: number
@@ -63,7 +64,7 @@ export function AppPagination({
   if (totalPages <= 1) {
     return null
   }
-
+  const t = useTranslations('General');
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages)
   const rangeStart = (safeCurrentPage - 1) * pageSize + 1
   const rangeEnd = Math.min(safeCurrentPage * pageSize, totalItems)
@@ -81,7 +82,7 @@ export function AppPagination({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
       <p className="text-xs sm:text-sm text-muted-foreground">
-        Showing {rangeStart} to {rangeEnd} of {totalItems} {itemLabel}
+        {t("AdminPaginationDescription", {RangeStart: rangeStart, RangeEnd: rangeEnd, TotalItems: totalItems, ItemLabel: itemLabel})}
       </p>
 
       <Pagination className="mx-0 w-auto justify-end">

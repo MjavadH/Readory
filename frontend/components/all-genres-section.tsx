@@ -3,6 +3,7 @@ import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
+import {useTranslations} from "next-intl";
 
 interface AllGenresSectionProps {
     genres: Array<{ name: string; slug: string; iconKey?: IconKey; }>;
@@ -10,6 +11,7 @@ interface AllGenresSectionProps {
 
 export function AllGenresSection({ genres }: AllGenresSectionProps) {
     if (genres.length === 0) return null;
+    const t = useTranslations('Genres');
 
     return (
         <section className="relative overflow-hidden bg-card">
@@ -26,10 +28,10 @@ export function AllGenresSection({ genres }: AllGenresSectionProps) {
                         <BookOpen className="h-5 w-5 text-primary" />
                     </div>
                     <h2 className="text-xl font-bold text-card-foreground sm:text-2xl lg:text-3xl text-balance">
-                        Browse All Genres
+                        {t("BrowseAllGenres")}
                     </h2>
                     <p className="mt-2 max-w-md text-sm text-muted-foreground leading-relaxed">
-                        Explore our full catalogue by genre and find your next favorite read
+                        {t("BrowseAllGenresDescription")}
                     </p>
                 </div>
 
@@ -49,7 +51,7 @@ export function AllGenresSection({ genres }: AllGenresSectionProps) {
                                 "active:scale-[0.97]"
                             )}
                         >
-                            {g.iconKey && <AppIcon name={g.iconKey} className="mr-1.5 size-5"/>}
+                            {g.iconKey && <AppIcon name={g.iconKey} className="me-1.5 size-5"/>}
                             {g.name}
                         </Link>
                     ))}

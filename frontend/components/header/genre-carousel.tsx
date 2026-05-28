@@ -6,6 +6,7 @@ import { AppIcon } from "@/components/AppIcon"
 import { cn } from "@/lib/utils"
 import type { IconKey } from "@readory/shared"
 import { ChevronDown } from "lucide-react"
+import {useTranslations} from "next-intl";
 
 interface BookGenre {
     name: string
@@ -28,6 +29,7 @@ export function GenreCarousel({
                                   onItemClick,
                                   onViewAll,
                               }: GenreCarouselProps) {
+    const t = useTranslations('UserHeader');
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
@@ -68,7 +70,7 @@ export function GenreCarousel({
     if (genres.length === 0) {
         return (
             <p className="px-1 py-4 text-center text-sm text-muted-foreground">
-                No genres available.
+                {t("NoGenres")}
             </p>
         )
     }
@@ -116,7 +118,7 @@ export function GenreCarousel({
                         onClick={onViewAll}
                         className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/30 px-3 py-2 text-xs font-semibold text-muted-foreground backdrop-blur-sm transition-all duration-200 active:scale-95 hover:bg-muted/50 border border-border/40 whitespace-nowrap scroll-snap-align-start"
                     >
-                        <span>View all</span>
+                        <span>{t("ViewAll")}</span>
                         <ChevronDown className="h-3 w-3" />
                     </button>
                 )}

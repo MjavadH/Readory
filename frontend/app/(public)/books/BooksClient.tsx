@@ -3,8 +3,13 @@
 import { useBookBrowser } from "@/hooks/use-book-browser";
 import { BookBrowseLayout } from "@/components/book-browse-layout";
 import {apiClient} from "@/lib/api-client";
+import {useTranslations} from "next-intl";
+import React, {useEffect, useState} from "react";
+import {BookType} from "@/lib/types";
 
 export default function BooksClient({ initialData }: any) {
+    const t = useTranslations('Books');
+
     const browser = useBookBrowser({
         baseUrl: "/books",
         fetcher: (params, signal) =>
@@ -14,8 +19,8 @@ export default function BooksClient({ initialData }: any) {
 
     return (
         <BookBrowseLayout
-            title="Browse Books"
-            description="Discover your next favorite manga, novel, or comic"
+            title={browser.isLoading && !browser.data ? <div className="h-10 w-48 animate-pulse rounded bg-muted" /> : t("BrowseBooks", {Books: t("Books")})}
+            description={t("BrowseBooksDescription" , {type: t("Books")})}
             books={browser.items}
             isLoading={browser.isLoading}
             isLoadingMore={browser.isLoadingMore}
