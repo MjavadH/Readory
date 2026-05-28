@@ -38,6 +38,7 @@ import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
 import { usePermission } from "@/hooks/use-permission"
+import {useTranslations} from "next-intl";
 
 interface Transaction {
   id: number
@@ -94,6 +95,8 @@ const isAdminRole = (role: User["role"]): boolean => {
 }
 
 export default function AdminUsers() {
+  const t = useTranslations('AdminPage.UserManagement');
+  const g = useTranslations('General');
   const { has } = usePermission()
   const toast = useToast()
   const [users, setUsers] = useState<User[]>([])
@@ -128,7 +131,7 @@ export default function AdminUsers() {
         setStats(statsData)
       }
     } catch (err: any) {
-      toast.error(getApiErrorMessage(err), "Error fetching data")
+      toast.error(getApiErrorMessage(err), t("ErrorFetchingData"))
     } finally {
       setLoading(false)
     }
@@ -140,7 +143,7 @@ export default function AdminUsers() {
       const data = await apiClient.get<UserDetails>(`/users/${userId}`)
       setSelectedUser(data)
     } catch (err: any) {
-      toast.error(getApiErrorMessage(err), "Error fetching user details")
+      toast.error(getApiErrorMessage(err), t("ErrorFetchingUserDetails"))
     } finally {
       setIsLoadingDetails(false)
     }
@@ -154,7 +157,7 @@ export default function AdminUsers() {
         fetchUserDetails(userId)
       }
     } catch (err: any) {
-      toast.error(getApiErrorMessage(err), "Error updating role")
+      toast.error(getApiErrorMessage(err), t("ErrorUpdatingRole"))
     }
   }
 
@@ -163,7 +166,7 @@ export default function AdminUsers() {
 
     const amount = Number.parseFloat(adjustAmount)
     if (isNaN(amount) || amount <= 0) {
-      toast.error("Please enter a valid positive number", "Invalid Input")
+      toast.error(t("EnterValidNumber"), t("InvalidInput"))
       return;
     }
 
@@ -174,9 +177,9 @@ export default function AdminUsers() {
       setAdjustAmount("");
       fetchUserDetails(selectedUser.id);
       fetchData();
-      toast.success("Wallet balance updated.")
+      toast.success(t("WalletBalanceUpdated"))
     } catch (err) {
-      toast.error(getApiErrorMessage(err, "Network error"))
+      toast.error(getApiErrorMessage(err, t("NetworkError")))
     }
   };
 
@@ -249,31 +252,31 @@ export default function AdminUsers() {
               transition={{ duration: 0.55 }}
           >
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              User Management
+              {t("Title")}
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              View and manage user accounts and wallet balances
+              {t("Description")}
             </p>
           </motion.div>
 
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
-                title="Total Users"
+                title={t("TotalUsers")}
                 value={(stats?.totalUsers || 0).toLocaleString()}
                 icon={Users}
                 color="blue"
                 animationDelay={0}
             />
             <StatCard
-                title="Active (30 Days)"
+                title={t("ActiveUsers")}
                 value={(stats?.activeUsers || 0).toLocaleString()}
                 icon={Activity}
                 color="green"
                 animationDelay={0.2}
             />
             <StatCard
-                title="New (7 Days)"
+                title={t("NewUsers")}
                 value={(stats?.newUsers || 0).toLocaleString()}
                 icon={UserPlus}
                 color="violet"
@@ -284,15 +287,15 @@ export default function AdminUsers() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-                placeholder="Search by email or username..."
+                placeholder={t("SearchByEmailOrUsername")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="pl-10"
+                className="ps-10"
             />
           </div>
 
@@ -303,12 +306,12 @@ export default function AdminUsers() {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-border/50">
-                      <TableHead className="min-w-62.5">User Info</TableHead>
-                      <TableHead className="min-w-25">Status</TableHead>
-                      <TableHead className="min-w-25">Role</TableHead>
-                      <TableHead className="text-right min-w-30">Balance</TableHead>
-                      <TableHead className="min-w-30">Joined</TableHead>
-                      <TableHead className="w-15">Actions</TableHead>
+                      <TableHead className="min-w-62.5 rtl:text-right">{t("UserInfo")}</TableHead>
+                      <TableHead className="min-w-25 rtl:text-right">{t("Status")}</TableHead>
+                      <TableHead className="min-w-25 rtl:text-right">{t("Role")}</TableHead>
+                      <TableHead className="ltr:text-right min-w-30 rtl:text-left">{t("Balance")}</TableHead>
+                      <TableHead className="min-w-30 rtl:text-right">{t("Joined")}</TableHead>
+                      <TableHead className="w-15 rtl:text-right">{t("Actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -317,7 +320,7 @@ export default function AdminUsers() {
                           <TableCell colSpan={6} className="h-32 text-center">
                             <div className="flex flex-col items-center justify-center text-muted-foreground">
                               <Search className="size-8 mb-2 opacity-50" />
-                              <p className="text-sm">No users found</p>
+                              <p className="text-sm">{t("NoUsersFound")}</p>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -352,9 +355,9 @@ export default function AdminUsers() {
                                     }
                                 >
                                   {user.status === "ACTIVE" ? (
-                                      <CheckCircle2 className="size-3 mr-1" />
+                                      <CheckCircle2 className="size-3 me-1" />
                                   ) : (
-                                      <Ban className="size-3 mr-1" />
+                                      <Ban className="size-3 me-1" />
                                   )}
                                   {user.status}
                                 </Badge>
@@ -369,15 +372,14 @@ export default function AdminUsers() {
                                           : "border-border/50"
                                     }
                                 >
-                                  {isAdminRole(user.role) && <Shield className="size-3 mr-1" />}
+                                  {isAdminRole(user.role) && <Shield className="size-3 me-1" />}
                                   {getRoleName(user.role)}
                                 </Badge>
                               </TableCell>
 
-                              <TableCell className="text-right">
+                              <TableCell className="ltr:text-right rtl:text-left">
                           <span className="font-semibold text-base">
-                            $
-                            {user.balance.toLocaleString(undefined, {
+                            {g("CurrencySymbols")} {user.balance.toLocaleString(g("locale"), {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
@@ -386,7 +388,7 @@ export default function AdminUsers() {
 
                               <TableCell>
                           <span className="text-sm text-muted-foreground">
-                            {new Date(user.joinedAt).toLocaleDateString("en-US", {
+                            {new Date(user.joinedAt).toLocaleDateString(g("locale"), {
                               month: "short",
                               day: "numeric",
                               year: "numeric",
@@ -403,23 +405,23 @@ export default function AdminUsers() {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end" className="w-48">
                                     <DropdownMenuItem onClick={() => handleRowClick(user)}>
-                                      <Users className="size-4 mr-2" />
-                                      View Details
+                                      <Users className="size-4 me-2" />
+                                      {t("ViewDetails")}
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={() => updateUserRole(user.id, isAdminRole(user.role) ? "USER" : "ADMIN")}
                                     >
-                                      <Shield className="size-4 mr-2" />
-                                      {isAdminRole(user.role) ? "Remove Admin" : "Make Admin"}
+                                      <Shield className="size-4 me-2" />
+                                      {isAdminRole(user.role) ? t("RemoveAdmin") : t("MakeAdmin")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => toggleBanStatus(user.id, user.status)}
                                         disabled={user.id === currentUserId}
                                         className={user.status === "BANNED" ? "text-green-600" : "text-red-600"}
                                     >
-                                      <Ban className="size-4 mr-2" />
-                                      {user.status === "BANNED" ? "Unban User" : "Ban User"}
+                                      <Ban className="size-4 me-2" />
+                                      {user.status === "BANNED" ? t("UnbanUser") : t("BanUser")}
                                     </DropdownMenuItem>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
@@ -438,7 +440,7 @@ export default function AdminUsers() {
             totalPages={totalPages}
             totalItems={totalListUsers}
             pageSize={ITEMS_PER_PAGE}
-            itemLabel="users"
+            itemLabel={t("users")}
             onPageChange={setCurrentPage}
             canGoPrevious={currentPage > 1}
             canGoNext={currentPage < totalPages}
@@ -449,7 +451,7 @@ export default function AdminUsers() {
             <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-3xl md:max-w-4xl lg:max-w-5xl max-h-[90vh] overflow-y-auto">
               {isLoadingDetails || !selectedUser ? (
                   <div className="py-12 space-y-4">
-                    <DialogTitle className="sr-only">Loading User Details</DialogTitle>
+                    <DialogTitle className="sr-only">{t("LoadingUserDetails")}</DialogTitle>
                     <div className="animate-pulse space-y-4">
                       <div className="h-20 bg-muted rounded" />
                       <div className="grid gap-4 md:grid-cols-2">
@@ -500,8 +502,8 @@ export default function AdminUsers() {
                                 size="sm"
                                 onClick={() => toggleBanStatus(selectedUser.id, selectedUser.status)}
                             >
-                              <Ban className="size-4 mr-2" />
-                              {selectedUser.status === "BANNED" ? "Unban" : "Ban User"}
+                              <Ban className="size-4 me-2" />
+                              {selectedUser.status === "BANNED" ? t("Unban") : t("BanUser")}
                             </Button>
                         ) : null}
                       </div>
@@ -513,36 +515,36 @@ export default function AdminUsers() {
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-lg">
                             <Wallet className="size-5 text-green-600 dark:text-green-500" />
-                            Wallet
+                            {t("Wallet")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid gap-4 sm:grid-cols-3">
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground font-medium">Current Balance</p>
+                              <p className="text-xs text-muted-foreground font-medium">{t("CurrentBalance")}</p>
                               <p className="text-2xl font-bold">
-                                $
-                                {selectedUser.wallet.balance.toLocaleString(undefined, {
+                                {g("CurrencySymbols")}
+                                {selectedUser.wallet.balance.toLocaleString(g("locale"), {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground font-medium">Total Deposits</p>
+                              <p className="text-xs text-muted-foreground font-medium">{t("TotalDeposits")}</p>
                               <p className="text-xl font-semibold text-green-600 dark:text-green-500">
-                                +$
-                                {totalDeposits.toLocaleString(undefined, {
+                                +{g("CurrencySymbols")}
+                                {totalDeposits.toLocaleString(g("locale"), {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground font-medium">Total Spent</p>
+                              <p className="text-xs text-muted-foreground font-medium">{t("TotalSpent")}</p>
                               <p className="text-xl font-semibold text-red-600 dark:text-red-500">
-                                -$
-                                {totalSpent.toLocaleString(undefined, {
+                                -{g("CurrencySymbols")}
+                                {totalSpent.toLocaleString(g("locale"), {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
                                 })}
@@ -551,11 +553,11 @@ export default function AdminUsers() {
                           </div>
                           {has("MANAGE_FINANCE") ? (
                               <div className="border-t border-border/50 pt-4">
-                                <p className="text-sm font-medium mb-3">Manually Adjust Balance</p>
+                                <p className="text-sm font-medium mb-3">{t("ManuallyAdjustBalance")}</p>
                                 <div className="flex flex-col sm:flex-row gap-2">
                                   <Input
                                       type="number"
-                                      placeholder="Amount"
+                                      placeholder={t("Amount")}
                                       value={adjustAmount}
                                       onChange={(e) => setAdjustAmount(e.target.value)}
                                       className="flex-1"
@@ -567,8 +569,8 @@ export default function AdminUsers() {
                                         onClick={() => handleBalanceAdjustment("increase")}
                                         className="flex-1 sm:flex-none border-green-500/30 hover:bg-green-500/10"
                                     >
-                                      <Plus className="size-4 mr-1" />
-                                      Add
+                                      <Plus className="size-4 me-1" />
+                                      {t("Add")}
                                     </Button>
                                     <Button
                                         variant="outline"
@@ -576,8 +578,8 @@ export default function AdminUsers() {
                                         onClick={() => handleBalanceAdjustment("decrease")}
                                         className="flex-1 sm:flex-none border-red-500/30 hover:bg-red-500/10"
                                     >
-                                      <Minus className="size-4 mr-1" />
-                                      Deduct
+                                      <Minus className="size-4 me-1" />
+                                      {t("Deduct")}
                                     </Button>
                                   </div>
                                 </div>
@@ -585,7 +587,7 @@ export default function AdminUsers() {
                           ) : null}
                           {selectedUser.wallet.transactions.length > 0 && (
                               <div className="border-t border-border/50 pt-4">
-                                <p className="text-sm font-medium mb-3">Recent Transactions</p>
+                                <p className="text-sm font-medium mb-3">{t("RecentTransactions")}</p>
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
                                   {selectedUser.wallet.transactions.slice(0, 10).map((transaction) => (
                                       <div
@@ -610,14 +612,14 @@ export default function AdminUsers() {
                                                         : "text-red-600 dark:text-red-500"
                                                 }`}
                                             >
-                                              {transaction.type === "CREDIT" ? "+" : "-"}$
-                                              {transaction.amount.toLocaleString(undefined, {
+                                              {transaction.type === "CREDIT" ? "+" : "-"}{g("CurrencySymbols")}
+                                              {transaction.amount.toLocaleString(g("locale"), {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 2,
                                               })}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                              {new Date(transaction.createdAt).toLocaleString("en-US", {
+                                              {new Date(transaction.createdAt).toLocaleString(g("locale"), {
                                                 month: "short",
                                                 day: "numeric",
                                                 year: "numeric",
@@ -645,14 +647,14 @@ export default function AdminUsers() {
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-lg">
                             <BookOpen className="size-5 text-blue-600 dark:text-blue-500" />
-                            Purchased Chapter ({selectedUser.accessRecords.length})
+                            {t("PurchasedChapter")} ({selectedUser.accessRecords.length})
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           {selectedUser.accessRecords.length === 0 ? (
                               <div className="text-center py-8 text-muted-foreground">
                                 <BookOpen className="size-12 mx-auto mb-2 opacity-30" />
-                                <p className="text-sm">No books purchased yet</p>
+                                <p className="text-sm">{t("NoBooksPurchased")}</p>
                               </div>
                           ) : (
                               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -664,8 +666,8 @@ export default function AdminUsers() {
                                       <div className="flex-1 min-w-0">
                                         <p className="font-medium truncate">{chapter.chapterTitle}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          Purchased{" "}
-                                          {new Date(chapter.purchasedAt).toLocaleDateString("en-US", {
+                                          {t("Purchased")}{" "}
+                                          {new Date(chapter.purchasedAt).toLocaleDateString(g("locale"), {
                                             month: "short",
                                             day: "numeric",
                                             year: "numeric",
@@ -673,7 +675,7 @@ export default function AdminUsers() {
                                         </p>
                                       </div>
                                       <div className="text-right shrink-0">
-                                        <p className="font-semibold text-sm">${(chapter.price || 0).toFixed(2)}</p>
+                                        <p className="font-semibold text-sm">{g("CurrencySymbols")}{(chapter.price || 0).toFixed(2)}</p>
                                       </div>
                                     </div>
                                 ))}
@@ -687,29 +689,29 @@ export default function AdminUsers() {
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 text-lg">
                             <Clock className="size-5 text-violet-600 dark:text-violet-500" />
-                            Activity History
+                            {t("ActivityHistory")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground font-medium">Last Login</p>
+                              <p className="text-xs text-muted-foreground font-medium">{t("LastLogin")}</p>
                               <p className="text-sm font-medium">
                                 {selectedUser.lastLoginAt
-                                    ? new Date(selectedUser.lastLoginAt).toLocaleString("en-US", {
+                                    ? new Date(selectedUser.lastLoginAt).toLocaleString(g("locale"), {
                                       month: "short",
                                       day: "numeric",
                                       year: "numeric",
                                       hour: "2-digit",
                                       minute: "2-digit",
                                     })
-                                    : "Never logged in"}
+                                    : t("NeverLoggedIn")}
                               </p>
                             </div>
                             <div className="space-y-1">
-                              <p className="text-xs text-muted-foreground font-medium">Member Since</p>
+                              <p className="text-xs text-muted-foreground font-medium">{t("MemberSince")}</p>
                               <p className="text-sm font-medium">
-                                {new Date(selectedUser.createdAt).toLocaleString("en-US", {
+                                {new Date(selectedUser.createdAt).toLocaleString(g("locale"), {
                                   month: "long",
                                   day: "numeric",
                                   year: "numeric",
@@ -720,7 +722,7 @@ export default function AdminUsers() {
 
                           {selectedUser.accessRecords.length > 0 && (
                               <div className="border-t border-border/50 pt-4">
-                                <p className="text-sm font-medium mb-3">Chapter Purchase History</p>
+                                <p className="text-sm font-medium mb-3">{t("ChapterPurchaseHistory")}</p>
                                 <div className="space-y-2 max-h-48 overflow-y-auto">
                                   {selectedUser.accessRecords.map((record) => (
                                       <div
@@ -731,7 +733,7 @@ export default function AdminUsers() {
                                           <p className="font-medium text-sm truncate">{record.chapterTitle}</p>
                                           <p className="text-xs text-muted-foreground truncate">{record.bookTitle}</p>
                                           <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(record.purchasedAt).toLocaleDateString("en-US", {
+                                            {new Date(record.purchasedAt).toLocaleDateString(g("locale"), {
                                               month: "short",
                                               day: "numeric",
                                               year: "numeric",
@@ -739,7 +741,7 @@ export default function AdminUsers() {
                                           </p>
                                         </div>
                                         <div className="shrink-0">
-                                          <p className="font-semibold text-sm">${(record.price || 0).toFixed(2)}</p>
+                                          <p className="font-semibold text-sm">{g("CurrencySymbols")}{(record.price || 0).toFixed(2)}</p>
                                         </div>
                                       </div>
                                   ))}
