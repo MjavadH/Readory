@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import irFlag from "../public/flags/fa.svg"
 import enFlag from "../public/flags/en.svg"
 import Image from "next/image"
+import { useLocale } from "next-intl"
 
 const languages = [
     { code: "en", name: "English", nativeName: "English" },
@@ -28,16 +29,8 @@ interface LanguageSwitcherProps {
     variant?: "default" | "mobile" | "inline"
 }
 
-function getCookie(name: string): string | null {
-    if (typeof document === "undefined") return null
-    const value = `; ${document.cookie}`
-    const parts = value.split(`; ${name}=`)
-    if (parts.length === 2) return parts.pop()?.split(";").shift() || null
-    return null
-}
-
 export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
-    const currentLocale = getCookie("locale") || "en"
+    const currentLocale = useLocale()
     const [isPending, startTransition] = useTransition()
     const [isOpen, setIsOpen] = useState(false)
     const currentLanguage = languages.find((lang) => lang.code === currentLocale)

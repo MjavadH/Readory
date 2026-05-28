@@ -29,6 +29,8 @@ import { WalletCard } from "@/components/header/wallet-card"
 import { TypeCarousel } from "@/components/header/type-carousel"
 import { GenreCarousel } from "@/components/header/genre-carousel"
 import { ThemeSwitcher } from "@/components/theme-toggle";
+import {useTranslations} from "next-intl";
+import {LanguageSwitcher} from "@/components/language-switcher";
 
 type RoleName = "USER" | "ADMIN"
 type Profile = { userId: number; username: string; roleName?: RoleName; walletBalance?: number }
@@ -148,6 +150,8 @@ function MobileNavLink({href, icon: Icon, label, onClick, badge, active,}: {
 
 /* Main Header */
 export function UserHeader() {
+  const t = useTranslations('UserHeader');
+  const g = useTranslations('General');
   const router = useRouter()
   const pathname = usePathname()
 
@@ -301,20 +305,20 @@ export function UserHeader() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
               <BrandLogo priority className="h-9 w-auto" />
-              <span className="font-bold text-lg tracking-tight hidden sm:block">Readory</span>
+              <span className="font-bold text-lg tracking-tight hidden sm:block">{g("Readory")}</span>
             </Link>
 
             {/* Desktop Nav */}
             <nav className="hidden lg:flex items-center gap-1">
               <NavDropdown
-                  label="Books"
+                  label={t("Books")}
                   icon={"bookOpen"}
                   href="/books"
                   isActive={pathname.startsWith("/books")}
               >
                 <div className="w-94 rounded-xl border bg-popover p-4 shadow-xl">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Browse by Type
+                    {t("BrowseByType")}
                   </p>
                   {bookTypeLoading ? (
                       <div className="grid grid-cols-2 gap-2">
@@ -323,7 +327,7 @@ export function UserHeader() {
                         ))}
                       </div>
                   ) : bookType.length === 0 ? (
-                      <p className="py-4 text-center text-sm text-muted-foreground">No book type yet.</p>
+                      <p className="py-4 text-center text-sm text-muted-foreground">{t("NoBookType")}</p>
                   ) : (
                       <div className="grid grid-cols-2 gap-1">
                         {bookType.map((b) => (
@@ -344,7 +348,7 @@ export function UserHeader() {
               </NavDropdown>
 
               <NavDropdown
-                  label="Genres"
+                  label={t("Genres")}
                   icon={"library"}
                   href="/genres"
                   isActive={pathname.startsWith("/genres")}
@@ -352,10 +356,10 @@ export function UserHeader() {
                 <div className="w-96 rounded-xl border bg-popover p-4 shadow-xl">
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Featured Genres
+                      {t("FeaturedGenres")}
                     </p>
                     <Link href="/genres" className="text-xs font-medium text-primary hover:underline">
-                      View all
+                      {t("ViewAll")}
                     </Link>
                   </div>
                   {genresLoading ? (
@@ -365,7 +369,7 @@ export function UserHeader() {
                         ))}
                       </div>
                   ) : topGenres.length === 0 ? (
-                      <p className="py-4 text-center text-sm text-muted-foreground">No genres yet.</p>
+                      <p className="py-4 text-center text-sm text-muted-foreground">{t("NoGenres")}</p>
                   ) : (
                       <div className="grid grid-cols-2 gap-1">
                         {topGenres.map((g) => (
@@ -389,11 +393,11 @@ export function UserHeader() {
             {/* Desktop Search */}
             <div className="hidden md:flex flex-1 max-w-md relative">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Search books..."
-                    className="pl-10 bg-muted/40 border-transparent focus:border-border focus:bg-background transition-colors rounded-xl h-10"
+                    placeholder={t("SearchBooks")}
+                    className="ps-10 bg-muted/40 border-transparent focus:border-border focus:bg-background transition-colors rounded-xl h-10"
                     value={searchQuery}
                     onChange={onSearchChange}
                     onFocus={() => searchQuery.trim() && setShowSearchResults(true)}
@@ -417,7 +421,7 @@ export function UserHeader() {
                     onClick={submitSearch}
                 >
                   <Search className="h-4 w-4 text-muted-foreground" />
-                  Search for &ldquo;{searchQuery.trim()}&rdquo;
+                  {t("SearchFor")} {searchQuery.trim()}
                 </button>
               </div>
             </div>
@@ -434,6 +438,11 @@ export function UserHeader() {
               >
                 <Search className="h-5 w-5" />
               </Button>
+
+              {/* Desktop language switcher */}
+              <div className="hidden lg:block">
+                <LanguageSwitcher />
+              </div>
 
               {/* Desktop theme toggle */}
               <div className="hidden lg:block">
@@ -480,14 +489,14 @@ export function UserHeader() {
                             <DropdownMenuSeparator />
 
                             <DropdownMenuItem onClick={() => router.push("/dashboard")} className="rounded-lg px-3 py-2">
-                              <LayoutDashboard className="h-4 w-4 mr-2" />
-                              Dashboard
+                              <LayoutDashboard className="h-4 w-4 me-2" />
+                              {t("Dashboard")}
                             </DropdownMenuItem>
 
                             {isAdmin && (
                                 <DropdownMenuItem onClick={() => router.push("/admin")} className="rounded-lg px-3 py-2">
-                                  <AppIcon name={"shield"} className="h-4 w-4 mr-2" />
-                                  Admin Panel
+                                  <AppIcon name={"shield"} className="h-4 w-4 me-2" />
+                                  {t("AdminPanel")}
                                 </DropdownMenuItem>
                             )}
 
@@ -497,8 +506,8 @@ export function UserHeader() {
                                 onClick={handleLogout}
                                 className="rounded-lg px-3 py-2 text-destructive focus:text-destructive"
                             >
-                              <LogOut className="h-4 w-4 mr-2" />
-                              Log out
+                              <LogOut className="h-4 w-4 me-2" />
+                              {g("Logout")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -509,7 +518,7 @@ export function UserHeader() {
                             onClick={() => router.push("/login")}
                         >
                           <User className="h-4 w-4" />
-                          Sign in
+                          {t("SignIn")}
                         </Button>
                     )}
                   </div>
@@ -551,12 +560,12 @@ export function UserHeader() {
             <div className="container mx-auto px-4 py-3">
               <div className="relative flex items-center gap-2">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                       autoFocus={mobileSearchOpen}
                       type="search"
-                      placeholder="Search books..."
-                      className="pl-10 rounded-xl h-10"
+                      placeholder={t("SearchBooks")}
+                      className="ps-10 rounded-xl h-10"
                       value={searchQuery}
                       onChange={onSearchChange}
                       onKeyDown={(e) => e.key === "Enter" && submitSearch()}
@@ -573,7 +582,7 @@ export function UserHeader() {
                       onClick={submitSearch}
                   >
                     <Search className="h-4 w-4" />
-                    Search for &ldquo;{searchQuery.trim()}&rdquo;
+                    {t("SearchFor")} {searchQuery.trim()}
                   </Button>
               )}
             </div>
@@ -583,7 +592,7 @@ export function UserHeader() {
         {/* Mobile Menu (Sheet) */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent side="left" className="w-[85vw] max-w-sm p-0 flex flex-col [&>button]:hidden">
-            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            <SheetTitle className="sr-only">{t("NavigationMenu")}</SheetTitle>
 
             {/* Profile Area */}
             <div className="space-y-4 p-5 pb-4">
@@ -615,8 +624,8 @@ export function UserHeader() {
                       <User className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-base font-semibold">Welcome</p>
-                      <p className="text-xs text-muted-foreground">Sign in to your account</p>
+                      <p className="text-base font-semibold">{t("Welcome")}</p>
+                      <p className="text-xs text-muted-foreground">{t("SignInToAccount")}</p>
                     </div>
                   </div>
               )}
@@ -627,25 +636,25 @@ export function UserHeader() {
             {/* Scrollable Nav */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-hide">
               {/* Main Nav */}
-              <MobileSection title="Navigate">
+              <MobileSection title={t("Navigate")}>
                 <MobileNavLink
                     href="/"
                     icon={"home"}
-                    label="Home"
+                    label={t("Home")}
                     onClick={closeMobile}
                     active={pathname === "/"}
                 />
                 <MobileNavLink
                     href="/books"
                     icon={"bookOpen"}
-                    label="All Books"
+                    label={t("AllBooks")}
                     onClick={closeMobile}
                     active={pathname === "/books"}
                 />
                 <MobileNavLink
                     href="/genres"
                     icon={"library"}
-                    label="Genres"
+                    label={t("Genres")}
                     onClick={closeMobile}
                     active={pathname === "/genres"}
                 />
@@ -653,7 +662,7 @@ export function UserHeader() {
 
               {/* Content Types - Scrollable Carousel */}
               {bookType.length > 0 && (
-                  <MobileSection title="Browse by Type">
+                  <MobileSection title={t("BrowseByType")}>
                     <TypeCarousel
                         types={bookType}
                         isLoading={bookTypeLoading}
@@ -665,7 +674,7 @@ export function UserHeader() {
 
               {/* Genres - Swipeable Carousel */}
               {topGenres.length > 0 && (
-                  <MobileSection title="Popular Genres">
+                  <MobileSection title={t("PopularGenres")}>
                     <GenreCarousel
                         genres={topGenres}
                         isLoading={genresLoading}
@@ -681,11 +690,11 @@ export function UserHeader() {
 
               {/* Account */}
               {authenticated && (
-                  <MobileSection title="Account">
+                  <MobileSection title={t("Account")}>
                     <MobileNavLink
                         href="/dashboard"
                         icon={"layoutDashboard"}
-                        label="Dashboard"
+                        label={t("Dashboard")}
                         onClick={closeMobile}
                         active={pathname === "/dashboard"}
                     />
@@ -693,9 +702,9 @@ export function UserHeader() {
                         <MobileNavLink
                             href="/admin"
                             icon={"shield"}
-                            label="Admin Panel"
+                            label={t("AdminPanel")}
                             onClick={closeMobile}
-                            badge="ADMIN"
+                            badge={t("Admin")}
                             active={pathname.startsWith("/admin")}
                         />
                     )}
@@ -703,8 +712,11 @@ export function UserHeader() {
               )}
 
               {/* Theme */}
-              <MobileSection title="Appearance">
+              <MobileSection title={t("Appearance")}>
                 <ThemeSwitcher variant="mobile" />
+              </MobileSection>
+              <MobileSection title={t("Language")}>
+                <LanguageSwitcher variant="mobile" />
               </MobileSection>
             </div>
 
@@ -720,7 +732,7 @@ export function UserHeader() {
                       }}
                   >
                     <LogOut className="h-4 w-4" />
-                    Log out
+                    {g("Logout")}
                   </Button>
               ) : (
                   <Button
@@ -731,7 +743,7 @@ export function UserHeader() {
                       }}
                   >
                     <User className="h-4 w-4" />
-                    Sign in
+                    {t("SignIn")}
                   </Button>
               )}
             </div>
