@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import type { BookCardData } from "@/lib/types";
 import { getBookUrl } from "@/lib/types";
 import { formatUpdateTime } from "@/lib/time";
+import {useTranslations} from "next-intl";
 
 interface BookCardProps {
     book: BookCardData;
@@ -18,6 +19,8 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, priority = false, className, link }: BookCardProps) {
+    const t = useTranslations('Books');
+    const ti = useTranslations('Time');
     const [isImageLoaded, setIsImageLoaded] = useState(false);
     const url = getBookUrl(book);
 
@@ -116,7 +119,7 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                             variant="secondary"
                             className="bg-background/80 text-foreground backdrop-blur-sm text-[10px] px-1.5 py-0.5 font-medium shadow-sm"
                         >
-                            {book.chapterCount} Ch.
+                            {t("ChapterCount", {ChapterCount: book.chapterCount})}
                         </Badge>
                     </div>
                 )}
@@ -145,7 +148,7 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                 {book.updatedAt && (
                     <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        <span>{formatUpdateTime(new Date(book.updatedAt))}</span>
+                        <span>{formatUpdateTime(new Date(book.updatedAt), ti)}</span>
                     </div>
                 )}
 

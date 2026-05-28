@@ -6,6 +6,7 @@ import { Clock, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BookType } from "@/lib/types";
 import { formatUpdateTime } from "@/lib/time";
+import {useTranslations} from "next-intl";
 
 interface Chapter {
     id: number;
@@ -97,6 +98,8 @@ export function LatestSectionSkeleton({ count = 6 }: { count?: number }) {
 
 export function LatestSection({ books }: { books: LatestBook[] }) {
     if (books.length === 0) return null;
+    const t = useTranslations('HomePage');
+    const ti = useTranslations('Time');
     const filtered = books.filter((b) => b.chapters.length > 0);
 
     return (
@@ -106,11 +109,11 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                     <div className="mb-1 flex items-center gap-2">
                         <Sparkles className="h-5 w-5 text-primary" />
                         <span className="text-xs font-semibold uppercase tracking-widest text-primary">
-                            Fresh Drops
+                            {t("FreshDrops")}
                         </span>
                     </div>
                     <h2 className="text-2xl font-bold text-foreground md:text-3xl">
-                        Latest Updates
+                        {t("LatestUpdates")}
                     </h2>
                 </div>
             </div>
@@ -133,6 +136,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                         }
                                         alt={book.title}
                                         fill
+                                        sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                     {book.chapters[0]?.free && (
@@ -159,7 +163,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                             </Badge>
                                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                                                 <Clock className="h-3 w-3" />
-                                                {formatUpdateTime(book.time)}
+                                                {formatUpdateTime(book.time , ti)}
                                             </span>
                                         </div>
                                     </div>
@@ -173,7 +177,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-xs transition-colors hover:bg-primary/10 hover:text-primary"
                                             >
-                                                <span className="font-medium">Chapter {ch.num}</span>
+                                                <span className="font-medium">{t("Chapter")} {ch.num}</span>
                                                 <span
                                                     className={
                                                         ch.free
@@ -181,8 +185,8 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                                                             : "text-muted-foreground"
                                                     }
                                                 >
-                          {ch.free ? "Free" : "Paid"}
-                        </span>
+                                                    {ch.free ? t("Free") : t("Paid")}
+                                                </span>
                                             </Link>
                                         ))}
                                     </div>

@@ -5,6 +5,7 @@ import { ArrowDownLeft, ArrowUpRight, Clock, Hash } from "lucide-react";
 import { formatUpdateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import {useTranslations} from "next-intl";
 
 interface Props {
     transactions: Transaction[];
@@ -42,6 +43,9 @@ export function TransactionListSkeleton({ limit }: { limit?: number }) {
 }
 
 export function TransactionList({ transactions, limit, className }: Props) {
+    const t = useTranslations('UserDashboard');
+    const g = useTranslations('General');
+    const ti = useTranslations('Time');
     const displayTx = limit ? transactions.slice(0, limit) : transactions;
 
     return (
@@ -69,7 +73,7 @@ export function TransactionList({ transactions, limit, className }: Props) {
 
                         <div className="flex flex-col gap-0.5">
                             <span className="font-bold text-foreground tracking-tight group-hover:text-primary transition-colors">
-                                {tx.type === 'CREDIT' ? 'Deposit' : 'Purchase'}
+                                {tx.type === 'CREDIT' ? t("Deposit") : t("Purchase")}
                             </span>
                             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
                                 <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/50">
@@ -78,7 +82,7 @@ export function TransactionList({ transactions, limit, className }: Props) {
                                 </div>
                                 <div className="flex items-center gap-1 bg-background/50 px-2 py-0.5 rounded-lg border border-border/50">
                                     <Clock className="w-3 h-3" />
-                                    <span>{formatUpdateTime(new Date(tx.createdAt))}</span>
+                                    <span>{formatUpdateTime(new Date(tx.createdAt), ti)}</span>
                                 </div>
                             </div>
                         </div>
@@ -88,7 +92,7 @@ export function TransactionList({ transactions, limit, className }: Props) {
                         "text-lg font-bold tracking-tight px-4 py-2 rounded-2xl bg-background/40 border border-border/40",
                         tx.type === 'CREDIT' ? "text-green-600" : "text-red-600"
                     )}>
-                        {tx.type === 'CREDIT' ? '+' : '-'}${tx.amount.toFixed(2)}
+                        {tx.type === 'CREDIT' ? '+' : '-'}{t("Amount", {CurrencySymbols: g("CurrencySymbols"), Amount: tx.amount.toFixed(2)})}
                     </div>
                 </motion.div>
             ))}
