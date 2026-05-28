@@ -5,6 +5,7 @@ import { useId, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Upload, ImageIcon, FileText, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import {useTranslations} from "next-intl";
 
 type FileUploadPickerProps = {
     kind?: "image" | "file";
@@ -46,6 +47,11 @@ type FileUploadPickerProps = {
     className?: string;
 };
 
+function Translate(key: string){
+    const t = useTranslations('AdminPage.MediaLibrary');
+    return t(key)
+}
+
 function fileKey(f: File) {
     return `${f.name}::${f.size}::${f.lastModified}`;
 }
@@ -63,16 +69,17 @@ export function FileUploadPicker({
                                      success = false,
                                      error = null,
                                      onErrorChange,
-                                     dropTitleIdle = "Drag & drop your files",
-                                     dropTitleActive = "Drop your files here",
+                                     dropTitleIdle = Translate("DragDropYourFiles"),
+                                     dropTitleActive = Translate("DropFileHere"),
                                      helperText = "",
-                                     browseLabel = "Browse Files",
+                                     browseLabel = Translate("BrowseFiles"),
                                      blockedErrorText = "Some files are not allowed",
                                      maxFilesErrorText = (m) => `Maximum ${m} files`,
                                      allowAddMore = false,
                                      actions,
                                      className,
                                  }: FileUploadPickerProps) {
+    const t = useTranslations('AdminPage.MediaLibrary');
     const inputId = useId();
     const inputRef = useRef<HTMLInputElement | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -178,7 +185,7 @@ export function FileUploadPicker({
                             {helperText ? (
                                 <p className="text-sm text-muted-foreground">{helperText}</p>
                             ) : (
-                                <p className="text-sm text-muted-foreground">or</p>
+                                <p className="text-sm text-muted-foreground">{t("Or")}</p>
                             )}
                         </div>
 
@@ -196,7 +203,7 @@ export function FileUploadPicker({
                         <label htmlFor={inputId}>
                             <Button variant="default" size="lg" className="cursor-pointer" asChild>
                                 <span>
-                                    <Icon className="size-4 mr-2" />
+                                    <Icon className="size-4 me-2" />
                                     {browseLabel}
                                 </span>
                             </Button>
@@ -240,11 +247,11 @@ export function FileUploadPicker({
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold">{files.length} file(s) selected</p>
+                            <p className="text-sm font-semibold">{t("NFilesSelected", {NFiles: files.length})}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                                 ~{(totalSize / 1024).toFixed(1)} KB
-                                {uploading && " • Uploading..."}
-                                {success && " • Upload complete!"}
+                                {uploading && t("Uploading")}
+                                {success && t("UploadComplete")}
                             </p>
 
                             <div className="mt-3 grid gap-2">
@@ -264,7 +271,7 @@ export function FileUploadPicker({
                                     </div>
                                 ))}
                                 {files.length > 6 && (
-                                    <p className="text-xs text-muted-foreground">+{files.length - 6} more…</p>
+                                    <p className="text-xs text-muted-foreground">+{files.length - 6} {t("More")}</p>
                                 )}
                             </div>
 
@@ -292,8 +299,8 @@ export function FileUploadPicker({
                                             <label htmlFor={inputId}>
                                                 <Button variant="outline" size="sm" asChild>
                                                     <span>
-                                                        <Upload className="size-4 mr-2" />
-                                                        Browse more
+                                                        <Upload className="size-4 me-2" />
+                                                        {t("BrowseMore")}
                                                     </span>
                                                 </Button>
                                             </label>

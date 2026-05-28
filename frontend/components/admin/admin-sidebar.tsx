@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import {BrandLogo} from "@/components/brand-logo";
 import {ThemeSwitcher} from "@/components/theme-toggle";
+import {useTranslations} from "next-intl";
 
 interface CurrentUser {
   userId: number
@@ -47,6 +48,8 @@ interface CurrentUser {
 }
 
 export function AdminSidebar() {
+  const t = useTranslations('AdminPage.Sidebar');
+  const g = useTranslations('General');
   const pathname = usePathname()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -72,23 +75,23 @@ export function AdminSidebar() {
 
   const sidebarData = [
     {
-      title: "Main",
-      items: [{ label: "Dashboard", icon: Home, path: "/admin" }],
+      title: t("Main"),
+      items: [{ label: t("Dashboard"), icon: Home, path: "/admin" }],
     },
     {
-      title: "Catalog",
+      title: t("Catalog"),
       items: [
-        { label: "Books", icon: BookOpen, path: "/admin/books", show: has("MANAGE_BOOKS") },
-        { label: "Genres", icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
-        { label: "Books Type", icon: SquareLibrary, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
-        { label: "Media Library", icon: ImageIcon, path: "/admin/media", show: has("MANAGE_BOOKS") },
+        { label: t("Books"), icon: BookOpen, path: "/admin/books", show: has("MANAGE_BOOKS") },
+        { label: t("Genres"), icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
+        { label: t("BooksType"), icon: SquareLibrary, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
+        { label: t("MediaLibrary"), icon: ImageIcon, path: "/admin/media", show: has("MANAGE_BOOKS") },
       ],
     },
     {
-      title: "Customers",
+      title: t("Customers"),
       items: [
         {
-          label: "Users Management",
+          label: t("UsersManagement"),
           icon: Users,
           path: "/admin/users",
           show: has(["MANAGE_USERS", "MANAGE_FINANCE", "MANAGE_STAFF"]),
@@ -96,14 +99,14 @@ export function AdminSidebar() {
       ],
     },
     {
-      title: "Finance",
-      items: [{ label: "All Transactions", icon: Banknote, path: "/admin/transactions", show: has("MANAGE_FINANCE") }],
+      title: t("Finance"),
+      items: [{ label: t("AllTransactions"), icon: Banknote, path: "/admin/transactions", show: has("MANAGE_FINANCE") }],
     },
     {
-      title: "System",
+      title: t("System"),
       items: [
-        { label: "Admin Staff", icon: Lock, path: "/admin/staff", show: has("MANAGE_STAFF") },
-        { label: "Settings", icon: Settings, path: "/admin/settings" },
+        { label: t("AdminStaff"), icon: Lock, path: "/admin/staff", show: has("MANAGE_STAFF") },
+        { label: t("Settings"), icon: Settings, path: "/admin/settings" },
       ],
     },
   ]
@@ -120,12 +123,12 @@ export function AdminSidebar() {
   }
 
   const getAdminTitle = () => {
-    if (isSuperAdmin) return "Super Admin"
-    if (has("MANAGE_STAFF")) return "Staff Manager"
-    if (has("MANAGE_FINANCE")) return "Finance Manager"
-    if (has("MANAGE_BOOKS")) return "Content Manager"
-    if (has("MANAGE_USERS")) return "User Manager"
-    return "Administrator"
+    if (isSuperAdmin) return t("SuperAdmin")
+    if (has("MANAGE_STAFF")) return t("StaffManager")
+    if (has("MANAGE_FINANCE")) return t("FinanceManager")
+    if (has("MANAGE_BOOKS")) return t("ContentManager")
+    if (has("MANAGE_USERS")) return t("UserManager")
+    return t("Administrator")
   }
 
   if (loading) return null
@@ -167,11 +170,11 @@ export function AdminSidebar() {
                     <BrandLogo priority className="h-8 w-8" />
                     <Link href="/" className="hover:opacity-80 transition-opacity">
                       <h1 className="text-xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
-                        Readory
+                        {g("Readory")}
                       </h1>
                     </Link>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1.5 truncate font-medium">Management Portal</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 truncate font-medium">{t("ManagementPortal")}</p>
                 </div>
             )}
             <Button
@@ -180,7 +183,7 @@ export function AdminSidebar() {
                 className="hidden md:flex shrink-0 hover:bg-sidebar-accent"
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
-              <ChevronLeft className={cn("h-4 w-4 transition-transform duration-300", isCollapsed && "rotate-180")} />
+              <ChevronLeft className={cn("h-4 w-4 transition-transform rtl:rotate-180 duration-300", isCollapsed && "ltr:rotate-180 rtl:rotate-0")} />
             </Button>
           </div>
 
@@ -213,8 +216,8 @@ export function AdminSidebar() {
                                   className={cn(
                                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                                       isActive
-                                          ? "bg-linear-to-r from-primary/15 to-primary/5 text-primary border-l-2 border-primary shadow-sm"
-                                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-1",
+                                          ? "bg-linear-to-r from-primary/15 to-primary/5 text-primary border-s-2 border-primary shadow-sm"
+                                          : "text-sidebar-foreground hover:bg-sidebar-accent/50 rtl:hover:-translate-x-1 hover:translate-x-1",
                                       isCollapsed && "justify-center",
                                   )}
                                   title={isCollapsed ? item.label : undefined}
@@ -258,7 +261,7 @@ export function AdminSidebar() {
                                 {currentUser.username.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 min-w-0 text-left">
+                            <div className="flex-1 min-w-0 ltr:text-left rtl:text-right">
                               <div className="flex items-center gap-1.5">
                                 <p className="text-sm font-semibold text-sidebar-foreground truncate">
                                   {currentUser.username}
@@ -294,8 +297,8 @@ export function AdminSidebar() {
                         onClick={() => setIsLogoutDialogOpen(true)}
                         className="cursor-pointer text-destructive focus:text-destructive"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
+                      <LogOut className="h-4 w-4 me-2" />
+                      {g("Logout")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -304,18 +307,18 @@ export function AdminSidebar() {
           <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You are about to sign out of your admin account. You will need to login again to access the dashboard.
+                <AlertDialogTitle>{t("LogoutTitle")}</AlertDialogTitle>
+                <AlertDialogDescription className="rtl:text-right">
+                  {t("LogoutDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>{g("Cancel")}</AlertDialogCancel>
                 <AlertDialogAction
                     onClick={onConfirmLogout}
                     className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
-                  Log out
+                  {g("Logout")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

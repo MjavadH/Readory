@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { Search, Loader2, ChevronLeft, ChevronRight, Check, X } from "lucide-react"
 import { useToast } from "@/providers/toast-provider";
+import {useTranslations} from "next-intl";
 
 export type MediaItem = {
     code: string
@@ -40,11 +41,11 @@ export function MediaPicker({
                                 onOpenChangeAction,
                                 value,
                                 onSelectAction,
-                                title = "Select cover",
-                                description = "Choose an image from your media library",
                                 itemsPerPage = 30,
                                 allowClear = true,
                             }: MediaPickerProps) {
+    const t = useTranslations('AdminPage.MediaLibrary');
+    const g = useTranslations('General');
     const toast = useToast()
     const [q, setQ] = useState("")
     const [page, setPage] = useState(1)
@@ -152,14 +153,14 @@ export function MediaPicker({
         <Dialog open={open} onOpenChange={onOpenChangeAction}>
             <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
+                    <DialogTitle className="text-center">{t("SelectCover")}</DialogTitle>
+                    <DialogDescription className="text-center">{t("SelectCoverDescription")}</DialogDescription>
                 </DialogHeader>
 
                 {/* Search */}
                 <div className="relative mt-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by filename..." className="pl-9 h-11" />
+                    <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                    <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("SearchByFilename")} className="ps-9 h-11" />
                 </div>
 
                 {/* Grid */}
@@ -185,7 +186,7 @@ export function MediaPicker({
                         </div>
                     ) : items.length === 0 ? (
                         <div className="py-16 text-center text-sm text-muted-foreground">
-                            {q.trim() ? "No media found for this search." : "No media uploaded yet."}
+                            {q.trim() ? t("NoMediaFound") : t("NoMediaUploaded")}
                         </div>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
@@ -239,20 +240,20 @@ export function MediaPicker({
                                     onOpenChangeAction(false)
                                 }}
                             >
-                                <X className="size-4 mr-2" />
-                                No cover
+                                <X className="size-4 me-2" />
+                                {t("NoCover")}
                             </Button>
                         )}
                         <p className="text-xs text-muted-foreground">
                             {totalPages > 1 ? (
                                 <>
-                                    Page <span className="font-semibold text-foreground">{page}</span> /{" "}
-                                    <span className="font-semibold text-foreground">{totalPages}</span> • Total{" "}
+                                    {g("Page")} <span className="font-semibold text-foreground">{page}</span> /{" "}
+                                    <span className="font-semibold text-foreground">{totalPages}</span> • {g("Total")}{" "}
                                     <span className="font-semibold text-foreground">{total}</span>
                                 </>
                             ) : (
                                 <>
-                                    Total <span className="font-semibold text-foreground">{total || items.length}</span>
+                                    {g("Total")} <span className="font-semibold text-foreground">{total || items.length}</span>
                                 </>
                             )}
                         </p>
@@ -267,8 +268,8 @@ export function MediaPicker({
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 disabled={isLoading || page === 1}
                             >
-                                <ChevronLeft className="size-4 mr-1" />
-                                Prev
+                                <ChevronLeft className="size-4 rtl:rotate-180" />
+                                {g("Prev")}
                             </Button>
 
                             <div className="hidden sm:flex items-center gap-1">
@@ -294,8 +295,8 @@ export function MediaPicker({
                                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                                 disabled={isLoading || page >= totalPages}
                             >
-                                Next
-                                <ChevronRight className="size-4 ml-1" />
+                                {g("Next")}
+                                <ChevronRight className="size-4 rtl:rotate-180" />
                             </Button>
                         </div>
                     )}
