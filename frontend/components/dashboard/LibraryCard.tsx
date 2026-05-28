@@ -1,4 +1,3 @@
-
 "use client";
 
 import {getBookUrl, LibraryItem} from "@/lib/types";
@@ -7,6 +6,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import {useTranslations} from "next-intl";
 
 interface Props {
     item: LibraryItem;
@@ -48,6 +48,7 @@ export function LibraryCardSkeleton({ limit }: { limit?: number }) {
 }
 
 export function LibraryCard({ item, className }: Props) {
+    const t = useTranslations('UserDashboard');
     const isCompleted = item.purchasedPercent >= 100;
     const url = getBookUrl(item.book);
 
@@ -83,11 +84,11 @@ export function LibraryCard({ item, className }: Props) {
 
                     <div className="space-y-2">
                         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                    {item.purchasedChapters}/{item.totalChapters} Ch.
-                </span>
-                            <span className={cn("text-primary", isCompleted && "text-primary")}>{item.purchasedPercent}% Purchased</span>
+                            <span className="flex items-center gap-1">
+                                <ShoppingBag className="w-3.5 h-3.5" />
+                                {t("PTCh", {PurchasedChapters: item.purchasedChapters, TotalChapters: item.totalChapters})}
+                            </span>
+                            <span className={cn("text-primary", isCompleted && "text-primary")}>{t("PurchasedPercent", {PurchasedPercent: item.purchasedPercent})}</span>
                         </div>
 
                         <div className="h-2 bg-muted rounded-full overflow-hidden border border-border/20 ring-1 ring-primary/5">
@@ -99,7 +100,7 @@ export function LibraryCard({ item, className }: Props) {
                                     "h-full rounded-full transition-all duration-300",
                                     isCompleted
                                         ? "bg-primary"
-                                        : "bg-linear-to-r from-primary/60 to-primary shadow-[0_0_12px_rgba(var(--primary),0.3)]"
+                                        : "ltr:bg-linear-to-r rtl:bg-linear-to-l from-primary/60 to-primary shadow-[0_0_12px_rgba(var(--primary),0.3)]"
                                 )}
                             />
                         </div>

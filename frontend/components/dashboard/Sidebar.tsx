@@ -9,25 +9,32 @@ import {
     History,
     Settings,
     LogOut,
-    BookOpenText
+    BookHeart,
+    BookOpenText,
+    LucideHome,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {apiClient} from "@/lib/api-client";
 import {BrandLogo} from "@/components/brand-logo";
 import React from "react";
-
-const navItems = [
-    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Library", href: "/dashboard/library", icon: Library },
-    { name: "Reading Progress", href: "/dashboard/reading_progress", icon: BookOpenText },
-    { name: "History", href: "/dashboard/history", icon: History },
-    { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+import {useTranslations} from "next-intl";
 
 export function Sidebar() {
+    const t = useTranslations('UserDashboard');
+    const g = useTranslations('General');
     const pathname = usePathname();
     const router = useRouter()
+
+    const navItems = [
+        { name: t("Home"), href: "/", icon: LucideHome },
+        { name: t("Overview"), href: "/dashboard", icon: LayoutDashboard },
+        { name: t("Library"), href: "/dashboard/library", icon: Library },
+        { name: t("ReadingProgress"), href: "/dashboard/reading_progress", icon: BookOpenText },
+        { name: t("Favorites"), href: "/dashboard/favorites", icon: BookHeart },
+        { name: t("History"), href: "/dashboard/history", icon: History },
+        { name: t("Settings"), href: "/dashboard/settings", icon: Settings },
+    ];
 
     const handleLogout = async () => {
         try {
@@ -44,7 +51,7 @@ export function Sidebar() {
                 <BrandLogo priority className="h-10 w-10" />
                 <Link href="/" className="hover:opacity-80 transition-opacity">
                     <h1 className="text-2xl font-bold bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent truncate">
-                        Readory
+                        {g("Readory")}
                     </h1>
                 </Link>
             </div>
@@ -67,7 +74,7 @@ export function Sidebar() {
                             <span>{item.name}</span>
                             {isActive && (
                                 <motion.div
-                                    className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
+                                    className="absolute ltr:left-0 rtl:right-0 w-1 h-6 bg-primary rounded-r-full"
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                 />
                             )}
@@ -82,7 +89,7 @@ export function Sidebar() {
                     className="flex items-center gap-3 w-full px-4 py-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
                 >
                     <LogOut className="w-5 h-5" />
-                    <span>Logout</span>
+                    <span>{g("Logout")}</span>
                 </button>
             </div>
         </div>

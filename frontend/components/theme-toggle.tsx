@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import {useTranslations} from "next-intl";
 
 type ThemeVariant = "desktop" | "mobile" | "sidebar"
 
@@ -20,6 +21,7 @@ interface ThemeSwitcherProps {
 }
 
 export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: ThemeSwitcherProps) {
+    const t = useTranslations('General');
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
 
@@ -27,9 +29,9 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
     if (!mounted) return null
 
     const options = [
-        { value: "light", icon: Sun, label: "Light" },
-        { value: "dark", icon: Moon, label: "Dark" },
-        { value: "system", icon: Monitor, label: "System" },
+        { value: "light", icon: Sun, label: t("Light") },
+        { value: "dark", icon: Moon, label: t("Dark") },
+        { value: "system", icon: Monitor, label: t("System") },
     ] as const
 
     // Mobile Segmented Variant
@@ -78,7 +80,7 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
                         title={isCollapsed ? "Change theme" : undefined}
                     >
                         <CurrentIcon className="h-4 w-4 shrink-0" />
-                        {!isCollapsed && <span className="ml-2">Theme</span>}
+                        {!isCollapsed && <span className="ml-2">{t("Theme")}</span>}
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="top" align="end" className="w-40">
@@ -90,7 +92,7 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
                                 onClick={() => setTheme(opt.value)}
                                 className="cursor-pointer"
                             >
-                                <Icon className="mr-2 h-4 w-4" />
+                                <Icon className="me-2 h-4 w-4" />
                                 {opt.label}
                             </DropdownMenuItem>
                         )
@@ -123,7 +125,7 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
                             onClick={() => setTheme(opt.value)}
                             className={cn(theme === opt.value && "bg-accent")}
                         >
-                            <Icon className="mr-2 h-4 w-4" />
+                            <Icon className="me-2 h-4 w-4" />
                             {opt.label}
                         </DropdownMenuItem>
                     )

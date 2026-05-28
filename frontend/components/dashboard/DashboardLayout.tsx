@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Sidebar } from "./Sidebar";
@@ -6,12 +5,14 @@ import { ReactNode } from "react";
 import { Search, Menu } from "lucide-react";
 import { useState } from "react";
 import { ThemeSwitcher } from "@/components/theme-toggle";
+import {useTranslations} from "next-intl";
 
 interface DashboardLayoutProps {
     children: ReactNode;
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+    const t = useTranslations('UserDashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     return (
@@ -33,11 +34,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                             <Menu className="w-6 h-6" />
                         </button>
                         <div className="relative group max-w-md hidden sm:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                            <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Search your library..."
-                                className="pl-10 pr-4 py-2.5 bg-muted border border-transparent rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                                placeholder={t("SearchLibrary")}
+                                className="ps-10 pe-4 py-2.5 bg-muted border border-transparent rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
                             />
                         </div>
                     </div>
