@@ -10,6 +10,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { usePermission } from "@/hooks/use-permission"
 import { apiClient } from "@/lib/api-client"
 import { motion } from "framer-motion"
+import {useTranslations} from 'next-intl';
 
 // --- Types ---
 interface DashboardStats {
@@ -36,6 +37,7 @@ const CHART_COLORS = [
 ]
 
 export default function AdminDashboard() {
+    const t = useTranslations();
     const [stats, setStats] = useState<DashboardStats | null>(null)
     const [loadingData, setLoadingData] = useState(true)
 
@@ -65,7 +67,7 @@ export default function AdminDashboard() {
 
     // --- Data Preparation ---
     const revenueData = stats.summary.finance?.chartData.map(item => ({
-        date: new Date(item.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+        date: new Date(item.date).toLocaleDateString(t("General.locale"), { day: 'numeric', month: 'short' }),
         amount: item.amount
     })) || []
 
@@ -85,17 +87,17 @@ export default function AdminDashboard() {
                     transition={{ duration: 0.55 }}
                 >
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Dashboard
+                        {t('AdminPage.Dashboard.Title')}
                     </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">Overview of your platform's performance.</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{t('AdminPage.Dashboard.Description')}</p>
                 </motion.div>
 
                 {/* --- Summary Cards --- */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {(isSuperAdmin || has("MANAGE_FINANCE")) && stats.summary.finance && (
                         <StatsCard
-                            title="Total Revenue"
-                            value={`$${stats.summary.finance.totalRevenue.toLocaleString()}`}
+                            title={t("AdminPage.Dashboard.TotalRevenue")}
+                            value={`${t("General.CurrencySymbols")}${stats.summary.finance.totalRevenue.toLocaleString(t("General.locale"))}`}
                             growth={stats.summary.finance.growth}
                             icon={DollarSign}
                             color="text-emerald-500"
@@ -105,25 +107,25 @@ export default function AdminDashboard() {
                     )}
                     {(isSuperAdmin || has(["MANAGE_USERS", "MANAGE_STAFF"])) && stats.summary.users && (
                         <StatsCard
-                            title="Active Users"
-                            value={stats.summary.users.active.toLocaleString()}
+                            title={t("AdminPage.Dashboard.ActiveUsers")}
+                            value={stats.summary.users.active.toLocaleString(t("General.locale"))}
                             growth={stats.summary.users.growth}
                             icon={Users}
                             color="text-blue-500"
                             bg="bg-blue-500/10"
-                            subText="new users this month"
+                            subText={t("AdminPage.Dashboard.NewUsers")}
                             animationDelay={0.2}
                         />
                     )}
                     {(isSuperAdmin || has("MANAGE_BOOKS")) && stats.summary.content && (
                         <StatsCard
-                            title="Total Books"
-                            value={stats.summary.content.books.toLocaleString()}
+                            title={t("Books.TotalBooks")}
+                            value={stats.summary.content.books.toLocaleString(t("General.locale"))}
                             growth={stats.summary.content.growth}
                             icon={BookOpen}
                             color="text-orange-500"
                             bg="bg-orange-500/10"
-                            subText={`${stats.summary.content.chapters} total chapters`}
+                            subText={t("AdminPage.Dashboard.NTotalChapters", {NChapters: stats.summary.content.chapters})}
                             animationDelay={0.4}
                         />
                     )}
@@ -143,12 +145,12 @@ export default function AdminDashboard() {
                         <Card className="lg:col-span-4 border-border/60 shadow-sm">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
-                                    <TrendingUp className="size-5 text-primary" /> Revenue Trend
+                                    <TrendingUp className="size-5 text-primary" />{t("AdminPage.Dashboard.RevenueTrend")}
                                 </CardTitle>
-                                <CardDescription>Daily revenue for the last 30 days</CardDescription>
+                                <CardDescription>{t("AdminPage.Dashboard.RevenueTrendDescription")}</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={{ amount: { label: "Revenue", color: "var(--chart-1)" } }} className="h-75 w-full">
+                                <ChartContainer config={{ amount: { label: t("AdminPage.Dashboard.Revenue"), color: "var(--chart-1)" } }} className="h-75 w-full">
                                     <AreaChart data={revenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="fillAmount" x1="0" y1="0" x2="0" y2="1">
@@ -182,15 +184,15 @@ export default function AdminDashboard() {
                     {(isSuperAdmin || has(["MANAGE_USERS", "MANAGE_BOOKS"])) && (
                         <Card className="lg:col-span-3 border-border/60 shadow-sm">
                             <CardHeader className="pb-2">
-                                <CardTitle>Distributions</CardTitle>
-                                <CardDescription>Breakdown of users and content</CardDescription>
+                                <CardTitle>{t("AdminPage.Dashboard.Distributions")}</CardTitle>
+                                <CardDescription>{t("AdminPage.Dashboard.DistributionsDescription")}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Tabs defaultValue="types" className="w-full">
                                     <TabsList className="grid w-full grid-cols-3 mb-4">
-                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="users">User Status</TabsTrigger>
-                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="genres">Genre Dist.</TabsTrigger>
-                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="types">type Dist.</TabsTrigger>
+                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="users">{t("AdminPage.Dashboard.UserStatus")}</TabsTrigger>
+                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="genres">{t("AdminPage.Dashboard.GenreDist")}</TabsTrigger>
+                                        <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="types">{t("AdminPage.Dashboard.typeDist")}</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="genres" className="h-62.5 outline-hidden">
                                         <motion.div
@@ -201,7 +203,7 @@ export default function AdminDashboard() {
                                             {stats.charts?.genreDistribution && stats.charts.genreDistribution.length > 0 ? (
                                                 <PieChartWrapper data={stats.charts.genreDistribution} />
                                             ) : (
-                                                <EmptyState text="No genre data available" />
+                                                <EmptyState text={t("AdminPage.Dashboard.NoGenreData")} />
                                             )}
                                         </motion.div>
                                     </TabsContent>
@@ -214,7 +216,7 @@ export default function AdminDashboard() {
                                             {stats.charts?.typeDistribution && stats.charts.typeDistribution.length > 0 ? (
                                                 <PieChartWrapper data={stats.charts.typeDistribution} />
                                             ) : (
-                                                <EmptyState text="No type data available" />
+                                                <EmptyState text={t("AdminPage.Dashboard.NoTypeData")} />
                                             )}
                                         </motion.div>
                                     </TabsContent>
@@ -244,11 +246,11 @@ export default function AdminDashboard() {
                         <Card className="border-border/60 shadow-sm">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
-                                    <UserPlus className="size-5 text-blue-500" /> New User Registrations
+                                    <UserPlus className="size-5 text-blue-500" /> {t("AdminPage.Dashboard.NewUserRegistrations")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={{ users: { label: "Users", color: "var(--chart-2)" } }} className="h-62.5 w-full">
+                                <ChartContainer config={{ users: { label: t("AdminPage.Dashboard.Users"), color: "var(--chart-2)" } }} className="h-62.5 w-full">
                                     <BarChart data={stats.charts.userRegistrations}>
                                         <CartesianGrid vertical={false} strokeDasharray="3 3" className="stroke-muted" />
                                         <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={10} className="text-xs" />
@@ -287,28 +289,31 @@ export default function AdminDashboard() {
                             <Card className="border-border/60 shadow-sm h-full">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-lg">
-                                        <DollarSign className="size-5 text-emerald-500" /> Recent Transactions
+                                        <DollarSign className="size-5 text-emerald-500" /> {t("AdminPage.Dashboard.RecentTransactions")}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <Table>
                                         <TableHeader>
-                                            <TableRow className="border-border/50 hover:bg-transparent"><TableHead>User</TableHead><TableHead className="text-right">Amount</TableHead></TableRow>
+                                            <TableRow className="border-border/50 hover:bg-transparent">
+                                                <TableHead className="rtl:text-right">{t("AdminPage.Transactions.User")}</TableHead>
+                                                <TableHead className="text-right rtl:text-left">{t("AdminPage.Transactions.Amount")}</TableHead>
+                                            </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {stats.recent.transactions.length === 0 ? <EmptyRow text="No transactions" /> : (
-                                                stats.recent.transactions.map((t) => (
-                                                    <TableRow key={t.id} className="hover:bg-muted/50">
+                                            {stats.recent.transactions.length === 0 ? <EmptyRow text={t("AdminPage.Transactions.NoTransactionsFound")} /> : (
+                                                stats.recent.transactions.map((g) => (
+                                                    <TableRow key={g.id} className="hover:bg-muted/50">
                                                         <TableCell>
                                                             <div className="flex flex-col">
-                                                                <span className="font-medium text-sm">{t.username}</span>
-                                                                <span className="text-xs text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</span>
+                                                                <span className="font-medium text-sm">{g.username}</span>
+                                                                <span className="text-xs text-muted-foreground">{new Date(g.createdAt).toLocaleDateString(t("General.locale"))}</span>
                                                             </div>
                                                         </TableCell>
                                                         <TableCell className="text-right">
-                                                            <span className={`font-semibold flex items-center justify-end gap-1 ${t.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                                                {t.type === 'CREDIT' ? <ArrowUpCircle className="size-3"/> : <ArrowDownCircle className="size-3"/>}
-                                                                {t.type === 'CREDIT' ? '+' : '-'}${t.amount.toLocaleString()}
+                                                            <span className={`font-semibold flex items-center justify-end gap-1 ${g.type === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
+                                                                {g.type === 'CREDIT' ? <ArrowUpCircle className="size-3"/> : <ArrowDownCircle className="size-3"/>}
+                                                                {g.type === 'CREDIT' ? '+' : '-'}{t("General.CurrencySymbols")}{g.amount.toLocaleString(t("General.locale"))}
                                                             </span>
                                                         </TableCell>
                                                     </TableRow>
@@ -328,7 +333,7 @@ export default function AdminDashboard() {
                                 <CardHeader className="pb-3">
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="flex items-center gap-2 text-lg">
-                                            <Layers className="size-5 text-orange-500" /> Recent Content
+                                            <Layers className="size-5 text-orange-500" /> {t("AdminPage.Dashboard.RecentContent")}
                                         </CardTitle>
                                     </div>
                                 </CardHeader>
@@ -336,23 +341,28 @@ export default function AdminDashboard() {
                                     <Tabs defaultValue="books" className="w-full">
                                         <div className="px-6 pb-2">
                                             <TabsList className="w-full grid grid-cols-2">
-                                                <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="books">New Books</TabsTrigger>
-                                                <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="chapters">New Chapters</TabsTrigger>
+                                                <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="books">{t("AdminPage.Dashboard.NewBooks")}</TabsTrigger>
+                                                <TabsTrigger className="data-[state=active]:text-foreground dark:data-[state=active]:text-foreground" value="chapters">{t("AdminPage.Dashboard.NewChapters")}</TabsTrigger>
                                             </TabsList>
                                         </div>
 
                                         <TabsContent value="books" className="mt-0">
                                             <Table>
-                                                <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Title</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+                                                <TableHeader>
+                                                    <TableRow className="border-border/50 hover:bg-transparent">
+                                                        <TableHead className="rtl:text-right">{t("AdminPage.Dashboard.BooksTitle")}</TableHead>
+                                                        <TableHead className="rtl:text-right">{t("AdminPage.Dashboard.BooksDate")}</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
                                                 <TableBody>
-                                                    {stats.recent.books.length === 0 ? <EmptyRow text="No new books" /> : (
+                                                    {stats.recent.books.length === 0 ? <EmptyRow text={t("AdminPage.Dashboard.NoNewBooks")} /> : (
                                                         stats.recent.books.map((b) => (
                                                             <TableRow key={b.id}>
                                                                 <TableCell>
                                                                     <div className="font-medium text-sm truncate max-w-50">{b.title}</div>
-                                                                    <div className="text-xs text-muted-foreground">{b.author || "Unknown"}</div>
+                                                                    <div className="text-xs text-muted-foreground">{b.author || t("Books.Unknown")}</div>
                                                                 </TableCell>
-                                                                <TableCell className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString()}</TableCell>
+                                                                <TableCell className="text-xs text-muted-foreground">{new Date(b.createdAt).toLocaleDateString(t("General.locale"))}</TableCell>
                                                             </TableRow>
                                                         ))
                                                     )}
@@ -362,15 +372,20 @@ export default function AdminDashboard() {
 
                                         <TabsContent value="chapters" className="mt-0">
                                             <Table>
-                                                <TableHeader><TableRow className="border-border/50 hover:bg-transparent"><TableHead>Chapter</TableHead><TableHead>Book</TableHead></TableRow></TableHeader>
+                                                <TableHeader>
+                                                    <TableRow className="border-border/50 hover:bg-transparent">
+                                                        <TableHead className="rtl:text-right">{t("AdminPage.Dashboard.Chapter")}</TableHead>
+                                                        <TableHead className="rtl:text-right">{t("AdminPage.Dashboard.Book")}</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
                                                 <TableBody>
-                                                    {stats.recent.chapters.length === 0 ? <EmptyRow text="No new chapters" /> : (
+                                                    {stats.recent.chapters.length === 0 ? <EmptyRow text={t("NoNewChapters")} /> : (
                                                         stats.recent.chapters.map((c) => (
                                                             <TableRow key={c.id}>
                                                                 <TableCell className="font-medium text-sm">{c.title}</TableCell>
                                                                 <TableCell>
                                                                     <div className="text-xs truncate max-w-37.5">{c.bookTitle}</div>
-                                                                    <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString()}</div>
+                                                                    <div className="text-[10px] text-muted-foreground">{new Date(c.createdAt).toLocaleDateString(t("General.locale"))}</div>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))
@@ -392,6 +407,7 @@ export default function AdminDashboard() {
 // --- Sub Components ---
 
 function StatsCard({ title, value, growth, icon: Icon, color, bg, subText, animationDelay }: any) {
+    const t = useTranslations("AdminPage.Dashboard");
     const isPositive = growth >= 0
     return (
         <motion.div
@@ -415,7 +431,7 @@ function StatsCard({ title, value, growth, icon: Icon, color, bg, subText, anima
                             {isPositive ? <ArrowUpRight className="size-4" /> : <ArrowDownRight className="size-4" />}
                             <span className="font-medium">{Math.abs(growth)}%</span>
                         </div>
-                        <span className="text-muted-foreground ml-1">{subText || "from last month"}</span>
+                        <span className="text-muted-foreground ms-1">{subText || t("fromLastMonth")}</span>
                     </div>
                 </CardContent>
             </Card>
