@@ -45,6 +45,7 @@ import type { IconKey } from "@readory/shared";
 import { IconPicker } from "@/components/admin/icon-picker";
 import { apiClient } from "@/lib/api-client"
 import { motion } from "framer-motion"
+import {useTranslations} from "next-intl";
 
 type Genre = {
     id: number
@@ -97,7 +98,7 @@ function SortableGenreItem({genre, isFeaturedList, onDelete, onUpdateIcon,}: {
             <div
                 {...attributes}
                 {...listeners}
-                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1"
+                className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 -ms-1"
             >
                 <GripVertical className="h-5 w-5" />
             </div>
@@ -156,6 +157,8 @@ function DroppableContainer({id, items, children, className,}: {
 }
 
 export default function AdminGenres() {
+    const t = useTranslations('Genres');
+    const g = useTranslations('General');
     const [genres, setGenres] = useState<Genre[]>([])
     const [name, setName] = useState("")
     const [loading, setLoading] = useState(false)
@@ -340,10 +343,10 @@ export default function AdminGenres() {
                     transition={{ duration: 0.55 }}
                 >
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Genres Management
+                        {t("GenresManagement")}
                     </h1>
                     <p className="text-sm sm:text-base text-muted-foreground">
-                        Organize your content by dragging genres between lists to feature them on the homepage
+                        {t("GenresManagementDescription")}
                     </p>
                 </motion.div>
 
@@ -361,32 +364,32 @@ export default function AdminGenres() {
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-xl flex items-center gap-2">
                                         <div className="h-8 w-1 bg-linear-to-b from-blue-500 to-purple-500 rounded-full" />
-                                        Available Genres
+                                        {t("AvailableGenres")}
                                     </CardTitle>
-                                    <CardDescription>Create new genres or drag them to the featured list</CardDescription>
+                                    <CardDescription>{t("AvailableGenresDescription")}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="flex flex-col sm:flex-row gap-2">
                                         <Input
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            placeholder="Enter genre name..."
+                                            placeholder={t("EnterGenreName")}
                                             onKeyDown={(e) => e.key === "Enter" && create()}
                                             className="flex-1"
                                         />
                                         <Button onClick={create} disabled={loading || !name.trim()} className="sm:w-auto w-full gap-2">
                                             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                                            Create Genre
+                                            {t("CreateGenre")}
                                         </Button>
                                     </div>
 
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search available genres..."
+                                            placeholder={t("SearchAvailableGenres")}
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="pl-10"
+                                            className="ps-10"
                                         />
                                     </div>
 
@@ -399,8 +402,8 @@ export default function AdminGenres() {
                                             {unfeaturedGenres.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm border-2 border-dashed border-border/50 rounded-xl bg-background/50 backdrop-blur-sm p-8">
                                                     <Tag className="h-12 w-12 mb-3 opacity-20" />
-                                                    <p className="font-medium">{searchQuery ? "No matches found" : "No available genres"}</p>
-                                                    {!searchQuery && <p className="text-xs mt-1 opacity-60">Create your first genre above</p>}
+                                                    <p className="font-medium">{searchQuery ? t("NoMatches") : t("NoAvailable")}</p>
+                                                    {!searchQuery && <p className="text-xs mt-1 opacity-60">{t("CreateFirst")}</p>}
                                                 </div>
                                             ) : (
                                                 unfeaturedGenres.map((genre) => (
@@ -429,10 +432,10 @@ export default function AdminGenres() {
                                         </div>
                                         <div>
                                             <CardTitle className="text-xl bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                                Featured Genres
+                                                {t("FeaturedGenres")}
                                             </CardTitle>
                                             <CardDescription className="text-xs mt-0.5">
-                                                {featuredGenres.length} {featuredGenres.length === 1 ? "genre" : "genres"} featured
+                                                {t("NGenresFeatured", {GNum: featuredGenres.length})}
                                             </CardDescription>
                                         </div>
                                     </div>
@@ -445,9 +448,9 @@ export default function AdminGenres() {
                                                     <div className="h-16 w-16 rounded-full bg-linear-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mb-4">
                                                         <Sparkles className="h-8 w-8 text-blue-500/60" />
                                                     </div>
-                                                    <p className="font-medium text-center">Drag genres here to feature</p>
+                                                    <p className="font-medium text-center">{t("DragToFeature")}</p>
                                                     <p className="text-xs mt-1 opacity-60 text-center max-w-[200px]">
-                                                        Featured genres appear on your homepage
+                                                        {t("FeaturedOnHomepage")}
                                                     </p>
                                                 </div>
                                             ) : (
@@ -494,18 +497,18 @@ export default function AdminGenres() {
                 <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Genre</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to delete <strong>{genreToDelete?.name}</strong>? This action cannot be undone.
+                            <AlertDialogTitle>{t("DeleteGenre")}</AlertDialogTitle>
+                            <AlertDialogDescription className="rtl:text-right">
+                                {t("DeleteGenreDescription", {GenreName: genreToDelete?.name || ""})}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{g("Cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={handleDeleteConfirm}
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
-                                Delete
+                                {g("Delete")}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
