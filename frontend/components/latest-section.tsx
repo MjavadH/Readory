@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookType } from "@/lib/types";
 import { formatUpdateTime } from "@/lib/time";
 import {useTranslations} from "next-intl";
+import { useRouter } from "next/navigation";
 
 interface Chapter {
     id: number;
@@ -98,6 +99,7 @@ export function LatestSectionSkeleton({ count = 6 }: { count?: number }) {
 
 export function LatestSection({ books }: { books: LatestBook[] }) {
     if (books.length === 0) return null;
+    const router = useRouter();
     const t = useTranslations('HomePage');
     const ti = useTranslations('Time');
     const filtered = books.filter((b) => b.chapters.length > 0);
@@ -124,75 +126,66 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                     const typeDisplay = book.type.name;
 
                     return (
-                        <Link key={book.id} href={`/${typeSlug}/${book.id}`}>
-                            <div className="group flex cursor-pointer gap-4 rounded-xl border border-border bg-card p-3 transition-all duration-300 hover:border-primary/30 hover:bg-accent/50">
-                                {/* Cover */}
-                                <div className="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 md:w-24">
-                                    <Image
-                                        src={
-                                            book.cover
-                                                ? `/media/${book.cover}/thumbnail`
-                                                : "/placeholder.svg"
-                                        }
-                                        alt={book.title}
-                                        fill
-                                        sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
-                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                    {book.chapters[0]?.free && (
-                                        <div className="absolute left-1 top-1">
-                                            <Badge className="bg-emerald-500 px-1.5 py-0 text-[10px] font-bold text-emerald-50 shadow-sm">
-                                                FREE
-                                            </Badge>
-                                        </div>
-                                    )}
+                        <div
+                            key={book.id}
+                            onClick={() => router.push(`/${typeSlug}/${book.id}`)}
+                            className="group flex cursor-pointer gap-4 rounded-xl border border-border bg-card p-3 transition-all duration-300 hover:border-primary/30 hover:bg-accent/50"
+                        >
+                            {/* Cover */}
+                            <div className="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 md:w-24">
+                                <Image
+                                    src={book.cover ? `/media/${book.cover}/thumbnail` : "/placeholder.svg"}
+                                    alt={book.title}
+                                    fill
+                                    sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
+                                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                />
+                                {book.chapters[0]?.free && (
+                                    <div className="absolute left-1 top-1">
+                                        <Badge className="bg-emerald-500 px-1.5 py-0 text-[10px] font-bold text-emerald-50 shadow-sm">
+                                            {t("Free")}
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
+                            {/* Info */}
+                            <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
+                                <div>
+                                    <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
+                                        {book.title}
+                                    </h3>
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                        <Badge
+                                            variant="secondary"
+                                            className="px-1.5 py-0 text-[10px] font-medium"
+                                        >
+                                            {typeDisplay}
+                                        </Badge>
+                                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                            <Clock className="h-3 w-3" />
+                                            {formatUpdateTime(book.time , ti)}
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {/* Info */}
-                                <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
-                                    <div>
-                                        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">
-                                            {book.title}
-                                        </h3>
-                                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                            <Badge
-                                                variant="secondary"
-                                                className="px-1.5 py-0 text-[10px] font-medium"
-                                            >
-                                                {typeDisplay}
-                                            </Badge>
-                                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <Clock className="h-3 w-3" />
-                                                {formatUpdateTime(book.time , ti)}
+                                {/* Chapters */}
+                                <div className="mt-2.5 flex flex-col gap-1">
+                                    {book.chapters.slice(0, 2).map((ch) => (
+                                        <Link
+                                            key={ch.id}
+                                            href={`/${typeSlug}/${book.id}/c/${ch.num}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-xs transition-colors hover:bg-primary/10 hover:text-primary"
+                                        >
+                                            <span className="font-medium">{t("Chapter")} {ch.num}</span>
+                                            <span className={ch.free ? "font-semibold text-emerald-600" : "text-muted-foreground"}>
+                                                {ch.free ? t("Free") : t("Paid")}
                                             </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Chapters */}
-                                    <div className="mt-2.5 flex flex-col gap-1">
-                                        {book.chapters.slice(0, 2).map((ch) => (
-                                            <Link
-                                                key={ch.id}
-                                                href={`/${typeSlug}/${book.id}/c/${ch.num}`}
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="flex items-center justify-between rounded-md bg-muted px-2.5 py-1.5 text-xs transition-colors hover:bg-primary/10 hover:text-primary"
-                                            >
-                                                <span className="font-medium">{t("Chapter")} {ch.num}</span>
-                                                <span
-                                                    className={
-                                                        ch.free
-                                                            ? "font-semibold text-emerald-600"
-                                                            : "text-muted-foreground"
-                                                    }
-                                                >
-                                                    {ch.free ? t("Free") : t("Paid")}
-                                                </span>
-                                            </Link>
-                                        ))}
-                                    </div>
+                                        </Link>
+                                    ))}
                                 </div>
                             </div>
-                        </Link>
+                        </div>
                     );
                 })}
             </div>
