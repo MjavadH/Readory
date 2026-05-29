@@ -14,6 +14,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { useToast } from "@/providers/toast-provider";
 import {BrandLogo} from "@/components/brand-logo";
+import {useTranslations} from "next-intl";
+import Link from "next/link";
 
 type RoleName = "ADMIN" | "USER"
 
@@ -36,6 +38,8 @@ type OTPFormValues = z.infer<typeof otpSchema>
 type ViewMode = "login" | "register" | "otp"
 
 export default function AuthPage() {
+  const t = useTranslations('Auth');
+  const g = useTranslations('General');
   const router = useRouter()
   const toast = useToast()
   const [mode, setMode] = useState<ViewMode>("login")
@@ -75,7 +79,7 @@ export default function AuthPage() {
 
       router.push(data.user?.roleName === "ADMIN" ? "/admin" : "/")
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "An error occurred during login."),"Login failed")
+      toast.error(getApiErrorMessage(error, t("ErrorLogin")),t("LoginFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -83,7 +87,7 @@ export default function AuthPage() {
 
   const handleRegister = async (values: AuthFormValues) => {
     if (!values.username || values.username.length < 3) {
-      authForm.setError("username", { message: "Username must be at least 3 chars" })
+      authForm.setError("username", { message: t("UsernameChars") })
       return
     }
 
@@ -98,9 +102,9 @@ export default function AuthPage() {
       setRegisteredEmail(values.email.trim())
       setMode("otp")
       authForm.reset()
-      toast.info("Enter the 6-digit OTP code sent to your email.","Verification sent")
+      toast.info(t("EnterOTP"),t("VerificationSent"))
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "An error occurred during registration."),"Registration failed")
+      toast.error(getApiErrorMessage(error, t("ErrorRegistration")),t("RegistrationFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -115,10 +119,10 @@ export default function AuthPage() {
         email: registeredEmail,
         otp: values.otp,
       })
-      toast.success("Your account is now active and signed in.","Verified")
+      toast.success(t("AccountActive"),t("Verified"))
       router.push(data.user?.roleName === "ADMIN" ? "/admin" : "/")
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "An error occurred during verification."),"Verification failed")
+      toast.error(getApiErrorMessage(error, t("ErrorVerification")), t("VerificationFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -136,25 +140,27 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-muted/20 to-background p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center">
-            <BrandLogo priority className="h-20 w-20" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground">Readory</h1>
+          <Link href="/">
+            <div className="inline-flex items-center justify-center">
+              <BrandLogo priority className="h-20 w-20" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground">{g("Readory")}</h1>
+          </Link>
           <p className="text-muted-foreground mt-2">
-            {mode === "login" && "Sign in with Email or Username"}
-            {mode === "register" && "Create an account to get started"}
-            {mode === "otp" && "Verify your email address"}
+            {mode === "login" && t("SignInEmailUsername")}
+            {mode === "register" && t("CreateAccount")}
+            {mode === "otp" && t("VerifyEmail")}
           </p>
         </div>
 
         <Card className="border-2">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl">
-              {mode === "login" && "Sign In"}
-              {mode === "register" && "Create Account"}
-              {mode === "otp" && "Email Verification"}
+              {mode === "login" && t("SignIn")}
+              {mode === "register" && t("Register")}
+              {mode === "otp" && t("OTP")}
             </CardTitle>
-            <CardDescription>{mode === "otp" && `Enter the code sent to ${registeredEmail}`}</CardDescription>
+            <CardDescription>{mode === "otp" && t("EnterCode" , {Email: registeredEmail})}</CardDescription>
           </CardHeader>
 
           <CardContent>
@@ -167,11 +173,11 @@ export default function AuthPage() {
                       name="username"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{t("Username")}</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input placeholder="username" disabled={isLoading} className="pl-10" {...field} />
+                              <User className="absolute ltr:left-3 rtl: right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input placeholder={t("Username")} disabled={isLoading} className="ps-10" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -185,14 +191,14 @@ export default function AuthPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{mode === "login" ? "Email or Username" : "Email Address"}</FormLabel>
+                        <FormLabel>{mode === "login" ? t("EmailUsername") : t("EmailAddress")}</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Mail className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                              placeholder={mode === "login" ? "email or username" : "name@gmail.com"}
+                              placeholder={mode === "login" ? t("EmailUsername") : t("ExampleEmail")}
                               disabled={isLoading}
-                              className="pl-10"
+                              className="ps-10"
                               {...field}
                             />
                           </div>
@@ -207,11 +213,11 @@ export default function AuthPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>{t("Password")}</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Enter password" type="password" disabled={isLoading} className="pl-10" {...field} />
+                            <Lock className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder={t("EnterPassword")} type="password" disabled={isLoading} className="ps-10" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -222,11 +228,11 @@ export default function AuthPage() {
                   <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
+                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                        {t("Processing")}
                       </>
                     ) : (
-                      <>{mode === "login" ? "Sign In" : "Create Account"}</>
+                      <>{mode === "login" ? t("SignIn") : t("Register")}</>
                     )}
                   </Button>
                 </form>
@@ -241,9 +247,9 @@ export default function AuthPage() {
                     name="otp"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Verification Code</FormLabel>
+                        <FormLabel>{t("VerificationCode")}</FormLabel>
                         <FormControl>
-                          <div className="flex justify-center">
+                          <div className="flex justify-center must-ltr">
                             <InputOTP
                               maxLength={6}
                               {...field}
@@ -267,7 +273,7 @@ export default function AuthPage() {
 
                   <div className="space-y-2">
                     <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                      {isLoading ? "Verifying..." : "Verify & Activate"}
+                      {isLoading ? t("Verifying") : t("VerifyActivate")}
                     </Button>
                     <Button
                       type="button"
@@ -278,8 +284,8 @@ export default function AuthPage() {
                         otpForm.reset()
                       }}
                     >
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Register
+                      <ArrowLeft className="me-2 rtl:rotate-180 h-4 w-4" />
+                      {t("BackRegister")}
                     </Button>
                   </div>
                 </form>
@@ -289,7 +295,7 @@ export default function AuthPage() {
             {(mode === "login" || mode === "register") && (
               <div className="mt-6 text-center text-sm">
                 <span className="text-muted-foreground">
-                  {mode === "login" ? "Don't have an account?" : "Already have an account?"}
+                  {mode === "login" ? t("NoAccount") : t("HaveAccount")}
                 </span>{" "}
                 <button
                   type="button"
@@ -300,7 +306,7 @@ export default function AuthPage() {
                   className="text-primary hover:underline font-medium"
                   disabled={isLoading}
                 >
-                  {mode === "login" ? "Sign Up" : "Sign In"}
+                  {mode === "login" ? t("SignUp") : t("SignIn")}
                 </button>
               </div>
             )}
