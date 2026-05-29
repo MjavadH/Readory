@@ -49,10 +49,10 @@ export function TrendingSkeleton({ count = 8 }: { count?: number }) {
 
                 <div className="hidden items-center gap-2 md:flex">
                     <div className="rounded-full border border-border bg-card p-2 animate-pulse">
-                        <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+                        <ChevronLeft className="h-4 w-4 rtl:rotate-180 text-muted-foreground" />
                     </div>
                     <div className="rounded-full border border-border bg-card p-2 animate-pulse">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 rtl:rotate-180 text-muted-foreground" />
                     </div>
                 </div>
             </div>
@@ -78,8 +78,17 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
     const checkScroll = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
-        setCanScrollLeft(el.scrollLeft > 4);
-        setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+        const isRtl = window.getComputedStyle(el).direction === "rtl";
+        const maxScroll = el.scrollWidth - el.clientWidth;
+
+        if (isRtl) {
+            const scrollAbs = Math.abs(el.scrollLeft);
+            setCanScrollLeft(scrollAbs > 4);
+            setCanScrollRight(scrollAbs < maxScroll - 4);
+        } else {
+            setCanScrollLeft(el.scrollLeft > 4);
+            setCanScrollRight(el.scrollLeft < maxScroll - 4);
+        }
     }, []);
 
     useEffect(() => {
@@ -93,7 +102,11 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
     const scroll = (dir: "left" | "right") => {
         const el = scrollRef.current;
         if (!el) return;
-        el.scrollBy({ left: dir === "left" ? -340 : 340, behavior: "smooth" });
+
+        const isRtl = window.getComputedStyle(el).direction === "rtl";
+        const amount = dir === "left" ? -340 : 340;
+
+        el.scrollBy({ left: isRtl ? -amount : amount, behavior: "smooth" });
     };
 
     return (
