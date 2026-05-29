@@ -46,6 +46,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { GripVertical, Loader2, Pencil, Plus, Search, Tag, Trash2 } from "lucide-react"
 import { motion } from "framer-motion"
+import {useTranslations} from "next-intl";
 
 function SortableTypeItem({item, isActiveList, onDelete, onEdit, onUpdateIcon,}: {
     item: BookType
@@ -54,6 +55,7 @@ function SortableTypeItem({item, isActiveList, onDelete, onEdit, onUpdateIcon,}:
     onEdit: (t: BookType) => void
     onUpdateIcon: (id: number, iconKey: IconKey | null) => void
 }) {
+    const t = useTranslations('AdminPage.BooksType');
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: item.id.toString(),
         data: { type: "BookType", item },
@@ -75,7 +77,7 @@ function SortableTypeItem({item, isActiveList, onDelete, onEdit, onUpdateIcon,}:
         ${isDragging ? "shadow-2xl ring-2 ring-primary scale-[1.02]" : ""}
       `}
         >
-            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 -ml-1">
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1 -ms-1">
                 <GripVertical className="h-5 w-5" />
             </div>
 
@@ -89,7 +91,7 @@ function SortableTypeItem({item, isActiveList, onDelete, onEdit, onUpdateIcon,}:
                 <div className="flex items-center gap-2 mb-1">
                     <AppIcon name={item.iconKey as IconKey | null} className="h-4 w-4 text-muted-foreground shrink-0" />
                     <h3 className="font-semibold truncate text-sm text-foreground">{item.name}</h3>
-                    {!item.isActive && <Badge variant="secondary" className="h-5 px-2 text-[10px]">Inactive</Badge>}
+                    {!item.isActive && <Badge variant="secondary" className="h-5 px-2 text-[10px]">{t("Inactive")}</Badge>}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -142,6 +144,8 @@ function DroppableContainer({
 }
 
 export default function AdminBookTypesPage() {
+    const t = useTranslations('AdminPage.BooksType');
+    const g = useTranslations('General');
     const [types, setTypes] = useState<BookType[]>([])
     const [name, setName] = useState("")
     const [loadingCreate, setLoadingCreate] = useState(false)
@@ -371,10 +375,10 @@ export default function AdminBookTypesPage() {
                     transition={{ duration: 0.55 }}
                 >
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Book Types Management
+                        {t("Title")}
                     </h1>
                     <p className="text-sm sm:text-base text-muted-foreground">
-                        Create and organize book types. Drag between lists to activate/deactivate, and reorder active types.
+                        {t("Description")}
                     </p>
                 </motion.div>
 
@@ -392,9 +396,9 @@ export default function AdminBookTypesPage() {
                                 <CardHeader className="pb-4">
                                     <CardTitle className="text-xl flex items-center gap-2">
                                         <div className="h-8 w-1 bg-linear-to-b from-primary to-primary/60 rounded-full" />
-                                        Inactive Types
+                                        {t("InactiveTypes")}
                                     </CardTitle>
-                                    <CardDescription>Create new types or drag them to Active list</CardDescription>
+                                    <CardDescription>{t("CreateNewOrDrag")}</CardDescription>
                                 </CardHeader>
 
                                 <CardContent className="space-y-4">
@@ -402,23 +406,23 @@ export default function AdminBookTypesPage() {
                                         <Input
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            placeholder="Enter type name..."
+                                            placeholder={t("EnterTypeName")}
                                             onKeyDown={(e) => e.key === "Enter" && create()}
                                             className="flex-1"
                                         />
                                         <Button onClick={create} disabled={loadingCreate || !name.trim()} className="sm:w-auto w-full gap-2">
                                             {loadingCreate ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                                            Create Type
+                                            {t("CreateType")}
                                         </Button>
                                     </div>
 
                                     <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Search inactive types..."
+                                            placeholder={t("SearchInactiveTypes")}
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="pl-10"
+                                            className="ps-10"
                                         />
                                     </div>
 
@@ -427,7 +431,7 @@ export default function AdminBookTypesPage() {
                                             {inactiveTypes.length === 0 ? (
                                                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm border-2 border-dashed border-border/50 rounded-xl bg-background/50 backdrop-blur-sm p-8">
                                                     <Tag className="h-12 w-12 mb-3 opacity-20" />
-                                                    <p className="font-medium">{searchQuery ? "No matches found" : "No inactive types"}</p>
+                                                    <p className="font-medium">{searchQuery ? t("NoMatches") : t("NoInactiveTypes")}</p>
                                                 </div>
                                             ) : (
                                                 inactiveTypes.map((t) => (
@@ -451,9 +455,9 @@ export default function AdminBookTypesPage() {
                         <div className="lg:col-span-5 space-y-6">
                             <Card className="border-primary/30 shadow-lg bg-linear-to-br from-card via-card to-primary/5">
                                 <CardHeader className="border-b border-primary/20 pt-4">
-                                    <CardTitle className="text-xl">Active Types</CardTitle>
+                                    <CardTitle className="text-xl">{t("ActiveTypes")}</CardTitle>
                                     <CardDescription className="text-xs mt-0.5">
-                                        {activeTypes.length} active
+                                        {t("NActive", {ANum: activeTypes.length})}
                                     </CardDescription>
                                 </CardHeader>
 
@@ -465,7 +469,7 @@ export default function AdminBookTypesPage() {
                                                     <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                                                         <Tag className="h-8 w-8 text-primary/60" />
                                                     </div>
-                                                    <p className="font-medium text-center">Drag types here to activate</p>
+                                                    <p className="font-medium text-center">{t("DragHereToActivate")}</p>
                                                 </div>
                                             ) : (
                                                 activeTypes.map((t) => (
@@ -499,7 +503,7 @@ export default function AdminBookTypesPage() {
                                         <code className="text-xs text-muted-foreground truncate block">{activeItem.slug}</code>
                                     </div>
                                     <Badge variant="secondary" className="shrink-0">
-                                        {activeItem.isActive ? "Active" : "Inactive"}
+                                        {activeItem.isActive ? t("Active") : t("Inactive")}
                                     </Badge>
                                 </div>
                             </div>
@@ -511,15 +515,15 @@ export default function AdminBookTypesPage() {
                 <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Book Type</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to delete <strong>{typeToDelete?.name}</strong>? If this type is used by books, it will be deactivated instead.
+                            <AlertDialogTitle>{t("DeleteType")}</AlertDialogTitle>
+                            <AlertDialogDescription className="rtl:text-right">
+                                {t("DeleteTypeDescription", {TypeName: typeToDelete?.name || ""})}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel>{g("Cancel")}</AlertDialogCancel>
                             <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                Delete
+                                {g("Delete")}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
@@ -529,28 +533,28 @@ export default function AdminBookTypesPage() {
                 <Dialog open={editOpen} onOpenChange={setEditOpen}>
                     <DialogContent className="sm:max-w-[520px]">
                         <DialogHeader>
-                            <DialogTitle>Edit Book Type</DialogTitle>
+                            <DialogTitle>{t("EditType")}</DialogTitle>
                         </DialogHeader>
 
                         <div className="space-y-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Name</label>
-                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Type name" />
+                                <label className="text-sm font-medium">{t("Name")}</label>
+                                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t("EnterTypeName")} />
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Slug</label>
-                                <Input value={editSlug} onChange={(e) => setEditSlug(e.target.value)} placeholder="kebab-case slug" />
-                                <p className="text-xs text-muted-foreground">Used in URLs and filters. Must be kebab-case.</p>
+                                <label className="text-sm font-medium">{t("Slug")}</label>
+                                <Input value={editSlug} onChange={(e) => setEditSlug(e.target.value)} placeholder={t("kebabCaseSlug")} />
+                                <p className="text-xs text-muted-foreground">{t("kebabCaseSlugDescription")}</p>
                             </div>
 
                             <div className="flex justify-end gap-2 pt-2">
                                 <Button variant="outline" onClick={() => setEditOpen(false)}>
-                                    Cancel
+                                    {g("Cancel")}
                                 </Button>
                                 <Button onClick={saveEdit} disabled={savingEdit || !editName.trim() || !editSlug.trim()}>
-                                    {savingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                    Save
+                                    {savingEdit ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : null}
+                                    {g("Save")}
                                 </Button>
                             </div>
                         </div>
