@@ -17,14 +17,16 @@ import {
 import { apiClient } from "@/lib/api-client"
 import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
+import {useTranslations} from "next-intl";
 
 function GrowthIndicator({ value }: { value?: number }) {
+    const t = useTranslations('AdminPage.Transactions');
     if (value === undefined) return null
     if (value === 0) {
         return (
             <div className="flex items-center text-xs font-medium text-muted-foreground bg-muted/20 px-2 py-1 rounded-full">
-                <Minus className="mr-1 size-3" />
-                <span>No change</span>
+                <Minus className="me-1 size-3" />
+                <span>{t("NoChange")}</span>
             </div>
         )
     }
@@ -39,9 +41,9 @@ function GrowthIndicator({ value }: { value?: number }) {
                     : "text-red-700 bg-red-500/10 dark:text-red-400"
             }`}
         >
-            {isPositive ? <TrendingUp className="mr-1 size-3" /> : <TrendingDown className="mr-1 size-3" />}
+            {isPositive ? <TrendingUp className="me-1 size-3" /> : <TrendingDown className="me-1 size-3" />}
             <span>
-        {Math.abs(value).toFixed(1)}% {isPositive ? "growth" : "drop"}
+        {Math.abs(value).toFixed(1)}% {isPositive ? t("Growth") : t("Drop")}
       </span>
         </div>
     )
@@ -76,6 +78,8 @@ interface TransactionStats {
 }
 
 export default function AdminTransactions() {
+    const t = useTranslations('AdminPage.Transactions');
+    const g = useTranslations('General');
     const [transactions, setTransactions] = useState<Transaction[]>([])
     const [stats, setStats] = useState<TransactionStats>({
         total: 0,
@@ -126,9 +130,9 @@ export default function AdminTransactions() {
     }, [page])
 
     const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("en-US", {
+        return new Intl.NumberFormat(g("locale"), {
             style: "currency",
-            currency: "USD",
+            currency: g("CurrencyName"),
         }).format(amount)
     }
 
@@ -163,15 +167,15 @@ export default function AdminTransactions() {
                     transition={{ duration: 0.55 }}
                 >
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Transactions
+                        {t("Title")}
                     </h1>
-                    <p className="text-sm sm:text-base text-muted-foreground">View all wallet transactions</p>
+                    <p className="text-sm sm:text-base text-muted-foreground">{t("Description")}</p>
                 </motion.div>
 
                 {/* Stats Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard
-                        title="Total Transactions"
+                        title={t("TotalTransactions")}
                         value={stats.total.toLocaleString()}
                         icon={Activity}
                         color="blue"
@@ -179,7 +183,7 @@ export default function AdminTransactions() {
                         animationDelay={0}
                     />
                     <StatCard
-                        title="Deposits"
+                        title={t("Deposits")}
                         value={formatCurrency(stats.creditAmount)}
                         icon={ArrowUpCircle}
                         color="emerald"
@@ -187,7 +191,7 @@ export default function AdminTransactions() {
                         animationDelay={0.2}
                     />
                     <StatCard
-                        title="Withdrawals"
+                        title={t("Withdrawals")}
                         value={formatCurrency(stats.debitAmount)}
                         icon={ArrowDownCircle}
                         color="red"
@@ -201,12 +205,12 @@ export default function AdminTransactions() {
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                        <TableHead className="font-semibold">User</TableHead>
-                                        <TableHead className="font-semibold">Type</TableHead>
-                                        <TableHead className="text-right font-semibold">Amount</TableHead>
-                                        <TableHead className="font-semibold">Reference</TableHead>
-                                        <TableHead className="font-semibold">Date & Time</TableHead>
+                                    <TableRow className="hover:bg-transparent border-border/50">
+                                        <TableHead className="font-semibold rtl:text-right">{t("User")}</TableHead>
+                                        <TableHead className="font-semibold rtl:text-right">{t("Type")}</TableHead>
+                                        <TableHead className="ltr:text-right font-semibold rtl:text-left">{t("Amount")}</TableHead>
+                                        <TableHead className="font-semibold rtl:text-right">{t("Reference")}</TableHead>
+                                        <TableHead className="font-semibold rtl:text-right">{t("DateTime")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -217,9 +221,9 @@ export default function AdminTransactions() {
                                                     <div className="size-16 sm:size-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
                                                         <Wallet className="size-8 sm:size-10 text-muted-foreground/50" />
                                                     </div>
-                                                    <p className="text-base sm:text-lg font-semibold mb-1">No transactions found</p>
+                                                    <p className="text-base sm:text-lg font-semibold mb-1">{t("NoTransactionsFound")}</p>
                                                     <p className="text-xs sm:text-sm text-muted-foreground/60">
-                                                        Transactions will appear here once users start transacting
+                                                        {t("NoTransactionsFoundDescription")}
                                                     </p>
                                                 </div>
                                             </TableCell>
@@ -229,9 +233,9 @@ export default function AdminTransactions() {
                                             <TableRow key={transaction.id} className="hover:bg-muted/20 transition-colors">
                                                 <TableCell>
                                                     <div className="flex flex-col">
-                            <span className="font-medium text-sm sm:text-base">
-                              {transaction.wallet?.user?.username}
-                            </span>
+                                                        <span className="font-medium text-sm sm:text-base">
+                                                            {transaction.wallet?.user?.username}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
 
@@ -242,7 +246,7 @@ export default function AdminTransactions() {
                                                             className="gap-1.5 border-emerald-600/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 hover:bg-emerald-500/20"
                                                         >
                                                             <ArrowUpCircle className="size-3" />
-                                                            Credit
+                                                            {t("Credit")}
                                                         </Badge>
                                                     ) : (
                                                         <Badge
@@ -250,22 +254,20 @@ export default function AdminTransactions() {
                                                             className="gap-1.5 border-red-600/30 bg-red-500/10 text-red-600 dark:text-red-500 hover:bg-red-500/20"
                                                         >
                                                             <ArrowDownCircle className="size-3" />
-                                                            Debit
+                                                            {t("Debit")}
                                                         </Badge>
                                                     )}
                                                 </TableCell>
 
-                                                <TableCell className="text-right">
-                          <span
-                              className={`text-base sm:text-lg font-bold tabular-nums ${
-                                  transaction.type === "CREDIT"
-                                      ? "text-emerald-600 dark:text-emerald-500"
-                                      : "text-red-600 dark:text-red-500"
-                              }`}
-                          >
-                            {transaction.type === "CREDIT" ? "+" : "-"}
-                              {formatCurrency(Number(transaction.amount)).replace("-", "")}
-                          </span>
+                                                <TableCell className="text-right rtl:text-left">
+                                                    <span className={`text-base sm:text-lg font-bold tabular-nums
+                                                    ${transaction.type === "CREDIT" 
+                                                        ? "text-emerald-600 dark:text-emerald-500" 
+                                                        : "text-red-600 dark:text-red-500"
+                                                    }`}
+                                                    >
+                                                        {formatCurrency(Number(transaction.amount)).replace("-", "")}
+                                                    </span>
                                                 </TableCell>
 
                                                 <TableCell>
@@ -274,25 +276,25 @@ export default function AdminTransactions() {
                                                             {transaction.reference}
                                                         </Badge>
                                                     ) : (
-                                                        <span className="text-xs sm:text-sm text-muted-foreground italic">No reference</span>
+                                                        <span className="text-xs sm:text-sm text-muted-foreground italic">{t("NoReference")}</span>
                                                     )}
                                                 </TableCell>
 
                                                 <TableCell>
                                                     <div className="flex flex-col gap-0.5">
-                            <span className="text-xs sm:text-sm font-medium">
-                              {new Date(transaction.createdAt).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                              })}
-                            </span>
+                                                        <span className="text-xs sm:text-sm font-medium">
+                                                            {new Date(transaction.createdAt).toLocaleDateString(g("locale"), {
+                                                                month: "short",
+                                                                day: "numeric",
+                                                                year: "numeric",
+                                                            })}
+                                                        </span>
                                                         <span className="text-[10px] sm:text-xs text-muted-foreground">
-                              {new Date(transaction.createdAt).toLocaleTimeString("en-US", {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                              })}
-                            </span>
+                                                            {new Date(transaction.createdAt).toLocaleTimeString(g("locale"), {
+                                                                hour: "2-digit",
+                                                                minute: "2-digit",
+                                                            })}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -308,7 +310,7 @@ export default function AdminTransactions() {
                     totalPages={totalPages}
                     totalItems={stats.total}
                     pageSize={ITEMS_PER_PAGE}
-                    itemLabel="transactions"
+                    itemLabel={t("transactions")}
                     onPageChange={setPage}
                     canGoPrevious={page > 1}
                     canGoNext={hasMore}
