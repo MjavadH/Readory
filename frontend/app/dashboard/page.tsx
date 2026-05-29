@@ -18,8 +18,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {useTranslations} from "next-intl";
 
 export default function OverviewPage() {
+  const t = useTranslations('UserDashboard');
   const [data, setData] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export default function OverviewPage() {
         const res = await apiClient.get<DashboardOverview>("/dashboard");
         setData(res);
       } catch (err: any) {
-        setError("Failed to load dashboard data");
+        setError(t("FailedLoadDashboard"));
       } finally {
         setLoading(false);
       }
@@ -120,14 +122,14 @@ export default function OverviewPage() {
             <AlertCircle className="w-12 h-12 text-destructive" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Something went wrong</h2>
+            <h2 className="text-2xl font-bold">{t("SomethingWentWrong")}</h2>
             <p className="text-muted-foreground">{error}</p>
           </div>
           <button
               onClick={() => window.location.reload()}
               className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
           >
-            Try Again
+            {t("TryAgain")}
           </button>
         </div>
     );
@@ -137,14 +139,14 @@ export default function OverviewPage() {
       <div className="space-y-12 pb-12">
         {/* Header */}
         <section className="relative overflow-hidden p-10 rounded-[2.5rem] bg-linear-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 shadow-sm ring-1 ring-primary/5">
-          <div className="absolute top-0 right-0 p-8 opacity-5 -rotate-12 translate-x-1/4 -translate-y-1/4">
+          <div className="absolute top-0 ltr:right-0 rtl:left-0 p-8 opacity-5 -rotate-12 ltr:translate-x-1/4 rtl:-translate-x-1/4 -translate-y-1/4">
             <TrendingUp className="w-64 h-64" />
           </div>
           <div className="relative z-10 space-y-2">
             <h1
                 className="text-5xl font-extrabold tracking-tight text-foreground"
             >
-              Hello, <span style={{"wordBreak" : "break-all"}} className="text-primary">{data.profile.username}</span>!
+              {t("Hello")} <span style={{"wordBreak" : "break-all"}} className="text-primary">{data.profile.username}</span>!
             </h1>
             <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -152,8 +154,7 @@ export default function OverviewPage() {
                 transition={{ delay: 0.2 }}
                 className="text-muted-foreground text-lg max-w-2xl font-medium leading-relaxed"
             >
-              You've read {data.continueReading?.progress.percent || 100}% of your last chapter.
-              Keep up the great progress!
+              {t("Description1", {DataProgressPercent: data.continueReading?.progress.percent || 100})}
             </motion.p>
           </div>
         </section>
@@ -166,7 +167,7 @@ export default function OverviewPage() {
                   <div className="flex items-center justify-between px-2">
                     <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">
                       <BookMarked className="w-6 h-6 text-primary" />
-                      Continue Reading
+                      {t("ContinueReading")}
                     </h2>
                   </div>
                   <ContinueReadingCard progress={data.continueReading} />
@@ -178,11 +179,11 @@ export default function OverviewPage() {
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">
                   <TrendingUp className="w-6 h-6 text-primary" />
-                  Recent Library
+                  {t("RecentLibrary")}
                 </h2>
                 <Link href="/dashboard/library" className="group flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all px-4 py-2 bg-primary/5 rounded-2xl hover:bg-primary/10">
-                  View Full Library
-                  <ArrowRight className="w-4 h-4" />
+                  {t("ViewFullLibrary")}
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -197,11 +198,11 @@ export default function OverviewPage() {
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">
                   <History className="w-6 h-6 text-primary" />
-                  Transactions
+                  {t("Transactions")}
                 </h2>
                 <Link href="/dashboard/history" className="group flex items-center gap-2 text-primary font-bold hover:gap-3 transition-all px-4 py-2 bg-primary/5 rounded-2xl">
-                  History
-                  <ArrowRight className="w-4 h-4" />
+                  {t("History")}
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
               <div className="bg-card border border-border rounded-[2.5rem] p-6 shadow-xl shadow-black/5 min-h-100">
@@ -212,7 +213,7 @@ export default function OverviewPage() {
                       <div className="p-4 bg-muted rounded-full">
                         <History className="w-8 h-8 text-muted-foreground" />
                       </div>
-                      <p className="text-muted-foreground font-medium">No transactions yet</p>
+                      <p className="text-muted-foreground font-medium">{t("NoTransactions")}</p>
                     </div>
                 )}
               </div>
@@ -225,7 +226,7 @@ export default function OverviewPage() {
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">
                   <Wallet className="w-6 h-6 text-primary" />
-                  Wallet
+                  {t("Wallet")}
                 </h2>
               </div>
               <motion.div
@@ -242,7 +243,7 @@ export default function OverviewPage() {
                   </div>
                   <button className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-lg group/btn">
                     <Plus className="w-6 h-6 group-hover/btn:rotate-90 transition-transform" />
-                    Top Up Balance
+                    {t("TopUpBalance")}
                   </button>
                 </div>
               </motion.div>

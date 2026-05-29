@@ -8,10 +8,12 @@ import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCa
 import {Library, Search, AlertCircle} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
+import {useTranslations} from "next-intl";
 
 const ITEMS_PER_PAGE = 24
 
 export default function LibraryPage() {
+    const t = useTranslations('UserDashboard');
     const [data, setData] = useState<LibraryResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export default function LibraryPage() {
                 });
                 setData(res);
             } catch (err: any) {
-                setError("Failed to load library");
+                setError(t("FailedLoadLibrary"));
             } finally {
                 setLoading(false);
             }
@@ -47,7 +49,7 @@ export default function LibraryPage() {
                             </div>
                             <div className="h-10 w-56 bg-muted rounded-xl" />
                         </div>
-                        <div className="h-5 w-80 bg-muted rounded-lg ml-16" />
+                        <div className="h-5 w-80 bg-muted rounded-lg ms-16" />
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -72,14 +74,14 @@ export default function LibraryPage() {
                     <AlertCircle className="w-12 h-12 text-destructive" />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold">Something went wrong</h2>
+                    <h2 className="text-2xl font-bold">{t("SomethingWentWrong")}</h2>
                     <p className="text-muted-foreground">{error}</p>
                 </div>
                 <button
                     onClick={() => window.location.reload()}
                     className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
                 >
-                    Try Again
+                    {t("TryAgain")}
                 </button>
             </div>
         );
@@ -93,22 +95,22 @@ export default function LibraryPage() {
                         <div className="p-3 bg-primary/10 rounded-2xl">
                             <Library className="w-8 h-8 text-primary" />
                         </div>
-                        My Library
+                        {t("MyLibrary")}
                     </h1>
-                    <p className="text-muted-foreground font-medium text-lg ml-16">
-                        Showing all {data?.total || 0} books in your collection
+                    <p className="text-muted-foreground font-medium text-lg ms-16">
+                        {t("ShowingTotalBooks", {Total: data?.total || 0})}
                     </p>
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="relative group min-w-75">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search library..."
+                            placeholder={t("SearchLibrary")}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-12 pr-4 py-3 bg-muted/50 border border-border rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium"
+                            className="ps-12 pe-4 py-3 bg-muted/50 border border-border rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium"
                         />
                     </div>
                 </div>
@@ -131,7 +133,7 @@ export default function LibraryPage() {
                     totalPages={data.lastPage}
                     totalItems={data.total}
                     pageSize={ITEMS_PER_PAGE}
-                    itemLabel="book"
+                    itemLabel={t("book")}
                     onPageChange={setPage} />
             ) : null}
         </div>

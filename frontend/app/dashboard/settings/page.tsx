@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/providers/toast-provider";
+import {useTranslations} from "next-intl";
 
 function initialsFromUsername(username: string) {
     const safe = (username || "").trim()
@@ -28,6 +29,7 @@ function initialsFromUsername(username: string) {
 }
 
 export default function SettingsPage() {
+    const t = useTranslations('UserDashboard');
     const toast = useToast();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function SettingsPage() {
                 setProfile(res);
                 setUsername(res.username);
             } catch (err: any) {
-                setError("Failed to load profile")
+                setError(t("FailedLoadProfile"))
             } finally {
                 setLoading(false);
             }
@@ -61,9 +63,9 @@ export default function SettingsPage() {
         setSaving(true);
         try {
             await apiClient.patch("/users/profile", { username });
-            toast.success("Profile updated successfully");
+            toast.success(t("ProfileUpdated"));
         } catch (err: any) {
-            toast.error(err.message || "Failed to update profile");
+            toast.error(err.message || t("FailedUpdateProfile"));
         } finally {
             setSaving(false);
         }
@@ -72,7 +74,7 @@ export default function SettingsPage() {
     const handleChangePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
-            toast.error("Passwords do not match");
+            toast.error(t("PasswordsNotMatch"));
             return;
         }
         setSaving(true);
@@ -82,12 +84,12 @@ export default function SettingsPage() {
                 currentPassword,
                 newPassword
             });
-            toast.success("Password changed successfully");
+            toast.success(t("PasswordChanged"));
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
         } catch (err: any) {
-            toast.error(err.message || "Failed to change password");
+            toast.error(err.message || t("FailedChangePassword"));
         } finally {
             setSaving(false);
         }
@@ -105,7 +107,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="h-10 w-72 bg-muted rounded-xl" />
                         </div>
-                        <div className="h-5 w-96 bg-muted rounded-lg ml-16" />
+                        <div className="h-5 w-96 bg-muted rounded-lg ms-16" />
                     </div>
                 </section>
 
@@ -191,14 +193,14 @@ export default function SettingsPage() {
                     <AlertCircle className="w-12 h-12 text-destructive" />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold">Something went wrong</h2>
+                    <h2 className="text-2xl font-bold">{t("SomethingWentWrong")}</h2>
                     <p className="text-muted-foreground">{error}</p>
                 </div>
                 <button
                     onClick={() => window.location.reload()}
                     className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
                 >
-                    Try Again
+                    {t("TryAgain")}
                 </button>
             </div>
         );
@@ -212,10 +214,10 @@ export default function SettingsPage() {
                         <div className="p-3 bg-primary/10 rounded-2xl">
                             <Settings className="w-8 h-8 text-primary" />
                         </div>
-                        Account Settings
+                        {t("AccountSettings")}
                     </h1>
-                    <p className="text-muted-foreground font-medium text-lg ml-16">
-                        Manage your personal information and security
+                    <p className="text-muted-foreground font-medium text-lg ms-16">
+                        {t("ManagePersonalInformation")}
                     </p>
                 </div>
             </section>
@@ -251,43 +253,43 @@ export default function SettingsPage() {
                             <div className="p-2.5 bg-primary/10 rounded-2xl">
                                 <User className="w-6 h-6 text-primary" />
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight">Public Profile</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">{t("PublicProfile")}</h2>
                         </div>
 
                         <form onSubmit={handleUpdateProfile} className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Username</label>
+                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("Username")}</label>
                                     <div className="relative group">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                        <User className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                         <input
                                             type="text"
                                             value={username}
                                             onChange={(e) => setUsername(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
-                                            placeholder="Your unique username"
+                                            className="w-full ps-12 pe-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
+                                            placeholder={t("YourUniqueUsername")}
                                         />
                                     </div>
-                                    <p className="text-xs text-muted-foreground font-medium ml-1">This is your public display name.</p>
+                                    <p className="text-xs text-muted-foreground font-medium ms-1">{t("PublicDisplayName")}</p>
                                 </div>
 
                                 <div className="space-y-3">
-                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                                        Email Address
+                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1 flex items-center gap-2">
+                                        {t("EmailAddress")}
                                         <Lock className="w-3 h-3 text-muted-foreground/50" />
                                     </label>
                                     <div className="relative group opacity-60 cursor-not-allowed">
-                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <Mail className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                         <input
                                             type="email"
                                             value={profile?.email}
                                             disabled
-                                            className="w-full pl-12 pr-4 py-4 bg-muted border border-border rounded-2xl cursor-not-allowed font-bold"
+                                            className="w-full ps-12 pe-4 py-4 bg-muted border border-border rounded-2xl cursor-not-allowed font-bold"
                                         />
                                     </div>
-                                    <p className="text-xs text-amber-600 font-bold flex items-center gap-1 ml-1">
+                                    <p className="text-xs text-amber-600 font-bold flex items-center gap-1 ms-1">
                                         <AlertTriangle className="w-3 h-3" />
-                                        Email cannot be changed
+                                        {t("EmailCannotChanged")}
                                     </p>
                                 </div>
                             </div>
@@ -299,7 +301,7 @@ export default function SettingsPage() {
                                     className="flex items-center gap-2 px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed transition-all text-lg group"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />}
-                                    Save Changes
+                                    {t("SaveChanges")}
                                 </button>
                             </div>
                         </form>
@@ -316,25 +318,25 @@ export default function SettingsPage() {
                             <div className="p-2.5 bg-primary/10 rounded-2xl">
                                 <KeyRound className="w-6 h-6 text-primary" />
                             </div>
-                            <h2 className="text-2xl font-bold tracking-tight">Security & Password</h2>
+                            <h2 className="text-2xl font-bold tracking-tight">{t("SecurityPassword")}</h2>
                         </div>
 
                         <form onSubmit={handleChangePassword} className="space-y-8">
                             <div className="space-y-3 max-w-md">
-                                <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Current Password</label>
+                                <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("CurrentPassword")}</label>
                                 <div className="relative group">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                    <Lock className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={currentPassword}
                                         onChange={(e) => setCurrentPassword(e.target.value)}
-                                        className="w-full pl-12 pr-12 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
+                                        className="w-full ps-12 pe-12 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
                                         placeholder="••••••••"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-xl transition-colors"
+                                        className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-xl transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground" /> : <Eye className="w-5 h-5 text-muted-foreground" />}
                                     </button>
@@ -343,29 +345,29 @@ export default function SettingsPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-3">
-                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">New Password</label>
+                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("NewPassword")}</label>
                                     <div className="relative group">
-                                        <Shield className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                        <Shield className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                         <input
                                             type={showPassword ? "text" : "password"}
                                             value={newPassword}
                                             onChange={(e) => setNewPassword(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
-                                            placeholder="Min. 8 characters"
+                                            className="w-full ps-12 pe-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
+                                            placeholder={t("MinCharacters")}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-3">
-                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ml-1">Confirm New Password</label>
+                                    <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("ConfirmNewPassword")}</label>
                                     <div className="relative group">
-                                        <Check className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                        <Check className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                         <input
                                             type={showPassword ? "text" : "password"}
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
-                                            placeholder="Repeat new password"
+                                            className="w-full ps-12 pe-4 py-4 bg-muted/50 border border-border rounded-2xl focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-bold"
+                                            placeholder={t("RepeatNewPassword")}
                                         />
                                     </div>
                                 </div>
@@ -378,7 +380,7 @@ export default function SettingsPage() {
                                     className="flex items-center gap-2 px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed transition-all text-lg group"
                                 >
                                     {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />}
-                                    Update Password
+                                    {t("UpdatePassword")}
                                 </button>
                             </div>
                         </form>
