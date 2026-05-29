@@ -29,6 +29,7 @@ import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { motion } from "framer-motion"
 import { FileUploadPicker } from "@/components/admin/file-upload-picker";
+import {useTranslations} from "next-intl";
 
 type MediaItem = {
   code: string
@@ -53,6 +54,8 @@ function isAllowedImage(file: File) {
 }
 
 export default function AdminMedia() {
+  const t = useTranslations('AdminPage.MediaLibrary');
+  const g = useTranslations('General');
   const toast = useToast()
 
   const [isGalleryLoading, setIsGalleryLoading] = useState(true)
@@ -151,10 +154,10 @@ export default function AdminMedia() {
           "/media",
           formData,
       )
-      toast.success(`Uploaded ${data.items.length} file(s)`)
+      toast.success(t("UploadedNFile" , {NFile: data.items.length}))
 
       if (data.failed?.length) {
-        toast.error(data.failed.slice(0, 2).map((x) => `${x.name}: ${x.reason}`).join(" • "),"Some files failed")
+        toast.error(data.failed.slice(0, 2).map((x) => `${x.name}: ${x.reason}`).join(" • "),t("SomeFailed"))
       }
 
       setUploadSuccess(true)
@@ -168,7 +171,7 @@ export default function AdminMedia() {
         setUploadSuccess(false)
       }, 1200)
     } catch (error) {
-      const message = getApiErrorMessage(error, "Network error occurred")
+      const message = getApiErrorMessage(error, t("NetworkError"))
       setUploadError(message)
       toast.error(message)
     } finally {
@@ -187,7 +190,7 @@ export default function AdminMedia() {
 
     const next = renameValue.trim()
     if (!next) {
-      return toast.error("Filename is required")
+      return toast.error(t("FilenameRequired"))
     }
 
     setRenamingCode(fileToRename.code)
@@ -197,7 +200,7 @@ export default function AdminMedia() {
       setFiles((prev) => prev.map((f) => (f.code === fileToRename.code ? { ...f, filename: data.filename } : f)))
       setRenameDialogOpen(false)
       setFileToRename(null)
-      toast.success("File renamed successfully")
+      toast.success(t("FileRenamed"))
     } catch (err: any) {
       toast.error(getApiErrorMessage(err))
     } finally {
@@ -219,7 +222,7 @@ export default function AdminMedia() {
 
     try {
       await apiClient.delete(`/media/${fileToDelete}`)
-      toast.success("File deleted successfully")
+      toast.success(t("FileDeleted"))
 
       // Optimistic removal + adjust pagination if page becomes empty
       setFiles((prev) => prev.filter((f) => f.code !== fileToDelete))
@@ -251,9 +254,9 @@ export default function AdminMedia() {
               transition={{ duration: 0.55 }}
           >
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              Media Library
+              {t("Title")}
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">Upload and manage your media assets</p>
+            <p className="text-sm sm:text-base text-muted-foreground">{t("Description")}</p>
           </motion.div>
 
           {/* Upload */}
@@ -261,9 +264,9 @@ export default function AdminMedia() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="size-5" />
-                Upload New Images
+                {t("UploadNewImages")}
               </CardTitle>
-              <CardDescription>Drag & drop or click to browse. Supports JPG, JPEG, WebP</CardDescription>
+              <CardDescription>{t("UploadNewImagesDescription")}</CardDescription>
             </CardHeader>
 
             <CardContent className="p-6 space-y-4">
@@ -280,11 +283,11 @@ export default function AdminMedia() {
                   success={uploadSuccess}
                   error={uploadError}
                   onErrorChange={setUploadError}
-                  dropTitleIdle="Drag & drop your images"
-                  dropTitleActive="Drop your images here"
-                  helperText="Supports JPG, JPEG, WebP"
+                  dropTitleIdle={t("DragDropYourImages")}
+                  dropTitleActive={t("DropHere")}
+                  helperText={t("SupportsFormat")}
                   blockedErrorText="Only JPG/JPEG/WebP are allowed"
-                  maxFilesErrorText={(m) => `Maximum ${m} files per upload`}
+                  maxFilesErrorText={(m) => t("MaximumNFiles", {NFile: m})}
                   actions={
                     !uploadSuccess && selectedFiles.length > 0 ? (
                         <>
@@ -292,12 +295,12 @@ export default function AdminMedia() {
                             {isUploading ? (
                                 <>
                                   <Loader2 className="size-4 animate-spin" />
-                                  Uploading...
+                                  {t("Uploading")}
                                 </>
                             ) : (
                                 <>
                                   <Upload className="size-4" />
-                                  Upload {selectedFiles.length}
+                                  {t("UploadNFile", {NFile: selectedFiles.length})}
                                 </>
                             )}
                           </Button>
@@ -311,7 +314,7 @@ export default function AdminMedia() {
                               disabled={isUploading}
                               size="sm"
                           >
-                            Cancel
+                            {g("Cancel")}
                           </Button>
                         </>
                     ) : null
@@ -326,12 +329,12 @@ export default function AdminMedia() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <CardTitle>Media Gallery</CardTitle>
+                    <CardTitle>{t("MediaGallery")}</CardTitle>
                     <span className="inline-flex items-center rounded-full border bg-muted/40 px-2.5 py-0.5 text-xs font-medium">
-                    Total: {total.toLocaleString()}
+                      {t("TotalFile", {NFile: total})}
                   </span>
                   </div>
-                  <CardDescription className="mt-1">Browse and manage your uploaded images</CardDescription>
+                  <CardDescription className="mt-1">{t("BrowseManageImages")}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -339,12 +342,12 @@ export default function AdminMedia() {
             <CardContent className="p-4 md:p-6 space-y-4">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Search by filename..."
+                    placeholder={t("SearchByFilename")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 h-11"
+                    className="ps-9 h-11"
                 />
               </div>
 
@@ -376,10 +379,10 @@ export default function AdminMedia() {
                         <ImageIcon className="size-8 md:size-10 text-muted-foreground/50" />
                       </div>
                       <p className="text-sm md:text-base font-medium text-muted-foreground mb-1">
-                        {searchQuery ? "No images found" : "No images uploaded yet"}
+                        {searchQuery ? t("NoImagesFound") : t("NoImagesUploaded")}
                       </p>
                       <p className="text-xs md:text-sm text-muted-foreground/70">
-                        {searchQuery ? "Try a different search term" : "Upload your first image to get started"}
+                        {searchQuery ? t("TrySearch") : t("UploadFirst")}
                       </p>
                     </div>
                 ) : (
@@ -449,7 +452,7 @@ export default function AdminMedia() {
                 totalPages={totalPages}
                 totalItems={total}
                 pageSize={ITEMS_PER_PAGE}
-                itemLabel="media items"
+                itemLabel={t("MediaItems")}
                 onPageChange={setPage}
                 canGoPrevious={!isGalleryLoading && page > 1}
                 canGoNext={!isGalleryLoading && page < totalPages}
@@ -461,9 +464,9 @@ export default function AdminMedia() {
           <AlertDialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Rename Media</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Set a human-friendly unique filename (letters, numbers, space, dash, underscore).
+                <AlertDialogTitle>{t("RenameMedia")}</AlertDialogTitle>
+                <AlertDialogDescription className="rtl:text-right">
+                  {t("RenameMediaDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
 
@@ -472,9 +475,9 @@ export default function AdminMedia() {
               </div>
 
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={!!renamingCode}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={!!renamingCode}>{g("Cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleRenameConfirm} disabled={!!renamingCode}>
-                  {renamingCode ? "Saving..." : "Save"}
+                  {renamingCode ? g("Saving") : g("Save")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -484,16 +487,15 @@ export default function AdminMedia() {
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete Media File</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this image? This action cannot be undone and will permanently remove the
-                  file from your media library.
+                <AlertDialogTitle>{t("DeleteMedia")}</AlertDialogTitle>
+                <AlertDialogDescription className="rtl:text-right">
+                  {t("DeleteMediaDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={!!deletingCode}>Cancel</AlertDialogCancel>
+                <AlertDialogCancel disabled={!!deletingCode}>{g("Cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDeleteConfirm} disabled={!!deletingCode}>
-                  {deletingCode ? "Deleting..." : "Delete"}
+                  {deletingCode ? g("Deleting") : g("Delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
