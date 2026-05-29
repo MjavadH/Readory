@@ -37,6 +37,7 @@ import {
 import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { motion } from "framer-motion";
+import {useTranslations} from "next-intl";
 
 type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF"
 
@@ -56,37 +57,9 @@ interface SearchUser {
     role: "USER" | "ADMIN"
 }
 
-const PERMISSIONS_META: Record<
-    Permission,
-    { label: string; description: string; icon: React.ElementType; color: string }
-> = {
-    MANAGE_BOOKS: {
-        label: "Manage Books",
-        description: "Can create/edit/delete books and chapters",
-        icon: BookOpen,
-        color: "text-blue-600 dark:text-blue-500",
-    },
-    MANAGE_USERS: {
-        label: "Manage Users",
-        description: "Can ban users and view stats",
-        icon: Users,
-        color: "text-green-600 dark:text-green-500",
-    },
-    MANAGE_FINANCE: {
-        label: "Manage Finance",
-        description: "Can view transactions and adjust balances",
-        icon: DollarSign,
-        color: "text-yellow-600 dark:text-yellow-500",
-    },
-    MANAGE_STAFF: {
-        label: "Manage Staff",
-        description: "Can manage other admins (Super Admin only)",
-        icon: UserCog,
-        color: "text-red-600 dark:text-red-500",
-    },
-}
-
 export default function AdminStaff() {
+    const t = useTranslations('AdminPage.StaffManagement');
+    const g = useTranslations('General');
     const toast = useToast()
     const [staff, setStaff] = useState<StaffMember[]>([])
     const [loading, setLoading] = useState(true)
@@ -105,6 +78,37 @@ export default function AdminStaff() {
     // Alert dialog states
     const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false)
     const [staffToRemove, setStaffToRemove] = useState<StaffMember | null>(null)
+
+    // PERMISSIONS META
+    const PERMISSIONS_META: Record<
+        Permission,
+        { label: string; description: string; icon: React.ElementType; color: string }
+    > = {
+        MANAGE_BOOKS: {
+            label: t("ManageBooks"),
+            description: t("ManageBooksDescription"),
+            icon: BookOpen,
+            color: "text-blue-600 dark:text-blue-500",
+        },
+        MANAGE_USERS: {
+            label: t("ManageUsers"),
+            description: t("ManageUsersDescription"),
+            icon: Users,
+            color: "text-green-600 dark:text-green-500",
+        },
+        MANAGE_FINANCE: {
+            label: t("ManageFinance"),
+            description: t("ManageFinanceDescription"),
+            icon: DollarSign,
+            color: "text-yellow-600 dark:text-yellow-500",
+        },
+        MANAGE_STAFF: {
+            label: t("ManageStaff"),
+            description: t("ManageStaffDescription"),
+            icon: UserCog,
+            color: "text-red-600 dark:text-red-500",
+        },
+    }
 
     const fetchStaff = async () => {
         setLoading(true)
@@ -148,7 +152,7 @@ export default function AdminStaff() {
         setIsSubmitting(true)
         try {
             await apiClient.patch(`/users/${userId}/role`, { role: "ADMIN" })
-            toast.success("User promoted to Admin Staff successfully.")
+            toast.success(t("UserPromoted"))
 
             setIsAddStaffOpen(false)
             setSearchQuery("")
@@ -167,7 +171,7 @@ export default function AdminStaff() {
 
         try {
             await apiClient.patch(`/users/${selectedStaff.id}/permissions`, { permissions: selectedPermissions })
-            toast.success("Staff permissions updated successfully.")
+            toast.success(t("PermissionsUpdated"))
             setIsEditPermissionsOpen(false)
             setSelectedStaff(null)
             setSelectedPermissions([])
@@ -185,7 +189,7 @@ export default function AdminStaff() {
 
         try {
             await apiClient.patch(`/users/${staffToRemove.id}/role`, { role: "USER" })
-            toast.success(`${staffToRemove.username} has been removed from staff.`)
+            toast.success(t("AdminRemoved", {AdminUsername: staffToRemove.username}))
 
             setIsRemoveDialogOpen(false)
             setStaffToRemove(null)
@@ -236,7 +240,7 @@ export default function AdminStaff() {
                         </div>
                         <Button disabled={true} className="gap-2 w-full sm:w-auto">
                             <UserPlus className="size-4" />
-                            Add Staff
+                            {t("AddStaff")}
                         </Button>
                     </div>
                     <div className="animate-pulse space-y-4">
@@ -259,15 +263,15 @@ export default function AdminStaff() {
                     >
                         <h1
                             className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                            Staff Management
+                            {t("Title")}
                         </h1>
                         <p className="text-sm sm:text-base text-muted-foreground">
-                            Manage admin staff and their specific permissions
+                            {t("Description")}
                         </p>
                     </motion.div>
                     <Button onClick={() => setIsAddStaffOpen(true)} className="gap-2 w-full sm:w-auto">
                         <UserPlus className="size-4" />
-                        Add Staff
+                        {t("AddStaff")}
                     </Button>
                 </div>
 
@@ -276,7 +280,7 @@ export default function AdminStaff() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <Shield className="size-5" />
-                            Admin Staff ({staff.length})
+                            {t("AdminStaff")} ({staff.length})
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -284,9 +288,9 @@ export default function AdminStaff() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="hover:bg-transparent border-border/50">
-                                        <TableHead className="min-w-62.5">Staff Member</TableHead>
-                                        <TableHead className="min-w-75">Permissions</TableHead>
-                                        <TableHead className="w-25">Actions</TableHead>
+                                        <TableHead className="min-w-62.5">{t("StaffMember")}</TableHead>
+                                        <TableHead className="min-w-75">{t("Permissions")}</TableHead>
+                                        <TableHead className="w-25">{t("Actions")}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -295,7 +299,7 @@ export default function AdminStaff() {
                                             <TableCell colSpan={3} className="h-32 text-center">
                                                 <div className="flex flex-col items-center justify-center text-muted-foreground">
                                                     <Shield className="size-8 mb-2 opacity-50" />
-                                                    <p className="text-sm">No staff members found</p>
+                                                    <p className="text-sm">{t("NoStaffFound")}</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -333,11 +337,11 @@ export default function AdminStaff() {
                                                             variant="outline"
                                                             className="border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-500"
                                                         >
-                                                            <Crown className="size-3 mr-1" />
-                                                            Full Access (Super Admin)
+                                                            <Crown className="size-3 me-1" />
+                                                            {t("FullAccess")}
                                                         </Badge>
                                                     ) : member.permissions.length === 0 ? (
-                                                        <span className="text-xs text-muted-foreground">No permissions assigned</span>
+                                                        <span className="text-xs text-muted-foreground">{t("NoPermissionsAssigned")}</span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {(member.permissions || []).map((permission) => {
@@ -349,7 +353,7 @@ export default function AdminStaff() {
                                                                         variant="outline"
                                                                         className="text-xs border-border/50 bg-muted/30"
                                                                     >
-                                                                        <Icon className={`size-3 mr-1 ${meta.color}`} />
+                                                                        <Icon className={`size-3 me-1 ${meta.color}`} />
                                                                         {meta.label}
                                                                     </Badge>
                                                                 )
@@ -396,25 +400,25 @@ export default function AdminStaff() {
                 <Dialog open={isAddStaffOpen} onOpenChange={setIsAddStaffOpen}>
                     <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Add Staff Member</DialogTitle>
-                            <DialogDescription>Search for a user to promote to admin staff</DialogDescription>
+                            <DialogTitle>{t("AddStaffMember")}</DialogTitle>
+                            <DialogDescription>{t("AddStaffMemberDescription")}</DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 mt-4">
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search users by email or username..."
+                                    placeholder={t("SearchUsers")}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10"
+                                    className="ps-10"
                                 />
                             </div>
 
                             {isSearching ? (
-                                <div className="py-8 text-center text-muted-foreground text-sm">Searching...</div>
+                                <div className="py-8 text-center text-muted-foreground text-sm">{t("Searching")}</div>
                             ) : searchQuery && searchResults.length === 0 ? (
-                                <div className="py-8 text-center text-muted-foreground text-sm">No users found</div>
+                                <div className="py-8 text-center text-muted-foreground text-sm">{t("NoUsersFound")}</div>
                             ) : searchResults.length > 0 ? (
                                 <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-2">
                                     {searchResults.map((user) => (
@@ -441,14 +445,14 @@ export default function AdminStaff() {
                                                 onClick={() => promoteToAdmin(user.id)}
                                                 disabled={isSubmitting}
                                             >
-                                                {isSubmitting ? <span className="animate-spin mr-2">⏳</span> : <UserPlus className="size-4 mr-1" />}
-                                                Add
+                                                {isSubmitting ? <span className="animate-spin me-2">⏳</span> : <UserPlus className="size-4 me-1" />}
+                                                {g("Add")}
                                             </Button>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="py-8 text-center text-muted-foreground text-sm">Start typing to search for users</div>
+                                <div className="py-8 text-center text-muted-foreground text-sm">{t("TypingToSearch")}</div>
                             )}
                         </div>
                     </DialogContent>
@@ -458,8 +462,8 @@ export default function AdminStaff() {
                 <Dialog open={isEditPermissionsOpen} onOpenChange={setIsEditPermissionsOpen}>
                     <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-md">
                         <DialogHeader>
-                            <DialogTitle>Edit Permissions</DialogTitle>
-                            <DialogDescription>{selectedStaff && `Manage permissions for ${selectedStaff.username}`}</DialogDescription>
+                            <DialogTitle>{t("EditPermissions")}</DialogTitle>
+                            <DialogDescription>{selectedStaff && t("EditPermissionsDescription", {AdminUsername: selectedStaff.username})}</DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 mt-4">
@@ -498,13 +502,12 @@ export default function AdminStaff() {
 
                         <div className="flex justify-end gap-2 mt-6">
                             <Button variant="outline" onClick={() => setIsEditPermissionsOpen(false)}>
-                                Cancel
+                                {g("Cancel")}
                             </Button>
                             <Button onClick={updatePermissions} disabled={isSubmitting}>
-                                {isSubmitting ? "Saving..." : (
+                                {isSubmitting ? g("Saving") : (
                                     <>
-                                        <Check className="size-4 mr-2" />
-                                        Save Changes
+                                        <Check className="size-4" />{g("Save")}
                                     </>
                                 )}
                             </Button>
@@ -516,14 +519,13 @@ export default function AdminStaff() {
                 <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Staff Member</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to remove <strong>{staffToRemove?.username}</strong> from admin staff? This will
-                                demote them back to a regular user and revoke all their permissions.
+                            <AlertDialogTitle>{t("RemoveStaffMember")}</AlertDialogTitle>
+                            <AlertDialogDescription className="rtl:text-right">
+                                {staffToRemove?.username && t("RemoveStaffMemberDescription", {AdminUsername: staffToRemove?.username})}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setStaffToRemove(null)}>Cancel</AlertDialogCancel>
+                            <AlertDialogCancel onClick={() => setStaffToRemove(null)}>{g("Cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={(e) => {
                                     e.preventDefault()
@@ -532,7 +534,7 @@ export default function AdminStaff() {
                                 className="bg-red-600 hover:bg-red-700"
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? "Removing..." : "Remove Staff"}
+                                {isSubmitting ? g("Removing") : t("RemoveStaff")}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
