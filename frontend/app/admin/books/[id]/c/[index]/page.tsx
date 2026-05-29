@@ -41,6 +41,7 @@ import { AppPagination } from "@/components/app-pagination";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { FileUploadPicker } from "@/components/admin/file-upload-picker";
+import {useTranslations} from "next-intl";
 
 type ChapterMeta = {
   id: number;
@@ -175,6 +176,8 @@ function TabBtn({active, icon, label, onClick,}: {
 }
 
 export default function ChapterContentManager() {
+  const t = useTranslations('Books');
+  const g = useTranslations('General');
   const params = useParams<{ id: string; index: string }>();
   const toast = useToast();
 
@@ -225,15 +228,15 @@ export default function ChapterContentManager() {
         } catch (error) {
           setAdminPreviewToken(null);
           toast.error(
-              getApiErrorMessage(error, "Unable to create admin preview session."),
-              "Preview unavailable"
+              getApiErrorMessage(error, t("UnableCreatePreview")),
+              t("PreviewUnavailable")
           );
         }
       } else {
         setAdminPreviewToken(null);
       }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Unable to fetch chapter content."));
+      toast.error(getApiErrorMessage(error, t("UnableFetchChapterContent")));
     } finally {
       setLoading(false);
     }
@@ -257,12 +260,12 @@ export default function ChapterContentManager() {
             setProgress(Math.round((event.loaded / event.total) * 100));
           }
         };
-        request.onerror = () => reject(new Error("Network upload error"));
+        request.onerror = () => reject(new Error(t("NetworkUploadError")));
         request.onload = () => {
           if (request.status >= 200 && request.status < 300) {
             resolve();
           } else {
-            reject(new Error(`Upload failed with status ${request.status}`));
+            reject(new Error(t("UploadFailedStatus", {RequestStatus: request.status})));
           }
         };
         request.open("POST", `${base}${url}`);
@@ -272,7 +275,7 @@ export default function ChapterContentManager() {
 
   const handleUploadImages = async (mode: "replace" | "append") => {
     if (imageFiles.length === 0) {
-      toast.error("Select one or more image files.", "No files selected");
+      toast.error(t("SelectMoreImage"), t("NoFilesSelected"));
       return;
     }
     setUploading(true);
@@ -287,15 +290,15 @@ export default function ChapterContentManager() {
       await uploadWithXhr(url, formData);
       toast.success(
           mode === "append"
-              ? "Images appended successfully."
-              : "Image content replaced successfully."
+              ? t("ImagesAppended")
+              : t("ImageContentReplaced")
       );
       setImageFiles([]);
       await loadContent();
     } catch (error) {
       toast.error(
-          getApiErrorMessage(error, "Please verify file count/size/type and try again."),
-          mode === "append" ? "Append failed" : "Image upload failed"
+          getApiErrorMessage(error, t("VerifyFile")),
+          mode === "append" ? t("AppendFailed") : t("UploadFailed")
       );
     } finally {
       setUploading(false);
@@ -305,7 +308,7 @@ export default function ChapterContentManager() {
 
   const handleUploadText = async () => {
     if (!textFile) {
-      toast.error("Select a .md or .txt file.", "No file selected");
+      toast.error(t("SelectTextFile"), t("NoFileSelected"));
       return;
     }
     setUploading(true);
@@ -317,13 +320,13 @@ export default function ChapterContentManager() {
           `/admin/books/${bookId}/chapters/${chapterIndex}/content/text`,
           formData
       );
-      toast.success("Text content uploaded");
+      toast.success(t("TextContentUploaded"));
       setTextFile(null);
       await loadContent();
     } catch (error) {
       toast.error(
-          getApiErrorMessage(error, "Unable to upload text content."),
-          "Text upload failed"
+          getApiErrorMessage(error, t("UnableUploadTextContent")),
+          t("TextUploadFailed")
       );
     } finally {
       setUploading(false);
@@ -337,12 +340,12 @@ export default function ChapterContentManager() {
       await apiClient.delete(
           `/admin/books/${bookId}/chapters/${chapterIndex}/content`
       );
-      toast.success("All chapter content has been removed.");
+      toast.success(t("AllContentRemoved"));
       await loadContent();
     } catch (error) {
       toast.error(
-          getApiErrorMessage(error, "Could not delete chapter content."),
-          "Delete failed"
+          getApiErrorMessage(error, t("CouldNotDeleteContent")),
+          t("DeleteFailed")
       );
     } finally {
       setDeleting(false);
@@ -398,7 +401,7 @@ export default function ChapterContentManager() {
 
   const handleDeleteSelectedImages = async () => {
     if (selectedImagePages.length === 0) {
-      toast.error("No images selected.", "Nothing to delete");
+      toast.error(t("NoImagesSelected"), t("NothingToDelete"));
       return;
     }
     setDeletingImages(true);
@@ -407,14 +410,14 @@ export default function ChapterContentManager() {
           `/admin/books/${bookId}/chapters/${chapterIndex}/content/images`,
           { body: { pageNumbers: selectedImagePages } }
       );
-      toast.success(`${selectedImagePages.length} image(s) deleted.`);
+      toast.success(t("NImageDeleted", {NImage: selectedImagePages.length}));
       setDeleteMode(false);
       setSelectedImagePages([]);
       await loadContent();
     } catch (error) {
       toast.error(
-          getApiErrorMessage(error, "Could not delete selected images."),
-          "Delete failed"
+          getApiErrorMessage(error, t("CouldNotDeleteImages")),
+          t("DeleteFailed")
       );
     } finally {
       setDeletingImages(false);
@@ -430,33 +433,33 @@ export default function ChapterContentManager() {
     return [
       {
         icon: <BookOpen className="h-3.5 w-3.5" />,
-        label: "Chapter",
+        label: t("Chapter"),
         value: `${data.chapter.index} — ${data.chapter.title}`,
       },
       {
         icon: <Layers className="h-3.5 w-3.5" />,
-        label: "Content Type",
-        value: data.chapter.contentType ?? "none",
+        label: t("ContentType"),
+        value: data.chapter.contentType ?? t("None"),
       },
       {
         icon: <Hash className="h-3.5 w-3.5" />,
-        label: "Page Count",
+        label: t("PageCount"),
         value: String(data.chapter.pageCount ?? 0),
       },
       {
         icon: <GitBranch className="h-3.5 w-3.5" />,
-        label: "Content Version",
+        label: t("ContentVersion"),
         value: `v${data.chapter.contentVersion ?? 0}`,
       },
       {
         icon: <FolderOpen className="h-3.5 w-3.5" />,
-        label: "Storage Prefix",
+        label: t("StoragePrefix"),
         value: data.chapter.contentPath ?? `b${bookId}/c${chapterIndex}`,
         mono: true,
       },
       {
         icon: <FileStack className="h-3.5 w-3.5" />,
-        label: "Manifest",
+        label: t("Manifest"),
         value: data.manifest ? (
             <span className="flex items-center gap-1.5">
             <Badge
@@ -471,7 +474,7 @@ export default function ChapterContentManager() {
             <span>{data.manifest.pageCount}p</span>
           </span>
         ) : (
-            <span className="text-muted-foreground text-xs">No manifest</span>
+            <span className="text-muted-foreground text-xs">{t("NoManifest")}</span>
         ),
       },
     ];
@@ -485,9 +488,9 @@ export default function ChapterContentManager() {
         <div className="min-h-screen flex items-center justify-center bg-background p-8">
           <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-8 max-w-sm text-center space-y-3">
             <AlertCircle className="mx-auto h-8 w-8 text-destructive" />
-            <p className="font-semibold text-foreground">Invalid route</p>
+            <p className="font-semibold text-foreground">{t("InvalidRoute")}</p>
             <p className="text-sm text-muted-foreground">
-              The book or chapter path is invalid.
+              {t("PathInvalid")}
             </p>
           </div>
         </div>
@@ -509,14 +512,14 @@ export default function ChapterContentManager() {
           >
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1 hover:text-blue-500">
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <Link href={`/admin/books/${bookId}`}>Go Back</Link>
+                <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+                <Link href={`/admin/books/${bookId}`}>{t("GoBack")}</Link>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-                Chapter Content Manager
+                {t("ChapterContentManager")}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Manage uploads, manifests, and page previews for this chapter.
+                {t("ChapterContentManagerDescription")}
               </p>
             </div>
 
@@ -529,7 +532,7 @@ export default function ChapterContentManager() {
                   disabled={isBusy}
               >
                 <RefreshCcw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
-                Refresh
+                {g("Refresh")}
               </Button>
 
               <AlertDialog>
@@ -545,19 +548,19 @@ export default function ChapterContentManager() {
                     ) : (
                         <Trash2 className="h-3.5 w-3.5" />
                     )}
-                    Delete all
+                    {g("DeleteAll")}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete all chapter content?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes every object under the chapter prefix and resets the manifest. This action cannot be undone.
+                    <AlertDialogTitle>{t("DeleteAllContent")}</AlertDialogTitle>
+                    <AlertDialogDescription className="rtl:text-right">
+                      {t("DeleteAllContentDescription")}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteAll}>Confirm delete</AlertDialogAction>
+                    <AlertDialogCancel>{g("Cancel")}</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={handleDeleteAll}>{t("ConfirmDelete")}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -579,19 +582,19 @@ export default function ChapterContentManager() {
           </div>
 
           {/* Upload */}
-          <Section title="Upload Content" subtitle="Replace or append chapter content">
+          <Section title={t("UploadContent")} subtitle={t("UploadContentDescription")}>
             {/* Tab switcher */}
             <div className="flex items-center gap-1 rounded-lg bg-muted/60 border border-border p-1 w-fit mb-6">
               <TabBtn
                   active={activeTab === "images"}
                   icon={<ImageIcon className="h-3.5 w-3.5" />}
-                  label="Images"
+                  label={t("Images")}
                   onClick={() => setActiveTab("images")}
               />
               <TabBtn
                   active={activeTab === "text"}
                   icon={<FileText className="h-3.5 w-3.5" />}
-                  label="Text"
+                  label={t("Text")}
                   onClick={() => setActiveTab("text")}
               />
             </div>
@@ -606,10 +609,7 @@ export default function ChapterContentManager() {
                       transition={{ duration: 0.2 }}
                       className="space-y-4"
                   >
-                    <p className="text-xs text-muted-foreground">
-                      Upload JPG / PNG / WebP files. The server normalises them to WebP.
-                      You can replace all content or append new pages to the end.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{t("UploadImageFiles")}</p>
 
                     <FileUploadPicker
                         kind="image"
@@ -619,8 +619,8 @@ export default function ChapterContentManager() {
                         multiple
                         disabled={uploading}
                         allowAddMore
-                        blockedErrorText="Only JPG/PNG/WebP are allowed"
-                        helperText="JPG, PNG or WebP — multiple allowed"
+                        blockedErrorText={t("OnlyImageAllowed")}
+                        helperText={t("ImageAllowed")}
                     />
 
                     {uploading && <UploadProgressBar value={progress} />}
@@ -641,7 +641,7 @@ export default function ChapterContentManager() {
                         ) : (
                             <Upload className="h-3.5 w-3.5" />
                         )}
-                        Append images
+                        {t("AppendImages")}
                       </Button>
                       <Button
                           size="sm"
@@ -655,14 +655,14 @@ export default function ChapterContentManager() {
                         ) : (
                             <RefreshCcw className="h-3.5 w-3.5" />
                         )}
-                        Replace all
+                        {t("ReplaceAll")}
                       </Button>
                     </div>
 
                     {data?.chapter.contentType === "text" && (
                         <p className="flex items-center gap-1.5 text-xs text-amber-400">
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          Append disabled — chapter has text content. Use &quot;Replace all&quot; to switch type.
+                          {t("AppendDisabled")}
                         </p>
                     )}
                   </motion.div>
@@ -678,7 +678,7 @@ export default function ChapterContentManager() {
                       className="space-y-4"
                   >
                     <p className="text-xs text-muted-foreground">
-                      Upload chapter text as Markdown or plain text (.md / .txt).
+                      {t("UploadTextFile")}
                     </p>
 
                     <FileUploadPicker
@@ -689,9 +689,9 @@ export default function ChapterContentManager() {
                         multiple={false}
                         maxFiles={1}
                         disabled={uploading}
-                        blockedErrorText="Only .md or .txt are allowed"
-                        dropTitleIdle="Drag & drop your text file"
-                        helperText=".md or .txt"
+                        blockedErrorText={t("OnlyTextAllowed")}
+                        dropTitleIdle={t("DropTextFile")}
+                        helperText={t("TextFormats")}
                     />
 
                     {uploading && <UploadProgressBar value={progress} />}
@@ -707,7 +707,7 @@ export default function ChapterContentManager() {
                       ) : (
                           <Upload className="h-3.5 w-3.5" />
                       )}
-                      Upload text
+                      {t("UploadText")}
                     </Button>
                   </motion.div>
               )}
@@ -715,18 +715,18 @@ export default function ChapterContentManager() {
           </Section>
 
           {/* Current Content */}
-          <Section title="Current Content"
+          <Section title={t("CurrentContent")}
               subtitle={
                 data?.manifest
                     ? `${data.manifest.format} · ${data.manifest.pageCount} page${data.manifest.pageCount !== 1 ? "s" : ""}`
-                    : "No content uploaded yet"
+                    : t("NoContentUploaded")
               }
               action={data?.manifest?.format === "images" && imagePages.length > 0 ? (
                   <div className="flex items-center gap-2">
                     {deleteMode ? (
                         <>
                           <span className="text-xs text-muted-foreground">
-                            {selectedImagePages.length} selected
+                            {t("NPagesSelected", {NPages: selectedImagePages.length})}
                           </span>
                           <Button
                               size="sm"
@@ -737,8 +737,8 @@ export default function ChapterContentManager() {
                           >
                             {selectedCountOnCurrentPage === currentPagedPageNumbers.length &&
                             currentPagedPageNumbers.length > 0
-                                ? "Deselect page"
-                                : "Select page"}
+                                ? t("DeselectPage")
+                                : t("SelectPage")}
                           </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -753,22 +753,22 @@ export default function ChapterContentManager() {
                                 ) : (
                                     <Trash2 className="h-3 w-3" />
                                 )}
-                                Delete ({selectedImagePages.length})
+                                {t("DeleteNPages", {NPages: selectedImagePages.length})}
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>Delete selected images?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {selectedImagePages.length} page(s) will be permanently removed.
+                                <AlertDialogTitle>{t("DeleteSelectedImages")}</AlertDialogTitle>
+                                <AlertDialogDescription className="rtl:text-right">
+                                  {t("DeleteSelectedImagesDescription", {NPages: selectedImagePages.length})}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel disabled={deletingImages}>
-                                  Cancel
+                                  {g("Cancel")}
                                 </AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDeleteSelectedImages}>
-                                  Confirm delete
+                                <AlertDialogAction variant="destructive" onClick={handleDeleteSelectedImages}>
+                                  {t("ConfirmDelete")}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -784,7 +784,7 @@ export default function ChapterContentManager() {
                               disabled={deletingImages}
                           >
                             <X className="h-3 w-3" />
-                            Cancel
+                            {g("Cancel")}
                           </Button>
                         </>
                     ) : (
@@ -799,7 +799,7 @@ export default function ChapterContentManager() {
                             disabled={isBusy}
                         >
                           <Trash2 className="h-3 w-3" />
-                          Delete images
+                          {t("DeleteImages")}
                         </Button>
                     )}
                   </div>
@@ -815,7 +815,7 @@ export default function ChapterContentManager() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                     <AlertCircle className="h-5 w-5" />
                   </div>
-                  <p className="text-sm">No manifest or content uploaded yet.</p>
+                  <p className="text-sm">{t("NoContentUploaded")}</p>
                 </motion.div>
             )}
 
@@ -827,7 +827,7 @@ export default function ChapterContentManager() {
                 >
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <FileText className="h-4 w-4 text-primary" />
-                    <span>Text chapter uploaded</span>
+                    <span>{t("TextChapterUploaded")}</span>
                     <Badge variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
                       {data.manifest.format}
                     </Badge>
@@ -926,7 +926,7 @@ export default function ChapterContentManager() {
                           currentPage={imagePage}
                           pageSize={pageSize}
                           totalItems={imagePages.length}
-                          itemLabel="images"
+                          itemLabel={t("images")}
                           totalPages={totalImagePages}
                           onPageChange={setImagePage}
                       />
