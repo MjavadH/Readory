@@ -41,6 +41,7 @@ import {MediaPicker} from "@/components/admin/media-picker";
 import Link from "next/link";
 import {AppIcon} from "@/components/AppIcon";
 import { useToast } from "@/providers/toast-provider";
+import {useTranslations} from "next-intl";
 
 type BookDetails = {
     id: number;
@@ -110,6 +111,9 @@ function LoadingSkeleton() {
 }
 
 export default function AdminBookDetail() {
+    const t = useTranslations('Books');
+    const g = useTranslations('General');
+    const ti = useTranslations('Time');
     const toast = useToast();
     const params = useParams<{ id: string }>();
     const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -163,7 +167,7 @@ export default function AdminBookDetail() {
 
     const loadBook = useCallback(async () => {
         if (!Number.isInteger(bookId) || bookId <= 0) {
-            toast.error("Invalid book link.")
+            toast.error(t("InvalidBookLink"))
             setIsLoading(false);
             return;
         }
@@ -178,7 +182,7 @@ export default function AdminBookDetail() {
                 genreIds: data.genres?.map(g => g.id) || []
             });
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to load book details.'))
+            toast.error(getApiErrorMessage(error, t("FailedLoadDetails")))
         } finally {
             setIsLoading(false);
         }
@@ -196,7 +200,7 @@ export default function AdminBookDetail() {
             setChaptersTotal(data.pagination.total);
             setChaptersTotalPages(data.pagination.totalPages);
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to load chapters.'))
+            toast.error(getApiErrorMessage(error, t("FailedLoadChapters")))
         } finally {
             setChaptersLoading(false);
         }
@@ -225,11 +229,11 @@ export default function AdminBookDetail() {
                 typeId: editedBook.typeId,
                 genreIds: editedBook.genreIds,
             });
-            toast.success('Book updated successfully!')
+            toast.success(t("BookUpdated"))
             setEditMode(false);
             await loadBook();
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to update book.'))
+            toast.error(getApiErrorMessage(error, t("BookUpdatedFailed")))
         }
     };
 
@@ -238,12 +242,12 @@ export default function AdminBookDetail() {
 
         try {
             await apiClient.delete(`/books/${book.id}`);
-            toast.success('Book deleted successfully!')
+            toast.success(t("BookDeleted"))
             setTimeout(() => {
                 window.history.back();
             }, 1500);
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to delete book.'))
+            toast.error(getApiErrorMessage(error, t("BookDeletedFailed")))
         }
         setDeleteBookDialog(false);
     };
@@ -253,10 +257,10 @@ export default function AdminBookDetail() {
 
         try {
             await apiClient.delete(`/books/${book.id}/chapters/${chapterId}`);
-            toast.success('Chapter deleted successfully!')
+            toast.success(t("ChapterDeleted"))
             await loadChapters();
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to delete chapter.'))
+            toast.error(getApiErrorMessage(error, t("ChapterDeletedFailed")))
         }
         setDeleteChapterDialog(null);
     };
@@ -270,18 +274,18 @@ export default function AdminBookDetail() {
                 ...chapterForm,
                         price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
                 });
-                toast.success('Chapter added successfully!')
+                toast.success(t("ChapterAdded"))
             } else if (chapterDialog?.mode === 'edit' && chapterDialog.chapter) {
                 await apiClient.patch(`/books/${book.id}/chapters/${chapterDialog.chapter.id}`, {
                     ...chapterForm,
                     price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
                 });
-                toast.success('Chapter updated successfully!')
+                toast.success(t("ChapterUpdated"))
             }
             setChapterDialog(null);
             await loadChapters();
         } catch (error) {
-            toast.error(getApiErrorMessage(error, 'Failed to save chapter.'))
+            toast.error(getApiErrorMessage(error, t("ChapterSaveFailed")))
         }
     };
 
@@ -318,13 +322,13 @@ export default function AdminBookDetail() {
                             <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
                         </div>
                     </div>
-                    <h2 className="mb-2 text-2xl font-bold">Book Not Found</h2>
+                    <h2 className="mb-2 text-2xl font-bold">{t("BookNotFound")}</h2>
                     <p className="text-slate-600 dark:text-slate-400">
-                        The book you're looking for doesn't exist or has been removed.
+                        {t("BookNotFoundDescription")}
                     </p>
                     <Button onClick={() => window.history.back()} className="mt-6">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Go Back
+                        <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+                        {t("GoBack")}
                     </Button>
                 </div>
             </div>
@@ -344,9 +348,9 @@ export default function AdminBookDetail() {
                     className="p-3 md:p-0 group mb-6 flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 >
                     <div className="rounded-lg bg-white p-2 shadow-sm transition-all group-hover:shadow-md dark:bg-slate-900">
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
                     </div>
-                    <span className="font-medium">Back to Books</span>
+                    <span className="font-medium">{t("BackToBooks")}</span>
                 </Link>
 
                 <div className="space-y-6">
@@ -370,8 +374,8 @@ export default function AdminBookDetail() {
                                         <div className="mt-4">
                                             <div className="flex items-center gap-3">
                                                 <Button type="button" variant="outline" onClick={() => setNewCoverPickerOpen(true)}>
-                                                    <ImageIcon className="size-4 mr-2" />
-                                                    Select cover
+                                                    <ImageIcon className="size-4 me-2" />
+                                                    {t("BookSelectCover")}
                                                 </Button>
                                             </div>
                                         </div>
@@ -386,7 +390,7 @@ export default function AdminBookDetail() {
                                                     value={editedBook.title || ''}
                                                     onChange={(e) => setEditedBook({ ...editedBook, title: e.target.value })}
                                                     className="text-2xl font-bold sm:text-3xl"
-                                                    placeholder="Book title"
+                                                    placeholder={t("BookTitlePlaceholder")}
                                                 />
                                             ) : (
                                                 <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
@@ -398,13 +402,13 @@ export default function AdminBookDetail() {
                                                 <Input
                                                     value={editedBook.author || ''}
                                                     onChange={(e) => setEditedBook({ ...editedBook, author: e.target.value })}
-                                                    placeholder="Author name"
+                                                    placeholder={t("BookAuthorPlaceholder")}
                                                 />
                                             ) : (
                                                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
                                                     <User className="h-4 w-4" />
                                                     <span className="text-sm font-medium">
-                                                        {book.author || 'Unknown Author'}
+                                                        {book.author || t("Unknown")}
                                                     </span>
                                                 </div>
                                             )}
@@ -452,7 +456,7 @@ export default function AdminBookDetail() {
                                         {editMode ? (
                                             <div className="flex w-full flex-col gap-4 mb-4 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                                                 <div>
-                                                    <Label className="mb-2 block">Book Type</Label>
+                                                    <Label className="mb-2 block">{t("BookType")}</Label>
                                                     <select
                                                         className="flex h-10 w-full md:w-1/2 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
                                                         value={editedBook.typeId || ''}
@@ -464,7 +468,7 @@ export default function AdminBookDetail() {
                                                     </select>
                                                 </div>
                                                 <div>
-                                                    <Label className="mb-2 block">Genres</Label>
+                                                    <Label className="mb-2 block">{t("BookGenres")}</Label>
                                                     <div className="flex flex-wrap gap-2">
                                                         {genres.map(g => {
                                                             const isSelected = editedBook.genreIds?.includes(g.id);
@@ -516,7 +520,7 @@ export default function AdminBookDetail() {
                                                             setEditedBook({ ...editedBook, isPublished: checked })
                                                         }
                                                     />
-                                                    <Label htmlFor="isPublished">Published</Label>
+                                                    <Label htmlFor="isPublished">{t("Published")}</Label>
                                                 </div>
                                                 <div className="flex flex-wrap gap-3">
                                                     <Switch
@@ -526,7 +530,7 @@ export default function AdminBookDetail() {
                                                             setEditedBook({ ...editedBook, isFeatured: checked })
                                                         }
                                                     />
-                                                    <Label htmlFor="isFeatured">Mark as featured</Label>
+                                                    <Label htmlFor="isFeatured">{t("MarkFeatured")}</Label>
                                                 </div>
                                             </div>
                                         ) :  (
@@ -534,18 +538,18 @@ export default function AdminBookDetail() {
                                                 {book.isPublished ? (
                                                     <Badge className="gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                                                         <Eye className="h-3.5 w-3.5" />
-                                                        Published
+                                                        {t("Published")}
                                                     </Badge>
                                                 ) : (
                                                     <Badge className="gap-1.5 border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                                                         <EyeOff className="h-3.5 w-3.5" />
-                                                        Draft
+                                                        {t("Drafts")}
                                                     </Badge>
                                                 )}
                                                 {book.isFeatured && (
                                                     <Badge className="gap-1.5 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                                                         <Sparkles className="h-3.5 w-3.5" />
-                                                        Featured
+                                                        {t("Featured")}
                                                     </Badge>
                                                 )}
                                             </>
@@ -556,21 +560,21 @@ export default function AdminBookDetail() {
                                         <div className="space-y-4">
                                             <div>
                                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                    Description
+                                                    {t("BookDescription")}
                                                 </label>
                                                 <Textarea
                                                     value={editedBook.description || ''}
                                                     onChange={(e) =>
                                                         setEditedBook({ ...editedBook, description: e.target.value })
                                                     }
-                                                    placeholder="Book description"
+                                                    placeholder={t("BookDescriptionPlaceholder")}
                                                     rows={4}
                                                 />
                                             </div>
                                         </div>
                                     ) : (
                                         <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                                            {book.description || 'No description available.'}
+                                            {book.description || t("NoDescriptionAvailable")}
                                         </p>
                                     )}
 
@@ -581,13 +585,13 @@ export default function AdminBookDetail() {
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                                                    Rating
+                                                    {t("Rating")}
                                                 </p>
                                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                                     {Number(book.ratingAvg ?? 0).toFixed(1)}
                                                 </p>
                                                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                                                    {book.ratingCount} {book.ratingCount === 1 ? 'review' : 'reviews'}
+                                                    {t("NReviews", {count: book.ratingCount})}
                                                 </p>
                                             </div>
                                         </div>
@@ -598,10 +602,10 @@ export default function AdminBookDetail() {
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                                                    Updated
+                                                    {t("Updated")}
                                                 </p>
                                                 <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                                                    {formatUpdateTime(book.updatedAt)}
+                                                    {formatUpdateTime(book.updatedAt, ti)}
                                                 </p>
                                             </div>
                                         </div>
@@ -612,7 +616,7 @@ export default function AdminBookDetail() {
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                                                    Chapters
+                                                    {t("Chapters")}
                                                 </p>
                                                 <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                                     {chaptersTotal}
@@ -629,14 +633,14 @@ export default function AdminBookDetail() {
                         <CardHeader className="border-b border-slate-200 dark:border-slate-800">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <CardTitle className="text-2xl font-bold">Chapters</CardTitle>
+                                    <CardTitle className="text-2xl font-bold">{t("Chapters")}</CardTitle>
                                     <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                                        Manage all book chapters
+                                        {t("ManageAllChapters")}
                                     </p>
                                 </div>
                                 <Button onClick={openAddChapter} className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Chapter
+                                    <Plus className="me-2 h-4 w-4" />
+                                    {t("AddChapter")}
                                 </Button>
                             </div>
                         </CardHeader>
@@ -663,10 +667,10 @@ export default function AdminBookDetail() {
                                 <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 py-16 dark:border-slate-700">
                                     <BookOpen className="mb-3 h-12 w-12 text-slate-400" />
                                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                        No chapters yet
+                                        {t("NoChapters")}
                                     </p>
                                     <p className="text-xs text-slate-500 dark:text-slate-500">
-                                        Click "Add Chapter" to create the first chapter
+                                        {t("NoChaptersDescription")}
                                     </p>
                                 </div>
                             ) : (
@@ -675,7 +679,7 @@ export default function AdminBookDetail() {
                                         {chapters.map((chapter) => {
                                             const isFree = chapter.isFree || chapter.price == null;
                                             const priceLabel = isFree
-                                                ? 'Free'
+                                                ? t("Free")
                                                 : `$${Number(chapter.price).toFixed(2)}`;
 
                                             return (
@@ -683,7 +687,7 @@ export default function AdminBookDetail() {
                                                     key={chapter.id}
                                                     className="group relative overflow-hidden rounded-xl border bg-white p-4 transition-all duration-300 hover:border-blue-300 hover:shadow-xl dark:bg-slate-900 dark:hover:border-blue-700"
                                                 >
-                                                    <div className="absolute right-2 top-2">
+                                                    <div className="absolute ltr:right-2 rtl:left-2 top-2">
                                                         <Badge
                                                             variant={isFree ? 'secondary' : 'outline'}
                                                             className="border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
@@ -692,7 +696,7 @@ export default function AdminBookDetail() {
                                                         </Badge>
                                                     </div>
 
-                                                    <div className="mb-3 flex items-start gap-3 pr-20">
+                                                    <div className="mb-3 flex items-start gap-3 pe-20">
                                                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white shadow-lg">
                                                             {chapter.index}
                                                         </div>
@@ -706,7 +710,7 @@ export default function AdminBookDetail() {
                                                     <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                                                         <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
                                                             <Clock className="h-3 w-3" />
-                                                            {formatUpdateTime(chapter.updatedAt)}
+                                                            {formatUpdateTime(chapter.updatedAt, ti)}
                                                         </div>
                                                         <div className="flex items-center gap-1">
                                                             <Link href={`/admin/books/${bookId}/c/${chapter.index}`} >
@@ -744,7 +748,7 @@ export default function AdminBookDetail() {
                                                 totalPages={chaptersTotalPages}
                                                 totalItems={chaptersTotal}
                                                 pageSize={CHAPTERS_PER_PAGE}
-                                                itemLabel="chapter"
+                                                itemLabel={t("chapter")}
                                                 onPageChange={setChaptersPage}
                                                 canGoPrevious={!chaptersLoading && chaptersPage > 1}
                                                 canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
@@ -761,17 +765,17 @@ export default function AdminBookDetail() {
             <Dialog open={deleteBookDialog} onOpenChange={() => setDeleteBookDialog(false)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Delete Book</DialogTitle>
+                        <DialogTitle>{t("DeleteBook")}</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete "{book.title}"? This action cannot be undone.
+                            {t("DeleteBookDescription", {BookTitle: book.title})}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDeleteBookDialog(false)}>
-                            Cancel
+                            {g("Cancel")}
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteBook}>
-                            Delete Book
+                            {t("DeleteBook")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -780,20 +784,20 @@ export default function AdminBookDetail() {
             <Dialog open={deleteChapterDialog !== null} onOpenChange={() => setDeleteChapterDialog(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Delete Chapter</DialogTitle>
+                        <DialogTitle>{t("DeleteChapter")}</DialogTitle>
                         <DialogDescription>
-                            Are you sure you want to delete this chapter? This action cannot be undone.
+                            {t("DeleteChapterDescription")}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDeleteChapterDialog(null)}>
-                            Cancel
+                            {g("Cancel")}
                         </Button>
                         <Button
                             variant="destructive"
                             onClick={() => deleteChapterDialog && handleDeleteChapter(deleteChapterDialog)}
                         >
-                            Delete Chapter
+                            {t("DeleteChapter")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -803,23 +807,23 @@ export default function AdminBookDetail() {
                 <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {chapterDialog?.mode === 'add' ? 'Add New Chapter' : 'Edit Chapter'}
+                            {chapterDialog?.mode === 'add' ? t("AddNewChapter") : t("EditChapter")}
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Chapter Title
+                                {t("ChapterTitle")}
                             </label>
                             <Input
                                 value={chapterForm.title}
                                 onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })}
-                                placeholder="Enter chapter title"
+                                placeholder={t("EnterChapterTitle")}
                             />
                         </div>
                         <div>
                             <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Chapter Index
+                                {t("ChapterIndex")}
                             </label>
                             <Input
                                 type="number"
@@ -828,7 +832,7 @@ export default function AdminBookDetail() {
                                 onChange={(e) =>
                                     setChapterForm({ ...chapterForm, index: parseInt(e.target.value) || 1 })
                                 }
-                                placeholder="Chapter number"
+                                placeholder={t("ChapterNumber")}
                             />
                         </div>
                         <div className="flex items-center gap-4">
@@ -837,12 +841,12 @@ export default function AdminBookDetail() {
                                 checked={chapterForm.isFree}
                                 onCheckedChange={(checked) => setChapterForm({ ...chapterForm, isFree: checked })}
                             />
-                            <Label htmlFor="isFree">Free Chapter</Label>
+                            <Label htmlFor="isFree">{t("FreeChapter")}</Label>
                         </div>
                         {!chapterForm.isFree && (
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Price (USD)
+                                    {t("Price", {CurrencySymbols: (g("CurrencySymbols") + g("CurrencyName"))})}
                                 </label>
                                 <Input
                                     type="text"
@@ -855,10 +859,10 @@ export default function AdminBookDetail() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setChapterDialog(null)}>
-                            Cancel
+                            {g("Cancel")}
                         </Button>
                         <Button onClick={handleSaveChapter}>
-                            {chapterDialog?.mode === 'add' ? 'Add Chapter' : 'Save Changes'}
+                            {chapterDialog?.mode === 'add' ? t("AddChapter") : t("SaveChanges")}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
