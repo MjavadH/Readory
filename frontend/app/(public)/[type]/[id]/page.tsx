@@ -385,8 +385,8 @@ export default function BookDetailsPage() {
         return { ...prev, purchasedChapterIds: [...next] };
       });
       toast.success(actionChapter.mode === "access"
-          ? "Chapter is now accessible!"
-          : "Chapter purchased successfully!",)
+          ? t("ChapterAccessible")
+          : t("ChapterPurchasedSuccessfully"),)
 
       setActionChapter(null);
       router.push(chapterUrl);

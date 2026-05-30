@@ -581,7 +581,9 @@
     "Fullscreen": "تمام صفحه",
     "ExitFullscreen": "خروج از حالت تمام صفحه",
     "Brightness": "روشنایی",
-    "ChapterCount": "{ChapterCount} چپتر"
+    "ChapterCount": "{ChapterCount} چپتر",
+    "ChapterPurchasedSuccessfully": "خرید چپتر موفقیت آمیز!",
+    "ChapterAccessible": "چپتر حالا در دسترس است!"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

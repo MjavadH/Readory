@@ -581,7 +581,9 @@
     "Fullscreen": "Fullscreen",
     "ExitFullscreen": "Exit fullscreen",
     "Brightness": "Brightness",
-    "ChapterCount": "{ChapterCount} Ch"
+    "ChapterCount": "{ChapterCount} Ch",
+    "ChapterPurchasedSuccessfully": "Chapter purchased successfully!",
+    "ChapterAccessible": "Chapter is now accessible!"
   },
   "UserHeader": {
     "Books": "Books",
