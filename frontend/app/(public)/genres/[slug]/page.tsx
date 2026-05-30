@@ -8,8 +8,10 @@ import { useBookBrowser } from "@/hooks/use-book-browser";
 import { BookBrowseLayout } from "@/components/book-browse-layout";
 import { AllGenresSection } from "@/components/all-genres-section";
 import { notFound } from "next/navigation";
+import {useTranslations} from "next-intl";
 
 export default function GenrePage() {
+    const t = useTranslations('Books');
     const { slug } = useParams() as { slug: string };
     const [bookTypes, setBookTypes] = useState<BookType[]>([]);
     const [isLoadingTypes, setIsLoadingTypes] = useState(true);
@@ -33,8 +35,8 @@ export default function GenrePage() {
 
     return (
         <BookBrowseLayout
-            title={browser.isLoading && !browser.data ? <div className="h-10 w-48 animate-pulse rounded bg-muted" /> : `${genreName} Books`}
-            description={`Explore our collection of ${genreName} books`}
+            title={browser.isLoading && !browser.data ? <div className="h-10 w-48 animate-pulse rounded bg-muted" /> : t("GenreBooks", {Genre: genreName})}
+            description={t("GenreBooksDescription", {Genre: genreName.toLowerCase()})}
             books={browser.items}
             isLoading={browser.isLoading}
             isLoadingMore={browser.isLoadingMore}
