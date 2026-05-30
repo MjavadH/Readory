@@ -29,6 +29,7 @@ import {AppPagination} from "@/components/app-pagination";
 import type { IconKey } from "@readory/shared";
 import {AppIcon} from "@/components/AppIcon";
 import {useToast} from "@/providers/toast-provider";
+import {useTranslations} from "next-intl";
 
 type BookDetails = {
   id: number;
@@ -148,6 +149,8 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const t = useTranslations('Books');
+  const g = useTranslations('General');
   return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in">
         <div className="w-full max-w-md animate-in zoom-in-95 rounded-2xl border bg-card p-6 shadow-2xl">
@@ -159,12 +162,12 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
             )}
           </div>
           <h3 className="mb-2 text-xl font-bold">
-            {chapter.mode === "access" ? "Access Chapter" : "Purchase Chapter"}
+            {chapter.mode === "access" ? t("AccessChapter") : t("PurchaseChapter")}
           </h3>
           <p className="mb-6 text-sm text-muted-foreground">
             {chapter.mode === "access"
-                ? `Chapter ${chapter.index}: "${chapter.title}" is free. Confirm to access this chapter.`
-                : `Purchase Chapter ${chapter.index}: "${chapter.title}" for $${Number(chapter.price ?? 0).toFixed(2)}. The amount will be deducted from your wallet.`}
+                ? t("AccessChapterDescription" , {ChapterIndex: chapter.index, ChapterTitle: chapter.title})
+                : t("PurchaseChapterDescription" , {ChapterIndex: chapter.index, ChapterTitle: chapter.title, CurrencySymbols: g("CurrencySymbols"), ChapterPrice: Number(chapter.price ?? 0).toFixed(2)})}
           </p>
           <div className="flex gap-3">
             <Button
@@ -173,7 +176,7 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
                 disabled={isPending}
                 className="flex-1"
             >
-              Cancel
+              {g("Cancel")}
             </Button>
             <Button
                 onClick={onConfirm}
@@ -183,12 +186,12 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
               {isPending ? (
                   <span className="flex items-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Processing...
+                    {t("Processing")}
               </span>
               ) : chapter.mode === "access" ? (
-                  "Confirm Access"
+                  t("ConfirmAccess")
               ) : (
-                  "Confirm Purchase"
+                  t("ConfirmPurchase")
               )}
             </Button>
           </div>
@@ -198,6 +201,9 @@ function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
 }
 
 export default function BookDetailsPage() {
+  const t = useTranslations('Books');
+  const g = useTranslations('General');
+  const ti = useTranslations('Time');
   const toast = useToast();
   const params = useParams<{ type: string; id: string }>();
   const router = useRouter();
@@ -235,7 +241,7 @@ export default function BookDetailsPage() {
 
   const loadBase = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      toast.error("Invalid book link.")
+      toast.error(t("InvalidBookLink"))
       setIsLoading(false);
       return;
     }
@@ -249,7 +255,7 @@ export default function BookDetailsPage() {
       ]);
 
       if (!bookData || bookData.type.slug !== typeSlug) {
-        toast.error("Book not found for this category.")
+        toast.error(t("BookNotFoundForThisCategory"))
         return;
       }
 
@@ -273,7 +279,7 @@ export default function BookDetailsPage() {
       );
       setRelatedBooks(relatedResponse.items ?? []);
     } catch (loadError) {
-      toast.error(getApiErrorMessage(loadError, "Failed to load book details."))
+      toast.error(getApiErrorMessage(loadError, t("FailedLoadDetails")))
     } finally {
       setIsLoading(false);
     }
@@ -291,7 +297,7 @@ export default function BookDetailsPage() {
       setChaptersTotal(data.pagination.total);
       setChaptersTotalPages(data.pagination.totalPages);
     } catch (chapterError) {
-      toast.error(getApiErrorMessage(chapterError, "Failed to load chapters."))
+      toast.error(getApiErrorMessage(chapterError, t("FailedLoadChapters")))
     } finally {
       setChaptersLoading(false);
     }
@@ -311,7 +317,7 @@ export default function BookDetailsPage() {
 
   const handleSubmitRating = async () => {
     if (!book || !isAuthenticated || selectedRating === 0) {
-      toast.error("Please select a rating before submitting.")
+      toast.error(t("SelectRating"))
       return;
     }
 
@@ -332,9 +338,9 @@ export default function BookDetailsPage() {
               }
               : prev
       );
-      toast.success("Rating saved successfully!")
+      toast.success(t("RatingSaved"))
     } catch (rateError) {
-      toast.error(getApiErrorMessage(rateError, "Unable to save your rating."))
+      toast.error(getApiErrorMessage(rateError, t("UnableSaveRating")))
     } finally {
       setIsRatingPending(false);
     }
@@ -343,7 +349,7 @@ export default function BookDetailsPage() {
   const onChapterSelect = (chapter: ChapterItem) => {
     if (!book) return;
     if (!isAuthenticated) {
-      toast.error("Only registered users can view and access chapters.")
+      toast.error(t("OnlyRegisteredUsers"))
       return;
     }
 
@@ -409,9 +415,9 @@ export default function BookDetailsPage() {
                 <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
               </div>
             </div>
-            <h2 className="mb-2 text-2xl font-bold">Book Not Found</h2>
+            <h2 className="mb-2 text-2xl font-bold">{t("BookNotFound")}</h2>
             <p className="text-muted-foreground">
-              The book you're looking for doesn't exist or has been removed.
+              {t("BookNotFoundDescription")}
             </p>
           </div>
         </div>
@@ -450,7 +456,7 @@ export default function BookDetailsPage() {
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <User className="h-4 w-4" />
                     <span className="text-sm font-medium">
-                    {book.author || "Unknown Author"}
+                    {book.author || t("UnknownAuthor")}
                   </span>
                   </div>
                 </div>
@@ -473,7 +479,7 @@ export default function BookDetailsPage() {
                 </div>
 
                 <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                  {book.description || "No description available."}
+                  {book.description || t("NoDescriptionAvailable")}
                 </p>
 
                 <div className="space-y-4">
@@ -484,7 +490,7 @@ export default function BookDetailsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          Rating
+                          {t("Rating")}
                         </p>
                         <div className="mt-1 flex items-baseline gap-2">
                         <span className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -495,7 +501,7 @@ export default function BookDetailsPage() {
                         </span>
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400">
-                          {book.ratingCount} {book.ratingCount === 1 ? "rating" : "ratings"}
+                          {t("NReviews", {count: book.ratingCount})}
                         </p>
                       </div>
                     </div>
@@ -506,10 +512,10 @@ export default function BookDetailsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          Last Updated
+                          {t("LastUpdated")}
                         </p>
                         <p className="mt-1 font-semibold text-slate-900 dark:text-white">
-                          {formatUpdateTime(book.updatedAt)}
+                          {formatUpdateTime(book.updatedAt, ti)}
                         </p>
                       </div>
                     </div>
@@ -520,7 +526,7 @@ export default function BookDetailsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          Total Chapters
+                          {t("TotalChapters")}
                         </p>
                         <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
                           {chaptersTotal}
@@ -533,12 +539,12 @@ export default function BookDetailsPage() {
                       <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/50">
                         <div className="mb-4 flex items-center justify-between">
                           <p className="font-semibold text-slate-900 dark:text-white">
-                            Rate This Book
+                            {t("RateThisBook")}
                           </p>
                           {selectedRating > 0 && (
                               <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          {selectedRating} out of 5
-                        </span>
+                                {t("UserRate", {UserRate: selectedRating})}
+                              </span>
                           )}
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -569,13 +575,13 @@ export default function BookDetailsPage() {
                           >
                             {isRatingPending ? (
                                 <span className="flex items-center gap-2">
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          Submitting...
-                        </span>
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                  {t("Submitting")}
+                                </span>
                             ) : (
                                 <>
                                   <Send className="h-4 w-4" />
-                                  Submit Rating
+                                  {t("SubmitRating")}
                                 </>
                             )}
                           </Button>
@@ -591,21 +597,21 @@ export default function BookDetailsPage() {
         <Card className="border-slate-200 dark:border-slate-800">
           <CardHeader className="space-y-4 border-b border-slate-200 dark:border-slate-800">
             <div>
-              <CardTitle className="text-2xl font-bold">Chapters</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("Chapters")}</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Browse all available chapters
+                {t("BrowseAvailableChapters")}
               </p>
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute ltr:left-3 rtl:right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                     value={chapterSearchInput}
                     onChange={(e) => setChapterSearchInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    placeholder="Search by name or index..."
-                    className="pl-9"
+                    placeholder={t("SearchNameOrIndex")}
+                    className="ps-9"
                 />
               </div>
               <Button
@@ -613,8 +619,8 @@ export default function BookDetailsPage() {
                   disabled={chaptersLoading}
                   className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
               >
-                <Search className="mr-2 h-4 w-4" />
-                Search
+                <Search className="me-2 h-4 w-4" />
+                {t("Search")}
               </Button>
             </div>
           </CardHeader>
@@ -626,10 +632,10 @@ export default function BookDetailsPage() {
                 <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 py-12 dark:border-slate-700">
                   <BookOpen className="mb-3 h-12 w-12 text-slate-400" />
                   <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    No chapters found
+                    {t("NoChaptersFound")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Try adjusting your search
+                    {t("AdjustingSearch")}
                   </p>
                 </div>
             ) : (
@@ -639,16 +645,16 @@ export default function BookDetailsPage() {
                       const owned = purchasedIds.has(chapter.id);
                       const isFree = chapter.isFree || chapter.price == null;
                       const priceLabel = isFree
-                          ? "Free"
-                          : `$${Number(chapter.price).toFixed(2)}`;
+                          ? t("Free")
+                          : t("ChapterPrice", {CurrencySymbols: g("CurrencySymbols"), ChapterPrice: Number(chapter.price).toFixed(2)});
 
                       return (
                           <button
                               key={chapter.id}
                               onClick={() => onChapterSelect(chapter)}
-                              className="group relative overflow-hidden rounded-xl border bg-card p-4 text-left transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:hover:border-blue-700"
+                              className="group relative overflow-hidden rounded-xl border bg-card p-4 ltr:text-left rtl:text-right transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:hover:border-blue-700"
                           >
-                            <div className="absolute right-2 top-2">
+                            <div className="absolute ltr:right-2 rtl:left-2 top-2">
                               <Badge
                                   variant={owned ? "default" : isFree ? "secondary" : "outline"}
                                   className={
@@ -659,11 +665,11 @@ export default function BookDetailsPage() {
                                             : ""
                                   }
                               >
-                                {owned ? "Owned" : priceLabel}
+                                {owned ? t("Owned") : priceLabel}
                               </Badge>
                             </div>
 
-                            <div className="mb-3 flex items-start gap-3 pr-20">
+                            <div className="mb-3 flex items-start gap-3 pe-20">
                               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white shadow-lg">
                                 {chapter.index}
                               </div>
@@ -677,23 +683,23 @@ export default function BookDetailsPage() {
                             <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
                               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Clock className="h-3 w-3" />
-                                {formatUpdateTime(chapter.updatedAt)}
+                                {formatUpdateTime(chapter.updatedAt, ti)}
                               </div>
                               <div className="flex items-center gap-1.5 text-xs font-medium">
                                 {owned ? (
                                     <>
                                       <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                      <span className="text-emerald-600">Read</span>
+                                      <span className="text-emerald-600">{t("Read")}</span>
                                     </>
                                 ) : isFree ? (
                                     <>
                                       <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                                      <span className="text-blue-600">Access</span>
+                                      <span className="text-blue-600">{t("Access")}</span>
                                     </>
                                 ) : (
                                     <>
                                       <Lock className="h-3.5 w-3.5 text-slate-600" />
-                                      <span className="text-slate-600">Buy</span>
+                                      <span className="text-slate-600">{t("Buy")}</span>
                                     </>
                                 )}
                               </div>
@@ -711,7 +717,7 @@ export default function BookDetailsPage() {
                             totalPages={chaptersTotalPages}
                             totalItems={chaptersTotal}
                             pageSize={CHAPTERS_PER_PAGE}
-                            itemLabel="chapter"
+                            itemLabel={t("chapter")}
                             onPageChange={setChaptersPage}
                             canGoPrevious={!chaptersLoading && chaptersPage > 1}
                             canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
@@ -726,9 +732,9 @@ export default function BookDetailsPage() {
         {relatedBooks.length > 0 && (
             <Card className="border-slate-200 dark:border-slate-800">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">You May Also Like</CardTitle>
+                <CardTitle className="text-2xl font-bold">{t("MayLike")}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Similar books based on your interests
+                  {t("SimilarBooks")}
                 </p>
               </CardHeader>
               <CardContent>
