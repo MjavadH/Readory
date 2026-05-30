@@ -9,6 +9,7 @@ import { ReaderToolbar } from "@/components/reader/reader-toolbar";
 import {Loader2} from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
 import {ReaderContextMenu} from "@/components/reader/reader-context-menu";
+import {useTranslations} from "next-intl";
 
 type SessionResponse = {
     chapterId: number;
@@ -42,6 +43,7 @@ type ReaderContextResponse = {
 };
 
 export default function ChapterPage() {
+    const t = useTranslations('Books');
     const toast = useToast();
     const router = useRouter();
     const params = useParams<{ type: string; id: string; index: string }>();
@@ -93,7 +95,7 @@ export default function ChapterPage() {
         ({
             id: session?.chapterId ?? 0,
             index: chapterIndex,
-            title: `Chapter ${chapterIndex}`,
+            title: t("ChapterChapterIndex", {ChapterIndex: chapterIndex}),
             pageCount: session?.pageCount ?? 1,
             locked: false,
         } satisfies ReaderChapterItem);
@@ -194,16 +196,16 @@ export default function ChapterPage() {
                     const refreshed = await refreshReaderSession();
                     res = await requestPage(refreshed.sessionToken);
                 } catch {
-                    toast.error("Session expired. Please refresh the page.");
-                    throw new Error("Reader session refresh failed");
+                    toast.error(t("SessionExpired"));
+                    throw new Error(t("SessionRefreshFailed"));
                 }
             }
 
             if (!res.ok) {
                 if (res.status === 429) {
-                    toast.error("Temporarily blocked due to abnormal behavior. Please try again in 1 minute.");
+                    toast.error(t("AbnormalBehavior"));
                 } else if (res.status === 401) {
-                    toast.error("Session expired. Please refresh the page.");
+                    toast.error(t("SessionExpired"));
                 }
                 throw new Error(`Failed page ${page} (${res.status})`);
             }
@@ -292,7 +294,7 @@ export default function ChapterPage() {
 
         const run = async () => {
             if (!Number.isInteger(bookId) || !Number.isInteger(chapterIndex) || bookId <= 0 || chapterIndex <= 0) {
-                setError("Invalid chapter link");
+                setError(t("InvalidChapterLink"));
                 setLoading(false);
                 return;
             }
@@ -593,7 +595,7 @@ export default function ChapterPage() {
             <div className="container mx-auto px-4 py-10 space-y-4">
                 <p className="text-destructive">{error}</p>
                 <Link className="text-sm underline" href={backUrl}>
-                    Back to book page
+                    {t("BackBookPage")}
                 </Link>
             </div>
         );
@@ -617,9 +619,9 @@ export default function ChapterPage() {
                 <main
                     onContextMenu={handleContextMenu}
                     className="pt-20 pb-10"
-                    style={{ filter: `brightness(${brightness}%)` }}
+                    style={{ filter: t("BrightnessN", {Brightness: brightness})}}
                 >
-                    <div className="max-w-3xl mx-auto px-4">
+                    <div className="lg:max-w-3/4 w-full  mx-auto px-4">
                         <article
                             className="prose select-none prose-invert max-w-none rounded-2xl border bg-card/60 p-6"
                             dangerouslySetInnerHTML={{ __html: textHtml }}
@@ -653,7 +655,7 @@ export default function ChapterPage() {
             <main
                 onContextMenu={handleContextMenu}
                 className="pt-16 pb-24"
-                style={{ filter: `brightness(${brightness}%)` }}
+                style={{ filter: t("BrightnessN", {Brightness: brightness}) }}
             >
                 {readMode === "page" ? (
                     <div className="max-w-2xl mx-auto px-4 pt-8 flex items-center justify-center min-h-[calc(100vh-10rem)]">
@@ -743,7 +745,7 @@ export default function ChapterPage() {
                                 if (!document.fullscreenElement) {
                                     // Enter fullscreen for the specific reader container
                                     element.requestFullscreen().catch(() => {
-                                        toast.error("Fullscreen was blocked by your browser.")
+                                        toast.error(t("FullscreenBlocked"))
                                     });
                                 } else {
                                     if (document.exitFullscreen) {
