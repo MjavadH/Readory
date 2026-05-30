@@ -7,12 +7,14 @@ import { BookGenre } from "@/lib/types";
 import { useBookBrowser } from "@/hooks/use-book-browser";
 import { BookBrowseLayout } from "@/components/book-browse-layout";
 import { notFound } from "next/navigation";
+import {useTranslations} from "next-intl";
 
 // Format slug to Title Case
 const formatTypeTitle = (slug: string) =>
     slug.split("-").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 
 export default function TypePage() {
+    const t = useTranslations('Books');
     const params = useParams();
     const typeSlug = (Array.isArray(params.type) ? params.type[0] : params.type) || "";
 
@@ -35,8 +37,8 @@ export default function TypePage() {
 
     return (
         <BookBrowseLayout
-            title={`Browse ${formatTypeTitle(typeSlug)}`}
-            description={`Discover your next favorite ${formatTypeTitle(typeSlug)}`}
+            title={ browser.isLoading && !browser.data ? <div className="h-10 w-48 animate-pulse rounded bg-muted" /> : t("BrowseBooks", {Books: formatTypeTitle(typeSlug)})}
+            description={t("BrowseBooksDescription" , {type: formatTypeTitle(typeSlug)})}
             books={browser.items}
             isLoading={browser.isLoading}
             isLoadingMore={browser.isLoadingMore}
