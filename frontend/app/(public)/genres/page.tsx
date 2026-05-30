@@ -7,6 +7,7 @@ import { GenresPageSkeleton } from "@/components/genres-page-skeleton";
 import { apiClient } from "@/lib/api-client";
 import {BookType} from "@/lib/types";
 import type { IconKey } from "@readory/shared";
+import {useTranslations} from "next-intl";
 
 interface ApiFeaturedGenre {
     id: number;
@@ -36,6 +37,8 @@ export default function GenresPage() {
         `${process.env.NEXT_PUBLIC_API_BASE}/public/genres`,
         fetcher,
     );
+    const t = useTranslations('Genres');
+
 
     const featured = data?.featured ?? [];
     const allGenres = data?.allGenres ?? [];
@@ -45,10 +48,10 @@ export default function GenresPage() {
             {/* Page header */}
             <div className="mx-auto max-w-7xl px-4 pt-8 pb-2 sm:px-6 sm:pt-10 lg:px-8">
                 <h1 className="text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl text-balance">
-                    Genres
+                    {t("Title")}
                 </h1>
                 <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed sm:text-base">
-                    Discover books by category across manga, manhwa, comics, and novels
+                    {t("Description")}
                 </p>
             </div>
 
@@ -59,14 +62,14 @@ export default function GenresPage() {
                 {error && !isLoading && (
                     <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
                         <p className="text-sm text-destructive">
-                            {error instanceof Error ? error.message : "Failed to load genres"}
+                            {error instanceof Error ? error.message : t("Error")}
                         </p>
                         <button
                             type="button"
                             onClick={() => window.location.reload()}
                             className="mt-3 text-xs font-medium text-primary underline-offset-4 hover:underline"
                         >
-                            Try again
+                            {t("TryAgain")}
                         </button>
                     </div>
                 )}
