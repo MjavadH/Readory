@@ -15,6 +15,7 @@ import { PublicModule } from './public/public.module';
 import { BookTypesModule } from './book-types/book-types.module';
 import { StorageModule } from './storage/storage.module';
 import { ReaderModule } from './reader/reader.module';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -35,7 +36,7 @@ import { ReaderModule } from './reader/reader.module';
     StorageModule,
     ReaderModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [],
 })
 export class AppModule {}

@@ -1,227 +1,198 @@
+# Readory
 
+Readory is a custom npm-workspace monorepo with a Next.js frontend, NestJS backend, shared TypeScript package, PostgreSQL, Redis, and S3-compatible object storage.
 
+## Architecture overview
 
-# Readory – Digital Reading Platform
+```text
+Readory/
+├── frontend/   # Next.js + React + TypeScript
+├── server/     # NestJS + Prisma
+├── shared/     # @readory/shared workspace package
+└── docker-compose.yml
+```
 
-Readory is a simple online bookstore designed for digital manga, comics, novels and light‑novels. It allows readers to sign up, top up a wallet, and pay per chapter to read content. Administrators can upload books and chapters, set pricing and publish them. The backend is built with **NestJS** running on the latest **Node.js LTS** (v24 ‘Krypton’ branch)[nodejs.org](https://nodejs.org/en/about/previous-releases#:~:text=Looking%20for%20the%20latest%20release,of%20a%20version%20branch), uses **Prisma ORM** on **PostgreSQL** for data storage, and implements secure authentication and role‑based access control. This project was built from scratch as part of a step‑by‑step tutorial for beginners.
+The root `package.json` owns npm workspaces. `frontend` and `server` both depend on `@readory/shared`, so Docker builds compile the shared package before building each application.
 
-## Features
+## Docker architecture
 
-- **User registration and login** with secure password hashing (argon2) and JWT authentication.
+```text
+Browser
+  │
+  ├── http://localhost:3001 ──► frontend (Next.js)
+  │                                │
+  └── http://localhost:3000 ───────┴──► backend (NestJS)
+                                           │
+                                           ├── postgres:5432 (internal)
+                                           ├── redis:6379 (internal)
+                                           ├── minio:9000 (internal S3 API)
+                                           └── /app/server/uploads (persistent covers)
+```
 
-- **Wallet system** – users can deposit funds and purchase chapters. Transactions are recorded as credits/debits.
+Services:
 
-- **Book and chapter management** – administrators can create, update and publish books; add chapters with prices; and manage content. Users can browse published books and see chapter lists.
+| Service | Image/build | Host exposure | Persistent data |
+| --- | --- | --- | --- |
+| `frontend` | `frontend/Dockerfile` | `${FRONTEND_PORT:-3001}` | none |
+| `backend` | `server/Dockerfile` | `${BACKEND_PORT:-3000}` | `uploads_data` |
+| `postgres` | `postgres:17.2-alpine` | internal only | `postgres_data` |
+| `redis` | `redis:7.4.1-alpine` | internal only | `redis_data` |
+| `minio` | pinned MinIO release | `${MINIO_API_PORT:-9000}`, `${MINIO_CONSOLE_PORT:-9001}` | `minio_data` |
 
-- **Purchasing and access records** – buying a chapter debits the user’s wallet and grants access via an `AccessRecord` so the user can read the chapter later.
+## Environment variables
 
-- **Role‑based access control** – only users with the `ADMIN` role can manage books and chapters. Roles are stored in the database; JWT payloads include the role name for authorization.
+Copy the example file and edit secrets before starting:
 
-- **PostgreSQL database migrations** using Prisma Migrate. A `prisma` folder contains the schema and migrations; a `prisma.config.ts` file centralizes the database connection (required in Prisma v7)[prisma.io](https://www.prisma.io/docs/orm/reference/prisma-config-reference#:~:text=Starting%20with%20Prisma%20ORM%20v7%2C,environment%20variables%20for%20setup%20details).
+```bash
+cp .env.example .env
+```
 
+Important variables:
 
-## Prerequisites
+| Variable | Purpose |
+| --- | --- |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | PostgreSQL database and credentials. |
+| `DATABASE_URL` | Composed for the backend in Docker using the `postgres` service name. |
+| `JWT_SECRET`, `JWT_EXPIRES_IN` | Backend JWT signing secret and lifetime. Use a strong production secret. |
+| `CORS_ORIGIN` | Comma-separated allowed frontend origins. Defaults to `http://localhost:3001`. |
+| `REDIS_HOST`, `REDIS_PORT` | Set to `redis:6379` by Docker Compose. |
+| `NEXT_PUBLIC_API_BASE` | Browser-visible backend URL. For local Docker this remains `http://localhost:3000`. |
+| `S3_ENDPOINT`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | S3-compatible provider settings. |
+| `S3_BUCKET_CHAPTERS` | Bucket for book/chapter assets. |
+| `S3_FORCE_PATH_STYLE` | Use `true` for MinIO; cloud providers may use `false`. |
+| `S3_PUBLIC_BASE_URL` | Public bucket/object base URL when needed by the app. |
+| `S3_AUTO_CREATE_BUCKET` | Convenient for local MinIO; disable in locked-down production. |
+| `RUN_MIGRATIONS` | When `true`, backend startup runs `npx prisma migrate deploy`. |
 
-- **Node.js** v24 LTS.
+## Local production-like startup
 
-- **npm** (v11.6.2 or newer) to install packages.
+```bash
+cp .env.example .env
+# edit .env and replace all change-me values
+docker compose up -d --build
+```
 
-- **NestJS CLI** (v11.0.14) – used to scaffold modules and run the development server.
+Open:
 
-- **PostgreSQL** 18 – create a database named `readory_db` before running migrations.
+* Frontend: <http://localhost:3001>
+* Backend health: <http://localhost:3000/health>
+* MinIO console: <http://localhost:9001>
 
-- **Prisma CLI** (installed via `npm install --save-dev prisma @prisma/adapter-pg`).
+Check status:
 
-- **Docker** and **Docker Compose** (optional but recommended) if you prefer containerized deployment.
+```bash
+docker compose ps
+docker compose logs -f backend
+```
 
+## Development workflow with hot reload
 
-## Getting Started
+The optional override keeps infrastructure services from `docker-compose.yml` and runs frontend/backend dev commands with source mounts:
 
-1. **Clone the repository** and install dependencies:
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
 
-   ```bash
-   git clone https://github.com/MjavadH/Readory.git
-   cd readory/server
-   npm install
-   ```
+Backend migrations are not automatically run by the dev override. Run them explicitly when needed:
 
-2. **Configure environment variables**. Copy `.env.example` to `.env` and fill in your database credentials and JWT secret. **Never commit your `.env` file** to version control; it contains secrets. For example:
+```bash
+docker compose exec backend npx prisma migrate deploy --schema=server/prisma/schema.prisma
+```
 
-   ```env
-   DATABASE_URL="postgresql://<username>:<password>@localhost:5432/readory_db?schema=public"
-   JWT_SECRET="your‑strong‑random‑secret"
-   JWT_EXPIRES_IN=3600
-   PORT=3000
-   ```
+## Production deployment workflow
 
-4. **Create the database** if it doesn’t already exist:
+1. Provide production secrets through your deployment platform, not committed files.
+2. Set `POSTGRES_*` or an external `DATABASE_URL` equivalent for the backend.
+3. Set `S3_*` for AWS S3, Cloudflare R2, MinIO, or another S3-compatible provider.
+4. Set `S3_AUTO_CREATE_BUCKET=false` unless the runtime identity is intentionally allowed to create buckets.
+5. Set `CORS_ORIGIN` to the public frontend origin.
+6. Run:
 
-   ```bash
-   psql -U postgres -c "CREATE DATABASE readory_db;"
-   ```
+```bash
+docker compose up -d --build
+```
 
-6. **Run migrations and generate the Prisma client**:
+The backend entrypoint runs:
 
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev --name init
-   ````
+```bash
+npx prisma migrate deploy --schema=server/prisma/schema.prisma
+```
 
-7. **Start the development server**:
+This preserves the existing Prisma migration history and does not use `prisma db push`.
 
-   ```bash
-   npm run start:dev
-   ```
+## Database migration workflow
 
-   The server will compile TypeScript in watch mode and start listening on `localhost:3000` (or the `PORT` you set).
+* Create new migrations during development using Prisma's migration tooling.
+* Commit migration files under `server/prisma/migrations`.
+* Deploy with `npx prisma migrate deploy` in containers or CI/CD.
+* Do not replace migrations with `prisma db push` in production.
 
-9. **Seed an admin role**. By default the `USER` role is created when a user registers. To create an `ADMIN` role and assign it to a user, run the following SQL in your database:
+Manual deployment command:
 
-   ```sql
-   INSERT INTO "Role" ("name") VALUES ('ADMIN') ON CONFLICT DO NOTHING;
-   -- replace with your admin user’s email
-   UPDATE "User" SET "roleId" = (SELECT id FROM "Role" WHERE "name"='ADMIN') WHERE "email" = 'admin@example.com';
-   ```
+```bash
+docker compose exec backend npx prisma migrate deploy --schema=server/prisma/schema.prisma
+```
 
-## API Overview
+## MinIO configuration
 
-### Authentication
+MinIO is only the local S3-compatible development replacement. The app remains configured through generic `S3_*` variables and is not coupled to MinIO-specific application code.
 
-- `POST /auth/register` – register a new user with `{ email, password }`. Creates a wallet with zero balance.
-
-- `POST /auth/login` – login with `{ email, password }`. Returns a JWT (`access_token`).
-
-
-### Wallet
-
-- `GET /wallet` – get your wallet balance and transaction history (JWT required).
-
-- `POST /wallet/deposit` – deposit funds with `{ amount, reference? }` (JWT required).
-
-### Books
-
-- `GET /books` – list all published books.
-
-- `GET /books/:id` – get details of a book, including its chapters.
-
-- `POST /books` – **admin only**. Create a book with `{ title, author?, description?, coverImage?, isPublished? }`.
-
-- `PATCH /books/:id` – **admin only**. Update a book’s details or publish it.
-
-### Chapters
-
-- `GET /books/:bookId/chapters` – list chapters for a book.
-
-- `POST /books/:bookId/chapters` – **admin only**. Add a chapter with `{ title, index, price?, isFree?, contentPath? }`.
-
-- `POST /books/:bookId/chapters/:chapterId/purchase` – purchase a chapter (JWT required). Debits the user’s wallet if the chapter isn’t free.
-
-## License
-
-This project is released under the MIT License. See the `LICENSE` file for details.
-
-## Chapter Reader + MinIO Content Pipeline
-
-### Required environment variables (server)
+Default local Docker values:
 
 ```env
-S3_ENDPOINT=http://127.0.0.1:9000
-S3_REGION=us-east-1
-S3_ACCESS_KEY_ID=minioadmin
-S3_SECRET_ACCESS_KEY=minioadmin
-S3_BUCKET_CHAPTERS=readory-book
+S3_ENDPOINT=http://minio:9000
 S3_FORCE_PATH_STYLE=true
-S3_AUTO_CREATE_BUCKET=false
+S3_BUCKET_CHAPTERS=readory-book
+S3_PUBLIC_BASE_URL=http://localhost:9000/readory-book
 ```
 
-- Bucket must be **private**.
-- Reader APIs stream content through backend only (`/reader/page`, `/reader/text`) and do not expose S3 URLs.
+Use the MinIO console at <http://localhost:9001> with `MINIO_ROOT_USER` and `MINIO_ROOT_PASSWORD` from `.env`.
 
-### Admin chapter content management APIs
+## S3 migration notes
 
-- `GET /admin/books/:bookId/chapters/:index/content`
-- `POST /admin/books/:bookId/chapters/:index/content/images` (multipart `files[]`)
-- `POST /admin/books/:bookId/chapters/:index/content/text` (multipart `file`, `.md`/`.txt`)
-- `DELETE /admin/books/:bookId/chapters/:index/content`
+For AWS S3 or another provider:
 
-Storage prefix is always:
+* Change `S3_ENDPOINT` as required by the provider. AWS S3 may leave it unset if supported by your deployment configuration.
+* Set `S3_REGION` to the provider region.
+* Set `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` to production credentials.
+* Set `S3_FORCE_PATH_STYLE=false` for virtual-hosted-style providers when appropriate.
+* Set `S3_PUBLIC_BASE_URL` to the CDN or public bucket URL if assets are served directly.
+* Keep `server/uploads` persistent; cover images stored there are intentionally not migrated to S3 by this Dockerization.
 
-`readory-book/b{bookId}/c{chapterIndex}`
+## Backup and restore
 
-Each chapter stores a `manifest.json` used by the reader session and ordered page loading.
-
-### Security notes
-
-- Reader session token is short-lived and includes `contentVersion`; content changes invalidate prior sessions.
-- Reader endpoints enforce access (`isFree` or purchased access record), rate limits, and anomaly blocking for aggressive page scraping.
-- Image pages are watermarked per user and streamed as `image/webp` with `no-store` headers.
-- Chapter uploads validate image magic-bytes, normalize to WebP, and update chapter content metadata atomically.
-
-
-## Testing (NestJS + Jest + Prisma)
-
-### 1) Create a dedicated local test database
-
-Use a separate database for tests so no test can touch your development/production data.
+PostgreSQL backup:
 
 ```bash
-psql -U postgres -c "CREATE DATABASE readory_test;"
+docker compose exec postgres pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB" > readory.sql
 ```
 
-### 2) Create `server/.env.test`
-
-Copy the sample file and update values for your machine:
+PostgreSQL restore:
 
 ```bash
-cd server
-cp .env.test.example .env.test
+cat readory.sql | docker compose exec -T postgres psql -U "$POSTGRES_USER" "$POSTGRES_DB"
 ```
 
-Minimum required value:
+Redis backup data is stored in the `redis_data` named volume with append-only persistence enabled.
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/readory_test?schema=public"
-```
+MinIO data is stored in `minio_data`. Use S3 tooling such as `mc mirror` or provider-native backups for production object storage.
 
-> Safety guard: test helpers refuse to run if `DATABASE_URL` does not look like a test database URL.
+Uploads are stored in the `uploads_data` named volume. Back it up before host migration or destructive volume operations.
 
-### 3) Apply Prisma schema to the test database
+## Troubleshooting
 
-Run this from `server/`:
+* **Backend cannot connect to PostgreSQL**: confirm `postgres` is healthy with `docker compose ps` and that `POSTGRES_PASSWORD` is set in `.env`.
+* **Migrations fail**: inspect `docker compose logs backend`; the backend entrypoint uses `npx prisma migrate deploy --schema=server/prisma/schema.prisma`.
+* **Redis connection errors**: ensure the backend env uses `REDIS_HOST=redis` and `REDIS_PORT=6379` inside Docker.
+* **MinIO/S3 errors**: verify `S3_ENDPOINT`, credentials, bucket name, and `S3_FORCE_PATH_STYLE=true` for MinIO.
+* **Frontend cannot call backend from browser**: `NEXT_PUBLIC_API_BASE` must be browser reachable, usually `http://localhost:3000` for local Compose.
+* **CORS errors**: add the frontend origin to `CORS_ORIGIN`; multiple origins are comma-separated.
+* **Uploaded covers disappear**: ensure the `uploads_data` volume exists and is mounted at `/app/server/uploads`.
 
-```bash
-npx prisma migrate deploy
-```
+## Security notes
 
-If this is your first local setup and there are no applied migrations yet, you can use:
-
-```bash
-npx prisma migrate dev
-```
-
-### 4) Run tests
-
-From `server/`:
-
-```bash
-npm test
-npm run test:watch
-npm run test:cov
-npm run test:e2e
-```
-
-### Test DB cleanup strategy
-
-- E2E setup uses Prisma utilities in `server/test/utils`.
-- Before each E2E test, all public tables are truncated with `RESTART IDENTITY CASCADE` (excluding `_prisma_migrations`).
-- This keeps tests deterministic and isolated.
-
-### Troubleshooting
-
-- **Error: Refusing to run tests against a non-test database URL**
-  - Ensure `server/.env.test` points to `readory_test` (or any DB name containing `test`).
-- **Connection errors to Postgres**
-  - Verify Postgres is running and `DATABASE_URL` credentials are correct.
-- **Redis/S3 in unit/controller tests**
-  - Unit/controller tests should override Nest providers and fully mock external services (`REDIS_CLIENT`, `S3Client`/`StorageService`).
-
+* Application images run as non-root users.
+* PostgreSQL and Redis are not exposed on host ports by default.
+* Secrets are environment-driven and should be supplied by `.env`, CI/CD secrets, or a secret manager.
+* Containers avoid privileged mode and unnecessary Linux capabilities.
+* Images use explicit versions instead of `latest` tags.
