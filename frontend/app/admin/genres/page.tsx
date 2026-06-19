@@ -39,7 +39,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {Trash2, Plus, Search, Sparkles, GripVertical, Book, Loader2, Tag, Pencil} from "lucide-react"
 import {AppIcon} from "@/components/AppIcon";
 import type { IconKey } from "@readory/shared";
 import { IconPicker } from "@/components/admin/icon-picker";
@@ -61,10 +62,11 @@ type Genre = {
 }
 
 
-function SortableGenreItem({genre, isFeaturedList, onDelete, onUpdateIcon,}: {
+function SortableGenreItem({genre, isFeaturedList, onDelete, onEdit, onUpdateIcon,}: {
     genre: Genre
     isFeaturedList: boolean
     onDelete: (g: Genre) => void
+    onEdit: (g: Genre) => void
     onUpdateIcon: (id: number, iconKey: IconKey) => void
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -127,6 +129,16 @@ function SortableGenreItem({genre, isFeaturedList, onDelete, onUpdateIcon,}: {
                 value={genre.iconKey as IconKey}
                 onChange={(key: any) => onUpdateIcon(genre.id, key)}
             />
+
+            <Button
+                size="icon"
+                variant="ghost"
+                className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-muted opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                onClick={() => onEdit(genre)}
+            >
+                <Pencil className="h-4 w-4" />
+            </Button>
+
             <Button
                 size="icon"
                 variant="ghost"
@@ -166,6 +178,11 @@ export default function AdminGenres() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [genreToDelete, setGenreToDelete] = useState<Genre | null>(null)
     const [activeGenre, setActiveGenre] = useState<Genre | null>(null)
+    const [editOpen, setEditOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<Genre | null>(null)
+    const [editName, setEditName] = useState("")
+    const [editSlug, setEditSlug] = useState("")
+    const [savingEdit, setSavingEdit] = useState(false)
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -213,6 +230,38 @@ export default function AdminGenres() {
             console.error("Failed to save icon:", error)
         }
     };
+
+    const openEdit = (g: Genre) => {
+        setEditTarget(g)
+        setEditName(g.name)
+        setEditSlug(g.slug)
+        setEditOpen(true)
+    }
+
+    const saveEdit = async () => {
+        if (!editTarget) return
+        const n = editName.trim()
+        const s = editSlug.trim()
+        if (!n) return
+
+        setSavingEdit(true)
+        try {
+            const updated = await apiClient.patch<Genre>(`/genres/${editTarget.id}`, { name: n, slug: s || undefined })
+            setGenres((prev) =>
+                prev.map((g) =>
+                    g.id === editTarget.id
+                        ? { ...g, name: updated.name, slug: updated.slug }
+                        : g,
+                ),
+            )
+            setEditOpen(false)
+            setEditTarget(null)
+        } catch (error: any) {
+            alert(error?.message || "Failed to update")
+        } finally {
+            setSavingEdit(false)
+        }
+    }
 
     const handleDeleteClick = (genre: Genre) => {
         setGenreToDelete(genre)
@@ -412,6 +461,7 @@ export default function AdminGenres() {
                                                         genre={genre}
                                                         isFeaturedList={false}
                                                         onDelete={handleDeleteClick}
+                                                        onEdit={openEdit}
                                                         onUpdateIcon={updateGenreIcon}
                                                     />
                                                 ))
@@ -460,6 +510,7 @@ export default function AdminGenres() {
                                                         genre={genre}
                                                         isFeaturedList={true}
                                                         onDelete={handleDeleteClick}
+                                                        onEdit={openEdit}
                                                         onUpdateIcon={updateGenreIcon}
                                                     />
                                                 ))
@@ -513,6 +564,39 @@ export default function AdminGenres() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+                {/* Edit dialog */}
+                <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                    <DialogContent className="sm:max-w-[520px]">
+                        <DialogHeader>
+                            <DialogTitle>{t("EditGenre")}</DialogTitle>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">{t("Name")}</label>
+                                <Input value={editName}  onChange={(e) => setEditName(e.target.value)} placeholder={t("EnterGenreName")} />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">{t("Slug")}</label>
+                                <Input value={editSlug} onChange={(e) => setEditSlug(e.target.value)} placeholder={t("kebabCaseSlug")} />
+                                <p className="text-xs text-muted-foreground">{t("kebabCaseSlugDescription")}</p>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button variant="outline" onClick={() => setEditOpen(false)}>
+                                    {g("Cancel")}
+                                </Button>
+                                <Button onClick={saveEdit} disabled={savingEdit || !editName.trim()}>
+                                    {savingEdit ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : null}
+                                    {g("Save")}
+                                </Button>
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
             </div>
         </div>
     )

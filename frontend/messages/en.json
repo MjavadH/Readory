@@ -365,7 +365,12 @@
     "DragToFeature": "Drag genres here to feature",
     "FeaturedOnHomepage": "Featured genres appear on your homepage",
     "DeleteGenre": "Delete Genre",
-    "DeleteGenreDescription": "Are you sure you want to delete {GenreName} This action cannot be undone."
+    "DeleteGenreDescription": "Are you sure you want to delete {GenreName} This action cannot be undone.",
+    "EditGenre": "Edit Genre",
+    "Name": "Name",
+    "Slug": "Slug",
+    "kebabCaseSlug": "kebab-case slug",
+    "kebabCaseSlugDescription": "Used in URLs and filters. Must be kebab-case."
   },
   "Books": {
     "Title": "Books",

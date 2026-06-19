@@ -365,7 +365,12 @@
     "DragToFeature": "ژانرها را اینجا بکشید تا ویژه شوند",
     "FeaturedOnHomepage": "ژانرهای ویژه در صفحه اصلی شما نمایش داده می‌شوند",
     "DeleteGenre": "حذف ژانر",
-    "DeleteGenreDescription": "آیا مطمئن هستید که می‌خواهید {GenreName} را حذف کنید؟ این عمل قابل بازگشت نیست."
+    "DeleteGenreDescription": "آیا مطمئن هستید که می‌خواهید {GenreName} را حذف کنید؟ این عمل قابل بازگشت نیست.",
+    "EditGenre": "ویرایش ژانر",
+    "Name": "نام",
+    "Slug": "اسلاگ",
+    "kebabCaseSlug": "اسلاگ به فرم kebab-case",
+    "kebabCaseSlugDescription": "در URLها و فیلترها استفاده می‌شود. باید به فرم kebab-case باشد."
   },
   "Books": {
     "Title": "کتاب‌ها",
