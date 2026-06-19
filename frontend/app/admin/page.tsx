@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users, DollarSign, BookOpen, TrendingUp, ArrowUpRight, ArrowDownRight, UserPlus, Layers, ArrowDownCircle, ArrowUpCircle } from "lucide-react"
-import {Bar, BarChart, Pie, PieChart, XAxis, YAxis, CartesianGrid, Area, AreaChart, ResponsiveContainer} from "recharts"
+import {Bar, BarChart, Pie, PieChart, XAxis, YAxis, CartesianGrid, Area, AreaChart, ResponsiveContainer, RadarChart, Radar, PolarRadiusAxis, PolarGrid, PolarAngleAxis, Label, Sector } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { usePermission } from "@/hooks/use-permission"
 import { apiClient } from "@/lib/api-client"
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                                             transition={{ duration: 0.3 }}
                                         >
                                             {stats.charts?.genreDistribution && stats.charts.genreDistribution.length > 0 ? (
-                                                <PieChartWrapper data={stats.charts.genreDistribution} />
+                                                <RadarChartWrapper data={stats.charts.genreDistribution} gradientId="radar-genre" />
                                             ) : (
                                                 <EmptyState text={t("AdminPage.Dashboard.NoGenreData")} />
                                             )}
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
                                             transition={{ duration: 0.3 }}
                                         >
                                             {stats.charts?.typeDistribution && stats.charts.typeDistribution.length > 0 ? (
-                                                <PieChartWrapper data={stats.charts.typeDistribution} />
+                                                <RadarChartWrapper data={stats.charts.typeDistribution} gradientId="radar-type" />
                                             ) : (
                                                 <EmptyState text={t("AdminPage.Dashboard.NoTypeData")} />
                                             )}
@@ -226,7 +226,7 @@ export default function AdminDashboard() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3 }}
                                         >
-                                            <PieChartWrapper data={userStatusData} />
+                                            <PieChartWrapper data={userStatusData} activeIndex={0} />
                                         </motion.div>
                                     </TabsContent>
                                 </Tabs>
@@ -446,13 +446,70 @@ function orderOthersLast(data: { name: string; value: number }[]) {
     return [...rest, ...others]
 }
 
-function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) {
+function OrderedChartLegend({orderedData, total}:{orderedData: any, total: number}){
+    return (
+        <motion.div
+            className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 text-xs"
+            initial="hidden"
+            animate="visible"
+            variants={{
+                hidden: { opacity: 0 },
+                visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.2 } }
+            }}
+        >
+            {orderedData.map((item:any, index:number) => (
+                <motion.div
+                    key={`legend-${item.name}-${index}`}
+                    className="flex items-center gap-2 min-w-0"
+                    variants={{
+                        hidden: { opacity: 0, y: 10 },
+                        visible: { opacity: 1, y: 0 }
+                    }}
+                >
+                        <span
+                            className="size-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                            aria-hidden="true"
+                        />
+                    <span className="truncate">{item.name}</span>
+                    <span className="ml-auto tabular-nums font-semibold">
+                            {Number(item.value || 0).toLocaleString()}
+                        </span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                            {total > 0 ? Math.round((item.value / total) * 100) : 0}%
+                        </span>
+                </motion.div>
+            ))}
+        </motion.div>
+    )
+}
+
+function PieChartWrapper({ data, activeIndex = 0 }: { data: { name: string; value: number }[], activeIndex:number }) {
     const ordered = orderOthersLast(Array.isArray(data) ? data : []).map((item, index) => ({
         ...item,
         fill: CHART_COLORS[index % CHART_COLORS.length]
     }));
     const total = ordered.reduce((acc, cur) => acc + (Number(cur.value) || 0), 0)
+    const renderActiveShape = (props: any) => {
+        return (
+            <>
+                <Sector
+                    {...props}
+                    outerRadius={94}
+                    fill={props.fill}
+                    opacity={0.2}
+                />
 
+                <Sector
+                    {...props}
+                    outerRadius={86}
+                    fill={props.fill}
+                    stroke="white"
+                    strokeWidth={2}
+                />
+            </>
+        );
+    };
     return (
         <div className="h-full w-full flex flex-col">
             {/* Chart */}
@@ -464,55 +521,121 @@ function PieChartWrapper({ data }: { data: { name: string; value: number }[] }) 
                                 data={ordered}
                                 cx="50%"
                                 cy="50%"
+                                nameKey="name"
                                 innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
+                                outerRadius={75}
+                                paddingAngle={10}
+                                cornerRadius={5}
                                 dataKey="value"
+                                activeIndex={activeIndex}
+                                activeShape={renderActiveShape}
                                 isAnimationActive={true}
                                 animationBegin={200}
-                                animationDuration={800}
-                            />
+                                animationDuration={900}
+                            >
+                                <Label
+                                    content={({ viewBox }) => {
+                                        if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                                            const activeItem = ordered[activeIndex] || ordered[0]
+                                            return (
+                                                <text
+                                                    x={viewBox.cx}
+                                                    y={viewBox.cy}
+                                                    textAnchor="middle"
+                                                    dominantBaseline="middle"
+                                                >
+                                                    <tspan
+                                                        x={viewBox.cx}
+                                                        y={viewBox.cy}
+                                                        className="fill-foreground text-2xl font-bold tabular-nums"
+                                                    >
+                                                        {Number(activeItem?.value || 0).toLocaleString()}
+                                                    </tspan>
+                                                    <tspan
+                                                        x={viewBox.cx}
+                                                        y={(viewBox.cy || 0) + 20}
+                                                        className="fill-muted-foreground text-xs"
+                                                    >
+                                                        {activeItem?.name}
+                                                    </tspan>
+                                                </text>
+                                            )
+                                        }
+                                    }}
+                                />
+                            </Pie>
                             <ChartTooltip content={<ChartTooltipContent />} />
                         </PieChart>
                     </ResponsiveContainer>
                 </ChartContainer>
             </div>
 
-            {/* Legend */}
-            <motion.div
-                className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-2 text-xs"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                    hidden: { opacity: 0 },
-                    visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.2 } }
-                }}
-            >
-                {ordered.map((item, index) => (
-                    <motion.div
-                        key={`legend-${item.name}-${index}`}
-                        className="flex items-center gap-2 min-w-0"
-                        variants={{
-                            hidden: { opacity: 0, y: 10 },
-                            visible: { opacity: 1, y: 0 }
-                        }}
-                    >
-                        <span
-                            className="size-2.5 rounded-sm shrink-0"
-                            style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                            aria-hidden="true"
-                        />
-                        <span className="truncate">{item.name}</span>
-                        <span className="ml-auto tabular-nums font-semibold">
-                            {Number(item.value || 0).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
-                            {total > 0 ? Math.round((item.value / total) * 100) : 0}%
-                        </span>
-                    </motion.div>
-                ))}
-            </motion.div>
+            <OrderedChartLegend orderedData={ordered} total={total} />
+
         </div>
+    )
+}
+
+function RadarChartWrapper({ data, gradientId }: {
+    data: { name: string; value: number }[]
+    gradientId: string
+}) {
+    const ordered = orderOthersLast(Array.isArray(data) ? data : []).map((item, index) => ({
+        ...item,
+        fill: CHART_COLORS[index % CHART_COLORS.length]
+    }));
+    const total = ordered.reduce((acc, cur) => acc + (Number(cur.value) || 0), 0)
+    // "Others" is excluded from the radar plot but still shown in the legend below
+    const isOthers = (x: { name: string }) => x.name.trim().toLowerCase() === "others"
+    const radarData = (Array.isArray(data) ? data : []).filter((d) => !isOthers(d))
+    const max = Math.max(...radarData.map((d) => d.value))
+
+    return (
+        <>
+            <ChartContainer
+                config={{ value: { label: "Count", color: "var(--chart-1)" } }}
+                className="h-full w-full"
+            >
+                <RadarChart accessibilityLayer data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                    <defs>
+                        <linearGradient id={`${gradientId}-fill`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor={`var(--color-value)`} stopOpacity={0.45} />
+                            <stop offset="100%" stopColor={`var(--color-value)`} stopOpacity={0.1} />
+                        </linearGradient>
+                        <filter id={`${gradientId}-glow`} x="-15%" y="-15%" width="130%" height="130%">
+                            <feGaussianBlur stdDeviation="4" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <PolarAngleAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <PolarGrid strokeDasharray="3 3" />
+                    <PolarRadiusAxis
+                        angle={90}
+                        domain={[0, max]}
+                        tick={false}
+                        axisLine={false}
+                    />
+                    <Radar
+                        dataKey="value"
+                        fill={`url(#${gradientId}-fill)`}
+                        stroke="var(--color-value)"
+                        strokeWidth={2.5}
+                        filter={`url(#${gradientId}-glow)`}
+                        dot={{
+                            r: 4,
+                            fill: "var(--background)",
+                            strokeWidth: 2.5,
+                            stroke: "var(--color-value)",
+                        }}
+                        isAnimationActive={true}
+                        animationBegin={200}
+                        animationDuration={900}
+                    />
+                </RadarChart>
+            </ChartContainer>
+            <OrderedChartLegend orderedData={ordered} total={total} />
+        </>
     )
 }
 
