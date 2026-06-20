@@ -588,7 +588,8 @@
     "Brightness": "Brightness",
     "ChapterCount": "{ChapterCount} Ch",
     "ChapterPurchasedSuccessfully": "Chapter purchased successfully!",
-    "ChapterAccessible": "Chapter is now accessible!"
+    "ChapterAccessible": "Chapter is now accessible!",
+    "TryAgain": "Try Again"
   },
   "UserHeader": {
     "Books": "Books",

@@ -588,7 +588,8 @@
     "Brightness": "روشنایی",
     "ChapterCount": "{ChapterCount} چپتر",
     "ChapterPurchasedSuccessfully": "خرید چپتر موفقیت آمیز!",
-    "ChapterAccessible": "چپتر حالا در دسترس است!"
+    "ChapterAccessible": "چپتر حالا در دسترس است!",
+    "TryAgain": "تلاش مجدد"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

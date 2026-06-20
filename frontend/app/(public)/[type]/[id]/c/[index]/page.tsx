@@ -1,15 +1,34 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { apiClient, getApiErrorMessage } from "@/lib/api-client";
+import { apiClient, getApiErrorMessage, ApiError } from "@/lib/api-client";
 import { ReaderToolbar } from "@/components/reader/reader-toolbar";
-import {Loader2} from "lucide-react";
+import {
+    AlertCircle,
+    ArrowLeft,
+    BookOpen,
+    Loader2,
+    Lock,
+    LogIn,
+    RefreshCw,
+    ShoppingCart,
+    Unlock,
+} from "lucide-react";
 import { useToast } from "@/providers/toast-provider";
-import {ReaderContextMenu} from "@/components/reader/reader-context-menu";
-import {useTranslations} from "next-intl";
+import { ReaderContextMenu } from "@/components/reader/reader-context-menu";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AppIcon } from "@/components/AppIcon";
+import {
+    ChapterPurchaseDialog,
+    type PurchaseDialogBook,
+    type PurchaseDialogChapter,
+} from "@/components/chapter-purchase-dialog";
 
 type SessionResponse = {
     chapterId: number;
@@ -42,8 +61,19 @@ type ReaderContextResponse = {
     chapters: ReaderChapterItem[];
 };
 
+type BookDetailsResponse = {
+    id: number;
+    title: string;
+    author?: string | null;
+    coverImage: string;
+    type: PurchaseDialogBook["type"];
+};
+
+type ReaderErrorVariant = "auth" | "locked" | "notfound" | "error";
+
 export default function ChapterPage() {
-    const t = useTranslations('Books');
+    const t = useTranslations("Books");
+    const g = useTranslations("General");
     const toast = useToast();
     const router = useRouter();
     const params = useParams<{ type: string; id: string; index: string }>();
@@ -64,8 +94,12 @@ export default function ChapterPage() {
     const [manifest, setManifest] = useState<Manifest | null>(null);
     const [textHtml, setTextHtml] = useState<string>("");
     const [readerCtx, setReaderCtx] = useState<ReaderContextResponse | null>(null);
+    const [book, setBook] = useState<PurchaseDialogBook | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [errorStatus, setErrorStatus] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const [reloadKey, setReloadKey] = useState(0);
+    const [showPurchase, setShowPurchase] = useState(false);
     const [brightness, setBrightness] = useState(100);
     const [readMode, setReadMode] = useState<"scroll" | "page">("page");
     const [currentPage, setCurrentPage] = useState(1);
@@ -95,7 +129,7 @@ export default function ChapterPage() {
         ({
             id: session?.chapterId ?? 0,
             index: chapterIndex,
-            title: t("ChapterChapterIndex", {ChapterIndex: chapterIndex}),
+            title: t("ChapterChapterIndex", { ChapterIndex: chapterIndex }),
             pageCount: session?.pageCount ?? 1,
             locked: false,
         } satisfies ReaderChapterItem);
@@ -214,7 +248,7 @@ export default function ChapterPage() {
             pageBlobCacheRef.current.set(page, blob);
             return blob;
         },
-        [refreshReaderSession, toast]
+        [refreshReaderSession, toast, t]
     );
 
     const drawBlobToCanvas = useCallback(async (blob: Blob, canvas: HTMLCanvasElement) => {
@@ -288,22 +322,41 @@ export default function ChapterPage() {
         [session, manifest, fetchPageBlob, drawBlobToCanvas]
     );
 
-    // Initial load (session + context + manifest/text)
+    // Initial load (session + context + manifest/text + book details)
     useEffect(() => {
         let cancelled = false;
 
         const run = async () => {
             if (!Number.isInteger(bookId) || !Number.isInteger(chapterIndex) || bookId <= 0 || chapterIndex <= 0) {
                 setError(t("InvalidChapterLink"));
+                setErrorStatus(404);
                 setLoading(false);
                 return;
             }
 
             setLoading(true);
             setError(null);
+            setErrorStatus(null);
             resetChapterRenderState();
 
             try {
+                apiClient
+                    .get<BookDetailsResponse>(`/books/${bookId}`)
+                    .then((b) => {
+                        if (!cancelled) {
+                            setBook({
+                                id: b.id,
+                                title: b.title,
+                                author: b.author,
+                                coverImage: b.coverImage,
+                                type: b.type,
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        // non-fatal
+                    });
+
                 apiClient
                     .get<ReaderContextResponse>("/reader/context", { query: { bookId } })
                     .then((ctx) => {
@@ -333,18 +386,21 @@ export default function ChapterPage() {
                     });
                     if (cancelled) return;
                     setManifest(m);
-
                 } else if (s.contentType === "text") {
-                    const t = await apiClient.get<{ html: string }>("/reader/text", {
+                    const txt = await apiClient.get<{ html: string }>("/reader/text", {
                         query: { token: s.sessionToken },
                     });
                     if (cancelled) return;
-                    setTextHtml(t.html);
+                    setTextHtml(txt.html);
                 } else {
                     setError("Chapter content is unavailable");
+                    setErrorStatus(0);
                 }
             } catch (e) {
-                if (!cancelled) setError(getApiErrorMessage(e, "Unable to open chapter"));
+                if (!cancelled) {
+                    setErrorStatus(e instanceof ApiError ? e.status : 0);
+                    setError(getApiErrorMessage(e, "Unable to open chapter"));
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -355,7 +411,7 @@ export default function ChapterPage() {
         return () => {
             cancelled = true;
         };
-    }, [bookId, chapterIndex, resetChapterRenderState]);
+    }, [bookId, chapterIndex, reloadKey, resetChapterRenderState, t]);
 
     useEffect(() => {
         maxReachedPageRef.current = Math.max(maxReachedPageRef.current, currentPage);
@@ -590,23 +646,261 @@ export default function ChapterPage() {
         [manifest, session, chapters, currentChapter.index, handleChapterChange, handlePurchase, readMode]
     );
 
-    if (error) {
+    // Re-run the full reader load (used after a successful in-page purchase / retry).
+    const reloadReader = useCallback(() => {
+        setReloadKey((key) => key + 1);
+    }, []);
+
+    const handlePurchased = useCallback(() => {
+        // Access has been granted: re-open the session so the chapter renders inline.
+        reloadReader();
+    }, [reloadReader]);
+
+    if (loading) {
         return (
-            <div className="container mx-auto px-4 py-10 space-y-4">
-                <p className="text-destructive">{error}</p>
-                <Link className="text-sm underline" href={backUrl}>
-                    {t("BackBookPage")}
-                </Link>
+            <div className="min-h-dvh bg-reader-bg">
+                <div className="mx-auto w-full max-w-3xl px-4 py-8 sm:py-10">
+                    <div className="space-y-4">
+                        <div className="h-11 w-full animate-pulse rounded-2xl bg-muted" />
+                        <div className="h-[58vh] w-full animate-pulse rounded-2xl bg-muted sm:h-[64vh]" />
+                        <div className="flex items-center justify-center gap-3">
+                            <div className="h-10 w-28 animate-pulse rounded-full bg-muted" />
+                            <div className="h-10 w-16 animate-pulse rounded-full bg-muted" />
+                            <div className="h-10 w-28 animate-pulse rounded-full bg-muted" />
+                        </div>
+                    </div>
+                    <div className="mt-6 flex items-center justify-center" aria-hidden="true">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                </div>
             </div>
         );
     }
 
-    if (loading || !session) {
+    if (error) {
+        const variant: ReaderErrorVariant =
+            errorStatus === 401
+                ? "auth"
+                : errorStatus === 402 || errorStatus === 403
+                    ? "locked"
+                    : errorStatus === 404
+                        ? "notfound"
+                        : "error";
+
+        const lockedChapter = readerCtx?.chapters.find((c) => c.index === chapterIndex);
+        const lockedPrice = lockedChapter?.price ?? null;
+        const lockedIsFree = lockedPrice == null || lockedPrice <= 0;
+
+        const purchaseChapter: PurchaseDialogChapter | null = lockedChapter
+            ? {
+                id: lockedChapter.id,
+                title: lockedChapter.title,
+                index: lockedChapter.index,
+                isFree: lockedIsFree,
+                price: lockedPrice,
+                mode: lockedIsFree ? "access" : "purchase",
+            }
+            : null;
+
+        const canPurchase = variant === "locked" && !!book && !!purchaseChapter;
+
+        const priceLabel = lockedIsFree
+            ? t("Free")
+            : `${g("CurrencySymbols")}${Number(lockedPrice ?? 0).toFixed(2)}`;
+
+        const coverSrc = book?.coverImage
+            ? `/media/${book.coverImage}/thumbnail`
+            : "/placeholder.svg";
+
+        // Per-variant presentation.
+        const presentation: Record<
+            ReaderErrorVariant,
+            { icon: typeof Lock; iconWrap: string; title: string; description: string }
+        > = {
+            auth: {
+                icon: LogIn,
+                iconWrap: "bg-blue-600 dark:bg-blue-500",
+                title: t("OnlyRegisteredUsers"),
+                description: error,
+            },
+            locked: {
+                icon: lockedIsFree ? Unlock : Lock,
+                iconWrap: lockedIsFree
+                    ? "bg-emerald-600 dark:bg-emerald-500"
+                    : "bg-blue-600 dark:bg-blue-500",
+                title: lockedIsFree ? t("AccessChapter") : t("PurchaseChapter"),
+                description: lockedIsFree
+                    ? t("AccessChapterDescription", {
+                        ChapterIndex: lockedChapter?.index ?? chapterIndex,
+                        ChapterTitle: lockedChapter?.title ?? currentChapter.title,
+                    })
+                    : t("PurchaseChapterDescription", {
+                        ChapterIndex: lockedChapter?.index ?? chapterIndex,
+                        ChapterTitle: lockedChapter?.title ?? currentChapter.title,
+                        CurrencySymbols: g("CurrencySymbols"),
+                        ChapterPrice: Number(lockedPrice ?? 0).toFixed(2),
+                    }),
+            },
+            notfound: {
+                icon: AlertCircle,
+                iconWrap: "bg-muted-foreground/80",
+                title: t("BookNotFound"),
+                description: error || t("BookNotFoundDescription"),
+            },
+            error: {
+                icon: AlertCircle,
+                iconWrap: "bg-destructive",
+                title: error,
+                description: "",
+            },
+        };
+
+        const view = presentation[variant];
+        const Icon = view.icon;
+
         return (
-            <div className="min-h-screen bg-reader-bg">
-                <div className="max-w-4xl mx-auto px-4 py-8 space-y-4">
-                    <div className="h-12 rounded-xl bg-muted animate-pulse" />
-                    <div className="h-[60vh] rounded-2xl bg-muted animate-pulse" />
+            <div className="flex min-h-dvh flex-col bg-reader-bg">
+                <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+                    <div className="w-full max-w-md animate-in fade-in zoom-in-95 duration-300">
+                        <div className="overflow-hidden rounded-3xl border border-border bg-card text-card-foreground shadow-xl">
+                            <div className="flex flex-col items-center px-5 pt-8 text-center sm:px-8">
+                                <div
+                                    className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg ${view.iconWrap}`}
+                                >
+                                    <Icon className="h-7 w-7" aria-hidden="true" />
+                                </div>
+                                <h1 className="mt-5 text-balance text-xl font-bold leading-tight text-foreground sm:text-2xl">
+                                    {view.title}
+                                </h1>
+                                {view.description && (
+                                    <p className="mt-2 text-pretty text-sm leading-relaxed text-muted-foreground">
+                                        {view.description}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Locked chapter summary + price */}
+                            {variant === "locked" && book && (
+                                <div className="px-5 pt-6 sm:px-8">
+                                    <div className="flex gap-4 rounded-2xl border border-border bg-muted/40 p-4">
+                                        <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg shadow-md">
+                                            <Image
+                                                src={coverSrc}
+                                                alt={`Cover of ${book.title}`}
+                                                fill
+                                                className="object-cover"
+                                                sizes="64px"
+                                            />
+                                        </div>
+                                        <div className="flex min-w-0 flex-col justify-center gap-1.5 text-start">
+                                            <h2 className="line-clamp-2 font-semibold leading-snug text-foreground">
+                                                {book.title}
+                                            </h2>
+                                            <p className="truncate text-sm text-muted-foreground">
+                                                {book.author || t("UnknownAuthor")}
+                                            </p>
+                                            <Badge
+                                                variant="outline"
+                                                className="w-fit gap-1.5 border-border bg-background"
+                                            >
+                                                <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
+                                                {book.type.name}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3 flex items-center gap-3 rounded-2xl border border-border p-4">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white dark:bg-blue-500">
+                                            {lockedChapter?.index ?? chapterIndex}
+                                        </div>
+                                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                                            <BookOpen
+                                                className="h-4 w-4 shrink-0 text-muted-foreground"
+                                                aria-hidden="true"
+                                            />
+                                            <span className="line-clamp-1 text-sm font-medium text-foreground">
+                                                {lockedChapter?.title ?? currentChapter.title}
+                                            </span>
+                                        </div>
+                                        <span
+                                            className={`shrink-0 text-base font-bold ${
+                                                lockedIsFree
+                                                    ? "text-emerald-600 dark:text-emerald-400"
+                                                    : "text-foreground"
+                                            }`}
+                                        >
+                                            {priceLabel}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex flex-col gap-3 p-5 sm:p-8">
+                                {variant === "locked" && (
+                                    <Button
+                                        type="button"
+                                        onClick={() => setShowPurchase(true)}
+                                        disabled={!canPurchase}
+                                        className={`h-11 w-full text-white ${
+                                            lockedIsFree
+                                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                        }`}
+                                    >
+                                        {lockedIsFree ? (
+                                            <Unlock className="me-2 h-4 w-4" aria-hidden="true" />
+                                        ) : (
+                                            <ShoppingCart className="me-2 h-4 w-4" aria-hidden="true" />
+                                        )}
+                                        {lockedIsFree ? t("Access") : t("Buy")}
+                                    </Button>
+                                )}
+
+                                {variant === "error" && (
+                                    <Button
+                                        type="button"
+                                        onClick={reloadReader}
+                                        className="h-11 w-full"
+                                    >
+                                        <RefreshCw className="me-2 h-4 w-4" aria-hidden="true" />
+                                        {t("TryAgain")}
+                                    </Button>
+                                )}
+
+                                <Button asChild variant="outline" className="h-11 w-full">
+                                    <Link href={backUrl}>
+                                        <ArrowLeft
+                                            className="me-2 h-4 w-4 rtl:rotate-180"
+                                            aria-hidden="true"
+                                        />
+                                        {t("BackBookPage")}
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {variant === "locked" && book && purchaseChapter && showPurchase && (
+                    <ChapterPurchaseDialog
+                        book={book}
+                        chapter={purchaseChapter}
+                        typeSlug={typeSlug}
+                        onPurchased={handlePurchased}
+                        onClose={() => setShowPurchase(false)}
+                    />
+                )}
+            </div>
+        );
+    }
+
+    if (!session) {
+        return (
+            <div className="min-h-dvh bg-reader-bg">
+                <div className="mx-auto w-full max-w-3xl px-4 py-8">
+                    <div className="h-11 w-full animate-pulse rounded-2xl bg-muted" />
+                    <div className="mt-4 h-[60vh] w-full animate-pulse rounded-2xl bg-muted" />
                 </div>
             </div>
         );
@@ -619,11 +913,11 @@ export default function ChapterPage() {
                 <main
                     onContextMenu={handleContextMenu}
                     className="pt-20 pb-10"
-                    style={{ filter: t("BrightnessN", {Brightness: brightness})}}
+                    style={{ filter: t("BrightnessN", { Brightness: brightness }) }}
                 >
-                    <div className="lg:max-w-3/4 w-full  mx-auto px-4">
+                    <div className="mx-auto w-full px-4 lg:max-w-3/4">
                         <article
-                            className="prose select-none prose-invert max-w-none rounded-2xl border bg-card/60 p-6"
+                            className="prose prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
                             dangerouslySetInnerHTML={{ __html: textHtml }}
                         />
                     </div>
@@ -644,7 +938,6 @@ export default function ChapterPage() {
                     showReadModeToggle={false}
                     fullscreenTarget={readerRootRef.current}
                 />
-
             </div>
         );
     }
@@ -655,27 +948,27 @@ export default function ChapterPage() {
             <main
                 onContextMenu={handleContextMenu}
                 className="pt-16 pb-24"
-                style={{ filter: t("BrightnessN", {Brightness: brightness}) }}
+                style={{ filter: t("BrightnessN", { Brightness: brightness }) }}
             >
                 {readMode === "page" ? (
-                    <div className="max-w-2xl mx-auto px-4 pt-8 flex items-center justify-center min-h-[calc(100vh-10rem)]">
+                    <div className="mx-auto flex min-h-[calc(100dvh-10rem)] max-w-2xl items-center justify-center px-4 pt-8">
                         <div className="w-full">
                             <div className="relative">
                                 {pageTransitionLoading && (
-                                    <div className="absolute flex w-full h-full justify-center items-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
-                                        <Loader2 className="h-20 w-20 animate-spin text-primary" />
+                                    <div className="absolute flex h-full w-full items-center justify-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
+                                        <Loader2 className="h-16 w-16 animate-spin text-primary sm:h-20 sm:w-20" />
                                     </div>
                                 )}
 
                                 <canvas
                                     ref={setPageCanvasEl}
-                                    className="w-full h-full select-none rounded-lg shadow-xl bg-muted"
+                                    className="h-full w-full select-none rounded-lg bg-muted shadow-xl"
                                 />
                             </div>
                         </div>
                     </div>
                 ) : (
-                    <div className="max-w-2xl mx-auto px-4 space-y-4 pt-8">
+                    <div className="mx-auto max-w-2xl px-4 pt-8 space-y-4">
                         {Array.from({ length: manifest?.pageCount ?? 0 }).map((_, idx) => {
                             const pageNo = idx + 1;
                             const meta = manifest?.pages?.[idx];
@@ -691,8 +984,8 @@ export default function ChapterPage() {
                                     style={ratio ? { aspectRatio: ratio } : undefined}
                                 >
                                     {!loadedPages.has(pageNo) && (
-                                        <div className="absolute flex w-full h-full justify-center items-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
-                                            <Loader2 className="h-20 w-20 animate-spin text-primary" />
+                                        <div className="absolute flex h-full w-full items-center justify-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
+                                            <Loader2 className="h-16 w-16 animate-spin text-primary sm:h-20 sm:w-20" />
                                         </div>
                                     )}
                                     <canvas
@@ -700,7 +993,7 @@ export default function ChapterPage() {
                                         ref={(el) => {
                                             scrollCanvasRefs.current[idx] = el;
                                         }}
-                                        className="w-full h-full select-none rounded-lg shadow-xl bg-muted"
+                                        className="h-full w-full select-none rounded-lg bg-muted shadow-xl"
                                     />
                                 </motion.div>
                             );
@@ -734,18 +1027,18 @@ export default function ChapterPage() {
                         setMenuPos(null);
 
                         switch (action) {
-                            case 'reload':
+                            case "reload":
                                 window.location.reload();
                                 break;
 
-                            case 'fullscreen':
+                            case "fullscreen":
                                 const element = readerRootRef.current;
                                 if (!element) return;
 
                                 if (!document.fullscreenElement) {
                                     // Enter fullscreen for the specific reader container
                                     element.requestFullscreen().catch(() => {
-                                        toast.error(t("FullscreenBlocked"))
+                                        toast.error(t("FullscreenBlocked"));
                                     });
                                 } else {
                                     if (document.exitFullscreen) {
