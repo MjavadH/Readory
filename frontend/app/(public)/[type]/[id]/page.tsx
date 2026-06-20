@@ -5,17 +5,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   BookOpen,
+  Check,
   Clock,
+  Lock,
   Search,
+  Send,
   Sparkles,
   Star,
   User,
-  Lock,
-  Check,
-  ShoppingCart,
-  Unlock,
   AlertCircle,
-  Send,
+  ArrowDown10,
+  ArrowUp10,
 } from "lucide-react";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
@@ -25,11 +25,12 @@ import { Input } from "@/components/ui/input";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
 import { formatUpdateTime } from "@/lib/time";
-import {AppPagination} from "@/components/app-pagination";
+import { AppPagination } from "@/components/app-pagination";
 import type { IconKey } from "@readory/shared";
-import {AppIcon} from "@/components/AppIcon";
-import {useToast} from "@/providers/toast-provider";
-import {useTranslations} from "next-intl";
+import { AppIcon } from "@/components/AppIcon";
+import { useToast } from "@/providers/toast-provider";
+import { useTranslations } from "next-intl";
+import { ChapterPurchaseDialog } from "@/components/chapter-purchase-dialog";
 
 type BookDetails = {
   id: number;
@@ -77,34 +78,28 @@ function BookDetailsSkeleton() {
   return (
       <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         <div className="animate-pulse">
-          <Card className="overflow-hidden border-0 bg-linear-to-br from-slate-50 to-slate-100/50 shadow-xl dark:from-slate-900 dark:to-slate-800/50">
-            <CardContent className="p-6 sm:p-8">
-              <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-                <div className="mx-auto h-105 w-full max-w-70 rounded-2xl bg-slate-300 dark:bg-slate-700" />
+          <Card className="overflow-hidden border-border">
+            <CardContent className="p-5 sm:p-8">
+              <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+                <div className="mx-auto aspect-2/3 w-44 rounded-2xl bg-muted sm:w-56 lg:w-full" />
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <div className="h-8 w-3/4 rounded-lg bg-slate-300 dark:bg-slate-700" />
-                    <div className="h-5 w-1/3 rounded-lg bg-slate-300 dark:bg-slate-700" />
+                    <div className="h-8 w-3/4 rounded-lg bg-muted" />
+                    <div className="h-5 w-1/3 rounded-lg bg-muted" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className="h-6 w-20 rounded-full bg-slate-300 dark:bg-slate-700"
-                        />
+                        <div key={i} className="h-6 w-20 rounded-full bg-muted" />
                     ))}
                   </div>
                   <div className="space-y-2">
-                    <div className="h-4 w-full rounded bg-slate-300 dark:bg-slate-700" />
-                    <div className="h-4 w-full rounded bg-slate-300 dark:bg-slate-700" />
-                    <div className="h-4 w-2/3 rounded bg-slate-300 dark:bg-slate-700" />
+                    <div className="h-4 w-full rounded bg-muted" />
+                    <div className="h-4 w-full rounded bg-muted" />
+                    <div className="h-4 w-2/3 rounded bg-muted" />
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {[1, 2, 3].map((i) => (
-                        <div
-                            key={i}
-                            className="h-24 rounded-xl bg-slate-300 dark:bg-slate-700"
-                        />
+                        <div key={i} className="h-20 rounded-xl bg-muted" />
                     ))}
                   </div>
                 </div>
@@ -119,91 +114,20 @@ function BookDetailsSkeleton() {
 function BrowseChaptersSkeleton() {
   return (
       <div className="animate-pulse space-y-4">
-        <div className="h-10 w-64 rounded-lg bg-slate-300 dark:bg-slate-700" />
+        <div className="h-10 w-full max-w-sm rounded-lg bg-muted" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                  key={i}
-                  className="rounded-xl border bg-card p-4"
-              >
-                <div className="mb-3 flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-slate-300 dark:bg-slate-700" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-full rounded bg-slate-300 dark:bg-slate-700" />
-                    <div className="h-3 w-2/3 rounded bg-slate-300 dark:bg-slate-700" />
-                  </div>
-                </div>
-                <div className="border-t border-slate-200 pt-3 dark:border-slate-800">
-                  <div className="h-3 w-1/2 rounded bg-slate-300 dark:bg-slate-700" />
-                </div>
-              </div>
+              <div key={i} className="h-28 rounded-xl bg-muted" />
           ))}
         </div>
       </div>
   );
 }
 
-function ConfirmDialog({chapter, onConfirm, onCancel, isPending}: {
-  chapter: ActionChapter;
-  onConfirm: () => void;
-  onCancel: () => void;
-  isPending: boolean;
-}) {
-  const t = useTranslations('Books');
-  const g = useTranslations('General');
-  return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in">
-        <div className="w-full max-w-md animate-in zoom-in-95 rounded-2xl border bg-card p-6 shadow-2xl">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-blue-500 to-cyan-500">
-            {chapter.mode === "access" ? (
-                <Unlock className="h-6 w-6 text-white" />
-            ) : (
-                <ShoppingCart className="h-6 w-6 text-white" />
-            )}
-          </div>
-          <h3 className="mb-2 text-xl font-bold">
-            {chapter.mode === "access" ? t("AccessChapter") : t("PurchaseChapter")}
-          </h3>
-          <p className="mb-6 text-sm text-muted-foreground">
-            {chapter.mode === "access"
-                ? t("AccessChapterDescription" , {ChapterIndex: chapter.index, ChapterTitle: chapter.title})
-                : t("PurchaseChapterDescription" , {ChapterIndex: chapter.index, ChapterTitle: chapter.title, CurrencySymbols: g("CurrencySymbols"), ChapterPrice: Number(chapter.price ?? 0).toFixed(2)})}
-          </p>
-          <div className="flex gap-3">
-            <Button
-                variant="outline"
-                onClick={onCancel}
-                disabled={isPending}
-                className="flex-1"
-            >
-              {g("Cancel")}
-            </Button>
-            <Button
-                onClick={onConfirm}
-                disabled={isPending}
-                className="flex-1 bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-            >
-              {isPending ? (
-                  <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    {t("Processing")}
-              </span>
-              ) : chapter.mode === "access" ? (
-                  t("ConfirmAccess")
-              ) : (
-                  t("ConfirmPurchase")
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
-  );
-}
-
 export default function BookDetailsPage() {
-  const t = useTranslations('Books');
-  const g = useTranslations('General');
-  const ti = useTranslations('Time');
+  const t = useTranslations("Books");
+  const g = useTranslations("General");
+  const ti = useTranslations("Time");
   const toast = useToast();
   const params = useParams<{ type: string; id: string }>();
   const router = useRouter();
@@ -227,21 +151,21 @@ export default function BookDetailsPage() {
   const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
   const [chapterSearch, setChapterSearch] = useState("");
   const [chapterSearchInput, setChapterSearchInput] = useState("");
+  const [chaptersOrder, setChaptersOrder] = useState<"asc" | "desc">("asc");
   const [chaptersLoading, setChaptersLoading] = useState(false);
 
   const [relatedBooks, setRelatedBooks] = useState<BookCardData[]>([]);
 
   const [actionChapter, setActionChapter] = useState<ActionChapter | null>(null);
-  const [actionPending, setActionPending] = useState(false);
 
   const purchasedIds = useMemo(
       () => new Set(viewer?.purchasedChapterIds ?? []),
-      [viewer?.purchasedChapterIds]
+      [viewer?.purchasedChapterIds],
   );
 
   const loadBase = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      toast.error(t("InvalidBookLink"))
+      toast.error(t("InvalidBookLink"));
       setIsLoading(false);
       return;
     }
@@ -255,7 +179,7 @@ export default function BookDetailsPage() {
       ]);
 
       if (!bookData || bookData.type.slug !== typeSlug) {
-        toast.error(t("BookNotFoundForThisCategory"))
+        toast.error(t("BookNotFoundForThisCategory"));
         return;
       }
 
@@ -264,7 +188,7 @@ export default function BookDetailsPage() {
       if (profile) {
         setIsAuthenticated(true);
         const viewerState = await apiClient.get<ViewerState>(
-            `/books/${bookId}/viewer-state`
+            `/books/${bookId}/viewer-state`,
         );
         setViewer(viewerState);
         setSelectedRating(viewerState.myRating ?? 0);
@@ -275,11 +199,11 @@ export default function BookDetailsPage() {
       }
 
       const relatedResponse = await apiClient.get<{ items: BookCardData[] }>(
-          `/books/${bookId}/related?limit=12`
+          `/books/${bookId}/related?limit=12`,
       );
       setRelatedBooks(relatedResponse.items ?? []);
     } catch (loadError) {
-      toast.error(getApiErrorMessage(loadError, t("FailedLoadDetails")))
+      toast.error(getApiErrorMessage(loadError, t("FailedLoadDetails")));
     } finally {
       setIsLoading(false);
     }
@@ -291,17 +215,17 @@ export default function BookDetailsPage() {
     setChaptersLoading(true);
     try {
       const data = await apiClient.get<ChaptersResponse>(
-          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(chapterSearch)}`
+          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(chapterSearch)}&order=${chaptersOrder}`,
       );
       setChapters(data.items);
       setChaptersTotal(data.pagination.total);
       setChaptersTotalPages(data.pagination.totalPages);
     } catch (chapterError) {
-      toast.error(getApiErrorMessage(chapterError, t("FailedLoadChapters")))
+      toast.error(getApiErrorMessage(chapterError, t("FailedLoadChapters")));
     } finally {
       setChaptersLoading(false);
     }
-  }, [bookId, chapterSearch, chaptersPage]);
+  }, [bookId, chapterSearch, chaptersPage, chaptersOrder]);
 
   useEffect(() => {
     void loadBase();
@@ -317,7 +241,7 @@ export default function BookDetailsPage() {
 
   const handleSubmitRating = async () => {
     if (!book || !isAuthenticated || selectedRating === 0) {
-      toast.error(t("SelectRating"))
+      toast.error(t("SelectRating"));
       return;
     }
 
@@ -336,11 +260,11 @@ export default function BookDetailsPage() {
                 ratingAvg: updated.ratingAvg,
                 ratingCount: updated.ratingCount,
               }
-              : prev
+              : prev,
       );
-      toast.success(t("RatingSaved"))
+      toast.success(t("RatingSaved"));
     } catch (rateError) {
-      toast.error(getApiErrorMessage(rateError, t("UnableSaveRating")))
+      toast.error(getApiErrorMessage(rateError, t("UnableSaveRating")));
     } finally {
       setIsRatingPending(false);
     }
@@ -349,15 +273,13 @@ export default function BookDetailsPage() {
   const onChapterSelect = (chapter: ChapterItem) => {
     if (!book) return;
     if (!isAuthenticated) {
-      toast.error(t("OnlyRegisteredUsers"))
+      toast.error(t("OnlyRegisteredUsers"));
       return;
     }
 
     const alreadyPurchased = purchasedIds.has(chapter.id);
     if (alreadyPurchased) {
-      router.push(
-          `/${encodeURIComponent(typeSlug)}/${book.id}/c/${chapter.index}`
-      );
+      router.push(`/${encodeURIComponent(typeSlug)}/${book.id}/c/${chapter.index}`);
       return;
     }
 
@@ -367,39 +289,23 @@ export default function BookDetailsPage() {
     });
   };
 
-  const confirmChapterAction = async () => {
-    if (!book || !actionChapter) return;
-
-    const chapterUrl = `/${encodeURIComponent(typeSlug)}/${book.id}/c/${actionChapter.index}`;
-
-    try {
-      setActionPending(true);
-      await apiClient.post(
-          `/books/${book.id}/chapters/${actionChapter.id}/purchase`
-      );
-
-      setViewer((prev) => {
-        if (!prev) return prev;
-        const next = new Set(prev.purchasedChapterIds);
-        next.add(actionChapter.id);
-        return { ...prev, purchasedChapterIds: [...next] };
-      });
-      toast.success(actionChapter.mode === "access"
-          ? t("ChapterAccessible")
-          : t("ChapterPurchasedSuccessfully"),)
-
-      setActionChapter(null);
-      router.push(chapterUrl);
-    } catch (purchaseError) {
-      toast.error(getApiErrorMessage(purchaseError, "Purchase failed. Please check your balance and try again."))
-    } finally {
-      setActionPending(false);
-    }
-  };
+  const handlePurchased = useCallback((chapterId: number) => {
+    setViewer((prev) => {
+      if (!prev) return prev;
+      const next = new Set(prev.purchasedChapterIds);
+      next.add(chapterId);
+      return { ...prev, purchasedChapterIds: [...next] };
+    });
+  }, []);
 
   const handleSearch = () => {
     setChaptersPage(1);
     setChapterSearch(chapterSearchInput.trim());
+  };
+
+  const toggleOrder = () => {
+    setChaptersOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    setChaptersPage(1);
   };
 
   if (isLoading) {
@@ -408,29 +314,74 @@ export default function BookDetailsPage() {
 
   if (!book) {
     return (
-        <div className="container mx-auto max-w-7xl px-4 py-12 text-center">
+        <div className="container mx-auto max-w-7xl px-4 py-16 text-center sm:py-24">
           <div className="mx-auto max-w-md">
-            <div className="mb-4 flex justify-center">
-              <div className="rounded-full bg-red-100 p-3 dark:bg-red-950">
-                <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+            <div className="mb-5 flex justify-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
+                <AlertCircle className="h-8 w-8 text-destructive" />
               </div>
             </div>
-            <h2 className="mb-2 text-2xl font-bold">{t("BookNotFound")}</h2>
-            <p className="text-muted-foreground">
-              {t("BookNotFoundDescription")}
-            </p>
+            <h2 className="mb-2 text-2xl font-bold text-foreground">
+              {t("BookNotFound")}
+            </h2>
+            <p className="text-muted-foreground">{t("BookNotFoundDescription")}</p>
           </div>
         </div>
     );
   }
 
+  const ratingValue = Number(book.ratingAvg ?? 0);
+
+  const stats = [
+    {
+      key: "rating",
+      icon: Star,
+      iconClass: "bg-amber-500 dark:bg-amber-500",
+      label: t("Rating"),
+      value: (
+          <span className="flex items-baseline gap-1">
+          <span className="text-2xl font-bold text-foreground">
+            {ratingValue.toFixed(1)}
+          </span>
+          <span className="text-sm text-muted-foreground">/ 5</span>
+        </span>
+      ),
+      sub: t("NReviews", { count: book.ratingCount }),
+    },
+    {
+      key: "updated",
+      icon: Clock,
+      iconClass: "bg-blue-600 dark:bg-blue-500",
+      label: t("LastUpdated"),
+      value: (
+          <span className="text-base font-semibold text-foreground">
+          {formatUpdateTime(book.updatedAt, ti)}
+        </span>
+      ),
+      sub: null,
+    },
+    {
+      key: "chapters",
+      icon: BookOpen,
+      iconClass: "bg-emerald-600 dark:bg-emerald-500",
+      label: t("TotalChapters"),
+      value: (
+          <span className="text-2xl font-bold text-foreground">
+          {chaptersTotal}
+        </span>
+      ),
+      sub: null,
+    },
+  ];
+
   return (
       <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden border-0 bg-linear-to-br from-slate-50 to-slate-100/50 shadow-xl transition-all duration-300 hover:shadow-2xl dark:from-slate-900 dark:to-slate-800/50">
-          <CardContent className="p-6 sm:p-8">
-            <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-              <div className="group mx-auto w-full max-w-70">
-                <div className="relative overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 group-hover:scale-[1.02]">
+        {/* Hero */}
+        <Card className="overflow-hidden border-border shadow-sm">
+          <CardContent className="p-5 sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
+              <div className="mx-auto w-44 sm:w-56 lg:w-full">
+                <div className="group relative aspect-2/3 overflow-hidden rounded-2xl bg-muted shadow-lg ring-1 ring-border">
                   <Image
                       src={
                         book.coverImage
@@ -438,23 +389,21 @@ export default function BookDetailsPage() {
                             : "/placeholder.svg"
                       }
                       alt={`Cover of ${book.title}`}
-                      width={280}
-                      height={420}
-                      className="h-auto w-full object-cover"
-                      sizes="(max-width: 640px) 100vw, 280px"
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 640px) 11rem, (max-width: 1024px) 14rem, 260px"
                       priority
                   />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <h1 className="bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-bold tracking-tight text-transparent dark:from-slate-100 dark:to-slate-300 sm:text-4xl">
+                  <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
                     {book.title}
                   </h1>
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-4 w-4" />
+                    <User className="h-4 w-4 shrink-0" />
                     <span className="text-sm font-medium">
                     {book.author || t("UnknownAuthor")}
                   </span>
@@ -462,7 +411,7 @@ export default function BookDetailsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Badge className="gap-1.5 border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                  <Badge className="gap-1.5 border-transparent bg-blue-600 text-white hover:bg-blue-600 dark:bg-blue-500">
                     <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
                     {book.type.name}
                   </Badge>
@@ -470,7 +419,7 @@ export default function BookDetailsPage() {
                       <Badge
                           key={genre.id}
                           variant="outline"
-                          className="border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900"
+                          className="gap-1.5 border-border bg-background"
                       >
                         <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
                         {genre.name}
@@ -478,126 +427,100 @@ export default function BookDetailsPage() {
                   ))}
                 </div>
 
-                <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                <p className="text-pretty leading-relaxed text-muted-foreground">
                   {book.description || t("NoDescriptionAvailable")}
                 </p>
 
-                <div className="space-y-4">
-                  <div className="flex flex-col gap-4 sm:flex-row">
-                    <div className="flex flex-1 items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-amber-400 to-orange-500 text-white shadow-lg">
-                        <Star className="h-6 w-6" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          {t("Rating")}
-                        </p>
-                        <div className="mt-1 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">
-                          {Number(book.ratingAvg ?? 0).toFixed(1)}
-                        </span>
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                          / 5
-                        </span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {stats.map(({ key, icon: Icon, iconClass, label, value, sub }) => (
+                      <div
+                          key={key}
+                          className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-4"
+                      >
+                        <div
+                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white shadow-sm ${iconClass}`}
+                        >
+                          <Icon className="h-5 w-5" />
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">
-                          {t("NReviews", {count: book.ratingCount})}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-1 items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-blue-400 to-cyan-500 text-white shadow-lg">
-                        <Clock className="h-6 w-6" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          {t("LastUpdated")}
-                        </p>
-                        <p className="mt-1 font-semibold text-slate-900 dark:text-white">
-                          {formatUpdateTime(book.updatedAt, ti)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-1 items-center gap-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-800/30">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
-                        <BookOpen className="h-6 w-6" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium uppercase tracking-wide text-slate-600 dark:text-slate-400">
-                          {t("TotalChapters")}
-                        </p>
-                        <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">
-                          {chaptersTotal}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isAuthenticated && (
-                      <div className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900/50">
-                        <div className="mb-4 flex items-center justify-between">
-                          <p className="font-semibold text-slate-900 dark:text-white">
-                            {t("RateThisBook")}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                            {label}
                           </p>
-                          {selectedRating > 0 && (
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                                {t("UserRate", {UserRate: selectedRating})}
-                              </span>
+                          <div className="mt-0.5">{value}</div>
+                          {sub && (
+                              <p className="text-xs text-muted-foreground">{sub}</p>
                           )}
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div className="mb-4 flex items-center gap-2">
-                            {[1, 2, 3, 4, 5].map((value) => (
-                                <button
-                                    key={value}
-                                    onClick={() => handleSelectRating(value)}
-                                    onMouseEnter={() => setHoverRating(value)}
-                                    onMouseLeave={() => setHoverRating(0)}
-                                    className="transition-transform duration-200 hover:scale-110 active:scale-95"
-                                    aria-label={`Rate ${value} stars`}
-                                >
-                                  <Star
-                                      className={`h-8 w-8 transition-all duration-200 ${
-                                          value <= (hoverRating || selectedRating)
-                                              ? "fill-amber-400 text-amber-400 drop-shadow-lg"
-                                              : "text-slate-300 dark:text-slate-600"
-                                      }`}
-                                  />
-                                </button>
-                            ))}
-                          </div>
-                          <Button
-                              onClick={() => void handleSubmitRating()}
-                              disabled={isRatingPending || selectedRating === 0}
-                              className="gap-2 bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700"
-                          >
-                            {isRatingPending ? (
-                                <span className="flex items-center gap-2">
-                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                                  {t("Submitting")}
-                                </span>
-                            ) : (
-                                <>
-                                  <Send className="h-4 w-4" />
-                                  {t("SubmitRating")}
-                                </>
-                            )}
-                          </Button>
-                        </div>
                       </div>
-                  )}
+                  ))}
                 </div>
+
+                {isAuthenticated && (
+                    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <p className="font-semibold text-foreground">
+                          {t("RateThisBook")}
+                        </p>
+                        {selectedRating > 0 && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                        {t("UserRate", { UserRate: selectedRating })}
+                      </span>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                              <button
+                                  key={value}
+                                  type="button"
+                                  onClick={() => handleSelectRating(value)}
+                                  onMouseEnter={() => setHoverRating(value)}
+                                  onMouseLeave={() => setHoverRating(0)}
+                                  className="rounded-md p-1 transition-transform duration-200 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
+                                  aria-label={`Rate ${value} stars`}
+                              >
+                                <Star
+                                    className={`h-8 w-8 transition-colors duration-200 ${
+                                        value <= (hoverRating || selectedRating)
+                                            ? "fill-amber-400 text-amber-400"
+                                            : "text-muted-foreground/40"
+                                    }`}
+                                />
+                              </button>
+                          ))}
+                        </div>
+                        <Button
+                            onClick={() => void handleSubmitRating()}
+                            disabled={isRatingPending || selectedRating === 0}
+                            className="h-11 gap-2"
+                        >
+                          {isRatingPending ? (
+                              <span className="flex items-center gap-2">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                {t("Submitting")}
+                        </span>
+                          ) : (
+                              <>
+                                <Send className="h-4 w-4" />
+                                {t("SubmitRating")}
+                              </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 dark:border-slate-800">
-          <CardHeader className="space-y-4 border-b border-slate-200 dark:border-slate-800">
+        {/* Chapters */}
+        <Card className="border-border">
+          <CardHeader className="space-y-4 border-b border-border">
             <div>
-              <CardTitle className="text-2xl font-bold">{t("Chapters")}</CardTitle>
+              <CardTitle className="text-xl font-bold sm:text-2xl">
+                {t("Chapters")}
+              </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 {t("BrowseAvailableChapters")}
               </p>
@@ -605,33 +528,46 @@ export default function BookDetailsPage() {
 
             <div className="flex flex-col gap-2 sm:flex-row">
               <div className="relative flex-1">
-                <Search className="pointer-events-none absolute ltr:left-3 rtl:right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:left-3 rtl:right-3" />
                 <Input
                     value={chapterSearchInput}
                     onChange={(e) => setChapterSearchInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                     placeholder={t("SearchNameOrIndex")}
-                    className="ps-9"
+                    className="h-11 ps-9"
                 />
               </div>
               <Button
                   onClick={handleSearch}
                   disabled={chaptersLoading}
-                  className="bg-linear-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+                  className="h-11"
               >
                 <Search className="me-2 h-4 w-4" />
                 {t("Search")}
               </Button>
+              <Button
+                  variant="outline"
+                  onClick={toggleOrder}
+                  disabled={chaptersLoading}
+                  className="h-11 w-11 shrink-0 p-0"
+                  aria-label="Toggle sorting order"
+              >
+                {chaptersOrder === "asc" ? (
+                    <ArrowDown10 className="h-5 w-5" />
+                ) : (
+                    <ArrowUp10 className="h-5 w-5" />
+                )}
+              </Button>
             </div>
           </CardHeader>
 
-          <CardContent className="space-y-6 p-6">
+          <CardContent className="space-y-6 p-4 sm:p-6">
             {chaptersLoading ? (
                 <BrowseChaptersSkeleton />
             ) : chapters.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 py-12 dark:border-slate-700">
-                  <BookOpen className="mb-3 h-12 w-12 text-slate-400" />
-                  <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-14 text-center">
+                  <BookOpen className="mb-3 h-12 w-12 text-muted-foreground/50" />
+                  <p className="text-sm font-medium text-foreground">
                     {t("NoChaptersFound")}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -646,41 +582,45 @@ export default function BookDetailsPage() {
                       const isFree = chapter.isFree || chapter.price == null;
                       const priceLabel = isFree
                           ? t("Free")
-                          : t("ChapterPrice", {CurrencySymbols: g("CurrencySymbols"), ChapterPrice: Number(chapter.price).toFixed(2)});
+                          : t("ChapterPrice", {
+                            CurrencySymbols: g("CurrencySymbols"),
+                            ChapterPrice: Number(chapter.price).toFixed(2),
+                          });
 
                       return (
                           <button
                               key={chapter.id}
+                              type="button"
                               onClick={() => onChapterSelect(chapter)}
-                              className="group relative overflow-hidden rounded-xl border bg-card p-4 ltr:text-left rtl:text-right transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:hover:border-blue-700"
+                              className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right dark:hover:border-blue-600"
                           >
-                            <div className="absolute ltr:right-2 rtl:left-2 top-2">
+                            <div className="absolute top-3 ltr:right-3 rtl:left-3">
                               <Badge
                                   variant={owned ? "default" : isFree ? "secondary" : "outline"}
                                   className={
                                     owned
-                                        ? "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                        ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-600 dark:bg-emerald-500"
                                         : isFree
-                                            ? "border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                                            : ""
+                                            ? "border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300"
+                                            : "border-border bg-background"
                                   }
                               >
                                 {owned ? t("Owned") : priceLabel}
                               </Badge>
                             </div>
 
-                            <div className="mb-3 flex items-start gap-3 pe-20">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-cyan-500 text-sm font-bold text-white shadow-lg">
+                            <div className="mb-3 flex items-start gap-3 pe-16">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white shadow-sm dark:bg-blue-500">
                                 {chapter.index}
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h3 className="line-clamp-2 text-sm font-semibold leading-snug">
+                                <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
                                   {chapter.title}
                                 </h3>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+                            <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
                               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Clock className="h-3 w-3" />
                                 {formatUpdateTime(chapter.updatedAt, ti)}
@@ -688,30 +628,34 @@ export default function BookDetailsPage() {
                               <div className="flex items-center gap-1.5 text-xs font-medium">
                                 {owned ? (
                                     <>
-                                      <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                      <span className="text-emerald-600">{t("Read")}</span>
+                                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                      <span className="text-emerald-600 dark:text-emerald-400">
+                                        {t("Read")}
+                                      </span>
                                     </>
                                 ) : isFree ? (
                                     <>
-                                      <Sparkles className="h-3.5 w-3.5 text-blue-600" />
-                                      <span className="text-blue-600">{t("Access")}</span>
+                                      <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                      <span className="text-blue-600 dark:text-blue-400">
+                                        {t("Access")}
+                                      </span>
                                     </>
                                 ) : (
                                     <>
-                                      <Lock className="h-3.5 w-3.5 text-slate-600" />
-                                      <span className="text-slate-600">{t("Buy")}</span>
+                                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <span className="text-muted-foreground">
+                                        {t("Buy")}
+                                      </span>
                                     </>
                                 )}
                               </div>
                             </div>
-
-                            <div className="absolute inset-0 -z-10 bg-linear-to-br from-blue-500/5 to-cyan-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                           </button>
                       );
                     })}
                   </div>
                   {chaptersTotalPages > 1 && (
-                      <div className="border-t border-slate-200 pt-6 sm:flex-row dark:border-slate-800">
+                      <div className="border-t border-border pt-6">
                         <AppPagination
                             currentPage={chaptersPage}
                             totalPages={chaptersTotalPages}
@@ -730,12 +674,12 @@ export default function BookDetailsPage() {
         </Card>
 
         {relatedBooks.length > 0 && (
-            <Card className="border-slate-200 dark:border-slate-800">
+            <Card className="border-border">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold">{t("MayLike")}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {t("SimilarBooks")}
-                </p>
+                <CardTitle className="text-xl font-bold sm:text-2xl">
+                  {t("MayLike")}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">{t("SimilarBooks")}</p>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -747,12 +691,13 @@ export default function BookDetailsPage() {
             </Card>
         )}
 
-        {actionChapter && (
-            <ConfirmDialog
+        {book && actionChapter && (
+            <ChapterPurchaseDialog
+                book={book}
                 chapter={actionChapter}
-                onConfirm={() => void confirmChapterAction()}
-                onCancel={() => setActionChapter(null)}
-                isPending={actionPending}
+                typeSlug={typeSlug}
+                onPurchased={handlePurchased}
+                onClose={() => setActionChapter(null)}
             />
         )}
       </div>

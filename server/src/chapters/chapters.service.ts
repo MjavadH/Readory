@@ -35,6 +35,7 @@ export class ChaptersService {
         const safePage = Math.max(page, 1);
         const safeLimit = Math.max(limit, 1);
         const skip = (safePage - 1) * safeLimit;
+        const order = query.order === 'desc' ? 'desc' : 'asc';
 
         const shouldCache = safePage <= 20;
 
@@ -54,7 +55,7 @@ export class ChaptersService {
             const [items, total] = await this.prisma.$transaction([
                 this.prisma.chapter.findMany({
                     where,
-                    orderBy: { index: 'asc' },
+                    orderBy: { index: order },
                     skip,
                     take: safeLimit,
                     select: {
@@ -95,6 +96,7 @@ export class ChaptersService {
             page: safePage,
             limit: safeLimit,
             path,
+            order,
             version,
         });
 

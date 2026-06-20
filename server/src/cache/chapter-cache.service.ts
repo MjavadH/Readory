@@ -24,6 +24,7 @@ export class ChapterCache {
         page: number;
         limit: number;
         path: boolean;
+        order: 'asc' | 'desc';
         version: string;
     }): string {
         return this.cacheManager.buildHashedKey(this.listNamespace, params);
