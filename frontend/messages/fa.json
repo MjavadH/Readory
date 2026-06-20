@@ -589,7 +589,9 @@
     "ChapterCount": "{ChapterCount} چپتر",
     "ChapterPurchasedSuccessfully": "خرید چپتر موفقیت آمیز!",
     "ChapterAccessible": "چپتر حالا در دسترس است!",
-    "TryAgain": "تلاش مجدد"
+    "TryAgain": "تلاش مجدد",
+    "ReloadPage": "بارگذاری مجدد صفحه",
+    "Contrast": "کنتراست"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

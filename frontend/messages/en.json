@@ -589,7 +589,9 @@
     "ChapterCount": "{ChapterCount} Ch",
     "ChapterPurchasedSuccessfully": "Chapter purchased successfully!",
     "ChapterAccessible": "Chapter is now accessible!",
-    "TryAgain": "Try Again"
+    "TryAgain": "Try Again",
+    "ReloadPage": "Reload Page",
+    "Contrast": "Contrast"
   },
   "UserHeader": {
     "Books": "Books",

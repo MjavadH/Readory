@@ -934,7 +934,9 @@ export default function ChapterPage() {
                     onBrightnessChange={setBrightness}
                     onReadModeChange={() => {}}
                     onChapterChange={handleChapterChange}
-                    onPurchase={handlePurchase}
+                    book={book}
+                    typeSlug={typeSlug}
+                    onPurchased={handlePurchased}
                     showReadModeToggle={false}
                     fullscreenTarget={readerRootRef.current}
                 />
@@ -1014,7 +1016,9 @@ export default function ChapterPage() {
                 onBrightnessChange={setBrightness}
                 onReadModeChange={setReadMode}
                 onChapterChange={handleChapterChange}
-                onPurchase={handlePurchase}
+                book={book}
+                typeSlug={typeSlug}
+                onPurchased={handlePurchased}
                 fullscreenTarget={readerRootRef.current}
             />
 
