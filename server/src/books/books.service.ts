@@ -712,17 +712,22 @@ export class BooksService {
         const bookExists = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
         if (!bookExists) throw new NotFoundException('Book not found');
 
-        const [myRating, purchased] = await Promise.all([
+        const [myRating, purchased, favorite] = await Promise.all([
             this.prisma.bookRating.findUnique({ where: { userId_bookId: { userId, bookId } }, select: { rating: true } }),
             this.prisma.accessRecord.findMany({
                 where: { userId, chapter: { bookId } },
                 select: { chapterId: true },
+            }),
+            this.prisma.favoriteBook.findUnique({
+                where: { userId_bookId: { userId, bookId } },
+                select: { id: true },
             }),
         ]);
 
         return {
             myRating: myRating?.rating ?? null,
             purchasedChapterIds: purchased.map((row) => row.chapterId).filter((chapterId): chapterId is number => typeof chapterId === 'number'),
+            isFavorited: !!favorite,
         };
     }
 
@@ -892,6 +897,67 @@ export class BooksService {
         await this.invalidateCache();
 
         return { id, deleted: true };
+    }
+
+    async toggleFavorite(userId: number, bookId: number) {
+        const bookExists = await this.prisma.book.findUnique({ where: { id: bookId }, select: { id: true } });
+        if (!bookExists) throw new NotFoundException('book not found');
+
+        const existing = await this.prisma.favoriteBook.findUnique({
+            where: { userId_bookId: { userId, bookId } },
+        });
+
+        if (existing) {
+            await this.prisma.favoriteBook.delete({
+                where: { userId_bookId: { userId, bookId } },
+            });
+            return { favorited: false };
+        }
+
+        await this.prisma.favoriteBook.create({
+            data: { userId, bookId },
+        });
+        return { favorited: true };
+    }
+
+    async getFavorites(userId: number, args: { page: number; limit: number }) {
+        const page = clamp(args.page, 1, 10_000);
+        const limit = clamp(args.limit, 1, 50);
+        const skip = (page - 1) * limit;
+
+        const [total, favorites] = await this.prisma.$transaction([
+            this.prisma.favoriteBook.count({ where: { userId } }),
+            this.prisma.favoriteBook.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+                select: {
+                    book: {
+                        select: {
+                            id: true,
+                            title: true,
+                            author: true,
+                            coverImage: true,
+                            ratingAvg: true,
+                            ratingCount: true,
+                            type: { select: { name: true, slug: true } },
+                        },
+                    },
+                },
+            }),
+        ]);
+
+        return {
+            items: favorites.map((f) => ({
+                ...f.book,
+                ratingAvg: Number(toNumber(f.book.ratingAvg).toFixed(2)),
+            })),
+            total,
+            page,
+            limit,
+            hasMore: skip + favorites.length < total,
+        };
     }
 
     private async invalidateCache() {

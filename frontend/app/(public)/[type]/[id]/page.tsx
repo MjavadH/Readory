@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ArrowDown10,
   ArrowUp10,
+  Heart,
 } from "lucide-react";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,7 @@ type ChaptersResponse = {
 type ViewerState = {
   myRating: number | null;
   purchasedChapterIds: number[];
+  isFavorited: boolean;
 };
 
 type ActionChapter = ChapterItem & { mode: "purchase" | "access" };
@@ -145,6 +147,9 @@ export default function BookDetailsPage() {
   const [hoverRating, setHoverRating] = useState(0);
   const [isRatingPending, setIsRatingPending] = useState(false);
 
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [chaptersPage, setChaptersPage] = useState(1);
   const [chaptersTotal, setChaptersTotal] = useState(0);
@@ -192,6 +197,7 @@ export default function BookDetailsPage() {
         );
         setViewer(viewerState);
         setSelectedRating(viewerState.myRating ?? 0);
+        setIsFavorited(viewerState.isFavorited);
       } else {
         setIsAuthenticated(false);
         setViewer(null);
@@ -267,6 +273,19 @@ export default function BookDetailsPage() {
       toast.error(getApiErrorMessage(rateError, t("UnableSaveRating")));
     } finally {
       setIsRatingPending(false);
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!book) return;
+    setFavoriteLoading(true);
+    try {
+      const res: {favorited: boolean} = await apiClient.post(`/books/${book.id}/favorite`);
+      setIsFavorited(res.favorited);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err));
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -411,6 +430,17 @@ export default function BookDetailsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleToggleFavorite}
+                      disabled={favoriteLoading}
+                      className={`border-border transition-colors  ${
+                          isFavorited ? "text-red-500 hover:text-red-600 bg-red-50/10" : "text-muted-foreground hover:text-red-500"
+                      }`}
+                  >
+                    <Heart className={`h-5 w-5 transition-transform active:scale-95 ${isFavorited ? "fill-current" : ""}`} />
+                  </Button>
                   <Badge className="gap-1.5 border-transparent bg-blue-600 text-white hover:bg-blue-600 dark:bg-blue-500">
                     <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
                     {book.type.name}

@@ -38,6 +38,17 @@ export class BooksController {
         return this.booksService.browse(query);
     }
 
+    @Get('favorites')
+    @UseGuards(JwtAuthGuard)
+    async getFavorites(
+        @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+        @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+        @Request() req: any,
+    ) {
+        const userId = req.user.userId ?? req.user.id;
+        return this.booksService.getFavorites(Number(userId), { page, limit });
+    }
+
     // List all books
     @Get('allBooks')
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -114,6 +125,13 @@ export class BooksController {
     ) {
         const userId = req.user.userId ?? req.user.id;
         return this.booksService.rateBook(Number(userId), id, dto.rating);
+    }
+
+    @Post(':id/favorite')
+    @UseGuards(JwtAuthGuard)
+    async toggleFavorite(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+        const userId = req.user.userId ?? req.user.id;
+        return this.booksService.toggleFavorite(Number(userId), id);
     }
 
     // delete book

@@ -46,6 +46,7 @@ model User {
   permissions     String[]
   BookRating      BookRating[]
   readingProgress ReadingProgress[]
+  favoriteBooks   FavoriteBook[]
 }
 
 // Wallet for each user
@@ -88,7 +89,8 @@ model Book {
   ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
   ratingCount Int     @default(0)
 
-  ratings BookRating[]
+  ratings     BookRating[]
+  favoritedBy FavoriteBook[]
 
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
@@ -216,4 +218,17 @@ model Media {
   size       Int
   createdAt  DateTime @default(now())
   Book       Book[]
+}
+
+model FavoriteBook {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  bookId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, bookId])
+  @@index([userId, createdAt])
 }
