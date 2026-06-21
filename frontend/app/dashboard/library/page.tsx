@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { LibraryResponse } from "@/lib/types";
 import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCard";
-import {Library, Search, AlertCircle} from "lucide-react";
+import {Library, AlertCircle} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 import {useTranslations} from "next-intl";
@@ -18,7 +18,6 @@ export default function LibraryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
-    const [search, setSearch] = useState("");
 
     useEffect(() => {
         async function fetchData() {
