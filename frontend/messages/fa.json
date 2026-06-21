@@ -294,7 +294,7 @@
     "Amount": "{Amount} {CurrencySymbols}",
     "FailedLoadHistory": "خطا در بارگذاری تاریخچه",
     "DetailedHistory": "تاریخچه دقیق واریزها و خریدهای شما",
-    "ExportData": "خروجی داده‌ها",
+    "ExportData": "خروجی داده‌ها (۱۲ماه اخیر)",
     "CurrentBalance": "موجودی فعلی",
     "TotalCredits": "مجموع اعتبار",
     "TotalDebits": "مجموع بدهی",

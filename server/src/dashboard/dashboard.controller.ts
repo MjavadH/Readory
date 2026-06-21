@@ -1,10 +1,11 @@
-import {Controller, Get, UseGuards, Request, Query} from '@nestjs/common';
+import {Controller, Get, UseGuards, Request, Query, Res} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
 import { DashboardService } from './dashboard.service';
 import { WalletsService } from '../wallets/wallets.service';
+import express from 'express';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)
@@ -12,7 +13,8 @@ export class DashboardController {
     constructor(
         private dashboardService: DashboardService,
         private walletsService: WalletsService,
-    ) {}
+    ) {
+    }
 
     /**
      * User dashboard:
@@ -54,6 +56,24 @@ export class DashboardController {
             totals: wallet.totals,
             ...wallet.transactions,
         };
+    }
+
+    @Get('history/export')
+    async exportHistory(
+        @Request() req: any,
+        @Res() res: express.Response,
+    ) {
+        const userId = req.user.id || req.user.userId;
+
+        const csv = await this.dashboardService.exportTransactionsCsv(userId);
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="transactions-last-year.csv"`,
+        );
+
+        return res.send('\ufeff' + csv);
     }
 
     // Full library list

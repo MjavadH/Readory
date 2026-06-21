@@ -294,7 +294,7 @@
     "Amount": "{CurrencySymbols}{Amount}",
     "FailedLoadHistory": "Failed to load history",
     "DetailedHistory": "Detailed history of your deposits and purchases",
-    "ExportData": "Export Data",
+    "ExportData": "Export Data (Last 12 Months)",
     "CurrentBalance": "Current Balance",
     "TotalCredits": "Total Credits",
     "TotalDebits": "Total Debits",

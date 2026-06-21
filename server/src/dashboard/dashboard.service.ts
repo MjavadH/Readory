@@ -56,6 +56,54 @@ export class DashboardService {
         };
     }
 
+    async exportTransactionsCsv(userId: number) {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+        const transactions = await this.prisma.walletTransaction.findMany({
+            where: {
+                wallet: {
+                    userId,
+                },
+                createdAt: {
+                    gte: oneYearAgo,
+                },
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+        });
+
+        // Prevent CSV Formula Injection by sanitizing values starting with =, +, -, @
+        const sanitizeForCsv = (val: any) => {
+            const str = String(val ?? '');
+            if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
+                return `'${str}`;
+            }
+            return str;
+        };
+
+        const rows = [
+            ['Row', 'Transaction ID', 'Date', 'Type', 'Amount', 'Reference'],
+            ...transactions.map((tx, index) => [
+                index + 1,
+                tx.id,
+                tx.createdAt.toISOString(),
+                tx.type,
+                Number(tx.amount),
+                sanitizeForCsv(tx.reference),
+            ]),
+        ];
+
+        return rows
+            .map(row =>
+                row
+                    .map(value => `"${String(value).replace(/"/g, '""')}"`)
+                    .join(',')
+            )
+            .join('\n');
+    }
+
     async getUserLibrary(userId: number, page = 1, limit = 24) {
         const { pageSafe, limitSafe, skip } = this.normalizePagination(page, limit, 100);
 

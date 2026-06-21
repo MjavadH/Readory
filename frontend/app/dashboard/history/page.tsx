@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -28,6 +27,7 @@ export default function HistoryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
         async function fetchData() {
@@ -45,6 +45,34 @@ export default function HistoryPage() {
         }
         void fetchData();
     }, [page]);
+
+    const handleExport = async () => {
+        if (isExporting) return;
+        setIsExporting(true);
+
+        try {
+            const csvData = await apiClient.get<string>("/dashboard/history/export");
+            if (!csvData) return;
+
+            // Create client-side file download link
+            const blob = new Blob(["\ufeff" + csvData], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `transactions-${new Date().toISOString().split('T')[0]}.csv`);
+
+            document.body.appendChild(link);
+            link.click();
+
+            // Clean up DOM and memory resources
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Export failed:", err);
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     if (loading && !data) {
         return (
@@ -127,9 +155,9 @@ export default function HistoryPage() {
                     </p>
                 </div>
 
-                <button className="flex items-center gap-2 px-6 py-3 bg-primary/5 hover:bg-primary/10 text-primary font-bold rounded-2xl transition-all border border-primary/10 group">
+                <button onClick={handleExport} disabled={isExporting} className="flex items-center gap-2 px-6 py-3 bg-primary/5 hover:bg-primary/10 text-primary font-bold rounded-2xl transition-all border border-primary/10 group">
                     <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-                    {t("ExportData")}
+                    {isExporting ? t("ExportData") + "..." : t("ExportData")}
                 </button>
             </section>
 
