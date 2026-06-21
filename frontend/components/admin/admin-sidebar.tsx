@@ -19,6 +19,7 @@ import {
   X,
   Crown,
   SquareLibrary,
+  LayoutDashboard,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -76,7 +77,10 @@ export function AdminSidebar() {
   const sidebarData = [
     {
       title: t("Main"),
-      items: [{ label: t("Dashboard"), icon: Home, path: "/admin" }],
+      items: [
+        { label: t("Home"), icon: Home, path: "/" },
+        { label: t("Dashboard"), icon: LayoutDashboard, path: "/admin" }
+      ],
     },
     {
       title: t("Catalog"),
