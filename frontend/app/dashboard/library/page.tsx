@@ -101,19 +101,6 @@ export default function LibraryPage() {
                         {t("ShowingTotalBooks", {Total: data?.total || 0})}
                     </p>
                 </div>
-
-                <div className="flex items-center gap-4">
-                    <div className="relative group min-w-75">
-                        <Search className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <input
-                            type="text"
-                            placeholder={t("SearchLibrary")}
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="ps-12 pe-4 py-3 bg-muted/50 border border-border rounded-2xl w-full focus:bg-card focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium"
-                        />
-                    </div>
-                </div>
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
