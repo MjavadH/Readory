@@ -1,227 +1,240 @@
+# Readory
 
+Readory is a TypeScript monorepo for a digital reading platform. It contains a Next.js frontend, a NestJS API server, and a shared package used by both applications.
 
+## Overview
 
-# Readory – Digital Reading Platform
+Readory supports browsing, publishing, purchasing, and reading serialized books and chapters. The application includes public discovery pages, authenticated user dashboard features, wallet-based chapter access, reading progress, favorites, ratings, and an administrative interface for managing catalog content, media, staff, users, transactions, genres, and book types.
 
-Readory is a simple online bookstore designed for digital manga, comics, novels and light‑novels. It allows readers to sign up, top up a wallet, and pay per chapter to read content. Administrators can upload books and chapters, set pricing and publish them. The backend is built with **NestJS** running on the latest **Node.js LTS** (v24 ‘Krypton’ branch)[nodejs.org](https://nodejs.org/en/about/previous-releases#:~:text=Looking%20for%20the%20latest%20release,of%20a%20version%20branch), uses **Prisma ORM** on **PostgreSQL** for data storage, and implements secure authentication and role‑based access control. This project was built from scratch as part of a step‑by‑step tutorial for beginners.
+## Key Features
 
-## Features
+### Reader and customer features
 
-- **User registration and login** with secure password hashing (argon2) and JWT authentication.
+- Public home, book, genre, and dynamic book-type browsing pages.
+- Book detail pages with chapters, related books, ratings, and viewer state.
+- Chapter reader sessions for image-based or text-based chapter content.
+- User registration, OTP verification, login, logout, and profile retrieval.
+- Cookie-based authenticated API access.
+- User dashboard with library, reading history, reading progress, favorites, wallet, and settings views.
+- Wallet balance and transaction history with deposit support.
+- Chapter purchase flow backed by access records.
 
-- **Wallet system** – users can deposit funds and purchase chapters. Transactions are recorded as credits/debits.
+### Administrative features
 
-- **Book and chapter management** – administrators can create, update and publish books; add chapters with prices; and manage content. Users can browse published books and see chapter lists.
+- Admin dashboard and protected administration layout.
+- Book, chapter, chapter content, genre, book type, media, user, staff, and transaction management screens.
+- Role and permission-aware admin UI.
+- Media upload and server-side media processing.
+- S3-compatible chapter and content storage.
 
-- **Purchasing and access records** – buying a chapter debits the user’s wallet and grants access via an `AccessRecord` so the user can read the chapter later.
+### Platform features
 
-- **Role‑based access control** – only users with the `ADMIN` role can manage books and chapters. Roles are stored in the database; JWT payloads include the role name for authorization.
+- PostgreSQL data model managed with Prisma migrations.
+- Redis-backed cache utilities for session, access, and chapter-related data.
+- Shared TypeScript package for cross-application constants.
+- English and Persian localization files in the frontend.
+- Light/dark theming and Tailwind CSS design tokens.
 
-- **PostgreSQL database migrations** using Prisma Migrate. A `prisma` folder contains the schema and migrations; a `prisma.config.ts` file centralizes the database connection (required in Prisma v7)[prisma.io](https://www.prisma.io/docs/orm/reference/prisma-config-reference#:~:text=Starting%20with%20Prisma%20ORM%20v7%2C,environment%20variables%20for%20setup%20details).
+## Architecture
 
+The repository is organized as an npm workspace monorepo:
 
-## Prerequisites
+```text
+.
+├── frontend/       # Next.js application for public, dashboard, and admin UIs
+├── server/         # NestJS API server, Prisma schema, migrations, and tests
+├── shared/         # Shared TypeScript package consumed by frontend and server
+├── package.json    # Root workspace scripts and workspace definitions
+└── package-lock.json
+```
 
-- **Node.js** v24 LTS.
+The frontend communicates with the backend through HTTP APIs using `NEXT_PUBLIC_API_BASE`. Requests include credentials by default so the browser can send the server-issued `access_token` cookie. The backend exposes REST-style controllers for authentication, users, wallets, books, chapters, reader sessions, media, storage, genres, book types, dashboards, and public catalog data.
 
-- **npm** (v11.6.2 or newer) to install packages.
+The server stores relational data in PostgreSQL through Prisma. Chapter content and uploaded objects are stored through an S3-compatible storage client. Redis is used by cache services for session and content-access related caching.
 
-- **NestJS CLI** (v11.0.14) – used to scaffold modules and run the development server.
+## Technology Stack
 
-- **PostgreSQL** 18 – create a database named `readory_db` before running migrations.
+| Category | Technologies |
+| --- | --- |
+| Frontend | Next.js 16, React 19, TypeScript, App Router, next-intl, SWR, React Hook Form, Zod |
+| UI and styling | Tailwind CSS 4, Radix UI, shadcn-style component structure, lucide-react, next-themes, tw-animate-css, Recharts, Framer Motion |
+| Backend | NestJS 11, TypeScript, Passport, JWT, class-validator, class-transformer |
+| Database | PostgreSQL, Prisma Client, Prisma migrations, `pg`, `@prisma/adapter-pg` |
+| Authentication | Passport local strategy, Passport JWT strategy, argon2 password hashing, cookie-parser, JWT stored in `access_token` cookie |
+| Storage | AWS SDK S3 client, S3-compatible object storage, Multer, Sharp, file-type |
+| Cache / infrastructure services | Redis through ioredis |
+| Tooling | npm workspaces, TypeScript, ESLint, Prettier, Nest CLI |
+| Testing | Jest, ts-jest, Supertest, Nest testing utilities, unit specs, e2e Jest config |
+| Deployment | Frontend `next build`/`next start`; backend `nest build`/`node dist/main`; environment-driven database, Redis, CORS, JWT, and S3 configuration |
 
-- **Prisma CLI** (installed via `npm install --save-dev prisma @prisma/adapter-pg`).
+## Monorepo Structure
 
-- **Docker** and **Docker Compose** (optional but recommended) if you prefer containerized deployment.
-
+| Path | Responsibility |
+| --- | --- |
+| `frontend/` | User-facing Next.js application, admin UI, dashboard UI, shared UI components, hooks, providers, localization messages, global styles, and frontend configuration. |
+| `server/` | NestJS API application, modules/controllers/services, Prisma schema and migrations, seed script, server tests, and backend configuration. |
+| `shared/` | Internal `@readory/shared` TypeScript package with values shared between frontend and server. |
+| `package.json` | Root npm workspace definition and workspace-level build scripts. |
+| `package-lock.json` | npm lockfile for the workspace. |
 
 ## Getting Started
 
-1. **Clone the repository** and install dependencies:
+### Prerequisites
 
-   ```bash
-   git clone https://github.com/MjavadH/Readory.git
-   cd readory/server
-   npm install
-   ```
+- Node.js and npm compatible with Next.js 16 and NestJS 11.
+- PostgreSQL database.
+- Redis instance.
+- S3-compatible object storage for chapter and media content.
 
-2. **Configure environment variables**. Copy `.env.example` to `.env` and fill in your database credentials and JWT secret. **Never commit your `.env` file** to version control; it contains secrets. For example:
+### Installation
 
-   ```env
-   DATABASE_URL="postgresql://<username>:<password>@localhost:5432/readory_db?schema=public"
-   JWT_SECRET="your‑strong‑random‑secret"
-   JWT_EXPIRES_IN=3600
-   PORT=3000
-   ```
-
-4. **Create the database** if it doesn’t already exist:
-
-   ```bash
-   psql -U postgres -c "CREATE DATABASE readory_db;"
-   ```
-
-6. **Run migrations and generate the Prisma client**:
-
-   ```bash
-   npx prisma generate
-   npx prisma migrate dev --name init
-   ````
-
-7. **Start the development server**:
-
-   ```bash
-   npm run start:dev
-   ```
-
-   The server will compile TypeScript in watch mode and start listening on `localhost:3000` (or the `PORT` you set).
-
-9. **Seed an admin role**. By default the `USER` role is created when a user registers. To create an `ADMIN` role and assign it to a user, run the following SQL in your database:
-
-   ```sql
-   INSERT INTO "Role" ("name") VALUES ('ADMIN') ON CONFLICT DO NOTHING;
-   -- replace with your admin user’s email
-   UPDATE "User" SET "roleId" = (SELECT id FROM "Role" WHERE "name"='ADMIN') WHERE "email" = 'admin@example.com';
-   ```
-
-## API Overview
-
-### Authentication
-
-- `POST /auth/register` – register a new user with `{ email, password }`. Creates a wallet with zero balance.
-
-- `POST /auth/login` – login with `{ email, password }`. Returns a JWT (`access_token`).
-
-
-### Wallet
-
-- `GET /wallet` – get your wallet balance and transaction history (JWT required).
-
-- `POST /wallet/deposit` – deposit funds with `{ amount, reference? }` (JWT required).
-
-### Books
-
-- `GET /books` – list all published books.
-
-- `GET /books/:id` – get details of a book, including its chapters.
-
-- `POST /books` – **admin only**. Create a book with `{ title, author?, description?, coverImage?, isPublished? }`.
-
-- `PATCH /books/:id` – **admin only**. Update a book’s details or publish it.
-
-### Chapters
-
-- `GET /books/:bookId/chapters` – list chapters for a book.
-
-- `POST /books/:bookId/chapters` – **admin only**. Add a chapter with `{ title, index, price?, isFree?, contentPath? }`.
-
-- `POST /books/:bookId/chapters/:chapterId/purchase` – purchase a chapter (JWT required). Debits the user’s wallet if the chapter isn’t free.
-
-## License
-
-This project is released under the MIT License. See the `LICENSE` file for details.
-
-## Chapter Reader + MinIO Content Pipeline
-
-### Required environment variables (server)
-
-```env
-S3_ENDPOINT=http://127.0.0.1:9000
-S3_REGION=us-east-1
-S3_ACCESS_KEY_ID=minioadmin
-S3_SECRET_ACCESS_KEY=minioadmin
-S3_BUCKET_CHAPTERS=readory-book
-S3_FORCE_PATH_STYLE=true
-S3_AUTO_CREATE_BUCKET=false
-```
-
-- Bucket must be **private**.
-- Reader APIs stream content through backend only (`/reader/page`, `/reader/text`) and do not expose S3 URLs.
-
-### Admin chapter content management APIs
-
-- `GET /admin/books/:bookId/chapters/:index/content`
-- `POST /admin/books/:bookId/chapters/:index/content/images` (multipart `files[]`)
-- `POST /admin/books/:bookId/chapters/:index/content/text` (multipart `file`, `.md`/`.txt`)
-- `DELETE /admin/books/:bookId/chapters/:index/content`
-
-Storage prefix is always:
-
-`readory-book/b{bookId}/c{chapterIndex}`
-
-Each chapter stores a `manifest.json` used by the reader session and ordered page loading.
-
-### Security notes
-
-- Reader session token is short-lived and includes `contentVersion`; content changes invalidate prior sessions.
-- Reader endpoints enforce access (`isFree` or purchased access record), rate limits, and anomaly blocking for aggressive page scraping.
-- Image pages are watermarked per user and streamed as `image/webp` with `no-store` headers.
-- Chapter uploads validate image magic-bytes, normalize to WebP, and update chapter content metadata atomically.
-
-
-## Testing (NestJS + Jest + Prisma)
-
-### 1) Create a dedicated local test database
-
-Use a separate database for tests so no test can touch your development/production data.
+Install all workspace dependencies from the repository root:
 
 ```bash
-psql -U postgres -c "CREATE DATABASE readory_test;"
+npm install
 ```
 
-### 2) Create `server/.env.test`
+Build the shared workspace before running applications that consume `@readory/shared`:
 
-Copy the sample file and update values for your machine:
+```bash
+npm run build:shared
+```
+
+For active shared-package development, run the shared package in watch mode:
+
+```bash
+npm run dev:shared
+```
+
+### Environment configuration
+
+Create environment files from the examples:
+
+```bash
+cp frontend/.env.local.example frontend/.env.local
+cp server/.env.example server/.env
+```
+
+Configure the frontend API base URL:
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_BASE` | Base URL for the NestJS API server. |
+
+Configure the server environment:
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string used by Prisma. |
+| `JWT_SECRET` | Secret used to sign and verify JWTs. |
+| `JWT_EXPIRES_IN` | JWT lifetime in seconds. |
+| `PORT` | Port for the NestJS server. |
+| `CORS_ORIGIN` | Comma-separated list of allowed frontend origins. |
+| `SEED_ADMIN_PASSWORD` | Password used by the Prisma seed script. |
+| `REDIS_HOST` | Redis host. |
+| `REDIS_PORT` | Redis port. |
+| `SUPER_ADMIN_ID` | User id treated as the super admin by server logic. |
+| `S3_ENDPOINT` | S3-compatible endpoint. |
+| `S3_REGION` | S3 region. |
+| `S3_ACCESS_KEY_ID` | S3 access key id. |
+| `S3_SECRET_ACCESS_KEY` | S3 secret access key. |
+| `S3_BUCKET_CHAPTERS` | Bucket used for chapter/content objects. |
+| `S3_FORCE_PATH_STYLE` | Enables path-style S3 addressing when required by the provider. |
+| `S3_PUBLIC_BASE_URL` | Public base URL for stored objects when needed. |
+| `S3_AUTO_CREATE_BUCKET` | Allows the server to create the configured bucket on startup. |
+
+### Database setup
+
+The Prisma schema and migrations live in `server/prisma/`. Run Prisma commands from the `server` workspace, for example:
 
 ```bash
 cd server
-cp .env.test.example .env.test
-```
-
-Minimum required value:
-
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/readory_test?schema=public"
-```
-
-> Safety guard: test helpers refuse to run if `DATABASE_URL` does not look like a test database URL.
-
-### 3) Apply Prisma schema to the test database
-
-Run this from `server/`:
-
-```bash
-npx prisma migrate deploy
-```
-
-If this is your first local setup and there are no applied migrations yet, you can use:
-
-```bash
 npx prisma migrate dev
+npx prisma db seed
 ```
 
-### 4) Run tests
+## Development
 
-From `server/`:
+### Root workspace commands
+
+| Command | Description |
+| --- | --- |
+| `npm run build` | Runs `build` in all npm workspaces. |
+| `npm run build:shared` | Builds the `@readory/shared` package. |
+| `npm run dev:shared` | Builds the shared package in watch mode. |
+
+### Frontend commands
+
+Run from `frontend/` or with `npm --workspace frontend run <script>` from the root.
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Starts the Next.js development server. |
+| `npm run build` | Creates a production Next.js build. |
+| `npm run start` | Starts the production Next.js server. |
+| `npm run lint` | Runs ESLint. |
+
+### Server commands
+
+Run from `server/` or with `npm --workspace server run <script>` from the root.
+
+| Command | Description |
+| --- | --- |
+| `npm run start` | Starts the NestJS application. |
+| `npm run start:dev` | Starts NestJS in watch mode. |
+| `npm run start:debug` | Starts NestJS in debug watch mode. |
+| `npm run build` | Compiles the server into `server/dist/`. |
+| `npm run start:prod` | Runs the compiled server with `node dist/main`. |
+| `npm run lint` | Runs ESLint with automatic fixes. |
+| `npm run format` | Formats `src/**/*.ts` and `test/**/*.ts` with Prettier. |
+| `npm run test` | Runs unit tests. |
+| `npm run test:watch` | Runs unit tests in watch mode. |
+| `npm run test:cov` | Runs tests with coverage. |
+| `npm run test:debug` | Runs Jest under the Node inspector. |
+| `npm run test:e2e` | Runs e2e tests using `test/jest-e2e.json`. |
+
+## Build
+
+Build the full monorepo:
 
 ```bash
-npm test
-npm run test:watch
-npm run test:cov
-npm run test:e2e
+npm run build
 ```
 
-### Test DB cleanup strategy
+Build individual workspaces:
 
-- E2E setup uses Prisma utilities in `server/test/utils`.
-- Before each E2E test, all public tables are truncated with `RESTART IDENTITY CASCADE` (excluding `_prisma_migrations`).
-- This keeps tests deterministic and isolated.
+```bash
+npm run build:shared
+npm --workspace frontend run build
+npm --workspace server run build
+```
 
-### Troubleshooting
+Build outputs:
 
-- **Error: Refusing to run tests against a non-test database URL**
-  - Ensure `server/.env.test` points to `readory_test` (or any DB name containing `test`).
-- **Connection errors to Postgres**
-  - Verify Postgres is running and `DATABASE_URL` credentials are correct.
-- **Redis/S3 in unit/controller tests**
-  - Unit/controller tests should override Nest providers and fully mock external services (`REDIS_CLIENT`, `S3Client`/`StorageService`).
+- Frontend production build: `frontend/.next/`.
+- Server production build: `server/dist/`.
+- Shared package build: `shared/dist/`.
 
+## Deployment
+
+Deployment is configured through application scripts and environment variables rather than repository-specific deployment manifests.
+
+A typical production deployment should:
+
+1. Install workspace dependencies with npm.
+2. Configure frontend, server, PostgreSQL, Redis, and S3-compatible storage environment variables.
+3. Build the shared package.
+4. Apply Prisma migrations against the production database.
+5. Build the frontend and backend.
+6. Start the backend with `npm --workspace server run start:prod`.
+7. Start the frontend with `npm --workspace frontend run start`.
+8. Ensure the server `CORS_ORIGIN` includes the frontend origin and the frontend `NEXT_PUBLIC_API_BASE` points at the backend API.
+
+## Screenshots
+
+> Screenshots will be added here.
+
+## Documentation Links
+
+- [Frontend README](./frontend/README.md)
+- [Server README](./server/README.md)
