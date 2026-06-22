@@ -232,11 +232,11 @@ export class ReaderService {
 
       const requestUserId = this.getRequestUserId(req);
       if (decoded.userId !== requestUserId) {
-        new UnauthorizedException('Reader token user mismatch');
+        throw new UnauthorizedException('Reader token user mismatch');
       }
 
       if (decoded.uaHash !== this.uaHash(req)) {
-        new UnauthorizedException('Invalid reader token context');
+        throw new UnauthorizedException('Invalid reader token context');
       }
 
       const chapter = await this.prisma.chapter.findUnique({
@@ -245,7 +245,7 @@ export class ReaderService {
       });
 
       if (!chapter || chapter.contentVersion !== decoded.contentVersion) {
-        new UnauthorizedException('Reader token expired');
+        throw new UnauthorizedException('Reader token expired');
       }
 
       return decoded;

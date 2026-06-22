@@ -2,12 +2,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    // Automatically validate incoming requests based on DTO decorators
+    app.use(helmet());
+    const allowedOrigins = process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',')
+        : ['http://localhost:3001'];
     app.enableCors({
-        origin: 'http://localhost:3001',
+        origin: allowedOrigins,
         credentials: true,
     });
     app.use(cookieParser());
