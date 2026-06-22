@@ -16,7 +16,7 @@ import sharp from 'sharp';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import {createHash} from "crypto";
+import { createHash } from 'crypto';
 
 type ReaderTokenPayload = {
   userId: number;
@@ -39,13 +39,17 @@ type ChapterManifest = {
 };
 
 function escapeXml(s: string) {
-  return s.replace(/[<>&'"]/g, (c) => ({
-    '<': '&lt;',
-    '>': '&gt;',
-    '&': '&amp;',
-    "'": '&apos;',
-    '"': '&quot;',
-  }[c]!));
+  return s.replace(
+    /[<>&'"]/g,
+    (c) =>
+      ({
+        '<': '&lt;',
+        '>': '&gt;',
+        '&': '&amp;',
+        "'": '&apos;',
+        '"': '&quot;',
+      })[c]!,
+  );
 }
 
 @Injectable()
@@ -67,7 +71,7 @@ export class ReaderService {
   }
 
   private async getManifestByPayload(
-      payload: ReaderTokenPayload,
+    payload: ReaderTokenPayload,
   ): Promise<ChapterManifest> {
     const chapter = await this.prisma.chapter.findUnique({
       where: { id: payload.chapterId },
@@ -81,14 +85,14 @@ export class ReaderService {
     const key = this.manifestKey(payload.chapterId, payload.contentVersion);
 
     return this.cacheManager.getOrSet(
-        key,
-        { ttlSeconds: 900, jitterSeconds: 30 },
-        async () => {
-          const buffer = await this.storageService.getObjectBuffer(
-              `${chapter.contentPath}/manifest.json`,
-          );
-          return JSON.parse(buffer.toString('utf8')) as ChapterManifest;
-        },
+      key,
+      { ttlSeconds: 900, jitterSeconds: 30 },
+      async () => {
+        const buffer = await this.storageService.getObjectBuffer(
+          `${chapter.contentPath}/manifest.json`,
+        );
+        return JSON.parse(buffer.toString('utf8')) as ChapterManifest;
+      },
     );
   }
 
@@ -138,13 +142,12 @@ export class ReaderService {
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
 
-    const hasAccess =
-      Boolean(
-        await this.prisma.accessRecord.findFirst({
-          where: { userId, chapterId: chapter.id },
-          select: { id: true },
-        }),
-      );
+    const hasAccess = Boolean(
+      await this.prisma.accessRecord.findFirst({
+        where: { userId, chapterId: chapter.id },
+        select: { id: true },
+      }),
+    );
     if (!hasAccess) throw new ForbiddenException('Purchase or access required');
 
     const resume = await this.prisma.readingProgress.findUnique({
@@ -178,10 +181,10 @@ export class ReaderService {
   }
 
   async createAdminPreviewSession(
-      userId: number,
-      bookId: number,
-      chapterIndex: number,
-      req: Request,
+    userId: number,
+    bookId: number,
+    chapterIndex: number,
+    req: Request,
   ) {
     const chapter = await this.prisma.chapter.findFirst({
       where: { bookId, index: chapterIndex },
@@ -201,16 +204,16 @@ export class ReaderService {
     }
 
     const token = await this.jwtService.signAsync(
-        {
-          userId,
-          chapterId: chapter.id,
-          bookId,
-          chapterIndex,
-          contentVersion: chapter.contentVersion,
-          uaHash: this.uaHash(req),
-          scope: 'admin-preview',
-        },
-        { expiresIn: 600 },
+      {
+        userId,
+        chapterId: chapter.id,
+        bookId,
+        chapterIndex,
+        contentVersion: chapter.contentVersion,
+        uaHash: this.uaHash(req),
+        scope: 'admin-preview',
+      },
+      { expiresIn: 600 },
     );
 
     return {
@@ -228,7 +231,8 @@ export class ReaderService {
 
   async verifyToken(token: string, req: Request): Promise<ReaderTokenPayload> {
     try {
-      const decoded = await this.jwtService.verifyAsync<ReaderTokenPayload>(token);
+      const decoded =
+        await this.jwtService.verifyAsync<ReaderTokenPayload>(token);
 
       const requestUserId = this.getRequestUserId(req);
       if (decoded.userId !== requestUserId) {
@@ -294,8 +298,8 @@ export class ReaderService {
       const blockedUntil = await this.redis.get(blockKey);
       if (blockedUntil) {
         throw new HttpException(
-            'Temporarily blocked due to abnormal behavior',
-            429,
+          'Temporarily blocked due to abnormal behavior',
+          429,
         );
       }
 
@@ -309,11 +313,11 @@ export class ReaderService {
       if (recent >= 10) {
         await this.redis.set(blockKey, String(nowSec + 120), 'EX', 120);
         this.logger.warn(
-            `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
+          `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
         );
         throw new HttpException(
-            'Temporarily blocked due to abnormal behavior',
-            429,
+          'Temporarily blocked due to abnormal behavior',
+          429,
         );
       }
     }
@@ -335,10 +339,7 @@ export class ReaderService {
 
     if (isAdminPreview) return source;
 
-    const trace = createHash('sha256')
-        .update(token)
-        .digest('hex')
-        .slice(0, 8);
+    const trace = createHash('sha256').update(token).digest('hex').slice(0, 8);
 
     const watermarkText = `u${payload.userId} c${payload.chapterId} #${trace}`;
     const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130"
@@ -352,17 +353,23 @@ export class ReaderService {
 </svg>`;
 
     return sharp(source)
-        .composite([{ input: Buffer.from(svg), tile: true, gravity: 'center', blend: 'exclusion', }])
-        .webp({ quality: 82 })
-        .toBuffer();
+      .composite([
+        {
+          input: Buffer.from(svg),
+          tile: true,
+          gravity: 'center',
+          blend: 'exclusion',
+        },
+      ])
+      .webp({ quality: 82 })
+      .toBuffer();
   }
 
   async getReaderContext(userId: number, bookId: number) {
-
     const chapters = await this.prisma.chapter.findMany({
       where: {
         bookId,
-        contentType: { not: null }
+        contentType: { not: null },
       },
       orderBy: {
         index: 'asc',
@@ -378,7 +385,7 @@ export class ReaderService {
     });
 
     const accessRows = chapters.length
-        ? await this.prisma.accessRecord.findMany({
+      ? await this.prisma.accessRecord.findMany({
           where: {
             userId,
             chapterId: {
@@ -389,12 +396,12 @@ export class ReaderService {
             chapterId: true,
           },
         })
-        : [];
+      : [];
 
     const accessibleChapterIds = new Set(
-        accessRows
-            .map((r) => r.chapterId)
-            .filter((id): id is number => typeof id === 'number'),
+      accessRows
+        .map((r) => r.chapterId)
+        .filter((id): id is number => typeof id === 'number'),
     );
 
     return {
@@ -421,11 +428,11 @@ export class ReaderService {
     if (!chapter) throw new NotFoundException('Chapter not found');
 
     const hasAccess = Boolean(
-        await this.prisma.accessRecord.findFirst({
-          where: { userId, chapterId },
-          select: { id: true },
-        }),
-      );
+      await this.prisma.accessRecord.findFirst({
+        where: { userId, chapterId },
+        select: { id: true },
+      }),
+    );
     if (!hasAccess) throw new ForbiddenException('No access');
 
     const maxPage = Math.max(1, chapter.pageCount || 1);
