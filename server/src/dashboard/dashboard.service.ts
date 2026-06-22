@@ -1,564 +1,509 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {AuthService} from "../auth/auth.service";
-import {WalletsService} from "../wallets/wallets.service";
+import { AuthService } from '../auth/auth.service';
+import { WalletsService } from '../wallets/wallets.service';
+import {
+  clampInt,
+  normalizePagination,
+  calculateGrowth,
+  enrichLibraryGroups,
+} from '../common/index.js';
 
 type OverviewOptions = {
-    txLimit: number;
-    libraryLimit: number;
+  txLimit: number;
+  libraryLimit: number;
 };
 
 @Injectable()
 export class DashboardService {
-    constructor(
-        private prisma: PrismaService,
-        private readonly authService: AuthService,
-        private readonly walletsService: WalletsService,
-    ) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly authService: AuthService,
+    private readonly walletsService: WalletsService,
+  ) {}
 
-    private normalizePagination(page: number, limit: number, maxLimit: number) {
-        const pageSafe = this.clampInt(page, 1, 1_000_000, 1);
-        const limitSafe = this.clampInt(limit, 1, maxLimit, 20);
-        const skip = (pageSafe - 1) * limitSafe;
-        return { pageSafe, limitSafe, skip };
-    }
+  private async countDistinctBooks(userId: number) {
+    const rows = await this.prisma.$queryRaw<
+      { count: bigint }[]
+    >`SELECT COUNT(DISTINCT "bookId") AS count FROM "AccessRecord" WHERE "userId" = ${userId} AND "bookId" IS NOT NULL`;
+    return Number(rows[0]?.count ?? 0n);
+  }
 
-    private clampInt(value: number, min: number, max: number, fallback: number) {
-        const n = Number(value);
-        if (!Number.isFinite(n)) return fallback;
-        return Math.min(max, Math.max(min, Math.trunc(n)));
-    }
+  async getUserDashboardOverview(userId: number, options: OverviewOptions) {
+    const txLimit = clampInt(options.txLimit, 1, 20, 6);
+    const libraryLimit = clampInt(options.libraryLimit, 1, 30, 8);
 
-    private async countDistinctBooks(userId: number) {
-        const rows = await this.prisma.$queryRaw<{ count: bigint }[]>
-            `SELECT COUNT(DISTINCT "bookId") AS count FROM "AccessRecord" WHERE "userId" = ${userId} AND "bookId" IS NOT NULL`;
-        return Number(rows[0]?.count ?? 0n);
-    }
+    const [profile, continueReading, walletWithRecentTx, recentLibrary] =
+      await Promise.all([
+        this.authService.getProfile(userId),
+        this.getContinueReading(userId),
+        this.walletsService.getWallet(userId, { take: txLimit }),
+        this.getRecentLibrary(userId, libraryLimit),
+      ]);
 
-    async getUserDashboardOverview(userId: number, options: OverviewOptions) {
-        const txLimit = this.clampInt(options.txLimit, 1, 20, 6);
-        const libraryLimit = this.clampInt(options.libraryLimit, 1, 30, 8);
+    return {
+      profile,
+      wallet: { balance: walletWithRecentTx.balance },
+      recentTransactions: walletWithRecentTx.transactions,
+      continueReading,
+      recentLibrary,
+    };
+  }
 
-        const [profile, continueReading, walletWithRecentTx, recentLibrary] =
-            await Promise.all([
-                this.authService.getProfile(userId),
-                this.getContinueReading(userId),
-                this.walletsService.getWallet(userId, { take: txLimit }),
-                this.getRecentLibrary(userId, libraryLimit),
-            ]);
+  async exportTransactionsCsv(userId: number) {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-        return {
-            profile,
-            wallet: { balance: walletWithRecentTx.balance },
-            recentTransactions: walletWithRecentTx.transactions,
-            continueReading,
-            recentLibrary,
-        };
-    }
+    const transactions = await this.prisma.walletTransaction.findMany({
+      where: {
+        wallet: {
+          userId,
+        },
+        createdAt: {
+          gte: oneYearAgo,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
-    async exportTransactionsCsv(userId: number) {
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    // Prevent CSV Formula Injection by sanitizing values starting with =, +, -, @
+    const sanitizeForCsv = (val: any) => {
+      const str = String(val ?? '');
+      if (
+        str.startsWith('=') ||
+        str.startsWith('+') ||
+        str.startsWith('-') ||
+        str.startsWith('@')
+      ) {
+        return `'${str}`;
+      }
+      return str;
+    };
 
-        const transactions = await this.prisma.walletTransaction.findMany({
-            where: {
-                wallet: {
-                    userId,
-                },
-                createdAt: {
-                    gte: oneYearAgo,
-                },
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-        });
+    const rows = [
+      ['Row', 'Transaction ID', 'Date', 'Type', 'Amount', 'Reference'],
+      ...transactions.map((tx, index) => [
+        index + 1,
+        tx.id,
+        tx.createdAt.toISOString(),
+        tx.type,
+        Number(tx.amount),
+        sanitizeForCsv(tx.reference),
+      ]),
+    ];
 
-        // Prevent CSV Formula Injection by sanitizing values starting with =, +, -, @
-        const sanitizeForCsv = (val: any) => {
-            const str = String(val ?? '');
-            if (str.startsWith('=') || str.startsWith('+') || str.startsWith('-') || str.startsWith('@')) {
-                return `'${str}`;
-            }
-            return str;
-        };
+    return rows
+      .map((row) =>
+        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','),
+      )
+      .join('\n');
+  }
 
-        const rows = [
-            ['Row', 'Transaction ID', 'Date', 'Type', 'Amount', 'Reference'],
-            ...transactions.map((tx, index) => [
-                index + 1,
-                tx.id,
-                tx.createdAt.toISOString(),
-                tx.type,
-                Number(tx.amount),
-                sanitizeForCsv(tx.reference),
-            ]),
-        ];
+  async getUserLibrary(userId: number, page = 1, limit = 24) {
+    const {
+      page: pageSafe,
+      limit: limitSafe,
+      skip,
+    } = normalizePagination(page, limit, 100);
 
-        return rows
-            .map(row =>
-                row
-                    .map(value => `"${String(value).replace(/"/g, '""')}"`)
-                    .join(',')
-            )
-            .join('\n');
-    }
+    const [totalBooks, groups] = await Promise.all([
+      this.countDistinctBooks(userId),
+      this.prisma.accessRecord.groupBy({
+        by: ['bookId'],
+        where: { userId },
+        _count: { _all: true },
+        _max: { purchasedAt: true },
+        orderBy: { _max: { purchasedAt: 'desc' } },
+        skip,
+        take: limitSafe,
+      }),
+    ]);
 
-    async getUserLibrary(userId: number, page = 1, limit = 24) {
-        const { pageSafe, limitSafe, skip } = this.normalizePagination(page, limit, 100);
+    const items = await enrichLibraryGroups(this.prisma, groups);
 
-        // group purchases by book
-        const [totalBooks, groups] = await Promise.all([
-            this.countDistinctBooks(userId),
-            this.prisma.accessRecord.groupBy({
-                by: ['bookId'],
-                where: { userId },
-                _count: { _all: true },
-                _max: { purchasedAt: true },
-                orderBy: { _max: { purchasedAt: 'desc' } },
-                skip,
-                take: limitSafe,
-            }),
-        ]);
+    return {
+      data: items,
+      total: totalBooks,
+      page: pageSafe,
+      lastPage: Math.max(1, Math.ceil(totalBooks / limitSafe)),
+    };
+  }
 
-        const bookIds = groups
-            .map((g) => g.bookId)
-            .filter((id): id is number => typeof id === 'number');
+  private async getRecentLibrary(userId: number, take: number) {
+    const groups = await this.prisma.accessRecord.groupBy({
+      by: ['bookId'],
+      where: { userId },
+      _count: { _all: true },
+      _max: { purchasedAt: true },
+      orderBy: { _max: { purchasedAt: 'desc' } },
+      take,
+    });
 
-        const [books, chapterCounts] = await Promise.all([
-            this.prisma.book.findMany({
-                where: { id: { in: bookIds } },
-                select: {
-                    id: true,
-                    title: true,
-                    author: true,
-                    coverImage: true,
-                    updatedAt: true,
-                    type: { select: { slug: true, } },
-                },
-            }),
-            this.prisma.chapter.groupBy({
-                by: ['bookId'],
-                where: { bookId: { in: bookIds } },
-                _count: { _all: true },
-            }),
-        ]);
+    const items = await enrichLibraryGroups(this.prisma, groups);
 
-        const byBookId = new Map<number, (typeof books)[number]>();
-        books.forEach((b) => byBookId.set(b.id, b));
+    return {
+      data: items,
+    };
+  }
 
-        const chaptersByBookId = new Map<number, number>();
-        chapterCounts.forEach((row) => chaptersByBookId.set(row.bookId, row._count._all));
+  private async getContinueReading(userId: number) {
+    const row = await this.prisma.readingProgress.findFirst({
+      where: { userId, percent: { lt: 100 } },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        lastPage: true,
+        percent: true,
+        updatedAt: true,
+        chapterId: true,
+        bookId: true,
+        book: {
+          select: {
+            id: true,
+            type: { select: { slug: true, iconKey: true } },
+            title: true,
+            author: true,
+            coverImage: true,
+          },
+        },
+        chapter: {
+          select: {
+            title: true,
+            index: true,
+            pageCount: true,
+          },
+        },
+      },
+    });
 
-        const items = groups
-            .map((g) => {
-                const bookId = g.bookId as number;
-                const book = byBookId.get(bookId);
-                if (!book) return null;
+    if (!row) return null;
 
-                const purchasedChapters = g._count._all;
-                const totalChapters = chaptersByBookId.get(bookId) ?? 0;
-                const purchasedPercent =
-                    totalChapters <= 0 ? 0 : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+    return {
+      book: row.book,
+      chapter: {
+        title: row.chapter.title,
+        index: row.chapter.index,
+        pageCount: row.chapter.pageCount,
+      },
+      progress: {
+        lastPage: row.lastPage,
+        percent: row.percent,
+      },
+      lastReadAt: row.updatedAt,
+    };
+  }
 
-                return {
-                    book: {
-                        id: book.id,
-                        title: book.title,
-                        author: book.author,
-                        coverImage: book.coverImage,
-                        updatedAt: book.updatedAt,
-                        type: book.type,
-                    },
-                    purchasedChapters,
-                    totalChapters,
-                    purchasedPercent,
-                    lastPurchasedAt: g._max.purchasedAt,
-                };
-            })
-            .filter(Boolean);
+  async getReadingProgress(userId: number, page = 1, limit = 24) {
+    const {
+      page: pageSafe,
+      limit: limitSafe,
+      skip,
+    } = normalizePagination(page, limit, 100);
 
-        return {
-            data: items,
-            total: totalBooks,
-            page: pageSafe,
-            lastPage: Math.max(1, Math.ceil(totalBooks / limitSafe)),
-        };
-    }
+    const total = await this.prisma.readingProgress.count({
+      where: { userId, percent: { lt: 100 } },
+    });
 
-    private async getRecentLibrary(userId: number, take: number) {
-        const groups = await this.prisma.accessRecord.groupBy({
-            by: ['bookId'],
-            where: { userId },
-            _count: { _all: true },
-            _max: { purchasedAt: true },
-            orderBy: { _max: { purchasedAt: 'desc' } },
-            take,
-        });
+    const progressEntries = await this.prisma.readingProgress.findMany({
+      where: {
+        userId,
+        percent: { lt: 100 },
+      },
+      include: {
+        book: {
+          select: {
+            id: true,
+            title: true,
+            author: true,
+            coverImage: true,
+            type: { select: { slug: true, iconKey: true } },
+          },
+        },
+        chapter: {
+          select: {
+            title: true,
+            index: true,
+            pageCount: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limitSafe,
+    });
 
-        const bookIds = groups
-            .map((g) => g.bookId)
-            .filter((id): id is number => typeof id === 'number');
+    return {
+      data: progressEntries.map((p) => ({
+        book: p.book,
+        chapter: {
+          title: p.chapter.title,
+          index: p.chapter.index,
+          pageCount: p.chapter.pageCount,
+        },
+        progress: {
+          lastPage: p.lastPage,
+          percent: p.percent,
+        },
+        lastReadAt: p.updatedAt,
+      })),
+      total,
+      page: pageSafe,
+      lastPage: Math.max(1, Math.ceil(total / limitSafe)),
+    };
+  }
 
-        const [books, chapterCounts] = await Promise.all([
-            this.prisma.book.findMany({
-                where: { id: { in: bookIds } },
-                select: {
-                    id: true,
-                    title: true,
-                    author: true,
-                    coverImage: true,
-                    updatedAt: true,
-                    type: { select: { slug: true, } },
-                },
-            }),
-            this.prisma.chapter.groupBy({
-                by: ['bookId'],
-                where: { bookId: { in: bookIds } },
-                _count: { _all: true },
-            }),
-        ]);
+  async getAdminDashboardStats(permissions: string[], userId: number) {
+    const isSuperAdmin = userId === 1;
 
-        const byBookId = new Map<number, (typeof books)[number]>();
-        books.forEach((b) => byBookId.set(b.id, b));
+    const canViewFinance =
+      isSuperAdmin || permissions.includes('MANAGE_FINANCE');
+    const canViewUsers =
+      isSuperAdmin ||
+      permissions.includes('MANAGE_USERS') ||
+      permissions.includes('MANAGE_STAFF');
+    const canViewBooks = isSuperAdmin || permissions.includes('MANAGE_BOOKS');
 
-        const chaptersByBookId = new Map<number, number>();
-        chapterCounts.forEach((row) => chaptersByBookId.set(row.bookId, row._count._all));
+    const now = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
 
-        const items = groups
-            .map((g) => {
-                const bookId = g.bookId as number;
-                const book = byBookId.get(bookId);
-                if (!book) return null;
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(now.getDate() - 60);
 
-                const purchasedChapters = g._count._all;
-                const totalChapters = chaptersByBookId.get(bookId) ?? 0;
-                const purchasedPercent =
-                    totalChapters <= 0 ? 0 : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+    const [
+      totalUsers,
+      newUsersLast30,
+      newUsersPrev30,
+      activeUsers,
+      totalBooks,
+      totalChapters,
+      newBooksLast30,
+      newBooksPrev30,
+      financeStats,
+      recentTransactions,
+      recentUsers,
+      recentBooks,
+      recentChapters,
+      userChartData,
+      genreStats,
+      typeStats,
+    ] = await Promise.all([
+      // Users
+      this.prisma.user.count(),
+      this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.user.count({
+        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
+      this.prisma.user.count({
+        where: { lastLoginAt: { gte: thirtyDaysAgo } },
+      }),
 
-                return {
-                    book: {
-                        id: book.id,
-                        title: book.title,
-                        author: book.author,
-                        coverImage: book.coverImage,
-                        updatedAt: book.updatedAt,
-                        type: book.type,
-                    },
-                    purchasedChapters,
-                    totalChapters,
-                    purchasedPercent,
-                    lastPurchasedAt: g._max.purchasedAt,
-                };
-            })
-            .filter(Boolean);
+      // Content
+      this.prisma.book.count(),
+      this.prisma.chapter.count(),
+      this.prisma.book.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      this.prisma.book.count({
+        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
+      }),
 
-        return {
-            data: items,
-        };
-    }
+      // Finance
+      canViewFinance
+        ? this.getFinanceStats(thirtyDaysAgo, sixtyDaysAgo)
+        : Promise.resolve(null),
 
-    private async getContinueReading(userId: number) {
-        const row = await this.prisma.readingProgress.findFirst({
-            where: { userId, percent: { lt: 100 } },
-            orderBy: { updatedAt: 'desc' },
-            select: {
-                lastPage: true,
-                percent: true,
-                updatedAt: true,
-                chapterId: true,
-                bookId: true,
-                book: {
-                    select: {
-                        id: true,
-                        type: {select: { slug: true, iconKey: true}},
-                        title: true,
-                        author: true,
-                        coverImage: true,
-                    },
-                },
-                chapter: {
-                    select: {
-                        title: true,
-                        index: true,
-                        pageCount: true,
-                    },
-                },
-            },
-        });
-
-        if (!row) return null;
-
-        return {
-            book: row.book,
-            chapter: {
-                title: row.chapter.title,
-                index: row.chapter.index,
-                pageCount: row.chapter.pageCount,
-            },
-            progress: {
-                lastPage: row.lastPage,
-                percent: row.percent,
-            },
-            lastReadAt: row.updatedAt,
-        };
-    }
-
-    async getReadingProgress(userId: number, page = 1, limit = 24) {
-        const { pageSafe, limitSafe, skip } = this.normalizePagination(page, limit, 100);
-
-        const total = await this.prisma.readingProgress.count({
-            where: { userId, percent: { lt: 100 } }
-        });
-
-        const progressEntries = await this.prisma.readingProgress.findMany({
-            where: {
-                userId,
-                percent: { lt: 100 }
-            },
+      // Recents
+      canViewFinance
+        ? this.prisma.walletTransaction.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
             include: {
-                book: {
-                    select: {
-                        id: true,
-                        title: true,
-                        author: true,
-                        coverImage: true,
-                        type: { select: { slug: true, iconKey: true } }
-                    }
-                },
-                chapter: {
-                    select: {
-                        title: true,
-                        index: true,
-                        pageCount: true
-                    }
-                }
+              wallet: { include: { user: { select: { username: true } } } },
             },
-            orderBy: { updatedAt: 'desc' },
-            skip,
-            take: limitSafe,
-        });
-
-        return {
-            data: progressEntries.map(p => ({
-                book: p.book,
-                chapter: {
-                    title: p.chapter.title,
-                    index: p.chapter.index,
-                    pageCount: p.chapter.pageCount
-                },
-                progress: {
-                    lastPage: p.lastPage,
-                    percent: p.percent
-                },
-                lastReadAt: p.updatedAt,
-            })),
-            total,
-            page: pageSafe,
-            lastPage: Math.max(1, Math.ceil(total / limitSafe)),
-        };
-    }
-
-    async getAdminDashboardStats(permissions: string[], userId: number) {
-        const isSuperAdmin = userId === 1;
-
-        const canViewFinance = isSuperAdmin || permissions.includes('MANAGE_FINANCE');
-        const canViewUsers = isSuperAdmin || permissions.includes('MANAGE_USERS') || permissions.includes('MANAGE_STAFF');
-        const canViewBooks = isSuperAdmin || permissions.includes('MANAGE_BOOKS');
-
-        const now = new Date();
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(now.getDate() - 30);
-
-        const sixtyDaysAgo = new Date();
-        sixtyDaysAgo.setDate(now.getDate() - 60);
-
-        const [
-            totalUsers, newUsersLast30, newUsersPrev30, activeUsers,
-            totalBooks, totalChapters, newBooksLast30, newBooksPrev30,
-            financeStats, recentTransactions, recentUsers, recentBooks, recentChapters,
-            userChartData, genreStats, typeStats,
-        ] = await Promise.all([
-            // Users
-            this.prisma.user.count(),
-            this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-            this.prisma.user.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-            this.prisma.user.count({ where: { lastLoginAt: { gte: thirtyDaysAgo } } }),
-
-            // Content
-            this.prisma.book.count(),
-            this.prisma.chapter.count(),
-            this.prisma.book.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-            this.prisma.book.count({ where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } } }),
-
-            // Finance
-            canViewFinance ? this.getFinanceStats(thirtyDaysAgo, sixtyDaysAgo) : Promise.resolve(null),
-
-            // Recents
-            canViewFinance
-                ? this.prisma.walletTransaction.findMany({
-                    take: 5, orderBy: { createdAt: 'desc' },
-                    include: { wallet: { include: { user: { select: { username: true } } } } }
-                }) : Promise.resolve([]),
-            canViewUsers
-                ? this.prisma.user.findMany({
-                    take: 5, orderBy: { createdAt: 'desc' },
-                    select: { id: true, username: true, email: true, createdAt: true }
-                }) : Promise.resolve([]),
-            canViewBooks
-                ? this.prisma.book.findMany({
-                    take: 5, orderBy: { createdAt: 'desc' },
-                    select: { id: true, title: true, author: true, createdAt: true, coverImage: true }
-                }) : Promise.resolve([]),
-            canViewBooks
-                ? this.prisma.chapter.findMany({
-                    take: 5, orderBy: { createdAt: 'desc' },
-                    include: { book: { select: { title: true } } }
-                }) : Promise.resolve([]),
-
-            // Charts
-            canViewUsers ? this.getUserRegistrationChart() : Promise.resolve([]),
-            canViewBooks ? this.getGenreStats() : Promise.resolve([]),
-            canViewBooks ? this.getTypeStats() : Promise.resolve([])
-        ]);
-
-        return {
-            summary: {
-                users: canViewUsers ? {
-                    total: totalUsers, new: newUsersLast30, active: activeUsers,
-                    growth: this.calculateGrowth(newUsersLast30, newUsersPrev30)
-                } : null,
-                content: {
-                    books: totalBooks, chapters: totalChapters,
-                    growth: this.calculateGrowth(newBooksLast30, newBooksPrev30)
-                },
-                finance: financeStats
+          })
+        : Promise.resolve([]),
+      canViewUsers
+        ? this.prisma.user.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, username: true, email: true, createdAt: true },
+          })
+        : Promise.resolve([]),
+      canViewBooks
+        ? this.prisma.book.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              title: true,
+              author: true,
+              createdAt: true,
+              coverImage: true,
             },
-            charts: {
-                userRegistrations: userChartData,
-                genreDistribution: genreStats,
-                typeDistribution: typeStats,
-            },
-            recent: {
-                transactions: recentTransactions.map(t => ({
-                    id: t.id, username: t.wallet?.user?.username || 'Unknown',
-                    amount: Number(t.amount), type: t.type, createdAt: t.createdAt
-                })),
-                users: recentUsers,
-                books: recentBooks,
-                chapters: recentChapters.map(c => ({
-                    id: c.id, title: c.title, bookTitle: c.book.title, createdAt: c.createdAt
-                }))
+          })
+        : Promise.resolve([]),
+      canViewBooks
+        ? this.prisma.chapter.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            include: { book: { select: { title: true } } },
+          })
+        : Promise.resolve([]),
+
+      // Charts
+      canViewUsers ? this.getUserRegistrationChart() : Promise.resolve([]),
+      canViewBooks ? this.getGenreStats() : Promise.resolve([]),
+      canViewBooks ? this.getTypeStats() : Promise.resolve([]),
+    ]);
+
+    return {
+      summary: {
+        users: canViewUsers
+          ? {
+              total: totalUsers,
+              new: newUsersLast30,
+              active: activeUsers,
+              growth: calculateGrowth(newUsersLast30, newUsersPrev30),
             }
-        };
+          : null,
+        content: {
+          books: totalBooks,
+          chapters: totalChapters,
+          growth: calculateGrowth(newBooksLast30, newBooksPrev30),
+        },
+        finance: financeStats,
+      },
+      charts: {
+        userRegistrations: userChartData,
+        genreDistribution: genreStats,
+        typeDistribution: typeStats,
+      },
+      recent: {
+        transactions: recentTransactions.map((t) => ({
+          id: t.id,
+          username: t.wallet?.user?.username || 'Unknown',
+          amount: Number(t.amount),
+          type: t.type,
+          createdAt: t.createdAt,
+        })),
+        users: recentUsers,
+        books: recentBooks,
+        chapters: recentChapters.map((c) => ({
+          id: c.id,
+          title: c.title,
+          bookTitle: c.book.title,
+          createdAt: c.createdAt,
+        })),
+      },
+    };
+  }
+
+  private async getFinanceStats(startDate: Date, prevDate: Date) {
+    const currentMonthAgg = await this.prisma.walletTransaction.aggregate({
+      where: { type: 'CREDIT', createdAt: { gte: startDate } },
+      _sum: { amount: true },
+    });
+    const prevMonthAgg = await this.prisma.walletTransaction.aggregate({
+      where: { type: 'CREDIT', createdAt: { gte: prevDate, lt: startDate } },
+      _sum: { amount: true },
+    });
+    const totalRevenueAgg = await this.prisma.walletTransaction.aggregate({
+      where: { type: 'CREDIT' },
+      _sum: { amount: true },
+    });
+
+    const transactions = await this.prisma.walletTransaction.findMany({
+      where: { type: 'CREDIT', createdAt: { gte: startDate } },
+      select: { amount: true, createdAt: true },
+    });
+
+    const chartMap = new Map<string, number>();
+    for (let i = 0; i < 30; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split('T')[0];
+      chartMap.set(key, 0);
     }
 
-    private calculateGrowth(current: number, previous: number): number {
-        if (previous === 0) return current > 0 ? 100 : 0;
-        return Number((((current - previous) / previous) * 100).toFixed(1));
+    transactions.forEach((t) => {
+      const day = t.createdAt.toISOString().split('T')[0];
+      chartMap.set(day, (chartMap.get(day) || 0) + Number(t.amount));
+    });
+
+    const chartData = Array.from(chartMap.entries())
+      .map(([date, amount]) => ({ date, amount }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      totalRevenue: Number(totalRevenueAgg._sum.amount || 0),
+      monthlyRevenue: Number(currentMonthAgg._sum.amount || 0),
+      growth: calculateGrowth(
+        Number(currentMonthAgg._sum.amount),
+        Number(prevMonthAgg._sum.amount),
+      ),
+      chartData,
+    };
+  }
+
+  private async getUserRegistrationChart() {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+
+    const users = await this.prisma.user.findMany({
+      where: { createdAt: { gte: sixMonthsAgo } },
+      select: { createdAt: true },
+    });
+
+    const monthMap = new Map<string, number>();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const key = d.toLocaleString('default', { month: 'short' });
+      if (!monthMap.has(key)) monthMap.set(key, 0);
     }
 
-    private async getFinanceStats(startDate: Date, prevDate: Date) {
-        const currentMonthAgg = await this.prisma.walletTransaction.aggregate({
-            where: { type: 'CREDIT', createdAt: { gte: startDate } },
-            _sum: { amount: true }
-        });
-        const prevMonthAgg = await this.prisma.walletTransaction.aggregate({
-            where: { type: 'CREDIT', createdAt: { gte: prevDate, lt: startDate } },
-            _sum: { amount: true }
-        });
-        const totalRevenueAgg = await this.prisma.walletTransaction.aggregate({
-            where: { type: 'CREDIT' },
-            _sum: { amount: true }
-        });
+    users.forEach((u) => {
+      const key = u.createdAt.toLocaleString('default', { month: 'short' });
+      if (monthMap.has(key)) monthMap.set(key, (monthMap.get(key) || 0) + 1);
+    });
 
-        const transactions = await this.prisma.walletTransaction.findMany({
-            where: { type: 'CREDIT', createdAt: { gte: startDate } },
-            select: { amount: true, createdAt: true }
-        });
+    return Array.from(monthMap.entries())
+      .map(([month, users]) => ({ month, users }))
+      .reverse();
+  }
 
-        const chartMap = new Map<string, number>();
-        for (let i = 0; i < 30; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const key = d.toISOString().split('T')[0];
-            chartMap.set(key, 0);
-        }
+  private async getGenreStats() {
+    const genres = await this.prisma.genre.findMany({
+      include: { _count: { select: { books: true } } },
+    });
 
-        transactions.forEach(t => {
-            const day = t.createdAt.toISOString().split('T')[0];
-            chartMap.set(day, (chartMap.get(day) || 0) + Number(t.amount));
-        });
+    const sorted = genres
+      .map((g) => ({ name: g.name, value: g._count.books }))
+      .sort((a, b) => b.value - a.value);
 
-        const chartData = Array.from(chartMap.entries())
-            .map(([date, amount]) => ({ date, amount }))
-            .sort((a, b) => a.date.localeCompare(b.date));
+    if (sorted.length <= 5) return sorted;
 
-        return {
-            totalRevenue: Number(totalRevenueAgg._sum.amount || 0),
-            monthlyRevenue: Number(currentMonthAgg._sum.amount || 0),
-            growth: this.calculateGrowth(Number(currentMonthAgg._sum.amount), Number(prevMonthAgg._sum.amount)),
-            chartData
-        };
-    }
+    const top5 = sorted.slice(0, 5);
+    const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
 
-    private async getUserRegistrationChart() {
-        const sixMonthsAgo = new Date();
-        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-        sixMonthsAgo.setDate(1);
+    return [...top5, { name: 'Others', value: others }];
+  }
 
-        const users = await this.prisma.user.findMany({
-            where: { createdAt: { gte: sixMonthsAgo } },
-            select: { createdAt: true }
-        });
+  private async getTypeStats() {
+    const types = await this.prisma.bookType.findMany({
+      include: { _count: { select: { books: true } } },
+    });
 
-        const monthMap = new Map<string, number>();
-        for (let i = 0; i < 6; i++) {
-            const d = new Date();
-            d.setMonth(d.getMonth() - i);
-            const key = d.toLocaleString('default', { month: 'short' });
-            if (!monthMap.has(key)) monthMap.set(key, 0);
-        }
+    const sorted = types
+      .map((t) => ({ name: t.name, value: t._count.books }))
+      .sort((a, b) => b.value - a.value);
 
-        users.forEach(u => {
-            const key = u.createdAt.toLocaleString('default', { month: 'short' });
-            if (monthMap.has(key)) monthMap.set(key, (monthMap.get(key) || 0) + 1);
-        });
+    if (sorted.length <= 5) return sorted;
 
-        return Array.from(monthMap.entries()).map(([month, users]) => ({ month, users })).reverse();
-    }
+    const top5 = sorted.slice(0, 5);
+    const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
 
-    private async getGenreStats() {
-        const genres = await this.prisma.genre.findMany({
-            include: { _count: { select: { books: true } } }
-        });
-
-        const sorted = genres
-            .map(g => ({ name: g.name, value: g._count.books }))
-            .sort((a, b) => b.value - a.value);
-
-        if (sorted.length <= 5) return sorted;
-
-        const top5 = sorted.slice(0, 5);
-        const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
-
-        return [...top5, { name: 'Others', value: others }];
-    }
-
-    private async getTypeStats() {
-        const types = await this.prisma.bookType.findMany({
-            include: { _count: { select: { books: true } } }
-        });
-
-        const sorted = types
-            .map(t => ({ name: t.name, value: t._count.books }))
-            .sort((a, b) => b.value - a.value);
-
-        if (sorted.length <= 5) return sorted;
-
-        const top5 = sorted.slice(0, 5);
-        const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
-
-        return [...top5, { name: 'Others', value: others }];
-    }
+    return [...top5, { name: 'Others', value: others }];
+  }
 }

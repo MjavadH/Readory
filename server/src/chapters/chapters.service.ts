@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from '../wallets/wallets.service';
@@ -8,263 +12,301 @@ import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ListChaptersDto } from './dto/list-chapters.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
+import { normalizeQ } from '../common/index.js';
 
 @Injectable()
 export class ChaptersService {
-    constructor(
-        private prisma: PrismaService,
-        private walletsService: WalletsService,
-        private publicService: PublicService,
-        private readonly cacheManager: CacheManager,
-        private readonly chapterCache: ChapterCache,
-    ) {}
+  constructor(
+    private prisma: PrismaService,
+    private walletsService: WalletsService,
+    private publicService: PublicService,
+    private readonly cacheManager: CacheManager,
+    private readonly chapterCache: ChapterCache,
+  ) {}
 
-    private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
+  private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
 
-    private normalizeQ(q?: string): string | undefined {
-        const s = (q ?? '').trim();
-        if (!s) return undefined;
-        return s.length > 80 ? s.slice(0, 80) : s;
+  // List chapters for a book (public)
+  async listChapters(
+    bookId: number,
+    query: ListChaptersDto,
+    path: boolean = false,
+  ) {
+    const q = normalizeQ(query.q);
+    const page = Number.isInteger(query.page) ? Number(query.page) : 1;
+    const limit = Number.isInteger(query.limit)
+      ? Math.min(Number(query.limit), 100)
+      : 50;
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.max(limit, 1);
+    const skip = (safePage - 1) * safeLimit;
+    const order = query.order === 'desc' ? 'desc' : 'asc';
+
+    const shouldCache = safePage <= 20;
+
+    const where: Prisma.ChapterWhereInput = {
+      bookId,
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: 'insensitive' } },
+              ...(Number.isInteger(Number(q)) ? [{ index: Number(q) }] : []),
+            ],
+          }
+        : {}),
+    };
+
+    const loadFromDatabase = async () => {
+      const [items, total] = await this.prisma.$transaction([
+        this.prisma.chapter.findMany({
+          where,
+          orderBy: { index: order },
+          skip,
+          take: safeLimit,
+          select: {
+            id: true,
+            title: true,
+            index: true,
+            price: true,
+            isFree: true,
+            updatedAt: true,
+            contentPath: path,
+          },
+        }),
+        this.prisma.chapter.count({ where }),
+      ]);
+
+      return {
+        items: items.map((item) => ({
+          ...item,
+          price: item.price ? item.price.toNumber() : null,
+        })),
+        pagination: {
+          page: safePage,
+          limit: safeLimit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / safeLimit)),
+        },
+      };
+    };
+
+    if (!shouldCache) {
+      return loadFromDatabase();
     }
 
-    // List chapters for a book (public)
-    async listChapters(bookId: number, query: ListChaptersDto, path: boolean = false) {
-        const q = this.normalizeQ(query.q);
-        const page = Number.isInteger(query.page) ? Number(query.page) : 1;
-        const limit = Number.isInteger(query.limit) ? Math.min(Number(query.limit), 100) : 50;
-        const safePage = Math.max(page, 1);
-        const safeLimit = Math.max(limit, 1);
-        const skip = (safePage - 1) * safeLimit;
-        const order = query.order === 'desc' ? 'desc' : 'asc';
+    const version = await this.chapterCache.getListVersion(bookId);
+    const cacheKey = this.chapterCache.buildListKey({
+      bookId,
+      q,
+      page: safePage,
+      limit: safeLimit,
+      path,
+      order,
+      version,
+    });
 
-        const shouldCache = safePage <= 20;
+    return this.cacheManager.getOrSet(
+      cacheKey,
+      {
+        ttlSeconds: this.CHAPTERS_LIST_CACHE_TTL_SECONDS,
+        jitterSeconds: Math.ceil(this.CHAPTERS_LIST_CACHE_TTL_SECONDS * 0.1),
+        earlyRefreshWindowSeconds: 12,
+      },
+      loadFromDatabase,
+    );
+  }
 
-        const where: Prisma.ChapterWhereInput = {
-            bookId,
-            ...(q
-                ? {
-                      OR: [
-                          { title: { contains: q, mode: 'insensitive' } },
-                          ...(Number.isInteger(Number(q)) ? [{ index: Number(q) }] : []),
-                      ],
-                  }
-                : {}),
-        };
+  // Admin: create a new chapter
+  async createChapter(bookId: number, dto: CreateChapterDto) {
+    const isFree = dto.isFree ?? false;
+    const price = isFree
+      ? null
+      : dto.price
+        ? new Prisma.Decimal(dto.price)
+        : null;
 
-        const loadFromDatabase = async () => {
-            const [items, total] = await this.prisma.$transaction([
-                this.prisma.chapter.findMany({
-                    where,
-                    orderBy: { index: order },
-                    skip,
-                    take: safeLimit,
-                    select: {
-                        id: true,
-                        title: true,
-                        index: true,
-                        price: true,
-                        isFree: true,
-                        updatedAt: true,
-                        contentPath: path,
-                    },
-                }),
-                this.prisma.chapter.count({ where }),
-            ]);
+    try {
+      const chapter = await this.prisma.chapter.create({
+        data: {
+          book: { connect: { id: bookId } },
+          title: dto.title,
+          index: dto.index,
+          isFree,
+          price,
+          contentPath: dto.contentPath,
+        },
+      });
 
-            return {
-                items: items.map((item) => ({
-                    ...item,
-                    price: item.price ? item.price.toNumber() : null,
-                })),
-                pagination: {
-                    page: safePage,
-                    limit: safeLimit,
-                    total,
-                    totalPages: Math.max(1, Math.ceil(total / safeLimit)),
-                },
-            };
-        };
+      await this.prisma.book.update({
+        where: { id: bookId },
+        data: { updatedAt: new Date() },
+      });
 
-        if (!shouldCache) {
-            return loadFromDatabase();
-        }
-
-        const version = await this.chapterCache.getListVersion(bookId);
-        const cacheKey = this.chapterCache.buildListKey({
-            bookId,
-            q,
-            page: safePage,
-            limit: safeLimit,
-            path,
-            order,
-            version,
-        });
-
-        return this.cacheManager.getOrSet(
-            cacheKey,
-            {
-                ttlSeconds: this.CHAPTERS_LIST_CACHE_TTL_SECONDS,
-                jitterSeconds: Math.ceil(this.CHAPTERS_LIST_CACHE_TTL_SECONDS * 0.1),
-                earlyRefreshWindowSeconds: 12,
-            },
-            loadFromDatabase,
+      await this.cacheManager.del('stats:chapters:count');
+      await this.publicService.clearHomeCache();
+      await this.chapterCache.bumpListVersion(bookId);
+      return chapter;
+    } catch (err: any) {
+      if (err?.code === 'P2002')
+        throw new ConflictException(
+          'Chapter index already exists for this book',
         );
+      throw err;
+    }
+  }
+
+  async updateChapter(
+    bookId: number,
+    chapterId: number,
+    dto: UpdateChapterDto,
+  ) {
+    const existing = await this.prisma.chapter.findFirst({
+      where: { id: chapterId, bookId },
+    });
+    if (!existing) throw new NotFoundException('Chapter not found');
+
+    const nextIsFree = dto.isFree ?? existing.isFree;
+
+    const nextPrice = nextIsFree
+      ? null
+      : dto.price !== undefined
+        ? new Prisma.Decimal(dto.price)
+        : existing.price;
+
+    try {
+      const chapter = await this.prisma.chapter.update({
+        where: { id: chapterId },
+        data: {
+          title: dto.title,
+          index: dto.index,
+          isFree: dto.isFree,
+          price: nextPrice,
+          contentPath: dto.contentPath,
+        },
+        select: {
+          id: true,
+          title: true,
+          index: true,
+          price: true,
+          isFree: true,
+        },
+      });
+
+      await this.prisma.book.update({
+        where: { id: bookId },
+        data: { updatedAt: new Date() },
+      });
+
+      await this.publicService.clearHomeCache();
+      await this.chapterCache.bumpListVersion(bookId);
+      return chapter;
+    } catch (err: any) {
+      if (err?.code === 'P2002')
+        throw new ConflictException(
+          'Chapter index already exists for this book',
+        );
+      throw err;
+    }
+  }
+
+  async deleteChapter(bookId: number, chapterId: number) {
+    const existing = await this.prisma.chapter.findFirst({
+      where: { id: chapterId, bookId },
+    });
+    if (!existing) throw new NotFoundException('Chapter not found');
+
+    await this.prisma.chapter.delete({ where: { id: chapterId } });
+
+    await this.prisma.book.update({
+      where: { id: bookId },
+      data: { updatedAt: new Date() },
+    });
+
+    await this.publicService.clearHomeCache();
+    await this.cacheManager.del('stats:chapters:count');
+    await this.chapterCache.bumpListVersion(bookId);
+    return { id: chapterId, deleted: true };
+  }
+
+  async getAccessibleChapterByIndex(
+    bookId: number,
+    index: number,
+    userId: number,
+  ) {
+    const chapter = await this.prisma.chapter.findFirst({
+      where: { bookId, index },
+      select: {
+        id: true,
+        bookId: true,
+        title: true,
+        index: true,
+        contentPath: true,
+        isFree: true,
+        price: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!chapter) throw new NotFoundException('Chapter not found');
+
+    const hasAccess =
+      chapter.isFree ||
+      Boolean(
+        await this.prisma.accessRecord.findFirst({
+          where: { userId, chapterId: chapter.id },
+          select: { id: true },
+        }),
+      );
+
+    if (!hasAccess) throw new NotFoundException('Chapter access not found');
+
+    return {
+      ...chapter,
+      price: chapter.price ? chapter.price.toNumber() : null,
+    };
+  }
+
+  // User: purchase a chapter
+  async purchaseChapter(userId: number, chapterId: number) {
+    const chapter = await this.prisma.chapter.findUnique({
+      where: { id: chapterId },
+      select: {
+        id: true,
+        index: true,
+        isFree: true,
+        price: true,
+        book: { select: { id: true, title: true } },
+      },
+    });
+
+    if (!chapter) throw new NotFoundException('Chapter not found');
+
+    // Free chapters: just grant chapter access
+    if (chapter.isFree || chapter.price == null) {
+      const existing = await this.prisma.accessRecord.findFirst({
+        where: { userId, chapterId },
+      });
+      if (existing) return existing;
+      return this.prisma.accessRecord.create({
+        data: { userId, chapterId, bookId: chapter.book.id },
+      });
     }
 
-    // Admin: create a new chapter
-    async createChapter(bookId: number, dto: CreateChapterDto) {
-        const isFree = dto.isFree ?? false;
-        const price = isFree ? null : dto.price ? new Prisma.Decimal(dto.price) : null;
+    const existing = await this.prisma.accessRecord.findFirst({
+      where: { userId, chapterId },
+    });
+    if (existing) return existing;
 
-        try {
-            const chapter = await this.prisma.chapter.create({
-                data: {
-                    book: { connect: { id: bookId } },
-                    title: dto.title,
-                    index: dto.index,
-                    isFree,
-                    price,
-                    contentPath: dto.contentPath,
-                },
-            });
-
-            await this.prisma.book.update({
-                where: { id: bookId },
-                data: { updatedAt: new Date() },
-            });
-
-            await this.cacheManager.del('stats:chapters:count');
-            await this.publicService.clearHomeCache();
-            await this.chapterCache.bumpListVersion(bookId);
-            return chapter;
-        } catch (err: any) {
-            if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
-            throw err;
-        }
-    }
-
-    async updateChapter(bookId: number, chapterId: number, dto: UpdateChapterDto) {
-        const existing = await this.prisma.chapter.findFirst({ where: { id: chapterId, bookId } });
-        if (!existing) throw new NotFoundException('Chapter not found');
-
-        const nextIsFree = dto.isFree ?? existing.isFree;
-
-        const nextPrice = nextIsFree ? null : dto.price !== undefined ? new Prisma.Decimal(dto.price) : existing.price;
-
-        try {
-            const chapter = await this.prisma.chapter.update({
-                where: { id: chapterId },
-                data: {
-                    title: dto.title,
-                    index: dto.index,
-                    isFree: dto.isFree,
-                    price: nextPrice,
-                    contentPath: dto.contentPath,
-                },
-                select: {
-                    id: true,
-                    title: true,
-                    index: true,
-                    price: true,
-                    isFree: true,
-                },
-            });
-
-            await this.prisma.book.update({
-                where: { id: bookId },
-                data: { updatedAt: new Date() },
-            });
-
-            await this.publicService.clearHomeCache();
-            await this.chapterCache.bumpListVersion(bookId);
-            return chapter;
-        } catch (err: any) {
-            if (err?.code === 'P2002') throw new ConflictException('Chapter index already exists for this book');
-            throw err;
-        }
-    }
-
-    async deleteChapter(bookId: number, chapterId: number) {
-        const existing = await this.prisma.chapter.findFirst({ where: { id: chapterId, bookId } });
-        if (!existing) throw new NotFoundException('Chapter not found');
-
-        await this.prisma.chapter.delete({ where: { id: chapterId } });
-
-        await this.prisma.book.update({
-            where: { id: bookId },
-            data: { updatedAt: new Date() },
-        });
-
-        await this.publicService.clearHomeCache();
-        await this.cacheManager.del('stats:chapters:count');
-        await this.chapterCache.bumpListVersion(bookId);
-        return { id: chapterId, deleted: true };
-    }
-
-    async getAccessibleChapterByIndex(bookId: number, index: number, userId: number) {
-        const chapter = await this.prisma.chapter.findFirst({
-            where: { bookId, index },
-            select: {
-                id: true,
-                bookId: true,
-                title: true,
-                index: true,
-                contentPath: true,
-                isFree: true,
-                price: true,
-                updatedAt: true,
-            },
-        });
-
-        if (!chapter) throw new NotFoundException('Chapter not found');
-
-        const hasAccess =
-            chapter.isFree ||
-            Boolean(
-                await this.prisma.accessRecord.findFirst({ where: { userId, chapterId: chapter.id }, select: { id: true } }),
-            );
-
-        if (!hasAccess) throw new NotFoundException('Chapter access not found');
-
-        return {
-            ...chapter,
-            price: chapter.price ? chapter.price.toNumber() : null,
-        };
-    }
-
-    // User: purchase a chapter
-    async purchaseChapter(userId: number, chapterId: number) {
-        const chapter = await this.prisma.chapter.findUnique({
-            where: { id: chapterId },
-            select: {
-                id: true,
-                index: true,
-                isFree: true,
-                price: true,
-                book: { select: { id: true, title: true } },
-            },
-        });
-
-        if (!chapter) throw new NotFoundException('Chapter not found');
-
-        // Free chapters: just grant chapter access
-        if (chapter.isFree || chapter.price == null) {
-            const existing = await this.prisma.accessRecord.findFirst({ where: { userId, chapterId } });
-            if (existing) return existing;
-            return this.prisma.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
-        }
-
-        const existing = await this.prisma.accessRecord.findFirst({ where: { userId, chapterId } });
-        if (existing) return existing;
-
-        // Debit + access record in tx
-        return this.prisma.$transaction(async (tx) => {
-            await this.walletsService.debit(
-                userId,
-                chapter.price!.toNumber(),
-                `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
-            );
-            return tx.accessRecord.create({ data: { userId, chapterId, bookId: chapter.book.id } });
-        });
-    }
+    // Debit + access record in tx
+    return this.prisma.$transaction(async (tx) => {
+      await this.walletsService.debit(
+        userId,
+        chapter.price!.toNumber(),
+        `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
+      );
+      return tx.accessRecord.create({
+        data: { userId, chapterId, bookId: chapter.book.id },
+      });
+    });
+  }
 }
