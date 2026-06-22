@@ -61,36 +61,33 @@ export async function enrichLibraryGroups(
   for (const row of chapterCounts)
     chaptersByBookId.set(row.bookId, row._count._all);
 
-  return groups
-    .map((g) => {
-      const bookId = g.bookId as number;
-      const book = byBookId.get(bookId);
-      if (!book) return null;
+  const items: EnrichedLibraryItem[] = [];
+  for (const g of groups) {
+    const bookId = g.bookId as number;
+    const book = byBookId.get(bookId);
+    if (!book) continue;
 
-      const purchasedChapters = g._count._all;
-      const totalChapters = chaptersByBookId.get(bookId) ?? 0;
-      const purchasedPercent =
-        totalChapters <= 0
-          ? 0
-          : Math.min(
-              100,
-              Math.round((purchasedChapters / totalChapters) * 100),
-            );
+    const purchasedChapters = g._count._all;
+    const totalChapters = chaptersByBookId.get(bookId) ?? 0;
+    const purchasedPercent =
+      totalChapters <= 0
+        ? 0
+        : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
 
-      return {
-        book: {
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          coverImage: book.coverImage,
-          updatedAt: book.updatedAt,
-          type: book.type,
-        },
-        purchasedChapters,
-        totalChapters,
-        purchasedPercent,
-        lastPurchasedAt: g._max.purchasedAt,
-      };
-    })
-    .filter((item): item is EnrichedLibraryItem => item !== null);
+    items.push({
+      book: {
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        coverImage: book.coverImage,
+        updatedAt: book.updatedAt,
+        type: book.type as EnrichedLibraryItem['book']['type'],
+      },
+      purchasedChapters,
+      totalChapters,
+      purchasedPercent,
+      lastPurchasedAt: g._max.purchasedAt,
+    });
+  }
+  return items;
 }
