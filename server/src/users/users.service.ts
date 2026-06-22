@@ -153,8 +153,7 @@ export class UsersService {
         const tempData = { email, username, passwordHash, verificationCode };
         await this.cacheManager.setString(redisKey, JSON.stringify(tempData), 120);
 
-        // TODO: Send email
-        console.log(`[MOCK EMAIL] Verification code for ${email}: ${verificationCode}`);
+        // TODO: Send email via a real email service
 
         return { message: 'Verification code sent. Please confirm your email.', tempEmail: email };
     }

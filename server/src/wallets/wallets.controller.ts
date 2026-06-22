@@ -7,6 +7,7 @@ import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import {RolesGuard} from "../auth/roles.guard";
+import { DepositDto } from './dto/deposit.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('wallet')
@@ -30,7 +31,7 @@ export class WalletsController {
     }
 
     @Post('deposit')
-    deposit(@Request() req: any, @Body() body: { amount: number; reference?: string }) {
-        return this.walletsService.credit(req.user.userId, Number(body.amount), body.reference);
+    deposit(@Request() req: any, @Body() body: DepositDto) {
+        return this.walletsService.credit(req.user.userId, body.amount, body.reference);
     }
 }

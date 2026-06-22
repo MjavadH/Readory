@@ -29,7 +29,11 @@ async function main() {
 
     console.log('✅ Roles created/verified.');
 
-    const passwordHash = await argon2.hash('MjavadH'); // Must be more than 8 characters
+    const seedPassword = process.env.SEED_ADMIN_PASSWORD;
+    if (!seedPassword || seedPassword.length < 8) {
+        throw new Error('SEED_ADMIN_PASSWORD env var is required (min 8 chars)');
+    }
+    const passwordHash = await argon2.hash(seedPassword);
 
     const admin = await prisma.user.upsert({
         where: { email: 'MjavadH@gmail.com' }, // Only @gmail.com
