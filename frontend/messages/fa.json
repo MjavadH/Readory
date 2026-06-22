@@ -328,7 +328,8 @@
     "MinCharacters": "حداقل ۸ کاراکتر",
     "ConfirmNewPassword": "تأیید رمز عبور جدید",
     "RepeatNewPassword": "تکرار رمز عبور جدید",
-    "UpdatePassword": "به‌روزرسانی رمز عبور"
+    "UpdatePassword": "به‌روزرسانی رمز عبور",
+    "ShowingTotalFavorites": "نمایش کتاب‌های‌ موردعلاقه شما(مجموع: {Total})"
   },
   "HomePage": {
     "By": "توسط",

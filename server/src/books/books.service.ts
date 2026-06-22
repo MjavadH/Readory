@@ -925,8 +925,10 @@ export class BooksService {
         const limit = clamp(args.limit, 1, 50);
         const skip = (page - 1) * limit;
 
-        const [total, favorites] = await this.prisma.$transaction([
-            this.prisma.favoriteBook.count({ where: { userId } }),
+        const [total, favorites] = await Promise.all([
+            this.prisma.favoriteBook.count({
+                where: { userId },
+            }),
             this.prisma.favoriteBook.findMany({
                 where: { userId },
                 orderBy: { createdAt: 'desc' },
@@ -941,22 +943,35 @@ export class BooksService {
                             coverImage: true,
                             ratingAvg: true,
                             ratingCount: true,
-                            type: { select: { name: true, slug: true } },
+                            updatedAt: true,
+                            type: {
+                                select: {
+                                    name: true,
+                                    slug: true,
+                                },
+                            },
                         },
                     },
                 },
             }),
         ]);
 
+        const data = favorites.map(({ book }) => ({
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            coverImage: book.coverImage,
+            ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
+            ratingCount: book.ratingCount,
+            updatedAt: book.updatedAt.toISOString(),
+            type: book.type,
+        }));
+
         return {
-            items: favorites.map((f) => ({
-                ...f.book,
-                ratingAvg: Number(toNumber(f.book.ratingAvg).toFixed(2)),
-            })),
+            data,
             total,
             page,
-            limit,
-            hasMore: skip + favorites.length < total,
+            lastPage: Math.max(1, Math.ceil(total / limit)),
         };
     }
 

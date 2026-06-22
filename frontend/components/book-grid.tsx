@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { BookCard } from "@/components/book-card";
 import { BookCardSkeleton } from "@/components/book-card-skeleton";
 import type { BookCardData } from "@/lib/types";
+import { motion } from "framer-motion";
 
 interface BookGridProps {
     books: BookCardData[];
@@ -27,11 +28,20 @@ export function BookGrid({
             )}
         >
             {books.map((book, index) => (
-                <BookCard
+                <motion.div
                     key={book.slug ?? book.id}
-                    book={book}
-                    priority={index < priorityCount}
-                />
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <BookCard
+                        key={book.slug ?? book.id}
+                        book={book}
+                        priority={index < priorityCount}
+                    />
+                </motion.div>
             ))}
         </div>
     );

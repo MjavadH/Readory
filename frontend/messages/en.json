@@ -328,7 +328,8 @@
     "MinCharacters": "Min. 8 characters",
     "ConfirmNewPassword": "Confirm New Password",
     "RepeatNewPassword": "Repeat new password",
-    "UpdatePassword": "Update Password"
+    "UpdatePassword": "Update Password",
+    "ShowingTotalFavorites": "Showing your favorite books (Total: {Total})"
   },
   "HomePage": {
     "By": "by",

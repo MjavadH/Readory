@@ -3,18 +3,18 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api-client";
-import { LibraryResponse } from "@/lib/types";
-import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCard";
-import {Library, AlertCircle} from "lucide-react";
+import {FavoriteBooksResponse} from "@/lib/types";
+import {LucideBookHeart, AlertCircle} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 import {useTranslations} from "next-intl";
+import {BookGrid, BookGridSkeleton} from "@/components/book-grid";
 
 const ITEMS_PER_PAGE = 24
 
 export default function LibraryPage() {
     const t = useTranslations('UserDashboard');
-    const [data, setData] = useState<LibraryResponse | null>(null);
+    const [data, setData] = useState<FavoriteBooksResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -23,7 +23,7 @@ export default function LibraryPage() {
         async function fetchData() {
             setLoading(true);
             try {
-                const res = await apiClient.get<LibraryResponse>("/dashboard/library", {
+                const res = await apiClient.get<FavoriteBooksResponse>("/books/favorites", {
                     query: { page, limit: ITEMS_PER_PAGE }
                 });
                 setData(res);
@@ -53,8 +53,8 @@ export default function LibraryPage() {
                 </section>
 
                 {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <LibraryCardSkeleton limit={12} />
+                <div>
+                    <BookGridSkeleton count={6} />
                 </div>
             </div>
         );
@@ -86,26 +86,25 @@ export default function LibraryPage() {
                 <div className="space-y-1">
                     <h1 className="text-4xl font-extrabold tracking-tight text-foreground flex items-center gap-4">
                         <div className="p-3 bg-primary/10 rounded-2xl">
-                            <Library className="w-8 h-8 text-primary" />
+                            <LucideBookHeart className="w-8 h-8 text-primary" />
                         </div>
-                        {t("MyLibrary")}
+                        {t("Favorites")}
                     </h1>
                     <p className="text-muted-foreground font-medium text-lg ms-16">
-                        {t("ShowingTotalBooks", {Total: data?.total || 0})}
+                        {t("ShowingTotalFavorites", {Total: data?.total || 0})}
                     </p>
                 </div>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {data?.data.map((item) => (
-                        <LibraryCard
-                            key={item.book.id}
-                            item={item}
-                            className="min-h-105"
+            <div>
+                {data && (
+                    <AnimatePresence mode="popLayout">
+                        <BookGrid
+                            books={data.data}
+                            priorityCount={6}
                         />
-                    ))}
-                </AnimatePresence>
+                    </AnimatePresence>
+                )}
             </div>
             {data ? (
                 <AppPagination

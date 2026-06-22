@@ -99,6 +99,13 @@ export interface LibraryResponse {
     lastPage: number;
 }
 
+export interface FavoriteBooksResponse {
+    data: BookCardData[];
+    total: number;
+    page: number;
+    lastPage: number;
+}
+
 export interface ReadingProgressResponse {
     data: ReadingProgress[];
     total: number;
