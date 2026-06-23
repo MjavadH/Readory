@@ -6,7 +6,7 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
-  ListObjectsV2Command,
+  ListObjectsV2Command, PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -57,6 +57,26 @@ export class StorageService implements OnModuleInit {
       }
       this.logger.warn(`Creating S3 bucket: ${this.bucket}`);
       await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
+
+      const publicReadPolicy = {
+        Version: '2026-23-06',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: '*',
+            Action: ['s3:GetObject'],
+            // Restrict public access to media directory
+            Resource: [`arn:aws:s3:::${this.bucket}/media/*`],
+          },
+        ],
+      };
+      await this.s3.send(
+          new PutBucketPolicyCommand({
+            Bucket: this.bucket,
+            Policy: JSON.stringify(publicReadPolicy),
+          })
+      );
+
       this.logger.log(`S3 bucket created: ${this.bucket}`);
     }
   }

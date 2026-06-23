@@ -11,7 +11,7 @@ const s3RemotePattern = (() => {
             protocol: url.protocol.replace(':', '') as 'http' | 'https',
             hostname: url.hostname,
             port: url.port,
-            pathname: '/media/book-covers/**',
+            pathname: '/**',
         }
     } catch {
         return null
@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
         remotePatterns: [
             ...(s3RemotePattern ? [s3RemotePattern] : []),
         ],
+        dangerouslyAllowLocalIP: true,
     },
 };
 const withNextIntl = createNextIntlPlugin();
