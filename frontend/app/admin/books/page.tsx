@@ -1,4 +1,5 @@
 "use client"
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
@@ -381,7 +382,7 @@ export default function AdminBooks() {
                                 {newBook.coverImage && (
                                     <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/20">
                                         <img
-                                            src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${newBook.coverImage}/thumbnail`}
+                                            src={`${getBookCoverThumbnailUrl(newBook.coverImage)}`}
                                             alt={newCoverLabel || "image"}
                                             className="w-14 aspect-3/4 rounded-md object-cover border"
                                             loading="lazy"

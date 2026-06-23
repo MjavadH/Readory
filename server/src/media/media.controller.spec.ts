@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
+jest.mock('@prisma/client', () => ({
+  RoleName: { ADMIN: 'ADMIN' },
+  PrismaClient: class {},
+}));
 jest.mock('uuid', () => ({ v4: () => 'test-uuid' }));
 jest.mock(
   'file-type',

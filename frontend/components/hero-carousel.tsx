@@ -1,3 +1,4 @@
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
     const book = books[current];
     const bookTypeSlug = book.type.slug;
     const coverSrc = book.coverImage
-        ? `/media/${book.coverImage}/thumbnail`
+        ? getBookCoverThumbnailUrl(book.coverImage)
         : "/placeholder.svg";
 
     return (

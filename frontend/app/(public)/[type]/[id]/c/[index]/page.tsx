@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
@@ -709,7 +710,7 @@ export default function ChapterPage() {
             : `${g("CurrencySymbols")}${Number(lockedPrice ?? 0).toFixed(2)}`;
 
         const coverSrc = book?.coverImage
-            ? `/media/${book.coverImage}/thumbnail`
+            ? getBookCoverThumbnailUrl(book.coverImage)
             : "/placeholder.svg";
 
         // Per-variant presentation.

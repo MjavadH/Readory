@@ -1,5 +1,6 @@
 "use client"
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import type React from "react"
 import { useEffect, useState } from "react"
 import Image from "next/image"
@@ -394,7 +395,7 @@ export default function AdminMedia() {
                           >
                             <div className="aspect-2/3 relative bg-muted">
                               <Image
-                                  src={`${process.env.NEXT_PUBLIC_API_BASE}/media/${file.code}/thumbnail`}
+                                  src={`${getBookCoverThumbnailUrl(file.code)}`}
                                   alt={file.filename || "Image"}
                                   fill
                                   className="object-cover"

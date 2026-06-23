@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -67,7 +68,7 @@ export function ChapterPurchaseDialog({
         : `${g("CurrencySymbols")}${Number(chapter.price ?? 0).toFixed(2)}`;
 
     const coverSrc = book.coverImage
-        ? `/media/${book.coverImage}/thumbnail`
+        ? getBookCoverThumbnailUrl(book.coverImage)
         : "/placeholder.svg";
 
     const handleClose = useCallback(() => {

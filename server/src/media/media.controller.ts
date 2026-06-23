@@ -8,7 +8,6 @@ import {
     Query,
     UseGuards,
     UseInterceptors,
-    Res,
     Param,
     BadRequestException,
     DefaultValuePipe,
@@ -46,27 +45,6 @@ export class MediaController {
         return this.mediaService.listPaged({ q, page, limit });
     }
 
-    @Get(':code')
-    async getMedia(@Param('code') code: string, @Res() res: any) {
-        const { stream } = await this.mediaService.getFileStream(code);
-        res.set({
-            'Content-Type': 'image/webp',
-            'X-Content-Type-Options': 'nosniff',
-            'Cache-Control': 'public, max-age=86400',
-        });
-        stream.pipe(res);
-    }
-
-    @Get(':code/thumbnail')
-    async getThumbnail(@Param('code') code: string, @Res() res: any) {
-        const { stream } = await this.mediaService.getThumbnailStream(code);
-        res.set({
-            'Content-Type': 'image/webp',
-            'X-Content-Type-Options': 'nosniff',
-            'Cache-Control': 'public, max-age=86400',
-        });
-        stream.pipe(res);
-    }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -101,7 +79,7 @@ export class MediaController {
         const created: Array<{ code: string; filename: string; size: number }> = [];
         const failed: Array<{ name: string; reason: string }> = [];
 
-        // Sequential processing avoids CPU spikes (sharp + disk)
+        // Sequential processing avoids CPU spikes while optimizing thumbnails
         for (const f of files) {
             try {
                 if (!f?.buffer) throw new BadRequestException('Invalid upload');
@@ -113,7 +91,7 @@ export class MediaController {
                 }
 
                 const code = uuidv4();
-                const { storageKey, size } = await this.mediaService.storeImagePair(code, f.buffer);
+                const { storageKey, size } = await this.mediaService.storeBookCoverThumbnail(code, f.buffer);
 
                 const record = await this.mediaService.createRecord({
                     code,

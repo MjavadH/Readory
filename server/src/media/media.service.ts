@@ -6,28 +6,31 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import * as fs from 'fs';
-import * as path from 'path';
 import sharp from 'sharp';
-import { Readable } from 'stream';
+import { StorageService } from '../storage/storage.service';
+
+const COVER_THUMBNAIL_CACHE_CONTROL = 'public, max-age=31536000, immutable';
+const COVER_THUMBNAIL_WIDTH = 480;
+const COVER_THUMBNAIL_QUALITY = 82;
 
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly storage: StorageService,
+  ) {}
 
-  private uploadsDir() {
-    return path.join(process.cwd(), 'uploads');
+  private coverThumbnailKey(code: string) {
+    return `media/book-covers/${code}/thumbnail.webp`;
   }
 
-  private thumbsDir() {
-    return path.join(this.uploadsDir(), 'thumbnails');
-  }
-
-  private async ensureDirs() {
-    await fs.promises.mkdir(this.uploadsDir(), { recursive: true });
-    await fs.promises.mkdir(this.thumbsDir(), { recursive: true });
+  private toPublicMediaItem<T extends { storageKey?: string | null }>(item: T) {
+    return {
+      ...item,
+      url: item.storageKey ? this.storage.getPublicUrl(item.storageKey) : null,
+    };
   }
 
   async createRecord(params: {
@@ -38,12 +41,18 @@ export class MediaService {
     size: number;
   }) {
     try {
-      return await this.prisma.media.create({ data: params });
+      const record = await this.prisma.media.create({ data: params });
+      return this.toPublicMediaItem(record);
     } catch (e) {
       this.logger.error(
         `Failed to create media record: ${(e as Error).message}`,
         (e as Error).stack,
       );
+      await this.storage.deleteKeys([params.storageKey]).catch((err) => {
+        this.logger.error(
+          `Failed to clean up uploaded media object ${params.storageKey}: ${(err as Error).message}`,
+        );
+      });
       throw new InternalServerErrorException('Failed to create media record');
     }
   }
@@ -52,11 +61,11 @@ export class MediaService {
     const q = params.q?.trim();
     const page = Number.isFinite(params.page) ? Math.max(1, params.page) : 1;
     const limitRaw = Number.isFinite(params.limit) ? params.limit : 50;
-    const limit = Math.min(Math.max(1, limitRaw), 100); // hard cap for safety
+    const limit = Math.min(Math.max(1, limitRaw), 100);
 
     const where = q
       ? {
-          filename: { contains: q.slice(0, 80), mode: 'insensitive' as const }, // avoid abusive long queries
+          filename: { contains: q.slice(0, 80), mode: 'insensitive' as const },
         }
       : undefined;
 
@@ -72,6 +81,7 @@ export class MediaService {
         select: {
           code: true,
           filename: true,
+          storageKey: true,
           size: true,
           createdAt: true,
         },
@@ -79,7 +89,7 @@ export class MediaService {
     ]);
 
     return {
-      items,
+      items: items.map((item: { storageKey: string | null }) => this.toPublicMediaItem(item)),
       page,
       limit,
       total,
@@ -87,60 +97,23 @@ export class MediaService {
     };
   }
 
-  async storeImagePair(code: string, buffer: Buffer) {
-    await this.ensureDirs();
-
-    // Convert + strip metadata
-    const sanitized = await sharp(buffer).webp({ quality: 90 }).toBuffer();
-
-    // Create thumbnail once (huge server-load reduction)
-    const thumb = await sharp(sanitized)
-      .resize({ width: 300, withoutEnlargement: true })
-      .webp({ quality: 80 })
+  async storeBookCoverThumbnail(code: string, buffer: Buffer) {
+    const thumbnail = await sharp(buffer, { failOn: 'warning' })
+      .rotate()
+      .resize({ width: COVER_THUMBNAIL_WIDTH, withoutEnlargement: true })
+      .webp({ quality: COVER_THUMBNAIL_QUALITY, effort: 5 })
       .toBuffer();
 
-    const storageKey = `${code}.webp`;
-    const filePath = path.join(this.uploadsDir(), storageKey);
-    const thumbPath = path.join(this.thumbsDir(), `${code}.webp`);
+    const storageKey = this.coverThumbnailKey(code);
 
-    await fs.promises.writeFile(filePath, sanitized);
-    await fs.promises.writeFile(thumbPath, thumb);
+    await this.storage.putObject({
+      key: storageKey,
+      body: thumbnail,
+      contentType: 'image/webp',
+      cacheControl: COVER_THUMBNAIL_CACHE_CONTROL,
+    });
 
-    return { storageKey, size: sanitized.length };
-  }
-
-  async getFileStream(code: string) {
-    const record = await this.prisma.media.findUnique({ where: { code } });
-    if (!record) throw new NotFoundException('File not found');
-
-    const filePath = path.join(this.uploadsDir(), record.storageKey);
-    if (!fs.existsSync(filePath)) throw new NotFoundException('File not found');
-
-    return { record, stream: fs.createReadStream(filePath) };
-  }
-
-  async getThumbnailStream(code: string) {
-    const record = await this.prisma.media.findUnique({ where: { code } });
-    if (!record) throw new NotFoundException('File not found');
-
-    const thumbPath = path.join(this.thumbsDir(), `${code}.webp`);
-    if (fs.existsSync(thumbPath)) {
-      return { record, stream: fs.createReadStream(thumbPath) };
-    }
-
-    // Fallback (if old media has no cached thumbnail yet)
-    const filePath = path.join(this.uploadsDir(), record.storageKey);
-    if (!fs.existsSync(filePath)) throw new NotFoundException('File not found');
-
-    const buf = await sharp(filePath)
-      .resize({ width: 300, withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
-
-    await this.ensureDirs();
-    await fs.promises.writeFile(thumbPath, buf);
-
-    return { record, stream: Readable.from(buf) };
+    return { storageKey, size: thumbnail.length, url: this.storage.getPublicUrl(storageKey) };
   }
 
   async renameByCode(code: string, filename: string) {
@@ -148,11 +121,12 @@ export class MediaService {
     if (!record) throw new NotFoundException('Media not found');
 
     try {
-      return await this.prisma.media.update({
+      const updated = await this.prisma.media.update({
         where: { code },
         data: { filename },
-        select: { code: true, filename: true },
+        select: { code: true, filename: true, storageKey: true },
       });
+      return this.toPublicMediaItem(updated);
     } catch (err: any) {
       if (err?.code === 'P2002')
         throw new ConflictException('Filename already exists');
@@ -166,26 +140,13 @@ export class MediaService {
 
     await this.prisma.media.delete({ where: { code } });
 
-    const filePath = path.join(this.uploadsDir(), record.storageKey);
-    const thumbPath = path.join(this.thumbsDir(), `${code}.webp`);
-
     try {
-      await fs.promises.unlink(filePath);
+      await this.storage.deleteKeys([record.storageKey]);
     } catch (err: any) {
-      if (err?.code !== 'ENOENT') {
-        this.logger.error(
-          `Failed to delete media file ${filePath}: ${err.message}`,
-        );
-      }
-    }
-    try {
-      await fs.promises.unlink(thumbPath);
-    } catch (err: any) {
-      if (err?.code !== 'ENOENT') {
-        this.logger.error(
-          `Failed to delete thumbnail ${thumbPath}: ${err.message}`,
-        );
-      }
+      this.logger.error(
+        `Failed to delete media object ${record.storageKey}: ${err.message}`,
+      );
+      throw new InternalServerErrorException('Failed to delete media object');
     }
 
     return { code, deleted: true };

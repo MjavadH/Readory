@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -63,7 +64,7 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
 
                 {/* Image with smooth scale on hover */}
                 <Image
-                    src={book.coverImage ? `/media/${book.coverImage}/thumbnail` : "/placeholder.svg"}
+                    src={book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : "/placeholder.svg"}
                     alt={`Cover of ${book.title}`}
                     fill
                     sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"

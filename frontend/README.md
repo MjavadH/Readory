@@ -115,7 +115,7 @@ The application primarily uses React component state, context providers, and dat
 - Uses `credentials: "include"` by default for cookie-backed sessions.
 - Normalizes failed responses into `ApiError` instances.
 
-`next.config.ts` also defines a rewrite from `/media/:path*` to the backend media endpoint based on `NEXT_PUBLIC_API_BASE`.
+`next.config.ts` allows optimized Next.js image loading from the configured S3 media base URL for book-cover thumbnails.
 
 ## Authentication Flow
 
@@ -146,7 +146,7 @@ Repository-visible optimizations include:
 - Next.js App Router server/client component separation.
 - `fetch` options in `api-client.ts` support `cache` and `next` revalidation settings.
 - Skeleton components for loading states.
-- Dedicated image/media rewrite for backend media resources.
+- Direct S3/CDN delivery for immutable optimized book-cover thumbnails.
 - Centralized pagination components for large lists.
 - Reader-specific UI components separated from general page components.
 
@@ -156,7 +156,8 @@ Create `frontend/.env.local` from `frontend/.env.local.example`.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_API_BASE` | Yes | Base URL of the NestJS API server. Also used for `/media/:path*` rewrites. |
+| `NEXT_PUBLIC_API_BASE` | Yes | Base URL of the NestJS API server. |
+| `NEXT_PUBLIC_S3_PUBLIC_BASE_URL` | Yes | Public CDN/S3 base URL used to render optimized book-cover thumbnails. |
 
 ## Development Commands
 
@@ -211,6 +212,6 @@ frontend/
 
 - If API requests fail in development, confirm `NEXT_PUBLIC_API_BASE` points to the running NestJS server.
 - If authenticated requests fail, confirm the backend CORS origin includes the frontend URL and credentials are allowed.
-- If media does not render locally, confirm the backend is reachable and the `/media/:path*` rewrite points at the correct API base.
+- If media does not render locally, confirm `NEXT_PUBLIC_S3_PUBLIC_BASE_URL` matches the backend `S3_PUBLIC_BASE_URL` and publicly serves `media/book-covers/**` objects.
 - If shared imports fail, run `npm run build:shared` from the repository root.
 - If localization messages are missing, confirm the selected locale has a corresponding file in `messages/`.
