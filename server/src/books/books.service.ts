@@ -81,7 +81,7 @@ export class BooksService {
       }
     }
 
-    const limitRaw = Number(args.limit) || 24;
+    const limitRaw = Number(args.limit) || 18;
     const limit = clamp(limitRaw, 1, 50);
     const sort: BrowseSort = args.sort ?? 'recently_updated';
     const q = normalizeQ(args.q);

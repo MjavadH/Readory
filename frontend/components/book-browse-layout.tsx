@@ -193,7 +193,7 @@ export function BookBrowseLayout({
 
                     {/* Main Content */}
                     <main className="flex-1">
-                        {isLoading ? <BookGridSkeleton count={24} /> : books.length === 0 ? (
+                        {isLoading ? <BookGridSkeleton count={18} /> : books.length === 0 ? (
                             <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
                                 <Search className="h-8 w-8 text-muted-foreground mb-4" />
                                 <h3 className="text-lg font-semibold">{t("NoBooksFound")}</h3>
