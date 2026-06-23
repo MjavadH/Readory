@@ -1,4 +1,5 @@
 "use client"
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { useCallback, useEffect, useState } from 'react';
 import {
     ArrowLeft,
@@ -360,7 +361,7 @@ export default function AdminBookDetail() {
                                 <div className="relative mx-auto w-full max-w-75">
                                     <div className="group relative overflow-hidden rounded-2xl shadow-2xl transition-transform duration-300 hover:scale-[1.02]">
                                         <Image
-                                            src={coverCodeForDisplay ? `/media/${coverCodeForDisplay}/thumbnail` : '/placeholder.svg'}
+                                            src={coverCodeForDisplay ? getBookCoverThumbnailUrl(coverCodeForDisplay) : '/placeholder.svg'}
                                             alt={book.title}
                                             width={280}
                                             height={420}

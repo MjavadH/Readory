@@ -1,5 +1,6 @@
 "use client"
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -15,6 +16,7 @@ export type MediaItem = {
     filename: string
     createdAt?: string
     size?: number
+    url?: string | null
 }
 
 type PagedMediaResponse = {
@@ -207,7 +209,7 @@ export function MediaPicker({
                                     >
                                         <div className="aspect-2/3 bg-muted relative">
                                             <img
-                                                src={`${apiBase}/media/${m.code}/thumbnail`}
+                                                src={`${getBookCoverThumbnailUrl(m.code)}`}
                                                 alt={m.filename || "image"}
                                                 className="w-full h-full object-cover"
                                                 loading="lazy"

@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { ReadingProgress } from "@/lib/types";
 import { BookOpen, Clock, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -79,7 +80,7 @@ export function ContinueReadingCard({ progress }: Props) {
                     <Image
                         src={
                             progress.book.coverImage
-                                ? `/media/${progress.book.coverImage}/thumbnail`
+                                ? getBookCoverThumbnailUrl(progress.book.coverImage)
                                 : "/placeholder.svg"
                         }
                         alt={progress.book.title}

@@ -24,6 +24,7 @@ export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
   private readonly bucket: string;
   private readonly autoCreateBucket: boolean;
+  private readonly publicBaseUrl?: string;
 
   constructor(
     private readonly s3: S3Client,
@@ -35,6 +36,8 @@ export class StorageService implements OnModuleInit {
 
     this.autoCreateBucket =
       (config.get<string>('S3_AUTO_CREATE_BUCKET') ?? 'false') === 'true';
+    const publicBaseUrl = config.get<string>('S3_PUBLIC_BASE_URL')?.trim();
+    this.publicBaseUrl = publicBaseUrl ? publicBaseUrl.replace(/\/+$/, '') : undefined;
   }
 
   async onModuleInit() {
@@ -208,6 +211,14 @@ export class StorageService implements OnModuleInit {
     }
 
     return deleted;
+  }
+
+  getPublicUrl(key: string) {
+    if (!this.publicBaseUrl) return null;
+    return `${this.publicBaseUrl}/${key
+      .split('/')
+      .map((part) => encodeURIComponent(part))
+      .join('/')}`;
   }
 
   getBucketName() {

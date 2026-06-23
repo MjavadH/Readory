@@ -1,22 +1,27 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from 'next-intl/plugin';
 
-const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? "http://localhost:3000"
+const s3MediaBase = process.env.NEXT_PUBLIC_S3_PUBLIC_BASE_URL
+
+const s3RemotePattern = (() => {
+    if (!s3MediaBase) return null
+    try {
+        const url = new URL(s3MediaBase)
+        return {
+            protocol: url.protocol.replace(':', '') as 'http' | 'https',
+            hostname: url.hostname,
+            port: url.port,
+            pathname: '/media/book-covers/**',
+        }
+    } catch {
+        return null
+    }
+})()
 
 const nextConfig: NextConfig = {
-    async rewrites() {
-        return [
-            { source: "/media/:path*", destination: `${apiBase}/media/:path*` },
-        ]
-    },
     images: {
         remotePatterns: [
-            {
-                protocol: "http",
-                hostname: "localhost",
-                port: "3000",
-                pathname: "/media/**",
-            },
+            ...(s3RemotePattern ? [s3RemotePattern] : []),
         ],
     },
 };

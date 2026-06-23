@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, Sparkles } from "lucide-react";
@@ -134,7 +135,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                             {/* Cover */}
                             <div className="relative aspect-2/3 w-20 shrink-0 overflow-hidden rounded-lg bg-muted ring-1 ring-border/50 md:w-24">
                                 <Image
-                                    src={book.cover ? `/media/${book.cover}/thumbnail` : "/placeholder.svg"}
+                                    src={book.cover ? getBookCoverThumbnailUrl(book.cover) : "/placeholder.svg"}
                                     alt={book.title}
                                     fill
                                     sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"

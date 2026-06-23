@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -404,7 +405,7 @@ export default function BookDetailsPage() {
                   <Image
                       src={
                         book.coverImage
-                            ? `/media/${book.coverImage}/thumbnail`
+                            ? getBookCoverThumbnailUrl(book.coverImage)
                             : "/placeholder.svg"
                       }
                       alt={`Cover of ${book.title}`}

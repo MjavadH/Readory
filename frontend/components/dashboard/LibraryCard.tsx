@@ -1,5 +1,6 @@
 "use client";
 
+import { getBookCoverThumbnailUrl } from "@/lib/media"
 import {getBookUrl, LibraryItem} from "@/lib/types";
 import { CheckCircle2, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
@@ -64,7 +65,7 @@ export function LibraryCard({ item, className }: Props) {
 
                 <div className="aspect-3/4 rounded-2xl overflow-hidden bg-muted mb-4 relative z-10 shadow-lg group-hover:-translate-y-1 transition-transform duration-500">
                     <Image
-                        src={item.book.coverImage ? `/media/${item.book.coverImage}/thumbnail` : "/placeholder.svg"}
+                        src={item.book.coverImage ? getBookCoverThumbnailUrl(item.book.coverImage) : "/placeholder.svg"}
                         alt={item.book.title}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                         fill
