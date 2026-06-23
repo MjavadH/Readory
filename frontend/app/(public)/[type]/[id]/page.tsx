@@ -1,6 +1,6 @@
 "use client";
 
-import { getBookCoverThumbnailUrl } from "@/lib/media"
+import { getBookCoverThumbnailUrl } from "@/lib/media";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -79,36 +79,31 @@ const CHAPTERS_PER_PAGE = 60;
 
 function BookDetailsSkeleton() {
   return (
-      <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="animate-pulse">
-          <Card className="overflow-hidden border-border">
-            <CardContent className="p-5 sm:p-8">
-              <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-                <div className="mx-auto aspect-2/3 w-44 rounded-2xl bg-muted sm:w-56 lg:w-full" />
-                <div className="space-y-6">
-                  <div className="space-y-3">
-                    <div className="h-8 w-3/4 rounded-lg bg-muted" />
-                    <div className="h-5 w-1/3 rounded-lg bg-muted" />
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-6 w-20 rounded-full bg-muted" />
-                    ))}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 w-full rounded bg-muted" />
-                    <div className="h-4 w-full rounded bg-muted" />
-                    <div className="h-4 w-2/3 rounded bg-muted" />
-                  </div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="h-20 rounded-xl bg-muted" />
-                    ))}
-                  </div>
-                </div>
+      <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="animate-pulse overflow-hidden rounded-3xl border border-border bg-card">
+          <div className="h-40 bg-muted sm:h-56" />
+          <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[260px_1fr] lg:gap-10">
+            <div className="-mt-24 mx-auto aspect-2/3 w-44 rounded-2xl bg-muted sm:w-56 lg:w-full" />
+            <div className="space-y-5">
+              <div className="h-9 w-3/4 rounded-lg bg-muted" />
+              <div className="h-5 w-1/3 rounded-lg bg-muted" />
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-7 w-20 rounded-full bg-muted" />
+                ))}
               </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-muted" />
+                <div className="h-4 w-full rounded bg-muted" />
+                <div className="h-4 w-2/3 rounded bg-muted" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-20 rounded-2xl bg-muted" />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
   );
@@ -117,10 +112,10 @@ function BookDetailsSkeleton() {
 function BrowseChaptersSkeleton() {
   return (
       <div className="animate-pulse space-y-4">
-        <div className="h-10 w-full max-w-sm rounded-lg bg-muted" />
+        <div className="h-11 w-full max-w-sm rounded-xl bg-muted" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-28 rounded-xl bg-muted" />
+              <div key={i} className="h-28 rounded-2xl bg-muted" />
           ))}
         </div>
       </div>
@@ -281,7 +276,9 @@ export default function BookDetailsPage() {
     if (!book) return;
     setFavoriteLoading(true);
     try {
-      const res: {favorited: boolean} = await apiClient.post(`/books/${book.id}/favorite`);
+      const res: { favorited: boolean } = await apiClient.post(
+          `/books/${book.id}/favorite`,
+      );
       setIsFavorited(res.favorited);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
@@ -334,7 +331,7 @@ export default function BookDetailsPage() {
 
   if (!book) {
     return (
-        <div className="container mx-auto max-w-7xl px-4 py-16 text-center sm:py-24">
+        <div className="mx-auto w-full max-w-7xl px-4 py-20 text-center sm:py-28">
           <div className="mx-auto max-w-md">
             <div className="mb-5 flex justify-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
@@ -351,144 +348,163 @@ export default function BookDetailsPage() {
   }
 
   const ratingValue = Number(book.ratingAvg ?? 0);
-
-  const stats = [
-    {
-      key: "rating",
-      icon: Star,
-      iconClass: "bg-amber-500 dark:bg-amber-500",
-      label: t("Rating"),
-      value: (
-          <span className="flex items-baseline gap-1">
-          <span className="text-2xl font-bold text-foreground">
-            {ratingValue.toFixed(1)}
-          </span>
-          <span className="text-sm text-muted-foreground">/ 5</span>
-        </span>
-      ),
-      sub: t("NReviews", { count: book.ratingCount }),
-    },
-    {
-      key: "updated",
-      icon: Clock,
-      iconClass: "bg-blue-600 dark:bg-blue-500",
-      label: t("LastUpdated"),
-      value: (
-          <span className="text-base font-semibold text-foreground">
-          {formatUpdateTime(book.updatedAt, ti)}
-        </span>
-      ),
-      sub: null,
-    },
-    {
-      key: "chapters",
-      icon: BookOpen,
-      iconClass: "bg-emerald-600 dark:bg-emerald-500",
-      label: t("TotalChapters"),
-      value: (
-          <span className="text-2xl font-bold text-foreground">
-          {chaptersTotal}
-        </span>
-      ),
-      sub: null,
-    },
-  ];
+  const coverSrc = book.coverImage
+      ? getBookCoverThumbnailUrl(book.coverImage)
+      : "/placeholder.svg";
 
   return (
-      <div className="container mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        {/* Hero */}
-        <Card className="overflow-hidden border-border shadow-sm">
-          <CardContent className="p-5 sm:p-8">
-            <div className="grid gap-6 lg:grid-cols-[260px_1fr] lg:gap-8">
-              <div className="mx-auto w-44 sm:w-56 lg:w-full">
-                <div className="group relative aspect-2/3 overflow-hidden rounded-2xl bg-muted shadow-lg ring-1 ring-border">
+      <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:space-y-12 lg:px-8 lg:py-10">
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+          {/* Ambient cover backdrop */}
+          <div className="absolute inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
+            <Image
+                src={coverSrc}
+                alt=""
+                aria-hidden
+                fill
+                sizes="100vw"
+                className="scale-110 object-cover opacity-40 blur-2xl"
+                priority
+            />
+            <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/70 to-card" />
+          </div>
+
+          <div className="relative p-5 pt-28 sm:p-8 sm:pt-36 lg:p-10 lg:pt-44">
+            <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
+              {/* Cover */}
+              <div className="mx-auto w-40 sm:w-52 lg:w-full">
+                <div className="group relative aspect-2/3 overflow-hidden rounded-2xl bg-muted shadow-2xl ring-1 ring-border">
                   <Image
-                      src={
-                        book.coverImage
-                            ? getBookCoverThumbnailUrl(book.coverImage)
-                            : "/placeholder.svg"
-                      }
+                      src={coverSrc}
                       alt={`Cover of ${book.title}`}
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="(max-width: 640px) 11rem, (max-width: 1024px) 14rem, 260px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(max-width: 640px) 10rem, (max-width: 1024px) 13rem, 260px"
                       priority
                   />
                 </div>
               </div>
 
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <h1 className="text-balance text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-                    {book.title}
-                  </h1>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <User className="h-4 w-4 shrink-0" />
-                    <span className="text-sm font-medium">
-                    {book.author || t("UnknownAuthor")}
-                  </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleToggleFavorite}
-                      disabled={favoriteLoading}
-                      className={`border-border transition-colors  ${
-                          isFavorited ? "text-red-500 hover:text-red-600 bg-red-50/10" : "text-muted-foreground hover:text-red-500"
-                      }`}
-                  >
-                    <Heart className={`h-5 w-5 transition-transform active:scale-95 ${isFavorited ? "fill-current" : ""}`} />
-                  </Button>
-                  <Badge className="gap-1.5 border-transparent bg-blue-600 text-white hover:bg-blue-600 dark:bg-blue-500">
+              {/* Meta */}
+              <div className="space-y-6">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="gap-1.5 border-transparent bg-primary text-primary-foreground hover:bg-primary">
                     <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
                     {book.type.name}
                   </Badge>
-                  {book.genres.map((genre) => (
-                      <Badge
-                          key={genre.id}
-                          variant="outline"
-                          className="gap-1.5 border-border bg-background"
-                      >
-                        <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
-                        {genre.name}
+                  {book.isFeatured && (
+                      <Badge className="gap-1.5 border-transparent bg-amber-500 text-white hover:bg-amber-500">
+                        <Sparkles className="h-3.5 w-3.5" />
                       </Badge>
-                  ))}
+                  )}
                 </div>
 
-                <p className="text-pretty leading-relaxed text-muted-foreground">
+                <div className="space-y-2">
+                  <h1 className="text-balance text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                    {book.title}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+                    <span className="inline-flex items-center gap-2 text-sm font-medium">
+                      <User className="h-4 w-4 shrink-0" />
+                      {book.author || t("UnknownAuthor")}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Genres */}
+                {book.genres.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {book.genres.map((genre) => (
+                          <Badge
+                              key={genre.id}
+                              variant="outline"
+                              className="gap-1.5 rounded-full border-border bg-background/60 px-3 py-1 font-medium backdrop-blur"
+                          >
+                            <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
+                            {genre.name}
+                          </Badge>
+                      ))}
+                    </div>
+                )}
+
+                {/* Description */}
+                <p className="text-pretty text-[15px] leading-relaxed text-muted-foreground sm:text-base">
                   {book.description || t("NoDescriptionAvailable")}
                 </p>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {stats.map(({ key, icon: Icon, iconClass, label, value, sub }) => (
-                      <div
-                          key={key}
-                          className="flex items-center gap-3 rounded-xl border border-border bg-muted/40 p-4"
-                      >
-                        <div
-                            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white shadow-sm ${iconClass}`}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                            {label}
-                          </p>
-                          <div className="mt-0.5">{value}</div>
-                          {sub && (
-                              <p className="text-xs text-muted-foreground">{sub}</p>
-                          )}
-                        </div>
-                      </div>
-                  ))}
+                {/* Primary actions */}
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                      size="lg"
+                      onClick={() => {
+                        const el = document.getElementById("chapters");
+                        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      className="h-12 gap-2 px-6 text-base font-semibold shadow-sm"
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    {t("Chapters")}
+                  </Button>
+                  <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleToggleFavorite}
+                      disabled={favoriteLoading}
+                      className={`h-12 gap-2 px-5 transition-colors ${
+                          isFavorited
+                              ? "border-red-500/40 text-red-500 hover:text-red-600"
+                              : "text-foreground hover:text-red-500"
+                      }`}
+                  >
+                    <Heart
+                        className={`h-5 w-5 transition-transform active:scale-90 ${
+                            isFavorited ? "fill-current" : ""
+                        }`}
+                    />
+                  </Button>
                 </div>
 
+                {/* Stats strip */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <Star className="h-3.5 w-3.5" />
+                      {t("Rating")}
+                    </div>
+                    <div className="mt-1 flex items-baseline gap-1">
+                    <span className="text-2xl font-bold text-foreground">
+                      {ratingValue.toFixed(1)}
+                    </span>
+                      <span className="text-sm text-muted-foreground">/ 5</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("NReviews", { count: book.ratingCount })}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <Clock className="h-3.5 w-3.5" />
+                      {t("LastUpdated")}
+                    </div>
+                    <div className="mt-1 truncate text-base font-semibold text-foreground">
+                      {formatUpdateTime(book.updatedAt, ti)}
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-border bg-muted/40 p-4">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      {t("TotalChapters")}
+                    </div>
+                    <div className="mt-1 text-2xl font-bold text-foreground">
+                      {chaptersTotal}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rate this book */}
                 {isAuthenticated && (
-                    <div className="rounded-xl border border-border bg-card p-4 sm:p-5">
-                      <div className="mb-4 flex items-center justify-between gap-3">
+                    <div className="rounded-2xl border border-border bg-background/60 p-4 backdrop-blur sm:p-5">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                         <p className="font-semibold text-foreground">
                           {t("RateThisBook")}
                         </p>
@@ -542,184 +558,194 @@ export default function BookDetailsPage() {
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
         {/* Chapters */}
-        <Card className="border-border">
-          <CardHeader className="space-y-4 border-b border-border">
-            <div>
-              <CardTitle className="text-xl font-bold sm:text-2xl">
-                {t("Chapters")}
-              </CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {t("BrowseAvailableChapters")}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:left-3 rtl:right-3" />
-                <Input
-                    value={chapterSearchInput}
-                    onChange={(e) => setChapterSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    placeholder={t("SearchNameOrIndex")}
-                    className="h-11 ps-9"
-                />
+        <section id="chapters" className="scroll-mt-24">
+          <Card className="overflow-hidden rounded-3xl border-border">
+            <CardHeader className="space-y-4 border-b border-border">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <CardTitle className="text-xl font-bold sm:text-2xl">
+                    {t("Chapters")}
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {t("BrowseAvailableChapters")}
+                  </p>
+                </div>
               </div>
-              <Button
-                  onClick={handleSearch}
-                  disabled={chaptersLoading}
-                  className="h-11"
-              >
-                <Search className="me-2 h-4 w-4" />
-                {t("Search")}
-              </Button>
-              <Button
-                  variant="outline"
-                  onClick={toggleOrder}
-                  disabled={chaptersLoading}
-                  className="h-11 w-11 shrink-0 p-0"
-                  aria-label="Toggle sorting order"
-              >
-                {chaptersOrder === "asc" ? (
-                    <ArrowDown10 className="h-5 w-5" />
-                ) : (
-                    <ArrowUp10 className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
-          </CardHeader>
 
-          <CardContent className="space-y-6 p-4 sm:p-6">
-            {chaptersLoading ? (
-                <BrowseChaptersSkeleton />
-            ) : chapters.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-14 text-center">
-                  <BookOpen className="mb-3 h-12 w-12 text-muted-foreground/50" />
-                  <p className="text-sm font-medium text-foreground">
-                    {t("NoChaptersFound")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("AdjustingSearch")}
-                  </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:left-3 rtl:right-3" />
+                  <Input
+                      value={chapterSearchInput}
+                      onChange={(e) => setChapterSearchInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                      placeholder={t("SearchNameOrIndex")}
+                      className="h-11 rounded-xl ps-9"
+                  />
                 </div>
-            ) : (
-                <>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {chapters.map((chapter) => {
-                      const owned = purchasedIds.has(chapter.id);
-                      const isFree = chapter.isFree || chapter.price == null;
-                      const priceLabel = isFree
-                          ? t("Free")
-                          : t("ChapterPrice", {
-                            CurrencySymbols: g("CurrencySymbols"),
-                            ChapterPrice: Number(chapter.price).toFixed(2),
-                          });
-
-                      return (
-                          <button
-                              key={chapter.id}
-                              type="button"
-                              onClick={() => onChapterSelect(chapter)}
-                              className="group relative flex flex-col rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right dark:hover:border-blue-600"
-                          >
-                            <div className="absolute top-3 ltr:right-3 rtl:left-3">
-                              <Badge
-                                  variant={owned ? "default" : isFree ? "secondary" : "outline"}
-                                  className={
-                                    owned
-                                        ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-600 dark:bg-emerald-500"
-                                        : isFree
-                                            ? "border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300"
-                                            : "border-border bg-background"
-                                  }
-                              >
-                                {owned ? t("Owned") : priceLabel}
-                              </Badge>
-                            </div>
-
-                            <div className="mb-3 flex items-start gap-3 pe-16">
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white shadow-sm dark:bg-blue-500">
-                                {chapter.index}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
-                                  {chapter.title}
-                                </h3>
-                              </div>
-                            </div>
-
-                            <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                {formatUpdateTime(chapter.updatedAt, ti)}
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs font-medium">
-                                {owned ? (
-                                    <>
-                                      <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                                      <span className="text-emerald-600 dark:text-emerald-400">
-                                        {t("Read")}
-                                      </span>
-                                    </>
-                                ) : isFree ? (
-                                    <>
-                                      <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                      <span className="text-blue-600 dark:text-blue-400">
-                                        {t("Access")}
-                                      </span>
-                                    </>
-                                ) : (
-                                    <>
-                                      <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                                      <span className="text-muted-foreground">
-                                        {t("Buy")}
-                                      </span>
-                                    </>
-                                )}
-                              </div>
-                            </div>
-                          </button>
-                      );
-                    })}
-                  </div>
-                  {chaptersTotalPages > 1 && (
-                      <div className="border-t border-border pt-6">
-                        <AppPagination
-                            currentPage={chaptersPage}
-                            totalPages={chaptersTotalPages}
-                            totalItems={chaptersTotal}
-                            pageSize={CHAPTERS_PER_PAGE}
-                            itemLabel={t("chapter")}
-                            onPageChange={setChaptersPage}
-                            canGoPrevious={!chaptersLoading && chaptersPage > 1}
-                            canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
-                        />
-                      </div>
+                <Button
+                    onClick={handleSearch}
+                    disabled={chaptersLoading}
+                    className="h-11 rounded-xl"
+                >
+                  <Search className="me-2 h-4 w-4" />
+                  {t("Search")}
+                </Button>
+                <Button
+                    variant="outline"
+                    onClick={toggleOrder}
+                    disabled={chaptersLoading}
+                    className="h-11 w-11 shrink-0 rounded-xl p-0"
+                    aria-label="Toggle sorting order"
+                >
+                  {chaptersOrder === "asc" ? (
+                      <ArrowDown10 className="h-5 w-5" />
+                  ) : (
+                      <ArrowUp10 className="h-5 w-5" />
                   )}
-                </>
-            )}
-          </CardContent>
-        </Card>
+                </Button>
+              </div>
+            </CardHeader>
 
+            <CardContent className="space-y-6 p-4 sm:p-6">
+              {chaptersLoading ? (
+                  <BrowseChaptersSkeleton />
+              ) : chapters.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border py-16 text-center">
+                    <BookOpen className="mb-3 h-12 w-12 text-muted-foreground/50" />
+                    <p className="text-sm font-medium text-foreground">
+                      {t("NoChaptersFound")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("AdjustingSearch")}
+                    </p>
+                  </div>
+              ) : (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {chapters.map((chapter) => {
+                        const owned = purchasedIds.has(chapter.id);
+                        const isFree = chapter.isFree || chapter.price == null;
+                        const priceLabel = isFree
+                            ? t("Free")
+                            : t("ChapterPrice", {
+                              CurrencySymbols: g("CurrencySymbols"),
+                              ChapterPrice: Number(chapter.price).toFixed(2),
+                            });
+
+                        const statusColor = owned
+                            ? "before:bg-emerald-500"
+                            : isFree
+                                ? "before:bg-primary"
+                                : "before:bg-muted-foreground/40";
+
+                        return (
+                            <button
+                                key={chapter.id}
+                                type="button"
+                                onClick={() => onChapterSelect(chapter)}
+                                className={`group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right
+                        before:absolute before:top-0 before:h-full before:w-1 ltr:before:left-0 rtl:before:right-0 ${statusColor}`}
+                            >
+                              <div className="absolute top-3 ltr:right-3 rtl:left-3">
+                                <Badge
+                                    variant={
+                                      owned ? "default" : isFree ? "secondary" : "outline"
+                                    }
+                                    className={
+                                      owned
+                                          ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-600 dark:bg-emerald-500"
+                                          : isFree
+                                              ? "border-transparent bg-primary/10 text-primary hover:bg-primary/10"
+                                              : "border-border bg-background"
+                                    }
+                                >
+                                  {owned ? t("Owned") : priceLabel}
+                                </Badge>
+                              </div>
+
+                              <div className="mb-3 flex items-start gap-3 pe-16">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary ring-1 ring-primary/20">
+                                  {chapter.index}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                                    {chapter.title}
+                                  </h3>
+                                </div>
+                              </div>
+
+                              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Clock className="h-3 w-3" />
+                                  {formatUpdateTime(chapter.updatedAt, ti)}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                                  {owned ? (
+                                      <>
+                                        <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        <span className="text-emerald-600 dark:text-emerald-400">
+                                  {t("Read")}
+                                </span>
+                                      </>
+                                  ) : isFree ? (
+                                      <>
+                                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                        <span className="text-primary">{t("Access")}</span>
+                                      </>
+                                  ) : (
+                                      <>
+                                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <span className="text-muted-foreground">
+                                  {t("Buy")}
+                                </span>
+                                      </>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                        );
+                      })}
+                    </div>
+                    {chaptersTotalPages > 1 && (
+                        <div className="border-t border-border pt-6">
+                          <AppPagination
+                              currentPage={chaptersPage}
+                              totalPages={chaptersTotalPages}
+                              totalItems={chaptersTotal}
+                              pageSize={CHAPTERS_PER_PAGE}
+                              itemLabel={t("chapter")}
+                              onPageChange={setChaptersPage}
+                              canGoPrevious={!chaptersLoading && chaptersPage > 1}
+                              canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
+                          />
+                        </div>
+                    )}
+                  </>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Related */}
         {relatedBooks.length > 0 && (
-            <Card className="border-border">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold sm:text-2xl">
-                  {t("MayLike")}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">{t("SimilarBooks")}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-                  {relatedBooks.map((relatedBook) => (
-                      <BookCard key={relatedBook.id} book={relatedBook} />
-                  ))}
+            <section>
+              <div className="mb-5 flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold sm:text-2xl">{t("MayLike")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("SimilarBooks")}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {relatedBooks.map((relatedBook) => (
+                    <BookCard key={relatedBook.id} book={relatedBook} />
+                ))}
+              </div>
+            </section>
         )}
 
         {book && actionChapter && (
