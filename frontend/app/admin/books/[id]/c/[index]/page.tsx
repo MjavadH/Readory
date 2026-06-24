@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertCircle, ArrowLeft,
@@ -193,6 +193,7 @@ export default function ChapterContentManager() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [textFile, setTextFile] = useState<File | null>(null);
   const [imagePage, setImagePage] = useState(1);
+  const imagePaginationScrollRef = useRef<HTMLDivElement>(null);
   const [adminPreviewToken, setAdminPreviewToken] = useState<string | null>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
@@ -844,7 +845,7 @@ export default function ChapterContentManager() {
             {data?.manifest?.format === "images" && (
                 <div className="space-y-5">
                   {/* Image grid */}
-                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                  <div ref={imagePaginationScrollRef} className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
                     {pagedImages.map((page, idx) => {
                       const pageNumber = absolutePageNumber(idx);
                       const isSelected = selectedImagePageSet.has(pageNumber);
@@ -929,6 +930,7 @@ export default function ChapterContentManager() {
                           itemLabel={t("images")}
                           totalPages={totalImagePages}
                           onPageChange={setImagePage}
+                          scrollTarget={imagePaginationScrollRef}
                       />
                   )}
                 </div>

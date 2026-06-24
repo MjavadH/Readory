@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import {FavoriteBooksResponse} from "@/lib/types";
 import {LucideBookHeart, AlertCircle} from "lucide-react";
@@ -18,6 +18,7 @@ export default function LibraryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const paginationScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -96,7 +97,7 @@ export default function LibraryPage() {
                 </div>
             </section>
 
-            <div>
+            <div ref={paginationScrollRef}>
                 {data && (
                     <AnimatePresence mode="popLayout">
                         <BookGrid
@@ -113,7 +114,9 @@ export default function LibraryPage() {
                     totalItems={data.total}
                     pageSize={ITEMS_PER_PAGE}
                     itemLabel={t("book")}
-                    onPageChange={setPage} />
+                    onPageChange={setPage}
+                    scrollTarget={paginationScrollRef}
+                />
             ) : null}
         </div>
     );

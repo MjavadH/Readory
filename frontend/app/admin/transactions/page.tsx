@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -90,6 +90,7 @@ export default function AdminTransactions() {
     })
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
+    const paginationScrollRef = useRef<HTMLDivElement>(null)
     const [hasMore, setHasMore] = useState(false)
     const ITEMS_PER_PAGE = 20
     const totalPages = Math.ceil(stats.total / ITEMS_PER_PAGE)
@@ -200,7 +201,7 @@ export default function AdminTransactions() {
                     />
                 </div>
 
-                <Card className="border-none shadow-lg overflow-hidden bg-card">
+                <Card ref={paginationScrollRef} className="border-none shadow-lg overflow-hidden bg-card">
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
                             <Table>
@@ -314,6 +315,7 @@ export default function AdminTransactions() {
                     onPageChange={setPage}
                     canGoPrevious={page > 1}
                     canGoNext={hasMore}
+                    scrollTarget={paginationScrollRef}
                 />
             </div>
         </div>

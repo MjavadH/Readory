@@ -2,7 +2,7 @@
 
 import { getBookCoverThumbnailUrl } from "@/lib/media";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   BookOpen,
@@ -148,6 +148,7 @@ export default function BookDetailsPage() {
 
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [chaptersPage, setChaptersPage] = useState(1);
+  const chaptersPaginationScrollRef = useRef<HTMLDivElement>(null);
   const [chaptersTotal, setChaptersTotal] = useState(0);
   const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
   const [chapterSearch, setChapterSearch] = useState("");
@@ -626,7 +627,7 @@ export default function BookDetailsPage() {
                   </div>
               ) : (
                   <>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div ref={chaptersPaginationScrollRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {chapters.map((chapter) => {
                         const owned = purchasedIds.has(chapter.id);
                         const isFree = chapter.isFree || chapter.price == null;
@@ -722,6 +723,7 @@ export default function BookDetailsPage() {
                               onPageChange={setChaptersPage}
                               canGoPrevious={!chaptersLoading && chaptersPage > 1}
                               canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
+                              scrollTarget={chaptersPaginationScrollRef}
                           />
                         </div>
                     )}

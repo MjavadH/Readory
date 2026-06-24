@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -105,6 +105,7 @@ export default function AdminUsers() {
   const [totalListUsers, setTotalListUsers] = useState(0)
   const [stats, setStats] = useState<UserStats>({ totalUsers: 0, newUsers: 0, activeUsers: 0 })
   const [currentPage, setCurrentPage] = useState(1)
+  const paginationScrollRef = useRef<HTMLDivElement>(null)
   const [selectedUser, setSelectedUser] = useState<UserDetails | null>(null)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
@@ -300,7 +301,7 @@ export default function AdminUsers() {
           </div>
 
           {/* Users Table */}
-          <Card className="border-border/50">
+          <Card ref={paginationScrollRef} className="border-border/50">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
@@ -444,6 +445,7 @@ export default function AdminUsers() {
             onPageChange={setCurrentPage}
             canGoPrevious={currentPage > 1}
             canGoNext={currentPage < totalPages}
+            scrollTarget={paginationScrollRef}
           />
 
           {/* User Details Dialog */}

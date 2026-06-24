@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { ReadingProgressResponse } from "@/lib/types";
 import {ContinueReadingCard, ContinueReadingCardSkeleton} from "@/components/dashboard/ContinueReadingCard";
@@ -18,6 +18,7 @@ export default function ReadingProgressPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const paginationScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -98,7 +99,7 @@ export default function ReadingProgressPage() {
                 </div>
             </section>
 
-            <div className="grid grid-cols-1 gap-8">
+            <div ref={paginationScrollRef} className="grid grid-cols-1 gap-8">
                 <AnimatePresence mode="popLayout">
                     {data?.data.map((item,index) => (
                         <ContinueReadingCard key={index} progress={item} />
@@ -115,6 +116,7 @@ export default function ReadingProgressPage() {
                     onPageChange={setPage}
                     canGoPrevious={!loading && page > 1}
                     canGoNext={!loading && page < data.lastPage}
+                    scrollTarget={paginationScrollRef}
                 />
             ) : null}
         </div>

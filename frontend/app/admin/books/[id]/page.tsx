@@ -1,6 +1,6 @@
 "use client"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ArrowLeft,
     BookOpen,
@@ -136,6 +136,7 @@ export default function AdminBookDetail() {
 
     const [chapters, setChapters] = useState<ChapterItem[]>([]);
     const [chaptersPage, setChaptersPage] = useState(1);
+    const chaptersPaginationScrollRef = useRef<HTMLDivElement>(null);
     const [chaptersTotal, setChaptersTotal] = useState(0);
     const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
     const [chaptersLoading, setChaptersLoading] = useState(false);
@@ -689,7 +690,7 @@ export default function AdminBookDetail() {
                             </div>
                         ) : (
                             <>
-                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                <div ref={chaptersPaginationScrollRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                     {chapters.map((chapter) => {
                                         const isFree = chapter.isFree || chapter.price == null;
                                         const priceLabel = isFree ? t("Free") : `$${Number(chapter.price).toFixed(2)}`;
@@ -765,6 +766,7 @@ export default function AdminBookDetail() {
                                             onPageChange={setChaptersPage}
                                             canGoPrevious={!chaptersLoading && chaptersPage > 1}
                                             canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
+                                            scrollTarget={chaptersPaginationScrollRef}
                                         />
                                     </div>
                                 )}

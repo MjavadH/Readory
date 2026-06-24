@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { HistoryResponse } from "@/lib/types";
 import {TransactionList, TransactionListSkeleton} from "@/components/dashboard/TransactionList";
@@ -28,6 +28,7 @@ export default function HistoryPage() {
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [isExporting, setIsExporting] = useState(false);
+    const paginationScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -223,7 +224,7 @@ export default function HistoryPage() {
                 </motion.div>
             </div>
 
-            <div className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 overflow-x-auto">
+            <div ref={paginationScrollRef} className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 overflow-x-auto">
                 <h2 className="text-2xl font-bold tracking-tight mb-8">{t("TransactionLog")}</h2>
                 <TransactionList transactions={data?.data || []} />
             </div>
@@ -236,6 +237,7 @@ export default function HistoryPage() {
                     pageSize={ITEMS_PER_PAGE}
                     itemLabel={t("transactions")}
                     onPageChange={setPage}
+                    scrollTarget={paginationScrollRef}
                 />
             )}
         </div>

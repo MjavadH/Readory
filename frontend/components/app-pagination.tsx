@@ -1,6 +1,6 @@
 "use client"
 
-import type { MouseEvent } from "react"
+import type { MouseEvent, RefObject } from "react"
 
 import {
   Pagination,
@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/pagination"
 import {useTranslations} from "next-intl";
 
+type PaginationScrollTarget = RefObject<HTMLElement | null> | string
+
 type AdminPaginationProps = {
   currentPage: number
   totalPages: number
@@ -22,6 +24,8 @@ type AdminPaginationProps = {
   onPageChange: (page: number) => void
   canGoPrevious?: boolean
   canGoNext?: boolean
+  scrollTarget?: PaginationScrollTarget
+  scrollBehavior?: ScrollBehavior
 }
 
 const PAGE_WINDOW = 1
@@ -60,6 +64,8 @@ export function AppPagination({
   onPageChange,
   canGoPrevious,
   canGoNext,
+  scrollTarget,
+  scrollBehavior = "smooth",
 }: AdminPaginationProps) {
   if (totalPages <= 1) {
     return null
@@ -73,10 +79,28 @@ export function AppPagination({
   const previousEnabled = canGoPrevious ?? safeCurrentPage > 1
   const nextEnabled = canGoNext ?? safeCurrentPage < totalPages
 
+  const scrollToTarget = () => {
+    if (!scrollTarget || typeof window === "undefined") return
+
+    window.requestAnimationFrame(() => {
+      const target =
+          typeof scrollTarget === "string"
+              ? document.getElementById(scrollTarget)
+              : scrollTarget.current
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      target?.scrollIntoView({
+        behavior: prefersReducedMotion ? "auto" : scrollBehavior,
+        block: "start",
+      })
+    })
+  }
+
   const handlePageClick = (event: MouseEvent<HTMLAnchorElement>, page: number, enabled = true) => {
     event.preventDefault()
     if (!enabled || page === safeCurrentPage) return
     onPageChange(page)
+    scrollToTarget()
   }
 
   return (

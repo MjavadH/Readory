@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { LibraryResponse } from "@/lib/types";
 import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCard";
@@ -18,6 +18,7 @@ export default function LibraryPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
+    const paginationScrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -96,7 +97,7 @@ export default function LibraryPage() {
                 </div>
             </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div ref={paginationScrollRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <AnimatePresence mode="popLayout">
                     {data?.data.map((item) => (
                         <LibraryCard
@@ -114,7 +115,9 @@ export default function LibraryPage() {
                     totalItems={data.total}
                     pageSize={ITEMS_PER_PAGE}
                     itemLabel={t("book")}
-                    onPageChange={setPage} />
+                    onPageChange={setPage}
+                    scrollTarget={paginationScrollRef}
+                />
             ) : null}
         </div>
     );

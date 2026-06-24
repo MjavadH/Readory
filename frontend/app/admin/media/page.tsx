@@ -2,7 +2,7 @@
 
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
@@ -64,6 +64,7 @@ export default function AdminMedia() {
   const [files, setFiles] = useState<MediaItem[]>([])
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [page, setPage] = useState(1)
+  const paginationScrollRef = useRef<HTMLDivElement>(null)
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [refreshNonce, setRefreshNonce] = useState(0)
@@ -353,7 +354,7 @@ export default function AdminMedia() {
               </div>
 
               {/* Image Grid */}
-              <div className="relative">
+              <div ref={paginationScrollRef} className="relative">
                 {/* Overlay spinner only after first load */}
                 {isGalleryLoading && hasLoadedOnce && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
@@ -457,6 +458,7 @@ export default function AdminMedia() {
                 onPageChange={setPage}
                 canGoPrevious={!isGalleryLoading && page > 1}
                 canGoNext={!isGalleryLoading && page < totalPages}
+                scrollTarget={paginationScrollRef}
               />
             </CardContent>
           </Card>

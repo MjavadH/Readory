@@ -1,6 +1,6 @@
 "use client"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
 import { Input } from "@/components/ui/input"
@@ -65,6 +65,7 @@ export default function AdminBooks() {
     const [isLoadingTypes, setIsLoadingTypes] = useState(true)
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
+    const paginationScrollRef = useRef<HTMLDivElement>(null)
     const totalPages = Math.ceil(stats.total / ITEMS_PER_PAGE)
     const [searchQuery, setSearchQuery] = useState("")
     const [debouncedQ, setDebouncedQ] = useState("")
@@ -521,7 +522,7 @@ export default function AdminBooks() {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div ref={paginationScrollRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                         {books.map((book) => (
                             <div key={book.id} onClick={() => handleBookClick(book.id)} className="cursor-pointer">
                                 <BookCard book={book} link={`/admin/books/${book.id}`} />
@@ -540,6 +541,7 @@ export default function AdminBooks() {
                         onPageChange={setPage}
                         canGoPrevious={page > 1}
                         canGoNext={page < totalPages}
+                        scrollTarget={paginationScrollRef}
                     />
                 )}
 
