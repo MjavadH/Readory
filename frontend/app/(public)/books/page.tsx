@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import { getInitialBooksData } from "./books-api";
 import BooksClient from "./BooksClient";
 
@@ -11,9 +10,5 @@ export default async function Page({
 
     const initialData = await getInitialBooksData(resolvedSearchParams);
 
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <BooksClient initialData={initialData} />
-        </Suspense>
-    );
+    return <BooksClient initialData={initialData} />
 }
