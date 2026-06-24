@@ -75,7 +75,7 @@ type ViewerState = {
 
 type ActionChapter = ChapterItem & { mode: "purchase" | "access" };
 
-const CHAPTERS_PER_PAGE = 60;
+const CHAPTERS_PER_PAGE = 36;
 
 function BookDetailsSkeleton() {
   return (
