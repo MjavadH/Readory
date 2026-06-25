@@ -81,10 +81,10 @@ function BookDetailsSkeleton() {
   return (
       <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:px-8">
         <div className="animate-pulse overflow-hidden rounded-3xl border border-border bg-card">
-          <div className="h-40 bg-muted sm:h-56" />
           <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-[260px_1fr] lg:gap-10">
-            <div className="-mt-24 mx-auto aspect-2/3 w-44 rounded-2xl bg-muted sm:w-56 lg:w-full" />
+            <div className="mx-auto aspect-2/3 w-44 rounded-2xl bg-muted sm:w-56 lg:w-full" />
             <div className="space-y-5">
+              <div className="h-5 w-20 rounded-full bg-muted" />
               <div className="h-9 w-3/4 rounded-lg bg-muted" />
               <div className="h-5 w-1/3 rounded-lg bg-muted" />
               <div className="flex flex-wrap gap-2">
@@ -370,7 +370,7 @@ export default function BookDetailsPage() {
             <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/70 to-card" />
           </div>
 
-          <div className="relative p-5 pt-28 sm:p-8 sm:pt-36 lg:p-10 lg:pt-44">
+          <div className="relative p-5 sm:p-8 lg:p-10">
             <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
               {/* Cover */}
               <div className="mx-auto w-40 sm:w-52 lg:w-full">
@@ -563,7 +563,7 @@ export default function BookDetailsPage() {
         </section>
 
         {/* Chapters */}
-        <section id="chapters" className="scroll-mt-24">
+        <section ref={chaptersPaginationScrollRef} id="chapters" className="scroll-mt-24">
           <Card className="overflow-hidden rounded-3xl border-border">
             <CardHeader className="space-y-4 border-b border-border">
               <div className="flex flex-wrap items-end justify-between gap-3">
@@ -627,7 +627,7 @@ export default function BookDetailsPage() {
                   </div>
               ) : (
                   <>
-                    <div ref={chaptersPaginationScrollRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {chapters.map((chapter) => {
                         const owned = purchasedIds.has(chapter.id);
                         const isFree = chapter.isFree || chapter.price == null;

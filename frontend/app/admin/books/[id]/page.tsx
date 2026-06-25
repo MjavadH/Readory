@@ -97,6 +97,7 @@ function LoadingSkeleton() {
                         <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
                             <div className="aspect-2/3 w-full animate-pulse rounded-xl bg-muted" />
                             <div className="space-y-4">
+                                <div className="h-5 w-20 rounded-full bg-muted" />
                                 <div className="h-8 w-3/4 animate-pulse rounded-md bg-muted" />
                                 <div className="h-5 w-1/3 animate-pulse rounded-md bg-muted" />
                                 <div className="space-y-2 pt-4">
@@ -402,19 +403,20 @@ export default function AdminBookDetail() {
                 {/* Hero card */}
                 <Card className="relative overflow-hidden border-border/60 shadow-sm">
                     {/* Ambient cover backdrop */}
-                    <div className="pointer-events-none absolute inset-0 -z-10 opacity-30 dark:opacity-20">
+                    <div className="absolute inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
                         <Image
                             src={coverUrl}
                             alt=""
                             fill
                             aria-hidden
-                            className="object-cover blur-3xl scale-110"
+                            className="scale-110 object-cover opacity-40 blur-2xl"
                             sizes="100vw"
+                            priority
                         />
-                        <div className="absolute inset-0 bg-linear-to-b from-background/60 via-background/80 to-background" />
+                        <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/70 to-card" />
                     </div>
 
-                    <CardContent className="p-5 sm:p-8">
+                    <CardContent className="p-5 z-10 sm:p-8">
                         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[240px_1fr]">
                             {/* Cover */}
                             <div className="mx-auto w-full max-w-60">
@@ -648,7 +650,7 @@ export default function AdminBookDetail() {
                 </Card>
 
                 {/* Chapters */}
-                <Card className="border-border/60 shadow-sm">
+                <Card ref={chaptersPaginationScrollRef} className="border-border/60 shadow-sm">
                     <div className="flex flex-col gap-3 border-b border-border/60 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
                         <div className="min-w-0">
                             <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{t("Chapters")}</h2>
@@ -690,7 +692,7 @@ export default function AdminBookDetail() {
                             </div>
                         ) : (
                             <>
-                                <div ref={chaptersPaginationScrollRef} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                     {chapters.map((chapter) => {
                                         const isFree = chapter.isFree || chapter.price == null;
                                         const priceLabel = isFree ? t("Free") : `$${Number(chapter.price).toFixed(2)}`;
