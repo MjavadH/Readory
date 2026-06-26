@@ -14,7 +14,7 @@ import {
   normalizeQ,
   normalizeSlug,
   slugify,
-} from '../common/index.js';
+} from '../common';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -141,6 +141,7 @@ export class BooksService {
         ratingAvg: true,
         ratingCount: true,
         isFeatured: true,
+        createdAt: true,
         updatedAt: true,
         _count: { select: { chapters: true } },
         genres: { select: { genre: { select: { name: true, slug: true } } } },

@@ -4,8 +4,7 @@ import { useBookBrowser } from "@/hooks/use-book-browser";
 import { BookBrowseLayout } from "@/components/book-browse-layout";
 import {apiClient} from "@/lib/api-client";
 import {useTranslations} from "next-intl";
-import React, {useEffect, useState} from "react";
-import {BookType} from "@/lib/types";
+import React from "react";
 
 export default function BooksClient({ initialData }: any) {
     const t = useTranslations('Books');
