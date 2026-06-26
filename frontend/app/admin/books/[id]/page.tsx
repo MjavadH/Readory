@@ -401,7 +401,7 @@ export default function AdminBookDetail() {
 
             <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-10">
                 {/* Hero card */}
-                <Card className="relative overflow-hidden border-border/60 shadow-sm">
+                <Card className="relative border-border/60 shadow-sm">
                     {/* Ambient cover backdrop */}
                     <div className="absolute inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
                         <Image
@@ -419,7 +419,7 @@ export default function AdminBookDetail() {
                     <CardContent className="p-5 z-10 sm:p-8">
                         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[240px_1fr]">
                             {/* Cover */}
-                            <div className="mx-auto w-full max-w-60">
+                            <div className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full">
                                 <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-muted shadow-xl ring-1 ring-black/5 dark:ring-white/5">
                                     <div className="aspect-2/3 w-full">
                                         <Image
@@ -619,7 +619,7 @@ export default function AdminBookDetail() {
                                         />
                                     </div>
                                 ) : (
-                                    <p className="text-pretty text-[15px] leading-relaxed text-muted-foreground">
+                                    <p className="text-pretty text-justify text-[15px] leading-relaxed text-muted-foreground">
                                         {book.description || t("NoDescriptionAvailable")}
                                     </p>
                                 )}

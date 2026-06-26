@@ -355,7 +355,7 @@ export default function BookDetailsPage() {
 
   return (
       <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:space-y-12 lg:px-8 lg:py-10">
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+        <section className="relative rounded-3xl border border-border bg-card shadow-sm">
           {/* Ambient cover backdrop */}
           <div className="absolute inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
             <Image
@@ -373,7 +373,7 @@ export default function BookDetailsPage() {
           <div className="relative p-5 sm:p-8 lg:p-10">
             <div className="grid gap-8 lg:grid-cols-[260px_1fr] lg:gap-12">
               {/* Cover */}
-              <div className="mx-auto w-40 sm:w-52 lg:w-full">
+              <div className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full">
                 <div className="group relative aspect-2/3 overflow-hidden rounded-2xl bg-muted shadow-2xl ring-1 ring-border">
                   <Image
                       src={coverSrc}
@@ -429,7 +429,7 @@ export default function BookDetailsPage() {
                 )}
 
                 {/* Description */}
-                <p className="text-pretty text-[15px] leading-relaxed text-muted-foreground sm:text-base">
+                <p className="text-pretty text-justify text-[15px] leading-relaxed text-muted-foreground sm:text-base">
                   {book.description || t("NoDescriptionAvailable")}
                 </p>
 
