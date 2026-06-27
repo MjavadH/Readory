@@ -590,10 +590,10 @@ export default function ChapterPage() {
         if (readMode !== "page") return;
 
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            if (e.key === "ArrowLeft") {
                 e.preventDefault();
                 handlePageChange(currentPage - 1);
-            } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            } else if (e.key === "ArrowRight") {
                 e.preventDefault();
                 handlePageChange(currentPage + 1);
             }
