@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import {FavoriteBooksResponse} from "@/lib/types";
-import {LucideBookHeart, AlertCircle} from "lucide-react";
+import {LucideBookHeart, AlertCircle, BookDashedIcon} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 import {useTranslations} from "next-intl";
@@ -98,13 +98,20 @@ export default function LibraryPage() {
             </section>
 
             <div ref={paginationScrollRef}>
-                {data && (
+                {data && data.data.length > 0 ? (
                     <AnimatePresence mode="popLayout">
                         <BookGrid
                             books={data.data}
                             priorityCount={6}
                         />
                     </AnimatePresence>
+                ):(
+                    <div className="flex flex-col items-center justify-center h-87.5 text-center gap-4">
+                        <div className="p-4 bg-muted rounded-full">
+                            <BookDashedIcon className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground font-medium">{t("NoBooks")}</p>
+                    </div>
                 )}
             </div>
             {data ? (

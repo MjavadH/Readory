@@ -329,7 +329,9 @@
     "ConfirmNewPassword": "Confirm New Password",
     "RepeatNewPassword": "Repeat new password",
     "UpdatePassword": "Update Password",
-    "ShowingTotalFavorites": "Showing your favorite books (Total: {Total})"
+    "ShowingTotalFavorites": "{Total, plural, =0 {Showing your favorite books} other {Showing your favorite books (Total: #)}}",
+    "NoBooks": "No books yet",
+    "NoChapters": "No chapters yet"
   },
   "HomePage": {
     "By": "by",

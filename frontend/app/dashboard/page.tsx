@@ -14,7 +14,8 @@ import {
   Plus,
   TrendingUp,
   Wallet,
-  AlertCircle
+  AlertCircle,
+  BookDashedIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -154,7 +155,7 @@ export default function OverviewPage() {
                 transition={{ delay: 0.2 }}
                 className="text-muted-foreground text-lg max-w-2xl font-medium leading-relaxed"
             >
-              {t("Description1", {DataProgressPercent: data.continueReading?.progress.percent || 100})}
+              { data.continueReading && (t("Description1", {DataProgressPercent: data.continueReading.progress.percent}))}
             </motion.p>
           </div>
         </section>
@@ -186,11 +187,20 @@ export default function OverviewPage() {
                   <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                 </Link>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {data.recentLibrary.data.map((item) => (
-                    <LibraryCard key={item.book.id} item={item} />
-                ))}
-              </div>
+              {data.recentLibrary.data.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {data.recentLibrary.data.map((item) => (
+                        <LibraryCard key={item.book.id} item={item} />
+                    ))}
+                  </div>
+              ):(
+                  <div className="flex flex-col items-center justify-center h-87.5 text-center gap-4">
+                    <div className="p-4 bg-muted rounded-full">
+                      <BookDashedIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">{t("NoBooks")}</p>
+                  </div>
+              )}
             </section>
 
             {/* Recent Transactions Section */}

@@ -226,7 +226,16 @@ export default function HistoryPage() {
 
             <div ref={paginationScrollRef} className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 overflow-x-auto">
                 <h2 className="text-2xl font-bold tracking-tight mb-8">{t("TransactionLog")}</h2>
-                <TransactionList transactions={data?.data || []} />
+                {data && data?.data.length > 0 ? (
+                    <TransactionList transactions={data.data} />
+                ):(
+                    <div className="flex flex-col items-center justify-center h-87.5 text-center gap-4">
+                        <div className="p-4 bg-muted rounded-full">
+                            <History className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground font-medium">{t("NoTransactions")}</p>
+                    </div>
+                )}
             </div>
 
             {data && (

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { LibraryResponse } from "@/lib/types";
 import {LibraryCard, LibraryCardSkeleton} from "@/components/dashboard/LibraryCard";
-import {Library, AlertCircle} from "lucide-react";
+import {Library, AlertCircle, BookDashedIcon} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 import {useTranslations} from "next-intl";
@@ -91,23 +91,33 @@ export default function LibraryPage() {
                         </div>
                         {t("MyLibrary")}
                     </h1>
-                    <p className="text-muted-foreground font-medium text-lg ms-16">
-                        {t("ShowingTotalBooks", {Total: data?.total || 0})}
-                    </p>
+                    {data && data.data.length > 0 && (
+                        <p className="text-muted-foreground font-medium text-lg ms-16">
+                            {t("ShowingTotalBooks", {Total: data.total || 0})}
+                        </p>
+                    )}
                 </div>
             </section>
-
-            <div ref={paginationScrollRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {data?.data.map((item) => (
-                        <LibraryCard
-                            key={item.book.id}
-                            item={item}
-                            className="min-h-105"
-                        />
-                    ))}
-                </AnimatePresence>
-            </div>
+            {data && data.data.length > 0 ? (
+                <div ref={paginationScrollRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <AnimatePresence mode="popLayout">
+                        {data.data.map((item) => (
+                            <LibraryCard
+                                key={item.book.id}
+                                item={item}
+                                className="min-h-105"
+                            />
+                        ))}
+                    </AnimatePresence>
+                </div>
+                ):(
+                    <div className="flex flex-col items-center justify-center h-87.5 text-center gap-4">
+                        <div className="p-4 bg-muted rounded-full">
+                            <BookDashedIcon className="w-8 h-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-muted-foreground font-medium">{t("NoBooks")}</p>
+                    </div>
+                )}
             {data ? (
                 <AppPagination
                     currentPage={page}

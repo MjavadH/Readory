@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { ReadingProgressResponse } from "@/lib/types";
 import {ContinueReadingCard, ContinueReadingCardSkeleton} from "@/components/dashboard/ContinueReadingCard";
-import {AlertCircle, BookOpenText} from "lucide-react";
+import {AlertCircle, BookDashedIcon, BookOpenText} from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import {AppPagination} from "@/components/app-pagination";
 import {useTranslations} from "next-intl";
@@ -98,14 +98,22 @@ export default function ReadingProgressPage() {
                     </p>
                 </div>
             </section>
-
-            <div ref={paginationScrollRef} className="grid grid-cols-1 gap-8">
-                <AnimatePresence mode="popLayout">
-                    {data?.data.map((item,index) => (
-                        <ContinueReadingCard key={index} progress={item} />
-                    ))}
-                </AnimatePresence>
-            </div>
+            {data && data.data.length > 0 ?(
+                <div ref={paginationScrollRef} className="grid grid-cols-1 gap-8">
+                    <AnimatePresence mode="popLayout">
+                        {data?.data.map((item,index) => (
+                            <ContinueReadingCard key={index} progress={item} />
+                        ))}
+                    </AnimatePresence>
+                </div>
+            ):(
+                <div className="flex flex-col items-center justify-center h-87.5 text-center gap-4">
+                    <div className="p-4 bg-muted rounded-full">
+                        <BookDashedIcon className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">{t("NoChapters")}</p>
+                </div>
+            )}
             {data ? (
                 <AppPagination
                     currentPage={page}

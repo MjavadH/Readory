@@ -329,7 +329,9 @@
     "ConfirmNewPassword": "تأیید رمز عبور جدید",
     "RepeatNewPassword": "تکرار رمز عبور جدید",
     "UpdatePassword": "به‌روزرسانی رمز عبور",
-    "ShowingTotalFavorites": "نمایش کتاب‌های‌ موردعلاقه شما(مجموع: {Total})"
+    "ShowingTotalFavorites": "{Total, plural, =0 {نمایش کتاب‌های مور علاقه شما} other {نمایش کتاب‌های مورد علاقه شما(مجموع: #)}}",
+    "NoBooks": "هنوز کتابی وجود ندارد",
+    "NoChapters": "هنوز فصلی وجود ندارد"
   },
   "HomePage": {
     "By": "توسط",
