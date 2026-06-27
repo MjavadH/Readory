@@ -595,7 +595,8 @@
     "ChapterAccessible": "چپتر حالا در دسترس است!",
     "TryAgain": "تلاش مجدد",
     "ReloadPage": "بارگذاری مجدد صفحه",
-    "Contrast": "کنتراست"
+    "Contrast": "کنتراست",
+    "ShowResults": "نمایش نتایج"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

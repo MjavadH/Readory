@@ -20,14 +20,18 @@ import {
     Tag,
     Layers,
     ArrowUpDown,
+    CheckIcon,
+    ChevronDown,
 } from "lucide-react";
 import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-} from "@/components/ui/sheet";
+    Drawer,
+    DrawerClose,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+    DrawerFooter,
+} from "@/components/ui/drawer";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -38,6 +42,8 @@ import {
     SortOption,
 } from "@/lib/types";
 import { useTranslations } from "next-intl";
+import { AppIcon } from "@/components/AppIcon";
+import { cn } from "@/lib/utils";
 
 interface BookBrowseLayoutProps {
     title: React.ReactNode;
@@ -67,6 +73,245 @@ interface BookBrowseLayoutProps {
     isLoadingTypes?: boolean;
     isLoadingGenres?: boolean;
     children?: React.ReactNode;
+}
+
+function FilterPillSkeleton({ count }: { count: number }) {
+    return (
+        <div className="flex flex-wrap gap-2">
+            {Array.from({ length: count }).map((_, i) => (
+                <div
+                    key={i}
+                    className="h-8 w-20 animate-pulse rounded-full bg-muted"
+                />
+            ))}
+        </div>
+    );
+}
+
+function FilterChip({
+                        id,
+                        label,
+                        icon,
+                        checked,
+                        onToggle,
+                    }: {
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+    checked: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            id={id}
+            role="checkbox"
+            aria-checked={checked}
+            onClick={onToggle}
+            className={cn(
+                "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-all duration-150",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                checked
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent",
+            )}
+        >
+            {icon && (
+                <span className={cn("shrink-0", checked ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                    {icon}
+                </span>
+            )}
+            <span className="truncate">{label}</span>
+            {checked && <CheckIcon className="ms-0.5 h-3 w-3 shrink-0 text-primary-foreground/80" />}
+        </button>
+    );
+}
+
+function FilterSectionHeading({
+                                  icon,
+                                  label,
+                                  count,
+                              }: {
+    icon: React.ReactNode;
+    label: string;
+    count?: number;
+}) {
+    return (
+        <div className="mb-3 flex items-center gap-2">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+                {icon}
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {label}
+            </span>
+            {!!count && (
+                <span className="ms-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                    {count}
+                </span>
+            )}
+        </div>
+    );
+}
+
+/** Desktop sidebar row item */
+function SidebarFilterRow({
+                              id,
+                              label,
+                              icon,
+                              checked,
+                              onToggle,
+                          }: {
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+    checked: boolean;
+    onToggle: () => void;
+}) {
+    return (
+        <label
+            htmlFor={id}
+            className={cn(
+                "group flex cursor-pointer items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-1.5 text-sm transition-all duration-100",
+                checked
+                    ? "border-primary/20 bg-primary/5 text-foreground"
+                    : "text-foreground/70 hover:bg-muted/50 hover:text-foreground",
+            )}
+        >
+            <Checkbox
+                id={id}
+                checked={checked}
+                onCheckedChange={onToggle}
+                className="shrink-0"
+            />
+            {icon && (
+                <span className={cn("shrink-0", checked ? "text-primary" : "text-muted-foreground group-hover:text-foreground/60")}>
+                    {icon}
+                </span>
+            )}
+            <span className="flex-1 truncate font-medium">{label}</span>
+        </label>
+    );
+}
+
+/** Mobile drawer filter content */
+function FilterContent({
+                           filters,
+                           enableTypeFilter,
+                           enableGenreFilter,
+                           availableTypes,
+                           availableGenres,
+                           isLoadingTypes,
+                           isLoadingGenres,
+                           t,
+                       }: {
+    filters: BookBrowseLayoutProps["filters"];
+    enableTypeFilter: boolean;
+    enableGenreFilter: boolean;
+    availableTypes: BookType[];
+    availableGenres: BookGenre[];
+    isLoadingTypes: boolean;
+    isLoadingGenres: boolean;
+    t: ReturnType<typeof useTranslations>;
+}) {
+    return (
+        <div className="space-y-6 my-2">
+            {enableTypeFilter && (
+                <div>
+                    <FilterSectionHeading
+                        icon={<Layers className="h-3.5 w-3.5" />}
+                        label={t("Category")}
+                        count={filters.selectedTypes.length}
+                    />
+                    {isLoadingTypes ? (
+                        <FilterPillSkeleton count={4} />
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {availableTypes.map((type) => (
+                                <FilterChip
+                                    key={type.slug}
+                                    id={`type-${type.slug}`}
+                                    label={type.name}
+                                    icon={
+                                        <AppIcon
+                                            name={type.iconKey}
+                                            className="h-3.5 w-3.5"
+                                        />
+                                    }
+                                    checked={filters.selectedTypes.includes(type.slug)}
+                                    onToggle={() => filters.handleTypeToggle(type.slug)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {enableGenreFilter && (
+                <div>
+                    <FilterSectionHeading
+                        icon={<Tag className="h-3.5 w-3.5" />}
+                        label={t("Genres")}
+                        count={filters.selectedGenres.length}
+                    />
+                    {isLoadingGenres ? (
+                        <FilterPillSkeleton count={8} />
+                    ) : (
+                        <div className="flex flex-wrap gap-2">
+                            {availableGenres.map((genre) => (
+                                <FilterChip
+                                    key={genre.slug}
+                                    id={`genre-${genre.slug}`}
+                                    label={genre.name}
+                                    icon={
+                                        <AppIcon
+                                            name={genre.iconKey}
+                                            className="h-3.5 w-3.5"
+                                        />
+                                    }
+                                    checked={filters.selectedGenres.includes(genre.slug)}
+                                    onToggle={() =>
+                                        filters.handleGenreToggle(genre.slug)
+                                    }
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/** Desktop collapsible section */
+function DesktopFilterSection({
+                                  heading,
+                                  defaultOpen = true,
+                                  children,
+                              }: {
+    heading: React.ReactNode;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
+}) {
+    const [open, setOpen] = useState(defaultOpen);
+    return (
+        <div>
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="mb-2 flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted/50"
+                aria-expanded={open}
+            >
+                {heading}
+                <ChevronDown
+                    className={cn(
+                        "ms-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/60 transition-transform duration-200",
+                        open ? "rotate-180" : "rotate-0",
+                    )}
+                />
+            </button>
+            {open && children}
+        </div>
+    );
 }
 
 export function BookBrowseLayout({
@@ -103,132 +348,6 @@ export function BookBrowseLayout({
         filters.searchQuery.trim().length > 0 ||
         filters.sortBy !== "recently_updated";
 
-    const FilterSection: React.FC<{
-        icon: React.ReactNode;
-        label: string;
-        count?: number;
-        children: React.ReactNode;
-    }> = ({ icon, label, count, children }) => (
-        <div>
-            <div className="mb-3 flex items-center justify-between">
-                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span className="text-foreground/70">{icon}</span>
-                    {label}
-                </h3>
-                {count ? (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {count}
-                    </span>
-                ) : null}
-            </div>
-            {children}
-        </div>
-    );
-
-    const FilterContent = () => (
-        <div className="space-y-6">
-            {enableTypeFilter && (
-                <FilterSection
-                    icon={<Layers className="h-3.5 w-3.5" />}
-                    label={t("Category")}
-                    count={filters.selectedTypes.length}
-                >
-                    <div className="space-y-1.5">
-                        {isLoadingTypes ? (
-                            <div className="space-y-2">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="h-8 animate-pulse rounded-lg bg-muted"
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            availableTypes.map((type) => {
-                                const checked = filters.selectedTypes.includes(
-                                    type.slug,
-                                );
-                                return (
-                                    <label
-                                        key={type.slug}
-                                        htmlFor={`type-${type.slug}`}
-                                        className={`flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-2.5 py-2 text-sm transition-colors hover:bg-muted/60 ${
-                                            checked
-                                                ? "border-primary/30 bg-primary/5 text-foreground"
-                                                : "text-foreground/80"
-                                        }`}
-                                    >
-                                        <Checkbox
-                                            id={`type-${type.slug}`}
-                                            checked={checked}
-                                            onCheckedChange={() =>
-                                                filters.handleTypeToggle(type.slug)
-                                            }
-                                        />
-                                        <span className="flex-1 truncate font-medium">
-                                            {type.name}
-                                        </span>
-                                    </label>
-                                );
-                            })
-                        )}
-                    </div>
-                </FilterSection>
-            )}
-
-            {enableTypeFilter && enableGenreFilter && <Separator />}
-
-            {enableGenreFilter && (
-                <FilterSection
-                    icon={<Tag className="h-3.5 w-3.5" />}
-                    label={t("Genres")}
-                    count={filters.selectedGenres.length}
-                >
-                    {isLoadingGenres ? (
-                        <div className="space-y-2">
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <div
-                                    key={i}
-                                    className="h-8 animate-pulse rounded-lg bg-muted"
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="-me-2 max-h-105 space-y-1.5 overflow-y-auto pe-2">
-                            {availableGenres.map((genre) => {
-                                const checked = filters.selectedGenres.includes(
-                                    genre.slug,
-                                );
-                                return (
-                                    <label
-                                        key={genre.slug}
-                                        htmlFor={`genre-${genre.slug}`}
-                                        className={`flex cursor-pointer items-center gap-3 rounded-lg border border-transparent px-2.5 py-2 text-sm transition-colors hover:bg-muted/60 ${
-                                            checked
-                                                ? "border-primary/30 bg-primary/5 text-foreground"
-                                                : "text-foreground/80"
-                                        }`}
-                                    >
-                                        <Checkbox
-                                            id={`genre-${genre.slug}`}
-                                            checked={checked}
-                                            onCheckedChange={() =>
-                                                filters.handleGenreToggle(genre.slug)
-                                            }
-                                        />
-                                        <span className="flex-1 truncate font-medium">
-                                            {genre.name}
-                                        </span>
-                                    </label>
-                                );
-                            })}
-                        </div>
-                    )}
-                </FilterSection>
-            )}
-        </div>
-    );
-
     return (
         <div className="relative min-h-screen bg-background">
             {/* Decorative gradient backdrop */}
@@ -253,7 +372,8 @@ export function BookBrowseLayout({
 
                 {/* Toolbar */}
                 <div className="mb-6 rounded-2xl border border-border/60 bg-card/70 p-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-card/50 md:p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        {/* Search */}
                         <form
                             onSubmit={handleSearch}
                             className="relative flex flex-1 items-center"
@@ -277,6 +397,7 @@ export function BookBrowseLayout({
                             </Button>
                         </form>
 
+                        {/* Sort + Mobile filter trigger */}
                         <div className="flex items-center gap-2">
                             <Select
                                 value={filters.sortBy}
@@ -284,14 +405,14 @@ export function BookBrowseLayout({
                                     filters.setSortBy(v as SortOption)
                                 }
                             >
-                                <SelectTrigger className="h-11 w-full rounded-xl border-border/70 bg-background/80 px-3 text-sm md:w-50">
+                                <SelectTrigger className="h-11 w-full rounded-xl border-border/70 bg-background/80 px-3 text-sm sm:w-48">
                                     <div className="flex items-center gap-2 truncate">
                                         <ArrowUpDown className="h-4 w-4 shrink-0 text-muted-foreground" />
                                         <SelectValue />
                                     </div>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {SORT_OPTIONS.map((o) => (
+                                    {SORT_OPTIONS.map((o: { value: string; label: string }) => (
                                         <SelectItem key={o.value} value={o.value}>
                                             {o.label}
                                         </SelectItem>
@@ -299,55 +420,146 @@ export function BookBrowseLayout({
                                 </SelectContent>
                             </Select>
 
-                            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-                                <SheetTrigger asChild>
+                            {/* Mobile: bottom Drawer trigger */}
+                            <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
+                                <DrawerTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className="relative h-11 shrink-0 rounded-xl border-border/70 bg-background/80 px-3 lg:hidden"
+                                        className="relative h-11 shrink-0 gap-2 rounded-xl border-border/70 bg-background/80 px-3.5 lg:hidden"
                                     >
-                                        <SlidersHorizontal className="h-4 w-4 ltr:mr-2 rtl:ml-2" />
+                                        <SlidersHorizontal className="h-4 w-4" />
                                         <span className="text-sm font-medium">
                                             {t("Filters")}
                                         </span>
                                         {activeCount > 0 && (
-                                            <span className="ms-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                                            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
                                                 {activeCount}
                                             </span>
                                         )}
                                     </Button>
-                                </SheetTrigger>
-                                <SheetContent
-                                    side="right"
-                                    className="w-full overflow-y-auto sm:max-w-sm rtl:sm:max-w-sm"
-                                >
-                                    <SheetHeader className="text-start">
-                                        <SheetTitle className="flex items-center gap-2">
-                                            <SlidersHorizontal className="h-5 w-5 text-primary" />
-                                            {t("Filters")}
-                                        </SheetTitle>
-                                    </SheetHeader>
-                                    <div className="mt-6">
-                                        <FilterContent />
-                                    </div>
-                                    {hasActiveFilters && (
-                                        <div className="sticky bottom-0 -mx-6 mt-6 border-t border-border bg-background/95 px-6 py-4 backdrop-blur">
-                                            <Button
-                                                variant="outline"
-                                                className="w-full"
-                                                onClick={() => {
-                                                    filters.clearFilters();
-                                                    setFiltersOpen(false);
-                                                }}
-                                            >
-                                                {t("ClearAll")}
-                                            </Button>
+                                </DrawerTrigger>
+
+                                {/* Mobile Drawer */}
+                                <DrawerContent className="max-h-[92dvh]">
+                                    <DrawerHeader className="px-5 pt-2 pb-0">
+                                        <div className="flex items-center justify-between">
+                                            <DrawerTitle className="flex items-center gap-2 text-base font-semibold">
+                                                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                                                    <SlidersHorizontal className="h-4 w-4" />
+                                                </span>
+                                                {t("Filters")}
+                                                {activeCount > 0 && (
+                                                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                                                        {activeCount}
+                                                    </span>
+                                                )}
+                                            </DrawerTitle>
+                                            <DrawerClose asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="rounded-full text-muted-foreground"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                    <span className="sr-only">Close</span>
+                                                </Button>
+                                            </DrawerClose>
                                         </div>
-                                    )}
-                                </SheetContent>
-                            </Sheet>
+
+                                        {/* Active filter row */}
+                                        {activeCount > 0 && (
+                                            <div className="mt-3 flex flex-wrap gap-1.5 pb-3">
+                                                {filters.selectedTypes.map((tt) => (
+                                                    <Badge
+                                                        key={tt}
+                                                        variant="secondary"
+                                                        className="gap-1 rounded-full border border-border/60 bg-background ps-2.5 pe-1 text-xs font-medium"
+                                                    >
+                                                        {bookTypeLabel(tt)}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                filters.handleTypeToggle(tt)
+                                                            }
+                                                            className="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted-foreground/20 hover:text-foreground"
+                                                        >
+                                                            <X className="h-2.5 w-2.5" />
+                                                        </button>
+                                                    </Badge>
+                                                ))}
+                                                {filters.selectedGenres.map((s) => {
+                                                    const g = availableGenres.find(
+                                                        (ag) => ag.slug === s,
+                                                    );
+                                                    return g ? (
+                                                        <Badge
+                                                            key={s}
+                                                            variant="secondary"
+                                                            className="gap-1 rounded-full border border-border/60 bg-background ps-2.5 pe-1 text-xs font-medium"
+                                                        >
+                                                            {g.name}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    filters.handleGenreToggle(s)
+                                                                }
+                                                                className="ms-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition hover:bg-muted-foreground/20 hover:text-foreground"
+                                                            >
+                                                                <X className="h-2.5 w-2.5" />
+                                                            </button>
+                                                        </Badge>
+                                                    ) : null;
+                                                })}
+                                            </div>
+                                        )}
+                                    </DrawerHeader>
+
+                                    {/* Scrollable filter options */}
+                                    <div className="flex-1 overflow-y-auto px-5 py-4">
+                                        <FilterContent
+                                            filters={filters}
+                                            enableTypeFilter={enableTypeFilter}
+                                            enableGenreFilter={enableGenreFilter}
+                                            availableTypes={availableTypes}
+                                            availableGenres={availableGenres}
+                                            isLoadingTypes={isLoadingTypes}
+                                            isLoadingGenres={isLoadingGenres}
+                                            t={t}
+                                        />
+                                    </div>
+
+                                    {/* Sticky footer actions */}
+                                    <DrawerFooter className="gap-2 border-t border-border/60 bg-background/95 px-5 py-4 backdrop-blur">
+                                        <div className="flex gap-2">
+                                            {hasActiveFilters && (
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1 rounded-xl"
+                                                    onClick={() => {
+                                                        filters.clearFilters();
+                                                    }}
+                                                >
+                                                    {t("ClearAll")}
+                                                </Button>
+                                            )}
+                                            <DrawerClose asChild>
+                                                <Button
+                                                    className={cn(
+                                                        "rounded-xl",
+                                                        hasActiveFilters ? "flex-1" : "w-full",
+                                                    )}
+                                                >
+                                                    {t("ShowResults")}
+                                                </Button>
+                                            </DrawerClose>
+                                        </div>
+                                    </DrawerFooter>
+                                </DrawerContent>
+                            </Drawer>
                         </div>
                     </div>
 
+                    {/* Active filter badge strip */}
                     {hasActiveFilters && (
                         <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
                             <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -406,33 +618,154 @@ export function BookBrowseLayout({
                     )}
                 </div>
 
-                <div className="flex gap-8">
-                    {/* Desktop sidebar */}
-                    <aside className="hidden w-72 shrink-0 lg:block">
-                        <div className="sticky top-6 rounded-2xl border border-border/60 bg-card/70 p-5 shadow-sm backdrop-blur">
-                            <div className="mb-5 flex items-center justify-between">
+                <div className="flex gap-6 lg:gap-8">
+                    {/* Desktop Sidebar */}
+                    <aside className="hidden w-64 shrink-0 lg:block xl:w-72">
+                        <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/70 shadow-sm backdrop-blur">
+                            {/* Sidebar header — always visible */}
+                            <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3.5">
                                 <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                                     <span className="grid h-7 w-7 place-items-center rounded-lg bg-primary/10 text-primary">
                                         <SlidersHorizontal className="h-3.5 w-3.5" />
                                     </span>
                                     {t("Filters")}
+                                    {activeCount > 0 && (
+                                        <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                                            {activeCount}
+                                        </span>
+                                    )}
                                 </h2>
                                 {hasActiveFilters && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
                                         onClick={filters.clearFilters}
-                                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                        className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
                                     >
                                         {t("ClearAll")}
                                     </Button>
                                 )}
                             </div>
-                            <FilterContent />
+
+                            {/* Sidebar scrollable body */}
+                            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-thin">
+                                <div className="space-y-1 p-3">
+
+                                    {/* Types section */}
+                                    {enableTypeFilter && (
+                                        <DesktopFilterSection
+                                            heading={
+                                                <span className="flex items-center gap-2">
+                                                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+                                                        <Layers className="h-3 w-3" />
+                                                    </span>
+                                                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                                        {t("Category")}
+                                                    </span>
+                                                    {filters.selectedTypes.length > 0 && (
+                                                        <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-bold text-primary">
+                                                            {filters.selectedTypes.length}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            }
+                                        >
+                                            {isLoadingTypes ? (
+                                                <div className="space-y-1.5 px-1">
+                                                    {Array.from({ length: 4 }).map((_, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="h-8 animate-pulse rounded-lg bg-muted"
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-0.5 pb-1">
+                                                    {availableTypes.map((type) => (
+                                                        <SidebarFilterRow
+                                                            key={type.slug}
+                                                            id={`dt-type-${type.slug}`}
+                                                            label={type.name}
+                                                            icon={
+                                                                <AppIcon
+                                                                    name={type.iconKey}
+                                                                    className="h-3.5 w-3.5"
+                                                                />
+                                                            }
+                                                            checked={filters.selectedTypes.includes(type.slug)}
+                                                            onToggle={() => filters.handleTypeToggle(type.slug)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </DesktopFilterSection>
+                                    )}
+
+                                    {enableTypeFilter && enableGenreFilter && (
+                                        <Separator className="my-1" />
+                                    )}
+
+                                    {/* Genres section */}
+                                    {enableGenreFilter && (
+                                        <DesktopFilterSection
+                                            heading={
+                                                <span className="flex items-center gap-2">
+                                                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+                                                        <Tag className="h-3 w-3" />
+                                                    </span>
+                                                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                                        {t("Genres")}
+                                                    </span>
+                                                    {filters.selectedGenres.length > 0 && (
+                                                        <span className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-bold text-primary">
+                                                            {filters.selectedGenres.length}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            }
+                                        >
+                                            {isLoadingGenres ? (
+                                                <div className="space-y-1.5 px-1">
+                                                    {Array.from({ length: 8 }).map((_, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="h-8 animate-pulse rounded-lg bg-muted"
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-0.5 pb-1">
+                                                    {availableGenres.map((genre) => (
+                                                        <SidebarFilterRow
+                                                            key={genre.slug}
+                                                            id={`dt-genre-${genre.slug}`}
+                                                            label={genre.name}
+                                                            icon={
+                                                                <AppIcon
+                                                                    name={genre.iconKey}
+                                                                    className="h-3.5 w-3.5"
+                                                                />
+                                                            }
+                                                            checked={filters.selectedGenres.includes(genre.slug)}
+                                                            onToggle={() => filters.handleGenreToggle(genre.slug)}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </DesktopFilterSection>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Subtle scroll indicator — bottom fade */}
+                            <div
+                                aria-hidden
+                                className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b-2xl bg-linear-to-t from-card/90 to-transparent"
+                            />
                         </div>
                     </aside>
 
-                    {/* Main */}
+                    {/* Main content */}
                     <main className="min-w-0 flex-1">
                         {isLoading ? (
                             <BookGridSkeleton count={18} />

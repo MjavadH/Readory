@@ -595,7 +595,8 @@
     "ChapterAccessible": "Chapter is now accessible!",
     "TryAgain": "Try Again",
     "ReloadPage": "Reload Page",
-    "Contrast": "Contrast"
+    "Contrast": "Contrast",
+    "ShowResults": "Show results"
   },
   "UserHeader": {
     "Books": "Books",

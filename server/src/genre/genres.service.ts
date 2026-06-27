@@ -29,7 +29,7 @@ export class GenresService {
     }
     const genres = await this.prisma.genre.findMany({
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, slug: true },
+      select: { id: true, name: true, slug: true, iconKey: true },
     });
     await this.cacheManager.setString(
       this.CACHE_KEY_ALL,
