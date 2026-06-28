@@ -1,31 +1,29 @@
 "use client"
-import { getBookCoverThumbnailUrl } from "@/lib/media"
 import React, { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AppPagination } from "@/components/app-pagination"
+import { BookEditor } from "@/components/admin/book-editor"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     BookOpen,
     Plus,
     Search,
     CheckCircle2,
     Clock,
-    ImageIcon,
     X,
 } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/providers/toast-provider";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { MediaPicker } from "@/components/admin/media-picker"
 import { StatCard } from "@/components/admin/stat-card"
 import { BookCard } from "@/components/book-card"
 import type { BookCardData } from "@/lib/types"
-import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating } from "@readory/shared"
+import { BookStatus, type AgeRating } from "@readory/shared"
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
+import {useLocaleInfo} from "@/hooks/use-locale-info";
 
 type StatusFilter = "all" | "published" | "draft" | "featured"
 
@@ -53,6 +51,7 @@ export default function AdminBooks() {
     const t = useTranslations('Books');
     const g = useTranslations('General');
     const toast = useToast();
+    const { isRTL } = useLocaleInfo()
     const [books, setBooks] = useState<BookCardData[]>([])
     const [stats, setStats] = useState<BookStats>({
         total: 0,
@@ -60,10 +59,10 @@ export default function AdminBooks() {
         Drafts: 0,
     })
     const [newCoverPickerOpen, setNewCoverPickerOpen] = useState(false)
-    const [newCoverLabel, setNewCoverLabel] = useState<string>("")
+    const [, setNewCoverLabel] = useState<string>("")
     const [genres, setGenres] = useState<Genre[]>([])
     const [bookTypes, setBookTypes] = useState<BookType[]>([])
-    const [isLoadingTypes, setIsLoadingTypes] = useState(true)
+    const [, setIsLoadingTypes] = useState(true)
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
     const paginationScrollRef = useRef<HTMLDivElement>(null)
@@ -77,7 +76,7 @@ export default function AdminBooks() {
     const [newBook, setNewBook] = useState({
         title: "",
         originalTitle: "",
-        alternativeTitles: "",
+        alternativeTitles: [] as string[],
         author: "",
         typeId: undefined as number | undefined,
         description: "",
@@ -87,8 +86,8 @@ export default function AdminBooks() {
         isFeatured: false,
         status: BookStatus.Upcoming,
         ageRating: undefined as AgeRating | undefined,
-        publicationYear: "",
-        translators: "",
+        publicationYear: null as number | null,
+        translators: [] as string[],
     })
 
     useEffect(() => {
@@ -192,9 +191,7 @@ export default function AdminBooks() {
         try {
             await apiClient.post("/books", {
                 ...newBook,
-                alternativeTitles: newBook.alternativeTitles.split(",").map((item) => item.trim()).filter(Boolean),
-                translators: newBook.translators.split(",").map((item) => item.trim()).filter(Boolean),
-                publicationYear: newBook.publicationYear ? Number(newBook.publicationYear) : undefined,
+                publicationYear: newBook.publicationYear ?? undefined,
                 genreIds: newBook.genreIds,
             })
 
@@ -203,7 +200,7 @@ export default function AdminBooks() {
             setNewBook({
                 title: "",
                 originalTitle: "",
-                alternativeTitles: "",
+                alternativeTitles: [] as string[],
                 author: "",
                 typeId: bookTypes[0]?.id,
                 description: "",
@@ -213,8 +210,8 @@ export default function AdminBooks() {
                 isFeatured: false,
                 status: BookStatus.Upcoming,
                 ageRating: undefined,
-                publicationYear: "",
-                translators: "",
+                publicationYear: null as number | null,
+                translators: [] as string[],
             })
             setNewCoverLabel("")
             toast.success(t("BookCreatedSuccessfully"))
@@ -230,7 +227,7 @@ export default function AdminBooks() {
         setNewBook({
             title: "",
             originalTitle: "",
-            alternativeTitles: "",
+            alternativeTitles: [] as string[],
             author: "",
             typeId: bookTypes[0]?.id,
             description: "",
@@ -240,8 +237,8 @@ export default function AdminBooks() {
             isFeatured: false,
             status: BookStatus.Upcoming,
             ageRating: undefined,
-            publicationYear: "",
-            translators: "",
+            publicationYear: null as number | null,
+            translators: [] as string[],
         })
         setNewCoverLabel("")
     }
@@ -315,7 +312,7 @@ export default function AdminBooks() {
                 </div>
 
                 {showAddCard ? (
-                    <Card className="border-2 border-primary/20 shadow-lg">
+                    <Card className="relative border-border/60 shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between pb-4">
                             <CardTitle className="text-xl">{t("AddNewBook")}</CardTitle>
                             <Button
@@ -328,208 +325,32 @@ export default function AdminBooks() {
                                 <X className="h-4 w-4" />
                             </Button>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="add-title">{t("BookTitle")} *</Label>
-                                    <Input
-                                        id="add-title"
-                                        value={newBook.title}
-                                        onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-                                        placeholder={t("BookTitlePlaceholder")}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="add-author">{t("BookAuthor")}</Label>
-                                    <Input
-                                        id="add-author"
-                                        value={newBook.author}
-                                        onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-                                        placeholder={t("BookAuthorPlaceholder")}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="add-original-title">{t("OriginalTitle")}</Label>
-                                    <Input
-                                        id="add-original-title"
-                                        value={newBook.originalTitle}
-                                        onChange={(e) => setNewBook({ ...newBook, originalTitle: e.target.value })}
-                                        placeholder={t("OriginalTitlePlaceholder")}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="add-publication-year">{t("PublicationYear")}</Label>
-                                    <Input
-                                        id="add-publication-year"
-                                        value={newBook.publicationYear}
-                                        onChange={(e) => setNewBook({ ...newBook, publicationYear: e.target.value })}
-                                        placeholder={t("PublicationYearPlaceholder")}
-                                    />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="add-alternative-titles">{t("AlternativeTitles")}</Label>
-                                    <Input
-                                        id="add-alternative-titles"
-                                        value={newBook.alternativeTitles}
-                                        onChange={(e) => setNewBook({ ...newBook, alternativeTitles: e.target.value })}
-                                        placeholder={t("AlternativeTitlesPlaceholder")}
-                                    />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="add-translators">{t("Translators")}</Label>
-                                    <Input
-                                        id="add-translators"
-                                        value={newBook.translators}
-                                        onChange={(e) => setNewBook({ ...newBook, translators: e.target.value })}
-                                        placeholder={t("TranslatorsPlaceholder")}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>{t("BookType")}</Label>
-                                    <Select
-                                        value={newBook.typeId != null ? String(newBook.typeId) : undefined}
-                                        onValueChange={(v) => setNewBook({ ...newBook, typeId: Number(v) })}
-                                        disabled={isLoadingTypes || bookTypes.length === 0}
-                                        required
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {bookTypes.map((t) => (
-                                                <SelectItem key={t.id} value={String(t.id)}>
-                                                    {t.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>{t("BookStatus")}</Label>
-                                    <Select value={newBook.status} onValueChange={(v: BookStatus) => setNewBook({ ...newBook, status: v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{BOOK_STATUS_VALUES.map((value) => <SelectItem key={value} value={value}>{t(`BookStatus_${value}`)}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>{t("AgeRating")}</Label>
-                                    <Select value={newBook.ageRating} onValueChange={(v: AgeRating) => setNewBook({ ...newBook, ageRating: v })}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>{AGE_RATING_VALUES.map((value) => <SelectItem key={value} value={value}>{t(`AgeRating_${value}`)}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="add-description">{t("BookDescription")}</Label>
-                                <Textarea
-                                    id="add-description"
-                                    value={newBook.description}
-                                    onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
-                                    placeholder={t("BookDescriptionPlaceholder")}
-                                    rows={3}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{t("BookCover")} *</Label>
-                                <div className="flex items-center gap-3">
-                                    <Button type="button" variant="outline" onClick={() => setNewCoverPickerOpen(true)}>
-                                        <ImageIcon className="size-4 me-2" />
-                                        {t("BookSelectCover")}
-                                    </Button>
-                                    {newBook.coverImage ? (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setNewBook((p) => ({ ...p, coverImage: "" }))
-                                                setNewCoverLabel("")
-                                            }}
-                                        >
-                                            {g("Remove")}
-                                        </Button>
-                                    ) : (
-                                        <span className="text-xs text-muted-foreground">{t("NoCover")}</span>
-                                    )}
-                                </div>
-                                {newBook.coverImage && (
-                                    <div className="flex items-center gap-3 rounded-lg border p-3 bg-muted/20">
-                                        <img
-                                            src={`${getBookCoverThumbnailUrl(newBook.coverImage)}`}
-                                            alt={newCoverLabel || "image"}
-                                            className="w-14 aspect-3/4 rounded-md object-cover border"
-                                            loading="lazy"
-                                        />
-                                        <div className="min-w-0">
-                                            <div className="text-sm font-medium truncate">{newCoverLabel || "Selected cover"}</div>
-                                            <code className="text-[11px] text-muted-foreground font-mono truncate block">
-                                                {newBook.coverImage}
-                                            </code>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>{t("BookGenres")} *</Label>
-                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-auto border rounded-lg p-3 bg-muted/20">
-                                    {genres.map((g) => {
-                                        const checked = newBook.genreIds.includes(g.id)
-                                        return (
-                                            <label
-                                                key={g.id}
-                                                className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 p-2 rounded"
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={checked}
-                                                    onChange={() => {
-                                                        setNewBook((prev) => ({
-                                                            ...prev,
-                                                            genreIds: checked
-                                                                ? prev.genreIds.filter((x) => x !== g.id)
-                                                                : [...prev.genreIds, g.id],
-                                                        }))
-                                                    }}
-                                                    className="w-4 h-4"
-                                                />
-                                                <span>{g.name}</span>
-                                            </label>
-                                        )
-                                    })}
-                                </div>
-                                {genres.length === 0 && (
-                                    <p className="text-xs text-muted-foreground">{t("CreateGenresFirst")}</p>
-                                )}
-                            </div>
-                            <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    id="add-published"
-                                    checked={newBook.isPublished}
-                                    onChange={(e) => setNewBook({ ...newBook, isPublished: e.target.checked })}
-                                    className="w-4 h-4"
-                                />
-                                <Label htmlFor="add-published" className="cursor-pointer">
-                                    {t("PublishImmediately")}
-                                </Label>
-                            </div>
-                            <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg">
-                                <input
-                                    type="checkbox"
-                                    id="is-featured"
-                                    checked={newBook.isFeatured}
-                                    onChange={(e) => setNewBook({ ...newBook, isFeatured: e.target.checked })}
-                                    className="w-4 h-4"
-                                />
-                                <Label htmlFor="is-featured" className="cursor-pointer">
-                                    {t("MarkFeatured")}
-                                </Label>
-                            </div>
-                            <div className="flex gap-3 pt-2">
+                        <CardContent className="p-5 z-10 sm:p-8">
+                            <BookEditor
+                                value={newBook}
+                                onChange={(value) => setNewBook({
+                                    ...newBook,
+                                    ...value,
+                                    title: value.title || "",
+                                    originalTitle: value.originalTitle || "",
+                                    author: value.author || "",
+                                    description: value.description || "",
+                                    coverImage: value.coverImage || "",
+                                    typeId: value.typeId,
+                                    genreIds: value.genreIds || [],
+                                    alternativeTitles: value.alternativeTitles || [],
+                                    translators: value.translators || [],
+                                    publicationYear: value.publicationYear ?? null,
+                                    ageRating: value.ageRating ?? undefined,
+                                })}
+                                types={bookTypes}
+                                genres={genres}
+                                isRTL={isRTL}
+                                t={t}
+                                onSelectCover={() => setNewCoverPickerOpen(true)}
+                                coverAlt={newBook.title || t("AddNewBook")}
+                            />
+                            <div className="flex gap-3 pt-5">
                                 <Button variant="outline" onClick={handleCancelAdd} disabled={isSubmitting} className="flex-1">
                                     {g("Cancel")}
                                 </Button>
