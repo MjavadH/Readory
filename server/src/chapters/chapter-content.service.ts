@@ -98,6 +98,7 @@ export class ChapterContentService {
   }
 
   private async updateChapterAfterContentChange(
+      bookId: number,
       chapterId: number,
       data: {
         contentPath?: string | null;
@@ -105,15 +106,21 @@ export class ChapterContentService {
         pageCount: number;
       },
   ) {
-    await this.prisma.chapter.update({
-      where: { id: chapterId },
-      data: {
-        contentPath: data.contentPath ?? null,
-        contentType: data.contentType ?? null,
-        pageCount: data.pageCount,
-        contentVersion: { increment: 1 },
-      },
-    });
+    await this.prisma.$transaction([
+      this.prisma.chapter.update({
+        where: { id: chapterId },
+        data: {
+          contentPath: data.contentPath ?? null,
+          contentType: data.contentType ?? null,
+          pageCount: data.pageCount,
+          contentVersion: { increment: 1 },
+        },
+      }),
+      this.prisma.book.update({
+        where: { id: bookId },
+        data: { lastContentUpdate: new Date() },
+      }),
+    ]);
 
     await this.readerService.clearChapterManifestCache(chapterId);
     await this.cacheManager.del(this.cacheManager.buildKey('chapter-meta', chapterId));
@@ -172,7 +179,7 @@ export class ChapterContentService {
     const manifest = this.readerService.buildManifest('images', pages);
     await this.storage.putJson(`${prefix}/manifest.json`, manifest);
 
-    await this.updateChapterAfterContentChange(chapter.id, {
+    await this.updateChapterAfterContentChange(bookId, chapter.id, {
       contentPath: prefix,
       contentType: ChapterContentType.images,
       pageCount: pages.length,
@@ -219,7 +226,7 @@ export class ChapterContentService {
     const nextManifest = this.readerService.buildManifest('images', mergedPages);
     await this.storage.putJson(`${prefix}/manifest.json`, nextManifest);
 
-    await this.updateChapterAfterContentChange(chapter.id, {
+    await this.updateChapterAfterContentChange(bookId, chapter.id, {
       contentPath: prefix,
       contentType: ChapterContentType.images,
       pageCount: mergedPages.length,
@@ -314,7 +321,7 @@ export class ChapterContentService {
     const manifest = this.readerService.buildManifest('text', [{ key }]);
     await this.storage.putJson(`${prefix}/manifest.json`, manifest);
 
-    await this.updateChapterAfterContentChange(chapter.id, {
+    await this.updateChapterAfterContentChange(bookId, chapter.id, {
       contentPath: prefix,
       contentType: ChapterContentType.text,
       pageCount: 1,
@@ -336,7 +343,7 @@ export class ChapterContentService {
 
     await this.storage.deletePrefix(basePrefix);
 
-    await this.updateChapterAfterContentChange(chapter.id, {
+    await this.updateChapterAfterContentChange(bookId, chapter.id, {
       contentPath: null,
       contentType: null,
       pageCount: 0,
@@ -384,7 +391,7 @@ export class ChapterContentService {
     if (keptPages.length === 0) {
       await this.storage.deletePrefix(prefix);
 
-      await this.updateChapterAfterContentChange(chapter.id, {
+      await this.updateChapterAfterContentChange(bookId, chapter.id, {
         contentPath: null,
         contentType: null,
         pageCount: 0,
@@ -395,7 +402,7 @@ export class ChapterContentService {
 
       await this.storage.deleteKeys(removedKeys);
 
-      await this.updateChapterAfterContentChange(chapter.id, {
+      await this.updateChapterAfterContentChange(bookId, chapter.id, {
         contentPath: prefix,
         contentType: ChapterContentType.images,
         pageCount: keptPages.length,

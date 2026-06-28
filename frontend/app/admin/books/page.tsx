@@ -23,6 +23,7 @@ import { MediaPicker } from "@/components/admin/media-picker"
 import { StatCard } from "@/components/admin/stat-card"
 import { BookCard } from "@/components/book-card"
 import type { BookCardData } from "@/lib/types"
+import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating } from "@readory/shared"
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
 
@@ -75,6 +76,8 @@ export default function AdminBooks() {
 
     const [newBook, setNewBook] = useState({
         title: "",
+        originalTitle: "",
+        alternativeTitles: "",
         author: "",
         typeId: undefined as number | undefined,
         description: "",
@@ -82,6 +85,10 @@ export default function AdminBooks() {
         genreIds: [] as number[],
         isPublished: false,
         isFeatured: false,
+        status: BookStatus.Upcoming,
+        ageRating: undefined as AgeRating | undefined,
+        publicationYear: "",
+        translators: "",
     })
 
     useEffect(() => {
@@ -129,8 +136,8 @@ export default function AdminBooks() {
                 genres: (book.genres || []).map((g: any) => g.genre),
                 isFeatured: book.isFeatured,
                 isPublished: book.isPublished,
-                chapterCount: book._count?.chapters || 0,
-                updatedAt: book.updatedAt,
+                chapterCount: book.chapterCount || 0,
+                updatedAt: book.lastContentUpdate || book.updatedAt,
             }))
 
             setBooks(transformedBooks)
@@ -185,6 +192,9 @@ export default function AdminBooks() {
         try {
             await apiClient.post("/books", {
                 ...newBook,
+                alternativeTitles: newBook.alternativeTitles.split(",").map((item) => item.trim()).filter(Boolean),
+                translators: newBook.translators.split(",").map((item) => item.trim()).filter(Boolean),
+                publicationYear: newBook.publicationYear ? Number(newBook.publicationYear) : undefined,
                 genreIds: newBook.genreIds,
             })
 
@@ -192,6 +202,8 @@ export default function AdminBooks() {
             setShowAddCard(false)
             setNewBook({
                 title: "",
+                originalTitle: "",
+                alternativeTitles: "",
                 author: "",
                 typeId: bookTypes[0]?.id,
                 description: "",
@@ -199,6 +211,10 @@ export default function AdminBooks() {
                 genreIds: [],
                 isPublished: false,
                 isFeatured: false,
+                status: BookStatus.Upcoming,
+                ageRating: undefined,
+                publicationYear: "",
+                translators: "",
             })
             setNewCoverLabel("")
             toast.success(t("BookCreatedSuccessfully"))
@@ -213,6 +229,8 @@ export default function AdminBooks() {
         setShowAddCard(false)
         setNewBook({
             title: "",
+            originalTitle: "",
+            alternativeTitles: "",
             author: "",
             typeId: bookTypes[0]?.id,
             description: "",
@@ -220,6 +238,10 @@ export default function AdminBooks() {
             genreIds: [],
             isPublished: false,
             isFeatured: false,
+            status: BookStatus.Upcoming,
+            ageRating: undefined,
+            publicationYear: "",
+            translators: "",
         })
         setNewCoverLabel("")
     }
@@ -327,6 +349,43 @@ export default function AdminBooks() {
                                         placeholder={t("BookAuthorPlaceholder")}
                                     />
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="add-original-title">{t("OriginalTitle")}</Label>
+                                    <Input
+                                        id="add-original-title"
+                                        value={newBook.originalTitle}
+                                        onChange={(e) => setNewBook({ ...newBook, originalTitle: e.target.value })}
+                                        placeholder={t("OriginalTitlePlaceholder")}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="add-publication-year">{t("PublicationYear")}</Label>
+                                    <Input
+                                        id="add-publication-year"
+                                        value={newBook.publicationYear}
+                                        onChange={(e) => setNewBook({ ...newBook, publicationYear: e.target.value })}
+                                        placeholder={t("PublicationYearPlaceholder")}
+                                    />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="add-alternative-titles">{t("AlternativeTitles")}</Label>
+                                    <Input
+                                        id="add-alternative-titles"
+                                        value={newBook.alternativeTitles}
+                                        onChange={(e) => setNewBook({ ...newBook, alternativeTitles: e.target.value })}
+                                        placeholder={t("AlternativeTitlesPlaceholder")}
+                                    />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="add-translators">{t("Translators")}</Label>
+                                    <Input
+                                        id="add-translators"
+                                        value={newBook.translators}
+                                        onChange={(e) => setNewBook({ ...newBook, translators: e.target.value })}
+                                        placeholder={t("TranslatorsPlaceholder")}
+                                    />
+                                </div>
                                 <div className="space-y-2">
                                     <Label>{t("BookType")}</Label>
                                     <Select
@@ -345,6 +404,23 @@ export default function AdminBooks() {
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>{t("BookStatus")}</Label>
+                                    <Select value={newBook.status} onValueChange={(v: BookStatus) => setNewBook({ ...newBook, status: v })}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>{BOOK_STATUS_VALUES.map((value) => <SelectItem key={value} value={value}>{t(`BookStatus_${value}`)}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>{t("AgeRating")}</Label>
+                                    <Select value={newBook.ageRating} onValueChange={(v: AgeRating) => setNewBook({ ...newBook, ageRating: v })}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>{AGE_RATING_VALUES.map((value) => <SelectItem key={value} value={value}>{t(`AgeRating_${value}`)}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
                             </div>
