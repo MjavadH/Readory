@@ -617,7 +617,13 @@
     "AgeRating_GENERAL": "General",
     "AgeRating_TEEN": "Teen",
     "AgeRating_MATURE": "Mature",
-    "AgeRating_ADULTS_ONLY": "Adults only"
+    "AgeRating_ADULTS_ONLY": "Adults only",
+    "Classification": "Classification",
+    "BasicInfo": "Basic Info",
+    "DisplaySettings": "Display Settings",
+    "Publish": "Publish",
+    "MarkPublished": "Mark as Published",
+    "SelectAgeRating": "Select age rating"
   },
   "UserHeader": {
     "Books": "Books",

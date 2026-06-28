@@ -617,7 +617,13 @@
     "AgeRating_GENERAL": "عمومی",
     "AgeRating_TEEN": "نوجوان",
     "AgeRating_MATURE": "بزرگسال",
-    "AgeRating_ADULTS_ONLY": "فقط بزرگسالان"
+    "AgeRating_ADULTS_ONLY": "فقط بزرگسالان",
+    "Classification": "طبقه بندی",
+    "BasicInfo": "اطلاعات پایه",
+    "DisplaySettings": "تنظیمات نمایش",
+    "Publish": "انتشار",
+    "MarkPublished": "علامت‌گذاری به عنوان منتشر شده",
+    "SelectAgeRating": "رده سنی انتخاب کنید"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

@@ -20,6 +20,15 @@ import {
     EyeIcon,
     Lock,
     Unlock,
+    ChevronDown,
+    Calendar,
+    Hash,
+    Languages,
+    Tag,
+    LayoutGrid,
+    LucideBookOpenText,
+    BookText,
+    Type
 } from 'lucide-react';
 import {
     Dialog,
@@ -29,6 +38,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem, SelectSeparator,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +64,7 @@ import Link from "next/link";
 import { AppIcon } from "@/components/AppIcon";
 import { useToast } from "@/providers/toast-provider";
 import { useTranslations } from "next-intl";
+import {useLocaleInfo} from "@/hooks/use-locale-info";
 
 type BookDetails = {
     id: number;
@@ -131,6 +149,7 @@ export default function AdminBookDetail() {
     const t = useTranslations('Books');
     const g = useTranslations('General');
     const ti = useTranslations('Time');
+    const { isRTL } = useLocaleInfo()
     const toast = useToast();
     const params = useParams<{ id: string }>();
     const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -195,7 +214,7 @@ export default function AdminBookDetail() {
             setEditedBook({
                 ...data,
                 typeId: data.type?.id,
-                genreIds: data.genres?.map(g => g.id) || []
+                genreIds: data.genres?.map((g: { id: number }) => g.id) || []
             });
         } catch (error) {
             toast.error(getApiErrorMessage(error, t("FailedLoadDetails")));
@@ -396,7 +415,7 @@ export default function AdminBookDetail() {
                                         setEditedBook({
                                             ...book,
                                             typeId: book.type?.id,
-                                            genreIds: book.genres?.map(g => g.id) || [],
+                                            genreIds: book.genres?.map((g: { id: number }) => g.id) || [],
                                         });
                                     }}
                                 >
@@ -417,7 +436,7 @@ export default function AdminBookDetail() {
                 {/* Hero card */}
                 <Card className="relative border-border/60 shadow-sm">
                     {/* Ambient cover backdrop */}
-                    <div className="absolute inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
+                    <div className="absolute rounded-xl inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
                         <Image
                             src={coverUrl}
                             alt=""
@@ -461,231 +480,283 @@ export default function AdminBookDetail() {
                             </div>
 
                             {/* Meta */}
-                            <div className="min-w-0 space-y-5">
-                                {/* Status pills */}
-                                {!editMode && (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {book.isPublished ? (
-                                            <Badge className="gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-                                                <Eye className="h-3.5 w-3.5" />
-                                                {t("Published")}
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="secondary" className="gap-1.5">
-                                                <EyeOff className="h-3.5 w-3.5" />
-                                                {t("Drafts")}
-                                            </Badge>
-                                        )}
-                                        {book.isFeatured && (
-                                            <Badge className="gap-1.5 border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300">
-                                                <Sparkles className="h-3.5 w-3.5" />
-                                                {t("Featured")}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Title */}
-                                {editMode ? (
-                                    <div className="space-y-2">
-                                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                            {t("BookTitlePlaceholder")}
-                                        </Label>
-                                        <Input
-                                            value={editedBook.title || ''}
-                                            onChange={(e) => setEditedBook({ ...editedBook, title: e.target.value })}
-                                            className="h-12 text-lg font-semibold"
-                                            placeholder={t("BookTitlePlaceholder")}
-                                        />
-                                    </div>
-                                ) : (
-                                    <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-                                        {book.title}
-                                    </h1>
-                                )}
-
-                                {editMode && (
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                {t("OriginalTitle")}
-                                            </Label>
-                                            <Input
-                                                value={editedBook.originalTitle || ''}
-                                                onChange={(e) => setEditedBook({ ...editedBook, originalTitle: e.target.value })}
-                                                placeholder={t("OriginalTitlePlaceholder")}
-                                            />
+                            <div className="min-w-0">
+                                {!editMode ? (
+                                    /* VIEW MODE */
+                                    <div className="space-y-5">
+                                        {/* Status pills */}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {book.isPublished ? (
+                                                <Badge className="gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                    {t("Published")}
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="gap-1.5">
+                                                    <EyeOff className="h-3.5 w-3.5" />
+                                                    {t("Drafts")}
+                                                </Badge>
+                                            )}
+                                            {book.isFeatured && (
+                                                <Badge className="gap-1.5 border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300">
+                                                    <Sparkles className="h-3.5 w-3.5" />
+                                                    {t("Featured")}
+                                                </Badge>
+                                            )}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                {t("PublicationYear")}
-                                            </Label>
-                                            <Input
-                                                value={editedBook.publicationYear ?? ''}
-                                                onChange={(e) => setEditedBook({ ...editedBook, publicationYear: e.target.value ? Number(e.target.value) : null })}
-                                                placeholder={t("PublicationYearPlaceholder")}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                {t("AlternativeTitles")}
-                                            </Label>
-                                            <Input
-                                                value={(editedBook.alternativeTitles || []).join(', ')}
-                                                onChange={(e) => setEditedBook({ ...editedBook, alternativeTitles: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
-                                                placeholder={t("AlternativeTitlesPlaceholder")}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                {t("Translators")}
-                                            </Label>
-                                            <Input
-                                                value={(editedBook.translators || []).join(', ')}
-                                                onChange={(e) => setEditedBook({ ...editedBook, translators: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
-                                                placeholder={t("TranslatorsPlaceholder")}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
 
-                                {/* Author */}
-                                {editMode ? (
-                                    <div className="space-y-2">
-                                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                            {t("BookAuthorPlaceholder")}
-                                        </Label>
-                                        <Input
-                                            value={editedBook.author || ''}
-                                            onChange={(e) => setEditedBook({ ...editedBook, author: e.target.value })}
-                                            placeholder={t("BookAuthorPlaceholder")}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="inline-flex items-center gap-2 text-muted-foreground">
-                                        <User className="h-4 w-4" />
-                                        <span className="text-sm font-medium">{book.author || t("Unknown")}</span>
-                                    </div>
-                                )}
+                                        {/* Title */}
+                                        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+                                            {book.title}
+                                        </h1>
 
+                                        {/* Author */}
+                                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                                            <User className="h-4 w-4" />
+                                            <span className="text-sm font-medium">{book.author || t("Unknown")}</span>
+                                        </div>
 
-                                    {!editMode && (
+                                        {/* Meta badges */}
                                         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                             <Badge variant="outline">{t(`BookStatus_${book.status}`)}</Badge>
                                             {book.ageRating && <Badge variant="outline">{t(`AgeRating_${book.ageRating}`)}</Badge>}
                                             {book.publicationYear && <Badge variant="outline">{book.publicationYear}</Badge>}
                                             {book.originalTitle && <Badge variant="outline">{book.originalTitle}</Badge>}
                                         </div>
-                                    )}
 
-                                {/* Type + genres (view) */}
-                                {!editMode && (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-foreground">
-                                            <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
-                                            {book.type.name}
-                                        </Badge>
-                                        {book.genres.map((genre) => (
-                                            <Badge key={genre.id} variant="outline" className="gap-1.5">
-                                                <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
-                                                {genre.name}
+                                        {/* Type + genres */}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-foreground">
+                                                <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
+                                                {book.type.name}
                                             </Badge>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {/* Edit: type/genres/flags */}
-                                {editMode && (
-                                    <div className="space-y-4 rounded-xl border border-border/60 bg-card/50 p-4">
-                                        <div className="grid gap-4 sm:grid-cols-2">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    {t("BookType")}
-                                                </Label>
-                                                <select
-                                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                    value={editedBook.typeId || ''}
-                                                    onChange={(e) => setEditedBook({ ...editedBook, typeId: Number(e.target.value) })}
-                                                >
-                                                    {types.map((tp) => (
-                                                        <option key={tp.id} value={tp.id}>{tp.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    {t("BookStatus")}
-                                                </Label>
-                                                <select
-                                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                    value={editedBook.status || BookStatus.Upcoming}
-                                                    onChange={(e) => setEditedBook({ ...editedBook, status: e.target.value as BookStatus })}
-                                                >
-                                                    {BOOK_STATUS_VALUES.map((value) => (
-                                                        <option key={value} value={value}>{t(`BookStatus_${value}`)}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    {t("AgeRating")}
-                                                </Label>
-                                                <select
-                                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                    value={editedBook.ageRating || ''}
-                                                    onChange={(e) => setEditedBook({ ...editedBook, ageRating: e.target.value ? e.target.value as AgeRating : null })}
-                                                >
-                                                    <option value="">{t("None")}</option>
-                                                    {AGE_RATING_VALUES.map((value) => (
-                                                        <option key={value} value={value}>{t(`AgeRating_${value}`)}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="grid grid-cols-1 gap-3">
-                                                <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background px-3 py-2">
-                                                    <span className="flex items-center gap-2 text-sm">
-                                                        <Eye className="h-4 w-4 text-muted-foreground" />
-                                                        {t("Published")}
-                                                    </span>
-                                                    <Switch
-                                                        id="isPublished"
-                                                        checked={editedBook.isPublished ?? false}
-                                                        onCheckedChange={(checked) =>
-                                                            setEditedBook({ ...editedBook, isPublished: checked })
-                                                        }
-                                                    />
-                                                </label>
-                                                <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background px-3 py-2">
-                                                    <span className="flex items-center gap-2 text-sm">
-                                                        <Sparkles className="h-4 w-4 text-muted-foreground" />
-                                                        {t("MarkFeatured")}
-                                                    </span>
-                                                    <Switch
-                                                        id="isFeatured"
-                                                        checked={editedBook.isFeatured ?? false}
-                                                        onCheckedChange={(checked) =>
-                                                            setEditedBook({ ...editedBook, isFeatured: checked })
-                                                        }
-                                                    />
-                                                </label>
-                                            </div>
+                                            {book.genres.map((genre: { id: number; name: string; slug: string; iconKey: IconKey }) => (
+                                                <Badge key={genre.id} variant="outline" className="gap-1.5">
+                                                    <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
+                                                    {genre.name}
+                                                </Badge>
+                                            ))}
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                {t("BookGenres")}
-                                            </Label>
+                                        {/* Description */}
+                                        <p className="text-pretty text-justify text-[15px] leading-relaxed text-muted-foreground">
+                                            {book.description || t("NoDescriptionAvailable")}
+                                        </p>
+
+                                        {/* Stats */}
+                                        <div className="grid gap-3 pt-2 sm:grid-cols-3">
+                                            <StatTile
+                                                icon={<Star className="h-4 w-4" />}
+                                                label={t("Rating")}
+                                                value={Number(book.ratingAvg ?? 0).toFixed(1)}
+                                                hint={t("NReviews", { count: book.ratingCount })}
+                                            />
+                                            <StatTile
+                                                icon={<BookOpen className="h-4 w-4" />}
+                                                label={t("Chapters")}
+                                                value={String(book.chapterCount)}
+                                            />
+                                            <StatTile
+                                                icon={<Clock className="h-4 w-4" />}
+                                                label={t("Updated")}
+                                                value={formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti)}
+                                                small
+                                            />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* EDIT MODE */
+                                    <div className="space-y-0 divide-y divide-border/60">
+
+                                        {/* Section: Visibility */}
+                                        <EditSection
+                                            icon={<Eye className="h-4 w-4" />}
+                                            title={t("DisplaySettings")}
+                                        >
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <ToggleRow
+                                                    icon={<Eye className="h-4 w-4 text-muted-foreground" />}
+                                                    label={t("Publish")}
+                                                    description={t("MarkPublished")}
+                                                    checked={editedBook.isPublished ?? false}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditedBook({ ...editedBook, isPublished: checked })
+                                                    }
+                                                    activeColor="emerald"
+                                                />
+                                                <ToggleRow
+                                                    icon={<Sparkles className="h-4 w-4 text-muted-foreground" />}
+                                                    label={t("Featured")}
+                                                    description={t("MarkFeatured")}
+                                                    checked={editedBook.isFeatured ?? false}
+                                                    onCheckedChange={(checked) =>
+                                                        setEditedBook({ ...editedBook, isFeatured: checked })
+                                                    }
+                                                    activeColor="amber"
+                                                />
+                                            </div>
+                                        </EditSection>
+
+                                        {/* Section: Basic Info */}
+                                        <EditSection
+                                            icon={<BookOpen className="h-4 w-4" />}
+                                            title={t("BasicInfo")}
+                                        >
+                                            <div className="space-y-4">
+                                                <EditField label={t("BookTitle")} required>
+                                                    <div className="relative">
+                                                        <BookText className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                        <Input
+                                                            value={editedBook.title || ''}
+                                                            onChange={(e) => setEditedBook({ ...editedBook, title: e.target.value })}
+                                                            className="h-11 ps-9 text-base font-medium"
+                                                            placeholder={t("BookTitlePlaceholder")}
+                                                        />
+                                                    </div>
+                                                </EditField>
+
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <EditField label={t("OriginalTitle")}>
+                                                        <div className="relative">
+                                                            <Type className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                            <Input
+                                                                value={editedBook.originalTitle || ''}
+                                                                onChange={(e) => setEditedBook({ ...editedBook, originalTitle: e.target.value })}
+                                                                placeholder={t("OriginalTitlePlaceholder")}
+                                                                className="ps-9"
+                                                            />
+                                                        </div>
+                                                    </EditField>
+                                                    <EditField label={t("BookAuthorPlaceholder")}>
+                                                        <div className="relative">
+                                                            <User className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                            <Input
+                                                                value={editedBook.author || ''}
+                                                                onChange={(e) => setEditedBook({ ...editedBook, author: e.target.value })}
+                                                                className="ps-9"
+                                                                placeholder={t("BookAuthorPlaceholder")}
+                                                            />
+                                                        </div>
+                                                    </EditField>
+                                                </div>
+
+                                                <EditField label={t("AlternativeTitles")}>
+                                                    <div className="relative">
+                                                        <Hash className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                        <Input
+                                                            value={(editedBook.alternativeTitles || []).join(',')}
+                                                            onChange={(e) => setEditedBook({ ...editedBook, alternativeTitles: e.target.value.split(',')})}
+                                                            className="ps-9"
+                                                            placeholder={t("AlternativeTitlesPlaceholder")}
+                                                        />
+                                                    </div>
+                                                </EditField>
+
+                                                <div className="grid gap-4 sm:grid-cols-2">
+                                                    <EditField label={t("Translators")}>
+                                                        <div className="relative">
+                                                            <Languages className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                            <Input
+                                                                value={(editedBook.translators || []).join(', ')}
+                                                                onChange={(e) => setEditedBook({ ...editedBook, translators: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
+                                                                className="ps-9"
+                                                                placeholder={t("TranslatorsPlaceholder")}
+                                                            />
+                                                        </div>
+                                                    </EditField>
+                                                    <EditField label={t("PublicationYear")}>
+                                                        <div className="relative">
+                                                            <Calendar className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                                            <Input
+                                                                value={editedBook.publicationYear ?? ''}
+                                                                onChange={(e) => setEditedBook({ ...editedBook, publicationYear: e.target.value ? Number(e.target.value) : null })}
+                                                                className="ps-9"
+                                                                placeholder={t("PublicationYearPlaceholder")}
+                                                            />
+                                                        </div>
+                                                    </EditField>
+                                                </div>
+                                            </div>
+                                        </EditSection>
+
+                                        {/* Section: Classification */}
+                                        <EditSection
+                                            icon={<LayoutGrid className="h-4 w-4" />}
+                                            title={t("Classification")}
+                                        >
+                                            <div className="grid gap-4 sm:grid-cols-3">
+                                                <EditField required label={t("BookType")}>
+                                                    <div className="relative">
+                                                        <Select
+                                                            dir={isRTL ? "rtl" : "ltr"}
+                                                            value={`${editedBook.typeId}` || ''}
+                                                            onValueChange={(e) => setEditedBook({ ...editedBook, typeId: Number(e) })}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper">
+                                                                {types.map((tp) => (
+                                                                    <SelectItem key={tp.id} value={`${tp.id}`}>{tp.name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground opacity-50" />
+                                                    </div>
+                                                </EditField>
+
+                                                <EditField label={t("BookStatus")}>
+                                                        <Select
+                                                            dir={isRTL ? "rtl" : "ltr"}
+                                                            value={editedBook.status || BookStatus.Upcoming}
+                                                            onValueChange={(value) => setEditedBook({ ...editedBook, status: value as BookStatus })}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper">
+                                                                {BOOK_STATUS_VALUES.map((value: string) => (
+                                                                    <SelectItem key={value} value={value}>{t(`BookStatus_${value}`)}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                </EditField>
+
+                                                <EditField label={t("AgeRating")}>
+                                                        <Select
+                                                            dir={isRTL ? "rtl" : "ltr"}
+                                                            value={editedBook.ageRating || ''}
+                                                            onValueChange={(value) => setEditedBook({ ...editedBook, ageRating: value !== "None" ? value as AgeRating: null })}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder={t("SelectAgeRating")} />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper">
+                                                                <SelectItem value="None">{t("None")}</SelectItem>
+                                                                <SelectSeparator />
+                                                                <SelectGroup>
+                                                                    {AGE_RATING_VALUES.map((value: string) => (
+                                                                        <SelectItem key={value} value={value}>{t(`AgeRating_${value}`)}</SelectItem>
+                                                                    ))}
+                                                                </SelectGroup>
+                                                            </SelectContent>
+                                                        </Select>
+                                                </EditField>
+                                            </div>
+                                        </EditSection>
+
+                                        {/* Section: Genres */}
+                                        <EditSection
+                                            icon={<Tag className="h-4 w-4" />}
+                                            title={t("BookGenres")}
+                                        >
                                             <div className="flex flex-wrap gap-2">
                                                 {genres.map((gn) => {
                                                     const isSelected = editedBook.genreIds?.includes(gn.id);
                                                     return (
-                                                        <Badge
+                                                        <button
                                                             key={gn.id}
-                                                            variant={isSelected ? "default" : "outline"}
-                                                            className="cursor-pointer transition-colors"
+                                                            type="button"
                                                             onClick={() => {
                                                                 const current = editedBook.genreIds || [];
                                                                 const next = isSelected
@@ -693,57 +764,61 @@ export default function AdminBookDetail() {
                                                                     : [...current, gn.id];
                                                                 setEditedBook({ ...editedBook, genreIds: next });
                                                             }}
+                                                            className={[
+                                                                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                                                                isSelected
+                                                                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                                                                    : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent",
+                                                            ].join(' ')}
                                                         >
+                                                            {isSelected && <Check className="h-3 w-3" />}
                                                             {gn.name}
-                                                        </Badge>
+                                                        </button>
                                                     );
                                                 })}
+                                            </div>
+                                        </EditSection>
+
+                                        {/* Section: Description */}
+                                        <EditSection
+                                            icon={<LucideBookOpenText className="h-4 w-4" />}
+                                            title={t("BookDescription")}
+                                        >
+                                            <Textarea
+                                                value={editedBook.description || ''}
+                                                onChange={(e) =>
+                                                    setEditedBook({ ...editedBook, description: e.target.value })
+                                                }
+                                                placeholder={t("BookDescriptionPlaceholder")}
+                                                rows={5}
+                                                className="resize-none"
+                                            />
+                                        </EditSection>
+
+                                        {/* Stats (always visible) */}
+                                        <div className="pt-5">
+                                            <div className="grid gap-3 sm:grid-cols-3">
+                                                <StatTile
+                                                    icon={<Star className="h-4 w-4" />}
+                                                    label={t("Rating")}
+                                                    value={Number(book.ratingAvg ?? 0).toFixed(1)}
+                                                    hint={t("NReviews", { count: book.ratingCount })}
+                                                />
+                                                <StatTile
+                                                    icon={<BookOpen className="h-4 w-4" />}
+                                                    label={t("Chapters")}
+                                                    value={String(book.chapterCount)}
+                                                />
+                                                <StatTile
+                                                    icon={<Clock className="h-4 w-4" />}
+                                                    label={t("Updated")}
+                                                    value={formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti)}
+                                                    small
+                                                />
                                             </div>
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Description */}
-                                {editMode ? (
-                                    <div className="space-y-2">
-                                        <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                            {t("BookDescription")}
-                                        </Label>
-                                        <Textarea
-                                            value={editedBook.description || ''}
-                                            onChange={(e) =>
-                                                setEditedBook({ ...editedBook, description: e.target.value })
-                                            }
-                                            placeholder={t("BookDescriptionPlaceholder")}
-                                            rows={5}
-                                        />
-                                    </div>
-                                ) : (
-                                    <p className="text-pretty text-justify text-[15px] leading-relaxed text-muted-foreground">
-                                        {book.description || t("NoDescriptionAvailable")}
-                                    </p>
-                                )}
-
-                                {/* Stats */}
-                                <div className="grid gap-3 pt-2 sm:grid-cols-3">
-                                    <StatTile
-                                        icon={<Star className="h-4 w-4" />}
-                                        label={t("Rating")}
-                                        value={Number(book.ratingAvg ?? 0).toFixed(1)}
-                                        hint={t("NReviews", { count: book.ratingCount })}
-                                    />
-                                    <StatTile
-                                        icon={<BookOpen className="h-4 w-4" />}
-                                        label={t("Chapters")}
-                                        value={String(book.chapterCount)}
-                                    />
-                                    <StatTile
-                                        icon={<Clock className="h-4 w-4" />}
-                                        label={t("Updated")}
-                                        value={formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti)}
-                                        small
-                                    />
-                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -887,12 +962,12 @@ export default function AdminBookDetail() {
                             {t("DeleteBookDescription", { BookTitle: book.title })}
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter className="gap-2 sm:gap-0">
+                    <DialogFooter>
                         <Button variant="outline" onClick={() => setDeleteBookDialog(false)}>
                             {g("Cancel")}
                         </Button>
                         <Button variant="destructive" onClick={handleDeleteBook}>
-                            <Trash className="me-2 h-4 w-4" />
+                            <Trash className="h-4 w-4" />
                             {t("DeleteBook")}
                         </Button>
                     </DialogFooter>
@@ -997,7 +1072,7 @@ export default function AdminBookDetail() {
                 open={newCoverPickerOpen}
                 onOpenChangeAction={setNewCoverPickerOpen}
                 value={coverCodeForDisplay || null}
-                onSelectAction={(item) => {
+                onSelectAction={(item: { code?: string } | null) => {
                     setEditedBook((prev) => ({
                         ...prev,
                         coverImage: item?.code ?? "",
@@ -1030,5 +1105,94 @@ function StatTile({icon, label, value, hint, small,}: {
                 {hint && <p className="truncate text-[11px] text-muted-foreground">{hint}</p>}
             </div>
         </div>
+    );
+}
+
+function EditSection({
+                         icon,
+                         title,
+                         children,
+                     }: {
+    icon: React.ReactNode;
+    title: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="py-5 first:pt-0">
+            <div className="mb-4 flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    {icon}
+                </span>
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    {title}
+                </span>
+            </div>
+            {children}
+        </div>
+    );
+}
+
+function EditField({
+                       label,
+                       required,
+                       children,
+                   }: {
+    label: string;
+    required?: boolean;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">
+                {label}
+                {required && <span className="ms-0.5 text-destructive">*</span>}
+            </Label>
+            {children}
+        </div>
+    );
+}
+
+function ToggleRow({
+                       icon,
+                       label,
+                       description,
+                       checked,
+                       onCheckedChange,
+                       activeColor,
+                   }: {
+    icon: React.ReactNode;
+    label: string;
+    description: string;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+    activeColor?: "emerald" | "amber";
+}) {
+    const activeRing =
+        activeColor === "emerald"
+            ? "data-[active=true]:border-emerald-500/40 data-[active=true]:bg-emerald-500/5"
+            : activeColor === "amber"
+                ? "data-[active=true]:border-amber-500/40 data-[active=true]:bg-amber-500/5"
+                : "";
+
+    return (
+        <label
+            data-active={checked}
+            className={[
+                "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 transition-all duration-150 hover:border-border",
+                activeRing,
+            ].join(' ')}
+        >
+            <div className="flex min-w-0 items-center gap-3">
+                <span className="shrink-0 text-muted-foreground">{icon}</span>
+                <div className="min-w-0">
+                    <p className="text-sm font-medium leading-none">{label}</p>
+                    <p className="mt-1 truncate text-[11px] text-muted-foreground">{description}</p>
+                </div>
+            </div>
+            <Switch
+                checked={checked}
+                onCheckedChange={onCheckedChange}
+            />
+        </label>
     );
 }
