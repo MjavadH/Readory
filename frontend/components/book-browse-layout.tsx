@@ -793,7 +793,7 @@ export function BookBrowseLayout({
                                 {hasMore && (
                                     <div
                                         ref={loadMoreRef}
-                                        className="mt-10 flex justify-center"
+                                        className="mt-10"
                                     >
                                         {isLoadingMore && (
                                             <BookGridSkeleton count={12} />
