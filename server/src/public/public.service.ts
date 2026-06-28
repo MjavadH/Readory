@@ -40,12 +40,13 @@ export class PublicService {
                     this.prisma.book.findMany({
                         where: { isPublished: true },
                         take: 12,
-                        orderBy: { updatedAt: 'desc' },
+                        orderBy: { lastContentUpdate: 'desc' },
                         select: {
                             id: true,
                             title: true,
                             coverImage: true,
                             updatedAt: true,
+                            lastContentUpdate: true,
                             type: { select: { id: true, name: true, slug: true } },
                             chapters: {
                                 take: 2,
@@ -68,7 +69,7 @@ export class PublicService {
                             coverImage: true,
                             author: true,
                             type: { select: { id: true, name: true, slug: true } },
-                            _count: { select: { chapters: true } },
+                            chapterCount: true,
                             genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
                             ratingAvg: true,
                             ratingCount: true,
@@ -102,7 +103,7 @@ export class PublicService {
                         id: b.id,
                         title: b.title,
                         cover: b.coverImage,
-                        time: b.updatedAt,
+                        time: b.lastContentUpdate ?? b.updatedAt,
                         type: b.type,
                         chapters: b.chapters.map((c) => ({
                             id: c.id,
@@ -117,7 +118,7 @@ export class PublicService {
                         coverImage: b.coverImage,
                         type: b.type,
                         genres: b.genres.map((g) => g.genre),
-                        chapterCount: b._count.chapters,
+                        chapterCount: b.chapterCount,
                         ratingAvg: Number(b.ratingAvg),
                         ratingCount: b.ratingCount,
                     })),
@@ -147,7 +148,7 @@ export class PublicService {
                                 genres: { some: { genreId: g.id } },
                                 type: { isActive: true },
                             },
-                            orderBy: [{ updatedAt: 'desc' }],
+                            orderBy: [{ lastContentUpdate: 'desc' }],
                             take: 6,
                             select: {
                                 id: true,

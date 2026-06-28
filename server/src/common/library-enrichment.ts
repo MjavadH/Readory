@@ -13,6 +13,7 @@ export type EnrichedLibraryItem = {
     author: string | null;
     coverImage: string | null;
     updatedAt: Date;
+    chapterCount: number;
     type: { slug: string } | null;
   };
   purchasedChapters: number;
@@ -35,8 +36,7 @@ export async function enrichLibraryGroups(
 
   if (bookIds.length === 0) return [];
 
-  const [books, chapterCounts] = await Promise.all([
-    prisma.book.findMany({
+  const books = await prisma.book.findMany({
       where: { id: { in: bookIds } },
       select: {
         id: true,
@@ -44,22 +44,15 @@ export async function enrichLibraryGroups(
         author: true,
         coverImage: true,
         updatedAt: true,
+        chapterCount: true,
         type: { select: { slug: true } },
       },
-    }),
-    prisma.chapter.groupBy({
-      by: ['bookId'],
-      where: { bookId: { in: bookIds } },
-      _count: { _all: true },
-    }),
-  ]);
+    });
 
   const byBookId = new Map<number, (typeof books)[number]>();
   for (const b of books) byBookId.set(b.id, b);
 
-  const chaptersByBookId = new Map<number, number>();
-  for (const row of chapterCounts)
-    chaptersByBookId.set(row.bookId, row._count._all);
+
 
   const items: EnrichedLibraryItem[] = [];
   for (const g of groups) {
@@ -68,7 +61,7 @@ export async function enrichLibraryGroups(
     if (!book) continue;
 
     const purchasedChapters = g._count._all;
-    const totalChapters = chaptersByBookId.get(bookId) ?? 0;
+    const totalChapters = book.chapterCount;
     const purchasedPercent =
       totalChapters <= 0
         ? 0
@@ -81,6 +74,7 @@ export async function enrichLibraryGroups(
         author: book.author,
         coverImage: book.coverImage,
         updatedAt: book.updatedAt,
+        chapterCount: book.chapterCount,
         type: book.type as EnrichedLibraryItem['book']['type'],
       },
       purchasedChapters,

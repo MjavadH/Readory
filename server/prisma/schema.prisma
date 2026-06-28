@@ -72,20 +72,28 @@ model WalletTransaction {
 
 // Books
 model Book {
-  id          Int      @id @default(autoincrement())
-  title       String
-  author      String?
-  description String?
-  typeId      Int
-  type        BookType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  id                Int      @id @default(autoincrement())
+  title             String
+  originalTitle     String?
+  alternativeTitles String[] @default([])
+  author            String?
+  description       String?
+  typeId            Int
+  type              BookType @relation(fields: [typeId], references: [id], onDelete: Restrict)
   // Stores Media.code
-  coverImage  String?
-  coverMedia  Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
+  coverImage        String?
+  coverMedia        Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
 
-  isPublished Boolean     @default(false)
-  isFeatured  Boolean     @default(false)
-  chapters    Chapter[]
-  genres      BookGenre[]
+  isPublished       Boolean     @default(false)
+  isFeatured        Boolean     @default(false)
+  status            String      @default("UPCOMING")
+  ageRating         String?
+  publicationYear   Int?
+  translators       String[]    @default([])
+  lastContentUpdate DateTime?
+  chapterCount      Int         @default(0)
+  chapters          Chapter[]
+  genres            BookGenre[]
 
   ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
   ratingCount Int     @default(0)
@@ -102,6 +110,7 @@ model Book {
   @@index([isPublished, isFeatured])
   @@index([createdAt])
   @@index([updatedAt])
+  @@index([lastContentUpdate])
 }
 
 model BookType {

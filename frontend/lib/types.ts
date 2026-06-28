@@ -1,4 +1,4 @@
-import type { IconKey } from "@readory/shared"
+import type { AgeRating, BookStatus, IconKey } from "@readory/shared"
 
 export interface BookType {
     id: number;
@@ -19,6 +19,8 @@ export interface BookCardData {
     id: number;
     slug?: string;
     title: string;
+    originalTitle?: string | null;
+    alternativeTitles?: string[];
     coverImage: string;
     type: BookType;
     author?: string;
@@ -28,7 +30,12 @@ export interface BookCardData {
     genres?: BookGenre[];
     isFeatured?: boolean;
     isPublished?: boolean;
+    status?: BookStatus;
+    ageRating?: AgeRating | null;
+    publicationYear?: number | null;
+    translators?: string[];
     chapterCount?: number;
+    lastContentUpdate?: string | null;
     updatedAt?: string;
 }
 

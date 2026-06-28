@@ -39,7 +39,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from "@/components/ui/label";
 import { formatUpdateTime } from "@/lib/time";
 import { AppPagination } from "@/components/app-pagination";
-import type { IconKey } from "@readory/shared";
+import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating, type IconKey } from "@readory/shared";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { MediaPicker } from "@/components/admin/media-picker";
@@ -51,11 +51,19 @@ import { useTranslations } from "next-intl";
 type BookDetails = {
     id: number;
     title: string;
+    originalTitle?: string | null;
+    alternativeTitles: string[];
     author?: string | null;
     description?: string | null;
     coverImage: string;
     isFeatured: boolean;
     isPublished: boolean;
+    status: BookStatus;
+    ageRating?: AgeRating | null;
+    publicationYear?: number | null;
+    translators: string[];
+    chapterCount: number;
+    lastContentUpdate?: string | null;
     ratingAvg: number;
     ratingCount: number;
     updatedAt: string;
@@ -231,6 +239,12 @@ export default function AdminBookDetail() {
                 title: editedBook.title,
                 author: editedBook.author,
                 description: editedBook.description,
+                originalTitle: editedBook.originalTitle,
+                alternativeTitles: editedBook.alternativeTitles,
+                status: editedBook.status,
+                ageRating: editedBook.ageRating,
+                publicationYear: editedBook.publicationYear,
+                translators: editedBook.translators,
                 isPublished: editedBook.isPublished,
                 isFeatured: editedBook.isFeatured,
                 coverImage: editedBook.coverImage,
@@ -490,6 +504,51 @@ export default function AdminBookDetail() {
                                     </h1>
                                 )}
 
+                                {editMode && (
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                {t("OriginalTitle")}
+                                            </Label>
+                                            <Input
+                                                value={editedBook.originalTitle || ''}
+                                                onChange={(e) => setEditedBook({ ...editedBook, originalTitle: e.target.value })}
+                                                placeholder={t("OriginalTitlePlaceholder")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                {t("PublicationYear")}
+                                            </Label>
+                                            <Input
+                                                value={editedBook.publicationYear ?? ''}
+                                                onChange={(e) => setEditedBook({ ...editedBook, publicationYear: e.target.value ? Number(e.target.value) : null })}
+                                                placeholder={t("PublicationYearPlaceholder")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                {t("AlternativeTitles")}
+                                            </Label>
+                                            <Input
+                                                value={(editedBook.alternativeTitles || []).join(', ')}
+                                                onChange={(e) => setEditedBook({ ...editedBook, alternativeTitles: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
+                                                placeholder={t("AlternativeTitlesPlaceholder")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                {t("Translators")}
+                                            </Label>
+                                            <Input
+                                                value={(editedBook.translators || []).join(', ')}
+                                                onChange={(e) => setEditedBook({ ...editedBook, translators: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
+                                                placeholder={t("TranslatorsPlaceholder")}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Author */}
                                 {editMode ? (
                                     <div className="space-y-2">
@@ -508,6 +567,16 @@ export default function AdminBookDetail() {
                                         <span className="text-sm font-medium">{book.author || t("Unknown")}</span>
                                     </div>
                                 )}
+
+
+                                    {!editMode && (
+                                        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
+                                            <Badge variant="outline">{t(`BookStatus_${book.status}`)}</Badge>
+                                            {book.ageRating && <Badge variant="outline">{t(`AgeRating_${book.ageRating}`)}</Badge>}
+                                            {book.publicationYear && <Badge variant="outline">{book.publicationYear}</Badge>}
+                                            {book.originalTitle && <Badge variant="outline">{book.originalTitle}</Badge>}
+                                        </div>
+                                    )}
 
                                 {/* Type + genres (view) */}
                                 {!editMode && (
@@ -544,6 +613,37 @@ export default function AdminBookDetail() {
                                                 </select>
                                             </div>
 
+
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                    {t("BookStatus")}
+                                                </Label>
+                                                <select
+                                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                    value={editedBook.status || BookStatus.Upcoming}
+                                                    onChange={(e) => setEditedBook({ ...editedBook, status: e.target.value as BookStatus })}
+                                                >
+                                                    {BOOK_STATUS_VALUES.map((value) => (
+                                                        <option key={value} value={value}>{t(`BookStatus_${value}`)}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                    {t("AgeRating")}
+                                                </Label>
+                                                <select
+                                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                    value={editedBook.ageRating || ''}
+                                                    onChange={(e) => setEditedBook({ ...editedBook, ageRating: e.target.value ? e.target.value as AgeRating : null })}
+                                                >
+                                                    <option value="">{t("None")}</option>
+                                                    {AGE_RATING_VALUES.map((value) => (
+                                                        <option key={value} value={value}>{t(`AgeRating_${value}`)}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                             <div className="grid grid-cols-1 gap-3">
                                                 <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-background px-3 py-2">
                                                     <span className="flex items-center gap-2 text-sm">
@@ -635,12 +735,12 @@ export default function AdminBookDetail() {
                                     <StatTile
                                         icon={<BookOpen className="h-4 w-4" />}
                                         label={t("Chapters")}
-                                        value={String(chaptersTotal)}
+                                        value={String(book.chapterCount)}
                                     />
                                     <StatTile
                                         icon={<Clock className="h-4 w-4" />}
                                         label={t("Updated")}
-                                        value={formatUpdateTime(book.updatedAt, ti)}
+                                        value={formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti)}
                                         small
                                     />
                                 </div>
