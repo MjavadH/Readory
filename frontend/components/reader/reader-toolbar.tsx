@@ -21,6 +21,7 @@ import {
     type PurchaseDialogBook,
     type PurchaseDialogChapter,
 } from "@/components/chapter-purchase-dialog";
+import { useLocaleInfo } from "@/hooks/use-locale-info";
 
 export type ReaderChapterItem = {
     id: number;
@@ -72,15 +73,11 @@ export function ReaderToolbar({
     const [showChapters, setShowChapters] = useState(false);
     const [visible, setVisible] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [isRtl, setIsRtl] = useState(false);
+    const { isRTL } = useLocaleInfo();
     const [purchaseTarget, setPurchaseTarget] = useState<ReaderChapterItem | null>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const panelOpen = showChapters || showBrightness || purchaseTarget !== null;
-
-    useEffect(() => {
-        setIsRtl(getComputedStyle(document.documentElement).direction === "rtl");
-    }, []);
 
     useEffect(() => {
         const handleMove = () => {
@@ -288,9 +285,9 @@ export function ReaderToolbar({
                             onClick={() => setShowChapters(false)}
                         />
                         <motion.aside
-                            initial={{ x: isRtl ? "-100%" : "100%" }}
+                            initial={{ x: isRTL ? "-100%" : "100%" }}
                             animate={{ x: 0 }}
-                            exit={{ x: isRtl ? "-100%" : "100%" }}
+                            exit={{ x: isRTL ? "-100%" : "100%" }}
                             transition={{ type: "spring", damping: 32, stiffness: 320 }}
                             className="toolbar-glass fixed inset-y-0 inset-e-0 z-80 flex w-[88vw] max-w-sm flex-col border-s border-border shadow-2xl"
                             role="dialog"

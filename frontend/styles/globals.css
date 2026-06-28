@@ -134,7 +134,6 @@
   }
   :lang(fa) {
     font-feature-settings: "ss01";
-    direction: rtl;
   }
   .must-ltr *{
     direction: ltr !important;

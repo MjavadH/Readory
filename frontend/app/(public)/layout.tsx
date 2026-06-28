@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { ToastProvider } from "@/providers/toast-provider";
 import {NextIntlClientProvider} from "next-intl";
 import {getLocale, getMessages} from "next-intl/server";
+import {getDirection, getLocaleConfig} from "@/i18n/locales";
 
  const vazirmatn = Vazirmatn({
      subsets: ['latin', 'arabic'],
@@ -21,9 +22,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({children,}: Readonly<{ children: React.ReactNode; }>) {
     const locale = await getLocale();
     const messages = await getMessages();
+    const localeInfo = getLocaleConfig(locale);
 
     return (
-        <html lang={locale} suppressHydrationWarning>
+        <html lang={localeInfo.locale} dir={getDirection(localeInfo.code)} suppressHydrationWarning>
         <body className={`${vazirmatn.className} font-sans`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
             <ThemeProvider

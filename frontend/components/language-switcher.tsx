@@ -10,32 +10,21 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import irFlag from "../public/flags/fa.svg"
-import enFlag from "../public/flags/en.svg"
 import Image from "next/image"
-import { useLocale } from "next-intl"
-
-const languages = [
-    { code: "en", name: "English", nativeName: "English" },
-    { code: "fa", name: "فارسی", nativeName: "Persian" },
-]
-
-const flagMap: Record<string, string> = {
-    en: enFlag,
-    fa: irFlag,
-}
+import { getSupportedLocales, type SupportedLocale } from "@/i18n/locales"
+import { useLocaleInfo } from "@/hooks/use-locale-info"
 
 interface LanguageSwitcherProps {
     variant?: "default" | "mobile" | "inline"
 }
 
 export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
-    const currentLocale = useLocale()
+    const { locale: currentLocale, localeInfo: currentLanguage } = useLocaleInfo()
+    const supportedLocales = getSupportedLocales()
     const [isPending, startTransition] = useTransition()
     const [isOpen, setIsOpen] = useState(false)
-    const currentLanguage = languages.find((lang) => lang.code === currentLocale)
 
-    const handleLanguageChange = (newLocale: string) => {
+    const handleLanguageChange = (newLocale: SupportedLocale) => {
         if (newLocale === currentLocale) return
 
         startTransition(() => {
@@ -47,7 +36,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
     if (variant === "mobile") {
         return (
             <div className="flex flex-col gap-2 py-2">
-                {languages.map((lang) => (
+                {supportedLocales.map((lang) => (
                     <button
                         key={lang.code}
                         onClick={() => handleLanguageChange(lang.code)}
@@ -72,10 +61,11 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
                                 : "bg-accent/50"
                         )}>
                             <Image
-                                src={flagMap[lang.code]}
+                                src={lang.flag}
                                 alt={lang.nativeName}
-                                style={{ width: '24px', height: '18px', objectFit: 'cover' }}
-                                className="rounded-sm"
+                                width={24}
+                                height={18}
+                                className="rounded-sm object-cover"
                             />
                         </div>
 
@@ -105,7 +95,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
     if (variant === "inline") {
         return (
             <div className="flex items-center gap-2 p-1 rounded-lg bg-accent/50 border border-border">
-                {languages.map((lang) => (
+                {supportedLocales.map((lang) => (
                     <button
                         key={lang.code}
                         onClick={() => handleLanguageChange(lang.code)}
@@ -119,10 +109,11 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
                         )}
                     >
                         <Image
-                            src={flagMap[lang.code]}
+                            src={lang.flag}
                             alt={lang.nativeName}
-                            style={{ width: '16px', height: '12px', objectFit: 'cover' }}
-                            className="rounded-sm"
+                            width={16}
+                            height={12}
+                            className="rounded-sm object-cover"
                         />
                         <span>{lang.code.toUpperCase()}</span>
                     </button>
@@ -145,10 +136,11 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
                     <div className="flex items-center gap-2">
                         {currentLanguage && (
                             <Image
-                                src={flagMap[currentLanguage.code]}
+                                src={currentLanguage.flag}
                                 alt={currentLanguage.nativeName}
-                                style={{ width: '18px', height: '13px', objectFit: 'cover' }}
-                                className="rounded-sm"
+                                width={18}
+                                height={13}
+                                className="rounded-sm object-cover"
                             />
                         )}
                         <span className="hidden sm:inline text-sm font-medium">
@@ -163,7 +155,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
             </DropdownMenuTrigger>
 
             <DropdownMenuContent align="end" className="w-56 rounded-lg p-1">
-                {languages.map((lang) => (
+                {supportedLocales.map((lang) => (
                     <DropdownMenuItem
                         key={lang.code}
                         onClick={() => handleLanguageChange(lang.code)}
@@ -182,10 +174,11 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
                                 : "bg-accent/30 group-hover:bg-accent/50"
                         )}>
                             <Image
-                                src={flagMap[lang.code]}
+                                src={lang.flag}
                                 alt={lang.nativeName}
-                                style={{ width: '20px', height: '15px', objectFit: 'cover' }}
-                                className="rounded-sm"
+                                width={20}
+                                height={15}
+                                className="rounded-sm object-cover"
                             />
                         </div>
 

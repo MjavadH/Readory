@@ -5,6 +5,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
 import {useTranslations} from "next-intl";
+import { useLocaleInfo } from "@/hooks/use-locale-info";
 
 function TrendingCardSkeleton() {
     return (
@@ -74,14 +75,14 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(true);
+    const { isRTL } = useLocaleInfo();
 
     const checkScroll = useCallback(() => {
         const el = scrollRef.current;
         if (!el) return;
-        const isRtl = window.getComputedStyle(el).direction === "rtl";
         const maxScroll = el.scrollWidth - el.clientWidth;
 
-        if (isRtl) {
+        if (isRTL) {
             const scrollAbs = Math.abs(el.scrollLeft);
             setCanScrollLeft(scrollAbs > 4);
             setCanScrollRight(scrollAbs < maxScroll - 4);
@@ -89,7 +90,7 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
             setCanScrollLeft(el.scrollLeft > 4);
             setCanScrollRight(el.scrollLeft < maxScroll - 4);
         }
-    }, []);
+    }, [isRTL]);
 
     useEffect(() => {
         const el = scrollRef.current;
@@ -102,11 +103,9 @@ export function TrendingSection({ books }: { books: BookCardData[] }) {
     const scroll = (dir: "left" | "right") => {
         const el = scrollRef.current;
         if (!el) return;
-
-        const isRtl = window.getComputedStyle(el).direction === "rtl";
         const amount = dir === "left" ? -340 : 340;
 
-        el.scrollBy({ left: isRtl ? -amount : amount, behavior: "smooth" });
+        el.scrollBy({ left: isRTL ? -amount : amount, behavior: "smooth" });
     };
 
     return (
