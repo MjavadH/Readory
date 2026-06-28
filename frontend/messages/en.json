@@ -661,5 +661,20 @@
     "Total": "Total",
     "MorePages": "More pages",
     "Edit": "Edit"
+  },
+  "Enums": {
+    "BookStatus": {
+      "UPCOMING": "Upcoming",
+      "ONGOING": "Ongoing",
+      "COMPLETED": "Completed",
+      "HIATUS": "Hiatus",
+      "CANCELLED": "Cancelled"
+    },
+    "AgeRating": {
+      "GENERAL": "General",
+      "TEEN": "Teen",
+      "MATURE": "Mature",
+      "ADULT": "Adult"
+    }
   }
 }

@@ -23,6 +23,21 @@ enum ChapterContentType {
   text
 }
 
+enum BookStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  HIATUS
+  CANCELLED
+}
+
+enum AgeRating {
+  GENERAL
+  TEEN
+  MATURE
+  ADULT
+}
+
 // User roles
 model Role {
   id    Int      @id @default(autoincrement())
@@ -73,9 +88,17 @@ model WalletTransaction {
 // Books
 model Book {
   id          Int      @id @default(autoincrement())
-  title       String
-  author      String?
-  description String?
+  title             String
+  originalTitle     String?
+  alternativeTitles String[] @default([])
+  author            String?
+  description       String?
+  status            BookStatus @default(UPCOMING)
+  publicationYear   Int?
+  translators       String[] @default([])
+  lastContentUpdate DateTime?
+  ageRating         AgeRating?
+  chapterCount      Int @default(0)
   typeId      Int
   type        BookType @relation(fields: [typeId], references: [id], onDelete: Restrict)
   // Stores Media.code
@@ -102,6 +125,9 @@ model Book {
   @@index([isPublished, isFeatured])
   @@index([createdAt])
   @@index([updatedAt])
+  @@index([lastContentUpdate])
+  @@index([status])
+  @@index([publicationYear])
 }
 
 model BookType {

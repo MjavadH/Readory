@@ -661,5 +661,20 @@
     "Total": "تعداد کل",
     "MorePages": "صفحات بیشتر",
     "Edit": "ویرایش"
+  },
+  "Enums": {
+    "BookStatus": {
+      "UPCOMING": "به‌زودی",
+      "ONGOING": "در حال انتشار",
+      "COMPLETED": "تکمیل‌شده",
+      "HIATUS": "وقفه",
+      "CANCELLED": "لغوشده"
+    },
+    "AgeRating": {
+      "GENERAL": "عمومی",
+      "TEEN": "نوجوان",
+      "MATURE": "بزرگسال",
+      "ADULT": "بزرگسالان"
+    }
   }
 }

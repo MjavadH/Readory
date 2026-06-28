@@ -126,20 +126,24 @@ export class ChaptersService {
         : null;
 
     try {
-      const chapter = await this.prisma.chapter.create({
-        data: {
-          book: { connect: { id: bookId } },
-          title: dto.title,
-          index: dto.index,
-          isFree,
-          price,
-          contentPath: dto.contentPath,
-        },
-      });
+      const now = new Date();
+      const chapter = await this.prisma.$transaction(async (tx) => {
+        const created = await tx.chapter.create({
+          data: {
+            book: { connect: { id: bookId } },
+            title: dto.title,
+            index: dto.index,
+            isFree,
+            price,
+            contentPath: dto.contentPath,
+          },
+        });
 
-      await this.prisma.book.update({
-        where: { id: bookId },
-        data: { updatedAt: new Date() },
+        await tx.book.update({
+          where: { id: bookId },
+          data: { lastContentUpdate: now, chapterCount: { increment: 1 } },
+        });
+        return created;
       });
 
       await this.cacheManager.del('stats:chapters:count');
@@ -174,6 +178,7 @@ export class ChaptersService {
         : existing.price;
 
     try {
+      const now = new Date();
       const chapter = await this.prisma.chapter.update({
         where: { id: chapterId },
         data: {
@@ -194,7 +199,7 @@ export class ChaptersService {
 
       await this.prisma.book.update({
         where: { id: bookId },
-        data: { updatedAt: new Date() },
+        data: { lastContentUpdate: now },
       });
 
       await this.publicService.clearHomeCache();
@@ -215,12 +220,14 @@ export class ChaptersService {
     });
     if (!existing) throw new NotFoundException('Chapter not found');
 
-    await this.prisma.chapter.delete({ where: { id: chapterId } });
-
-    await this.prisma.book.update({
-      where: { id: bookId },
-      data: { updatedAt: new Date() },
-    });
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.chapter.delete({ where: { id: chapterId } }),
+      this.prisma.book.update({
+        where: { id: bookId },
+        data: { lastContentUpdate: now, chapterCount: { decrement: 1 } },
+      }),
+    ]);
 
     await this.publicService.clearHomeCache();
     await this.cacheManager.del('stats:chapters:count');

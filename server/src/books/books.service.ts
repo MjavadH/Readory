@@ -8,13 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
 import { createHash } from 'crypto';
-import {
-  clamp,
-  toNumber,
-  normalizeQ,
-  normalizeSlug,
-  slugify,
-} from '../common';
+import { clamp, toNumber, normalizeQ, normalizeSlug, slugify } from '../common';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -100,6 +94,8 @@ export class BooksService {
     if (q) {
       where.OR = [
         { title: { contains: q, mode: 'insensitive' } },
+        { originalTitle: { contains: q, mode: 'insensitive' } },
+        { alternativeTitles: { has: q } },
         { author: { contains: q, mode: 'insensitive' } },
       ];
     }
@@ -143,7 +139,8 @@ export class BooksService {
         isFeatured: true,
         createdAt: true,
         updatedAt: true,
-        _count: { select: { chapters: true } },
+        lastContentUpdate: true,
+        chapterCount: true,
         genres: { select: { genre: { select: { name: true, slug: true } } } },
       },
     });
@@ -161,8 +158,9 @@ export class BooksService {
       ratingCount: b.ratingCount,
       genres: b.genres.map((g) => g.genre),
       isFeatured: b.isFeatured,
-      chapterCount: b._count.chapters,
+      chapterCount: b.chapterCount,
       updatedAt: b.updatedAt.toISOString(),
+      lastContentUpdate: b.lastContentUpdate?.toISOString() ?? null,
     }));
 
     let nextCursor: string | null = null;
@@ -433,7 +431,7 @@ export class BooksService {
       const orderBy: Prisma.BookOrderByWithRelationInput[] = [
         { ratingAvg: 'desc' },
         { ratingCount: 'desc' },
-        { updatedAt: 'desc' },
+        { lastContentUpdate: 'desc' },
         { id: 'desc' },
       ];
 
@@ -447,23 +445,25 @@ export class BooksService {
           JSON.stringify({
             ratingAvg: toNumber(r.ratingAvg),
             ratingCount: r.ratingCount,
-            updatedAt: r.updatedAt.toISOString(),
+            lastContentUpdate: (
+              r.lastContentUpdate ?? r.updatedAt
+            ).toISOString(),
           }),
       };
     }
 
     // recently_updated (default)
     const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-      { updatedAt: 'desc' },
+      { lastContentUpdate: 'desc' },
       { id: 'desc' },
     ];
     const seekWhere = cursor
       ? {
           OR: [
-            { updatedAt: { lt: new Date(cursor.v) } },
+            { lastContentUpdate: { lt: new Date(cursor.v) } },
             {
               AND: [
-                { updatedAt: { equals: new Date(cursor.v) } },
+                { lastContentUpdate: { equals: new Date(cursor.v) } },
                 { id: { lt: cursor.id } },
               ],
             },
@@ -474,7 +474,7 @@ export class BooksService {
     return {
       orderBy,
       seekWhere,
-      cursorValue: (r) => r.updatedAt.toISOString(),
+      cursorValue: (r) => (r.lastContentUpdate ?? r.updatedAt).toISOString(),
     };
   }
 
@@ -555,7 +555,12 @@ export class BooksService {
   }
 
   private popularSeekWhere(cursor: CursorPayload): Prisma.BookWhereInput {
-    let v: { ratingAvg: number; ratingCount: number; updatedAt: string } | null;
+    let v: {
+      ratingAvg: number;
+      ratingCount: number;
+      lastContentUpdate?: string;
+      updatedAt?: string;
+    } | null;
     try {
       v = JSON.parse(cursor.v);
     } catch {
@@ -565,7 +570,7 @@ export class BooksService {
 
     const avg = new Prisma.Decimal(v.ratingAvg);
     const count = v.ratingCount;
-    const updatedAt = new Date(v.updatedAt);
+    const lastContentUpdate = new Date(v.lastContentUpdate ?? v.updatedAt ?? 0);
 
     return {
       OR: [
@@ -577,14 +582,14 @@ export class BooksService {
           AND: [
             { ratingAvg: { equals: avg } },
             { ratingCount: { equals: count } },
-            { updatedAt: { lt: updatedAt } },
+            { lastContentUpdate: { lt: lastContentUpdate } },
           ],
         },
         {
           AND: [
             { ratingAvg: { equals: avg } },
             { ratingCount: { equals: count } },
-            { updatedAt: { equals: updatedAt } },
+            { lastContentUpdate: { equals: lastContentUpdate } },
             { id: { lt: cursor.id } },
           ],
         },
@@ -605,7 +610,11 @@ export class BooksService {
 
     const where: Prisma.BookWhereInput = {};
     if (q) {
-      where.title = { contains: q, mode: 'insensitive' };
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { originalTitle: { contains: q, mode: 'insensitive' } },
+        { alternativeTitles: { has: q } },
+      ];
     }
     switch (args.status) {
       case 'all':
@@ -635,6 +644,14 @@ export class BooksService {
         select: {
           id: true,
           title: true,
+          originalTitle: true,
+          alternativeTitles: true,
+          status: true,
+          publicationYear: true,
+          translators: true,
+          lastContentUpdate: true,
+          ageRating: true,
+          chapterCount: true,
           author: true,
           coverImage: true,
           isPublished: true,
@@ -648,7 +665,6 @@ export class BooksService {
             },
             take: 3,
           },
-          _count: { select: { chapters: true } },
           type: { select: { name: true } },
         },
       }),
@@ -683,9 +699,19 @@ export class BooksService {
         isPublished: true,
         id: { not: bookId },
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        author: true,
+        coverImage: true,
+        typeId: true,
+        ratingAvg: true,
+        ratingCount: true,
+        isFeatured: true,
+        updatedAt: true,
+        lastContentUpdate: true,
+        chapterCount: true,
         type: { select: { name: true, slug: true } },
-        _count: { select: { chapters: true } },
         genres: {
           select: { genre: { select: { id: true, name: true, slug: true } } },
           take: 3,
@@ -716,8 +742,9 @@ export class BooksService {
           ratingCount: row.ratingCount,
           genres: row.genres.map((g) => g.genre),
           isFeatured: row.isFeatured,
-          chapterCount: row._count.chapters,
+          chapterCount: row.chapterCount,
           updatedAt: row.updatedAt.toISOString(),
+          lastContentUpdate: row.lastContentUpdate?.toISOString() ?? null,
           _score: score,
         };
       })
@@ -741,6 +768,14 @@ export class BooksService {
       select: {
         id: true,
         title: true,
+        originalTitle: true,
+        alternativeTitles: true,
+        status: true,
+        publicationYear: true,
+        translators: true,
+        lastContentUpdate: true,
+        ageRating: true,
+        chapterCount: true,
         author: true,
         description: true,
         coverImage: true,
@@ -774,6 +809,14 @@ export class BooksService {
       select: {
         id: true,
         title: true,
+        originalTitle: true,
+        alternativeTitles: true,
+        status: true,
+        publicationYear: true,
+        translators: true,
+        lastContentUpdate: true,
+        ageRating: true,
+        chapterCount: true,
         author: true,
         description: true,
         coverImage: true,
@@ -845,6 +888,12 @@ export class BooksService {
     isFeatured?: boolean;
     typeId: number;
     genreIds: number[];
+    originalTitle?: string;
+    alternativeTitles?: string[];
+    status?: any;
+    publicationYear?: number;
+    translators?: string[];
+    ageRating?: any;
   }) {
     const { genreIds, typeId, ...rest } = data;
     const foundType = await this.prisma.bookType.findUnique({
@@ -873,6 +922,15 @@ export class BooksService {
     }
     if (rest.isPublished !== undefined) payload.isPublished = rest.isPublished;
     if (rest.isFeatured !== undefined) payload.isFeatured = rest.isFeatured;
+    if (rest.originalTitle !== undefined)
+      payload.originalTitle = rest.originalTitle;
+    if (rest.alternativeTitles !== undefined)
+      payload.alternativeTitles = rest.alternativeTitles;
+    if (rest.status !== undefined) payload.status = rest.status;
+    if (rest.publicationYear !== undefined)
+      payload.publicationYear = rest.publicationYear;
+    if (rest.translators !== undefined) payload.translators = rest.translators;
+    if (rest.ageRating !== undefined) payload.ageRating = rest.ageRating;
 
     const created = await this.prisma.book.create({
       data: payload,
@@ -902,6 +960,12 @@ export class BooksService {
       isFeatured?: boolean;
       typeId?: number;
       genreIds?: number[];
+      originalTitle?: string;
+      alternativeTitles?: string[];
+      status?: any;
+      publicationYear?: number;
+      translators?: string[];
+      ageRating?: any;
     }>,
   ) {
     const { genreIds, typeId, coverImage, ...rest } = data;
@@ -1056,6 +1120,14 @@ export class BooksService {
             select: {
               id: true,
               title: true,
+              originalTitle: true,
+              alternativeTitles: true,
+              status: true,
+              publicationYear: true,
+              translators: true,
+              lastContentUpdate: true,
+              ageRating: true,
+              chapterCount: true,
               author: true,
               coverImage: true,
               ratingAvg: true,
