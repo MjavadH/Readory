@@ -4,10 +4,11 @@ import { BooksController } from './books.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WalletsModule } from '../wallets/wallets.module';
 import { PublicModule } from '../public/public.module';
+import { RecommendationService } from './recommendation/recommendation.service';
 
 @Module({
   imports: [PrismaModule, WalletsModule, PublicModule],
-  providers: [BooksService],
+  providers: [BooksService, RecommendationService],
   controllers: [BooksController],
   exports: [BooksService],
 })

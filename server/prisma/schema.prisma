@@ -1,6 +1,6 @@
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -97,6 +97,9 @@ model Book {
 
   ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
   ratingCount Int     @default(0)
+
+  favoriteCount   Int     @default(0)
+  popularityScore Decimal @default(0) @db.Decimal(8, 4)
 
   ratings     BookRating[]
   favoritedBy FavoriteBook[]

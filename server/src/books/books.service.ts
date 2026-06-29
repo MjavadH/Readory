@@ -16,6 +16,12 @@ import {
   normalizeSlug,
   slugify,
 } from '../common';
+import {RecommendationService} from "./recommendation/recommendation.service";
+import {
+  RELATED_EXPONENTIAL_DECAY_LAMBDA, RELATED_FRESHNESS_WEIGHT, RELATED_GENRE_WEIGHT,
+  RELATED_POPULARITY_WEIGHT,
+  RELATED_TYPE_WEIGHT
+} from "./recommendation/recommendation.constants";
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -51,12 +57,14 @@ export class BooksService {
     private prisma: PrismaService,
     private publicService: PublicService,
     private readonly cacheManager: CacheManager,
+    private readonly recommendationService: RecommendationService,
   ) {}
 
   private readonly CACHE_KEY_BROWSE_DEFAULT = 'books:browse:default';
   private readonly CACHE_KEY_STATE_BOOK = 'stats:books';
   private readonly CACHE_KEY_STATE_CHAPTERS_COUNT = 'stats:chapters:count';
   private readonly CACHE_KEY_GENRES_ALL = 'genres:all';
+  private readonly CACHE_KEY_RECOMMENDATION_VERSION = 'books:recommendation:version';
 
   async browse(args: {
     types?: string[];
@@ -681,72 +689,133 @@ export class BooksService {
 
   async getRelatedBooks(bookId: number, limitInput: number) {
     const limit = clamp(limitInput || 12, 1, 24);
-    const book = await this.prisma.book.findUnique({
-      where: { id: bookId },
-      select: {
-        id: true,
-        typeId: true,
-        genres: { select: { genreId: true } },
-      },
-    });
 
-    if (!book) throw new NotFoundException('book not found');
+    const version = await this.cacheManager.getVersion(
+        this.CACHE_KEY_RECOMMENDATION_VERSION,
+    );
 
-    const genreIds = book.genres.map((item) => item.genreId);
+    const cacheKey = this.buildRelatedBooksCacheKey(version, bookId, limit);
 
-    const rows = await this.prisma.book.findMany({
-      where: {
-        isPublished: true,
-        id: { not: bookId },
-      },
-      include: {
-        type: { select: { name: true, slug: true } },
-        genres: {
-          select: { genre: { select: { id: true, name: true, slug: true } } },
-          take: 3,
+    return this.cacheManager.getOrSet(
+        cacheKey,
+        {
+          ttlSeconds: 1800,
+          earlyRefreshWindowSeconds: 300,
         },
-      },
-      take: 120,
-    });
+        async () => {
+          const sourceBook = await this.prisma.book.findUnique({
+            where: { id: bookId, isPublished: true },
+            select: { id: true, typeId: true, genres: { select: { genreId: true } } },
+          });
 
-    const scored = rows
-      .map((row) => {
-        const genreMatchCount = row.genres.filter((g) =>
-          genreIds.includes(g.genre.id),
-        ).length;
-        const score = [
-          genreMatchCount > 0 ? 1 : 0,
-          row.typeId === book.typeId ? 1 : 0,
-          Number(row.ratingAvg),
-          row.updatedAt.getTime(),
-        ] as const;
+          if (!sourceBook) {
+            throw new NotFoundException('book not found');
+          }
 
-        return {
-          id: row.id,
-          title: row.title,
-          coverImage: row.coverImage,
-          type: row.type,
-          author: row.author,
-          ratingAvg: Number(toNumber(row.ratingAvg).toFixed(2)),
-          ratingCount: row.ratingCount,
-          genres: row.genres.map((g) => g.genre),
-          isFeatured: row.isFeatured,
-          chapterCount: row.chapterCount,
-          updatedAt: (row.lastContentUpdate ?? row.updatedAt).toISOString(),
-          _score: score,
-        };
-      })
-      .sort((a, b) => {
-        if (b._score[0] !== a._score[0]) return b._score[0] - a._score[0];
-        if (b._score[1] !== a._score[1]) return b._score[1] - a._score[1];
-        if (b._score[2] !== a._score[2]) return b._score[2] - a._score[2];
-        if (b._score[3] !== a._score[3]) return b._score[3] - a._score[3];
-        return b.id - a.id;
-      })
-      .slice(0, limit)
-      .map(({ _score, ...item }) => item);
+          const genreIds = sourceBook.genres.map((g) => g.genreId);
 
-    return { items: scored };
+          const safeGenreIds = genreIds.length > 0 ? genreIds : [-1];
+
+          const rankedCandidates = await this.prisma.$queryRaw<{ id: number; score: number }[]>`
+            WITH SourceGenres AS (
+              SELECT unnest(ARRAY[${Prisma.join(safeGenreIds)}]::integer[]) AS genre_id
+            ),
+                 CandidateData AS (
+                   SELECT
+                     b.id,
+                     b."typeId",
+                     b."popularityScore"::float,
+                     COALESCE(b."lastContentUpdate", b."updatedAt") AS "contentDate",
+                     (
+                       SELECT COUNT(*)::float
+                       FROM "BookGenre" bg
+                       WHERE bg."bookId" = b.id AND bg."genreId" IN (SELECT genre_id FROM SourceGenres)
+                     ) AS intersection_count,
+                     (
+                       SELECT COUNT(*)::float
+                       FROM "BookGenre" bg
+                       WHERE bg."bookId" = b.id
+                     ) AS target_genre_count
+                   FROM "Book" b
+                   WHERE b."isPublished" = true
+                     AND b.id != ${bookId}::integer
+              AND (
+              b."typeId" = ${sourceBook.typeId}::integer
+              OR EXISTS (
+              SELECT 1 FROM "BookGenre" bg
+              WHERE bg."bookId" = b.id AND bg."genreId" IN (SELECT genre_id FROM SourceGenres)
+              )
+              )
+              )
+            SELECT
+              id,
+              (
+                -- Jaccard Similarity
+                (intersection_count / NULLIF(${genreIds.length}::float + target_genre_count - intersection_count, 0)) * ${RELATED_GENRE_WEIGHT}::float
+
+              -- Type Match Weight
+              + (CASE WHEN "typeId" = ${sourceBook.typeId}::integer THEN ${RELATED_TYPE_WEIGHT}::float ELSE 0 END)
+
+              -- Popularity Weight
+              + ("popularityScore" / 100.0) * ${RELATED_POPULARITY_WEIGHT}::float
+
+              -- Exponential Freshness Decay Weight
+              + (EXP(-${RELATED_EXPONENTIAL_DECAY_LAMBDA}::float * (EXTRACT(EPOCH FROM (NOW() - "contentDate")) / 86400.0))) * ${RELATED_FRESHNESS_WEIGHT}::float
+              ) AS "score"
+            FROM CandidateData
+            ORDER BY "score" DESC
+              LIMIT ${limit}::integer;
+          `;
+
+          if (!rankedCandidates.length) {
+            return { items: [], generatedAt: new Date().toISOString() };
+          }
+
+          const candidateIds = rankedCandidates.map(c => c.id);
+          const scoreMap = new Map(rankedCandidates.map(c => [c.id, c.score]));
+
+          const fullBooks = await this.prisma.book.findMany({
+            where: { id: { in: candidateIds } },
+            select: {
+              id: true, title: true, coverImage: true, author: true,
+              type: { select: { name: true, slug: true } },
+              ratingAvg: true, ratingCount: true, popularityScore: true,
+              isFeatured: true, chapterCount: true, updatedAt: true, lastContentUpdate: true,
+              genres: {
+                select: {
+                  genre: { select: { id: true, name: true, slug: true } }
+                }
+              }
+            }
+          });
+
+          const items = fullBooks
+              .map(book => ({
+                id: book.id,
+                title: book.title,
+                coverImage: book.coverImage,
+                author: book.author,
+                type: book.type,
+                ratingAvg: Number(book.ratingAvg.toFixed(2)),
+                ratingCount: book.ratingCount,
+                popularityScore: Number(book.popularityScore),
+                genres: book.genres.map(g => g.genre).sort((a, b) => a.name.localeCompare(b.name)),
+                chapterCount: book.chapterCount,
+                isFeatured: book.isFeatured,
+                updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
+                score: Number(scoreMap.get(book.id)?.toFixed(4) || 0)
+              }))
+              .sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return b.popularityScore - a.popularityScore; // Tie-breaker
+              });
+
+          return {
+            items,
+            generatedAt: new Date().toISOString(),
+          };
+        },
+    );
   }
 
   // Get book
@@ -1011,7 +1080,10 @@ export class BooksService {
       where: { id: bookId },
       select: { id: true, updatedAt: true },
     });
-    if (!book) throw new NotFoundException('book not found');
+
+    if (!book) {
+      throw new NotFoundException('book not found');
+    }
 
     const result = await this.prisma.$transaction(async (tx) => {
       await tx.bookRating.upsert({
@@ -1020,33 +1092,41 @@ export class BooksService {
         update: { rating },
       });
 
-      const agg = await tx.bookRating.aggregate({
+      const aggregate = await tx.bookRating.aggregate({
         where: { bookId },
         _avg: { rating: true },
         _count: { rating: true },
       });
 
-      const avg = agg._avg.rating ?? 0;
-      const count = agg._count.rating ?? 0;
+      const ratingAvg = Number((aggregate._avg.rating ?? 0).toFixed(2));
+      const ratingCount = aggregate._count.rating;
 
       await tx.book.update({
         where: { id: bookId },
         data: {
-          ratingAvg: new Prisma.Decimal(Number(avg).toFixed(2)),
-          ratingCount: count,
+          ratingAvg: new Prisma.Decimal(ratingAvg),
+          ratingCount,
           updatedAt: book.updatedAt,
         },
-        select: { id: true },
       });
+
+      await this.recommendationService.recalculatePopularity(
+          tx,
+          bookId,
+      );
 
       return {
         rating,
-        ratingAvg: Number(Number(avg).toFixed(2)),
-        ratingCount: count,
+        ratingAvg,
+        ratingCount,
       };
     });
 
     await this.publicService.clearHomeCache();
+
+    await this.cacheManager.bumpVersion(
+        this.CACHE_KEY_RECOMMENDATION_VERSION,
+    );
 
     return result;
   }
@@ -1067,23 +1147,83 @@ export class BooksService {
       where: { id: bookId },
       select: { id: true },
     });
-    if (!bookExists) throw new NotFoundException('book not found');
 
-    const existing = await this.prisma.favoriteBook.findUnique({
-      where: { userId_bookId: { userId, bookId } },
-    });
-
-    if (existing) {
-      await this.prisma.favoriteBook.delete({
-        where: { userId_bookId: { userId, bookId } },
-      });
-      return { favorited: false };
+    if (!bookExists) {
+      throw new NotFoundException('book not found');
     }
 
-    await this.prisma.favoriteBook.create({
-      data: { userId, bookId },
+    const result = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.favoriteBook.findUnique({
+        where: {
+          userId_bookId: {
+            userId,
+            bookId,
+          },
+        },
+      });
+
+      if (existing) {
+        await tx.favoriteBook.delete({
+          where: {
+            userId_bookId: {
+              userId,
+              bookId,
+            },
+          },
+        });
+
+        await tx.book.update({
+          where: { id: bookId },
+          data: {
+            favoriteCount: {
+              decrement: 1,
+            },
+          },
+        });
+
+        await this.recommendationService.recalculatePopularity(
+            tx,
+            bookId,
+        );
+
+        return {
+          favorited: false,
+        };
+      }
+
+      await tx.favoriteBook.create({
+        data: {
+          userId,
+          bookId,
+        },
+      });
+
+      await tx.book.update({
+        where: { id: bookId },
+        data: {
+          favoriteCount: {
+            increment: 1,
+          },
+        },
+      });
+
+      await this.recommendationService.recalculatePopularity(
+          tx,
+          bookId,
+      );
+
+      return {
+        favorited: true,
+      };
     });
-    return { favorited: true };
+
+    await this.publicService.clearHomeCache();
+
+    await this.cacheManager.bumpVersion(
+        this.CACHE_KEY_RECOMMENDATION_VERSION,
+    );
+
+    return result;
   }
 
   async getFavorites(userId: number, args: { page: number; limit: number }) {
@@ -1141,11 +1281,25 @@ export class BooksService {
     };
   }
 
+  private buildRelatedBooksCacheKey(
+      version: string,
+      bookId: number,
+      limit: number,
+  ) {
+    return this.cacheManager.buildKey(
+        'books:related',
+        version,
+        bookId,
+        limit,
+    );
+  }
+
   private async invalidateCache() {
     await this.cacheManager.del(this.CACHE_KEY_BROWSE_DEFAULT);
     await this.cacheManager.del(this.CACHE_KEY_STATE_BOOK);
     await this.cacheManager.del(this.CACHE_KEY_STATE_CHAPTERS_COUNT);
     await this.cacheManager.del(this.CACHE_KEY_GENRES_ALL);
+    await this.cacheManager.bumpVersion(this.CACHE_KEY_RECOMMENDATION_VERSION);
     await this.publicService.clearHomeCache();
   }
 }
