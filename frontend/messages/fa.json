@@ -559,7 +559,7 @@
     "OnlyRegisteredUsers": "فقط کاربران ثبت‌نام کرده میتوانند به چپتر‌ها دسترسی پیدا کنند",
     "UnknownAuthor": "نویسنده ناشناسی",
     "LastUpdated": "آخرین آپدیت",
-    "TotalChapters": "تعداد کل چپپتر‌ها",
+    "TotalChapters": "تعداد کل چپتر‌ها",
     "RateThisBook": "امتیاز دادن به این کتاب",
     "UserRate": "{UserRate} از 5",
     "Submitting": "درحال ذخیره...",
@@ -623,7 +623,13 @@
     "DisplaySettings": "تنظیمات نمایش",
     "Publish": "انتشار",
     "MarkPublished": "علامت‌گذاری به عنوان منتشر شده",
-    "SelectAgeRating": "رده سنی انتخاب کنید"
+    "SelectAgeRating": "رده سنی انتخاب کنید",
+    "OtherNames": "نام‌های دیگر",
+    "TranslatedBy": "ترجمه شده توسط",
+    "AddedOn": "افزوده شده در",
+    "Draft": "پیش نویس",
+    "AddToFavorites": "افزودن به مورد علاقه",
+    "RemoveFromFavorites": "حذف از مورد علاقه"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",

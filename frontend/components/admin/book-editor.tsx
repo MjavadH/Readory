@@ -1,4 +1,3 @@
-"use client"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import type React from "react";
 import Image from "next/image";
@@ -6,7 +5,6 @@ import {
     BookOpen,
     Calendar,
     Check,
-    ChevronDown,
     Eye,
     ImageIcon,
     Languages,
@@ -63,7 +61,6 @@ export function BookEditor({
                                t,
                                onSelectCover,
                                coverAlt,
-                               stats,
                            }: {
     value: BookEditorValue;
     onChange: (value: BookEditorValue) => void;
@@ -193,8 +190,8 @@ export function BookEditor({
                                     <div className="relative">
                                         <Languages className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
-                                            value={(value.translators || []).join(', ')}
-                                            onChange={(e) => onChange({ ...value, translators: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) })}
+                                            value={(value.translators || []).join(',')}
+                                            onChange={(e) => onChange({ ...value, translators: e.target.value.split(',')})}
                                             className="ps-9"
                                             placeholder={t("TranslatorsPlaceholder")}
                                         />
@@ -236,7 +233,6 @@ export function BookEditor({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <ChevronDown className="pointer-events-none absolute inset-e-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground opacity-50" />
                                 </div>
                             </EditField>
 
@@ -327,43 +323,7 @@ export function BookEditor({
                             className="resize-none"
                         />
                     </EditSection>
-
-                    {stats && (
-                        <div className="pt-5">
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                {stats.map((stat) => (
-                                    <StatTile
-                                        key={stat.label}
-                                        icon={stat.icon}
-                                        label={stat.label}
-                                        value={stat.value}
-                                        hint={stat.hint}
-                                        small={stat.small}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
-            </div>
-        </div>
-    );
-}
-
-function StatTile({icon, label, value, hint, small,}: BookEditorStat) {
-    return (
-        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-foreground">
-                {icon}
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {label}
-                </p>
-                <p className={small ? "truncate text-sm font-semibold" : "text-xl font-semibold tabular-nums"}>
-                    {value}
-                </p>
-                {hint && <p className="truncate text-[11px] text-muted-foreground">{hint}</p>}
             </div>
         </div>
     );

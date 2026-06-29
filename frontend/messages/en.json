@@ -623,7 +623,13 @@
     "DisplaySettings": "Display Settings",
     "Publish": "Publish",
     "MarkPublished": "Mark as Published",
-    "SelectAgeRating": "Select age rating"
+    "SelectAgeRating": "Select age rating",
+    "OtherNames": "Other names",
+    "TranslatedBy": "Translated by",
+    "AddedOn": "Added on",
+    "Draft": "Draft",
+    "AddToFavorites": "Add to favorites",
+    "RemoveFromFavorites": "Remove from favorites"
   },
   "UserHeader": {
     "Books": "Books",

@@ -5,17 +5,12 @@ import {
     ArrowLeft,
     BookOpen,
     Clock,
-    Star,
-    User,
     Edit,
     Trash,
     Plus,
     Check,
     AlertCircle,
     X,
-    Eye,
-    EyeOff,
-    Sparkles,
     EyeIcon,
     Lock,
     Unlock,
@@ -37,40 +32,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from "@/components/ui/label";
 import { formatUpdateTime } from "@/lib/time";
 import { AppPagination } from "@/components/app-pagination";
-import { BookStatus, type AgeRating, type IconKey } from "@readory/shared";
 import { useParams } from "next/navigation";
-import Image from "next/image";
 import { MediaPicker } from "@/components/admin/media-picker";
-import { BookEditor } from "@/components/admin/book-editor";
 import Link from "next/link";
-import { AppIcon } from "@/components/AppIcon";
 import { useToast } from "@/providers/toast-provider";
 import { useTranslations } from "next-intl";
 import {useLocaleInfo} from "@/hooks/use-locale-info";
-
-type BookDetails = {
-    id: number;
-    title: string;
-    originalTitle?: string | null;
-    alternativeTitles: string[];
-    author?: string | null;
-    description?: string | null;
-    coverImage: string;
-    isFeatured: boolean;
-    isPublished: boolean;
-    status: BookStatus;
-    ageRating?: AgeRating | null;
-    publicationYear?: number | null;
-    translators: string[];
-    chapterCount: number;
-    lastContentUpdate?: string | null;
-    ratingAvg: number;
-    ratingCount: number;
-    updatedAt: string;
-    createdAt: string;
-    type: { id: number; name: string; slug: string; iconKey: IconKey };
-    genres: Array<{ id: number; name: string; slug: string; iconKey: IconKey }>;
-};
+import {BookDetails, BookDetailsData, BookDetailsSkeleton} from "@/components/book-details";
+import {BookEditor} from "@/components/admin/book-editor";
 
 type ChapterItem = {
     id: number;
@@ -95,38 +64,6 @@ const CHAPTERS_PER_PAGE = 36;
 
 type OptionItem = { id: number; name: string };
 
-function LoadingSkeleton() {
-    return (
-        <div className="min-h-screen bg-background">
-            <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-10">
-                <div className="h-10 w-40 animate-pulse rounded-md bg-muted" />
-                <Card className="overflow-hidden border-border/60">
-                    <CardContent className="p-6 sm:p-8">
-                        <div className="grid gap-8 lg:grid-cols-[260px_1fr]">
-                            <div className="aspect-2/3 w-full animate-pulse rounded-xl bg-muted" />
-                            <div className="space-y-4">
-                                <div className="h-5 w-20 rounded-full bg-muted" />
-                                <div className="h-8 w-3/4 animate-pulse rounded-md bg-muted" />
-                                <div className="h-5 w-1/3 animate-pulse rounded-md bg-muted" />
-                                <div className="space-y-2 pt-4">
-                                    <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                                    <div className="h-4 w-full animate-pulse rounded bg-muted" />
-                                    <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
-                                </div>
-                                <div className="grid gap-3 pt-4 sm:grid-cols-3">
-                                    <div className="h-20 animate-pulse rounded-xl bg-muted" />
-                                    <div className="h-20 animate-pulse rounded-xl bg-muted" />
-                                    <div className="h-20 animate-pulse rounded-xl bg-muted" />
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    );
-}
-
 export default function AdminBookDetail() {
     const t = useTranslations('Books');
     const g = useTranslations('General');
@@ -137,7 +74,7 @@ export default function AdminBookDetail() {
     const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
     const bookId = Number(idParam);
 
-    const [book, setBook] = useState<BookDetails | null>(null);
+    const [book, setBook] = useState<BookDetailsData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [newCoverPickerOpen, setNewCoverPickerOpen] = useState(false);
 
@@ -152,7 +89,7 @@ export default function AdminBookDetail() {
     const [chaptersLoading, setChaptersLoading] = useState(false);
 
     const [editMode, setEditMode] = useState(false);
-    const [editedBook, setEditedBook] = useState<Partial<BookDetails> & { typeId?: number; genreIds?: number[] }>({});
+    const [editedBook, setEditedBook] = useState<Partial<BookDetailsData> & { typeId?: number; genreIds?: number[] }>({});
 
     const [deleteBookDialog, setDeleteBookDialog] = useState(false);
     const [deleteChapterDialog, setDeleteChapterDialog] = useState<number | null>(null);
@@ -191,7 +128,7 @@ export default function AdminBookDetail() {
 
         setIsLoading(true);
         try {
-            const data = await apiClient.get<BookDetails>(`/books/admin/${bookId}`);
+            const data = await apiClient.get<BookDetailsData>(`/books/admin/${bookId}`);
             setBook(data);
             setEditedBook({
                 ...data,
@@ -333,7 +270,7 @@ export default function AdminBookDetail() {
     };
 
     if (isLoading) {
-        return <LoadingSkeleton />;
+        return <BookDetailsSkeleton />;
     }
 
     if (!book) {
@@ -413,26 +350,20 @@ export default function AdminBookDetail() {
                     </div>
                 </div>
             </div>
-
             <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-10">
-                {/* Hero card */}
-                <Card className="relative border-border/60 shadow-sm">
-                    {/* Ambient cover backdrop */}
-                    <div className="absolute rounded-xl inset-x-0 top-0 h-56 overflow-hidden sm:h-72">
-                        <Image
-                            src={coverUrl}
-                            alt=""
-                            fill
-                            aria-hidden
-                            className="scale-110 object-cover opacity-40 blur-2xl"
-                            sizes="100vw"
-                            priority
-                        />
-                        <div className="absolute inset-0 bg-linear-to-b from-background/30 via-background/70 to-card" />
-                    </div>
-
-                    <CardContent className="p-5 z-10 sm:p-8">
-                        {editMode ? (
+                <BookDetails
+                    book={book}
+                    coverSrc={coverUrl}
+                    ratingValue={Number(book.ratingAvg ?? 0)}
+                    chaptersTotal={chaptersTotal}
+                    hideRatingPanel={true}
+                    hideFavoriteButton={true}
+                    hideUpdatedAt={false}
+                    hideCreatedAt={false}
+                    primaryActionSlot={false}
+                    t={t}
+                    ti={ti}
+                    editMode={editMode &&(
                         <BookEditor
                             value={editedBook}
                             onChange={setEditedBook}
@@ -442,135 +373,9 @@ export default function AdminBookDetail() {
                             t={t}
                             onSelectCover={() => setNewCoverPickerOpen(true)}
                             coverAlt={book.title}
-                            stats={[
-                                {
-                                    icon: <Star className="h-4 w-4" />,
-                                    label: t("Rating"),
-                                    value: Number(book.ratingAvg ?? 0).toFixed(1),
-                                    hint: t("NReviews", { count: book.ratingCount }),
-                                },
-                                {
-                                    icon: <BookOpen className="h-4 w-4" />,
-                                    label: t("Chapters"),
-                                    value: String(book.chapterCount),
-                                },
-                                {
-                                    icon: <Clock className="h-4 w-4" />,
-                                    label: t("Updated"),
-                                    value: formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti),
-                                    small: true,
-                                },
-                            ]}
                         />
-                        ) : (
-                        <div className="grid gap-6 sm:gap-8 lg:grid-cols-[240px_1fr]">
-                            {/* Cover */}
-                            <div className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full">
-                                <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-muted shadow-xl ring-1 ring-black/5 dark:ring-white/5">
-                                    <div className="aspect-2/3 w-full">
-                                        <Image
-                                            src={coverUrl}
-                                            alt={book.title}
-                                            width={480}
-                                            height={720}
-                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            sizes="(max-width: 640px) 70vw, 240px"
-                                            priority
-                                        />
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* Meta */}
-                            <div className="min-w-0">
-                                <div className="space-y-5">
-                                        {/* Status pills */}
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {book.isPublished ? (
-                                                <Badge className="gap-1.5 border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300">
-                                                    <Eye className="h-3.5 w-3.5" />
-                                                    {t("Published")}
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="gap-1.5">
-                                                    <EyeOff className="h-3.5 w-3.5" />
-                                                    {t("Drafts")}
-                                                </Badge>
-                                            )}
-                                            {book.isFeatured && (
-                                                <Badge className="gap-1.5 border border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/15 dark:text-amber-300">
-                                                    <Sparkles className="h-3.5 w-3.5" />
-                                                    {t("Featured")}
-                                                </Badge>
-                                            )}
-                                        </div>
-
-                                        {/* Title */}
-                                        <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-                                            {book.title}
-                                        </h1>
-
-                                        {/* Author */}
-                                        <div className="inline-flex items-center gap-2 text-muted-foreground">
-                                            <User className="h-4 w-4" />
-                                            <span className="text-sm font-medium">{book.author || t("Unknown")}</span>
-                                        </div>
-
-                                        {/* Meta badges */}
-                                        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                                            <Badge variant="outline">{t(`BookStatus_${book.status}`)}</Badge>
-                                            {book.ageRating && <Badge variant="outline">{t(`AgeRating_${book.ageRating}`)}</Badge>}
-                                            {book.publicationYear && <Badge variant="outline">{book.publicationYear}</Badge>}
-                                            {book.originalTitle && <Badge variant="outline">{book.originalTitle}</Badge>}
-                                        </div>
-
-                                        {/* Type + genres */}
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Badge variant="outline" className="gap-1.5 border-primary/30 bg-primary/5 text-foreground">
-                                                <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
-                                                {book.type.name}
-                                            </Badge>
-                                            {book.genres.map((genre: { id: number; name: string; slug: string; iconKey: IconKey }) => (
-                                                <Badge key={genre.id} variant="outline" className="gap-1.5">
-                                                    <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
-                                                    {genre.name}
-                                                </Badge>
-                                            ))}
-                                        </div>
-
-                                        {/* Description */}
-                                        <p className="text-pretty text-justify text-[15px] leading-relaxed text-muted-foreground">
-                                            {book.description || t("NoDescriptionAvailable")}
-                                        </p>
-
-                                        {/* Stats */}
-                                        <div className="grid gap-3 pt-2 sm:grid-cols-3">
-                                            <StatTile
-                                                icon={<Star className="h-4 w-4" />}
-                                                label={t("Rating")}
-                                                value={Number(book.ratingAvg ?? 0).toFixed(1)}
-                                                hint={t("NReviews", { count: book.ratingCount })}
-                                            />
-                                            <StatTile
-                                                icon={<BookOpen className="h-4 w-4" />}
-                                                label={t("Chapters")}
-                                                value={String(book.chapterCount)}
-                                            />
-                                            <StatTile
-                                                icon={<Clock className="h-4 w-4" />}
-                                                label={t("Updated")}
-                                                value={formatUpdateTime(book.lastContentUpdate || book.updatedAt, ti)}
-                                                small
-                                            />
-                                        </div>
-                                    </div>
-
-                            </div>
-                        </div>
-                        )}
-                    </CardContent>
-                </Card>
+                    )}
+                />
 
                 {/* Chapters */}
                 <Card ref={chaptersPaginationScrollRef} className="border-border/60 shadow-sm">
@@ -827,31 +632,6 @@ export default function AdminBookDetail() {
                     }));
                 }}
             />
-        </div>
-    );
-}
-
-function StatTile({icon, label, value, hint, small,}: {
-    icon: React.ReactNode;
-    label: string;
-    value: string;
-    hint?: string;
-    small?: boolean;
-}) {
-    return (
-        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-3 backdrop-blur-sm">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background text-foreground">
-                {icon}
-            </div>
-            <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                    {label}
-                </p>
-                <p className={small ? "truncate text-sm font-semibold" : "text-xl font-semibold tabular-nums"}>
-                    {value}
-                </p>
-                {hint && <p className="truncate text-[11px] text-muted-foreground">{hint}</p>}
-            </div>
         </div>
     );
 }
