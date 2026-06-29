@@ -379,7 +379,7 @@ export default function AdminDashboard() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {stats.recent.chapters.length === 0 ? <EmptyRow text={t("NoNewChapters")} /> : (
+                                                    {stats.recent.chapters.length === 0 ? <EmptyRow text={t("AdminPage.Dashboard.NoNewChapters")} /> : (
                                                         stats.recent.chapters.map((c) => (
                                                             <TableRow key={c.id}>
                                                                 <TableCell className="font-medium text-sm">{c.title}</TableCell>
