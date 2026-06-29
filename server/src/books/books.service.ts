@@ -141,6 +141,7 @@ export class BooksService {
         createdAt: true,
         updatedAt: true,
         lastContentUpdate: true,
+        status: true,
         chapterCount: true,
         genres: { select: { genre: { select: { name: true, slug: true } } } },
       },
@@ -159,6 +160,7 @@ export class BooksService {
       ratingCount: b.ratingCount,
       genres: b.genres.map((g) => g.genre),
       isFeatured: b.isFeatured,
+      status: b.status,
       chapterCount: b.chapterCount,
       updatedAt: (b.lastContentUpdate ?? b.updatedAt).toISOString(),
     }));
@@ -750,7 +752,7 @@ export class BooksService {
   // Get book
   async findById(id: number) {
     const book = await this.prisma.book.findUnique({
-      where: { id },
+      where: { id, isPublished: true },
       select: {
         id: true,
         title: true,
