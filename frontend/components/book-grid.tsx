@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import { BookCard } from "@/components/book-card";
-import { BookCardSkeleton } from "@/components/book-card-skeleton";
+import { BookCard, BookCardSkeleton } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
 import { motion } from "framer-motion";
 
