@@ -1,6 +1,6 @@
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import Image from "next/image";
-import {useCallback, useRef, useState} from "react";
+import React, {useCallback, useRef, useState} from "react";
 import {
     BookOpen,
     BookText,
@@ -35,6 +35,7 @@ import {Switch} from "@/components/ui/switch";
 import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {cn} from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 
 type OptionItem = { id: number; name: string };
 
@@ -103,10 +104,8 @@ function PillInput({
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        // If comma is typed mid-word, split and commit
         if (val.includes(",")) {
             const parts = val.split(",");
-            // commit all but last part
             parts.slice(0, -1).forEach((p) => commitValue(p));
             setInputValue(parts[parts.length - 1]);
         } else {
@@ -133,26 +132,36 @@ function PillInput({
                     {icon}
                 </span>
             )}
-            {pills.map((pill, i) => (
-                <Badge
-                    key={i}
-                    variant="secondary"
-                    className="flex h-6 shrink-0 items-center gap-1 rounded-full px-2 py-0 text-xs font-medium"
-                >
-                    <span className="max-w-35 truncate">{pill}</span>
-                    <button
-                        type="button"
-                        aria-label={`Remove ${pill}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove(i);
-                        }}
-                        className="ms-0.5 shrink-0 rounded-full p-0.5 text-secondary-foreground/60 transition-colors hover:bg-secondary-foreground/20 hover:text-secondary-foreground focus:outline-none"
+            <AnimatePresence initial={false}>
+                {pills.map((pill, i) => (
+                    <motion.div
+                        key={pill + i}
+                        initial={{ opacity: 0, scale: 0.75 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.75 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                        style={{ display: "contents" }}
                     >
-                        <X className="h-3 w-3" />
-                    </button>
-                </Badge>
-            ))}
+                        <Badge
+                            variant="secondary"
+                            className="flex h-6 shrink-0 items-center gap-1 rounded-full px-2 py-0 text-xs font-medium"
+                        >
+                            <span className="max-w-35 truncate">{pill}</span>
+                            <button
+                                type="button"
+                                aria-label={`Remove ${pill}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(i);
+                                }}
+                                className="ms-0.5 shrink-0 rounded-full p-0.5 text-secondary-foreground/60 transition-colors hover:bg-secondary-foreground/20 hover:text-secondary-foreground focus:outline-none"
+                            >
+                                <X className="h-3 w-3" />
+                            </button>
+                        </Badge>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
             <input
                 ref={inputRef}
                 value={inputValue}
@@ -186,7 +195,6 @@ export function BookEditor({
     coverAlt: string;
     stats?: BookEditorStat[];
 }) {
-    // Translators pills
     const handleAddTranslator = (v: string) => {
         const current = value.translators ?? [];
         if (!current.includes(v)) {
@@ -198,7 +206,6 @@ export function BookEditor({
         onChange({ ...value, translators: current.filter((_, idx) => idx !== i) });
     };
 
-    // Alternative titles pills
     const handleAddAltTitle = (v: string) => {
         const current = value.alternativeTitles ?? [];
         if (!current.includes(v)) {
@@ -215,7 +222,12 @@ export function BookEditor({
     return (
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[240px_1fr]">
             {/* Cover */}
-            <div className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full">
+            <motion.div
+                className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: "easeOut" }}
+            >
                 <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-muted shadow-xl ring-1 ring-black/5 dark:ring-white/5">
                     <div className="aspect-2/3 w-full">
                         <Image
@@ -238,10 +250,20 @@ export function BookEditor({
                     <ImageIcon className="me-2 h-4 w-4" />
                     {t("BookSelectCover")}
                 </Button>
-            </div>
+            </motion.div>
 
             <div className="min-w-0">
-                <div className="space-y-0 divide-y divide-border/60">
+                <motion.div
+                    className="space-y-0 divide-y divide-border/60"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: {},
+                        visible: {
+                            transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+                        },
+                    }}
+                >
                     {/* Display Settings */}
                     <EditSection icon={<Eye className="h-4 w-4" />} title={t("DisplaySettings")}>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -421,7 +443,7 @@ export function BookEditor({
                             {genres.map((gn) => {
                                 const isSelected = value.genreIds?.includes(gn.id);
                                 return (
-                                    <button
+                                    <motion.button
                                         key={gn.id}
                                         type="button"
                                         onClick={() => {
@@ -431,6 +453,9 @@ export function BookEditor({
                                                 : [...current, gn.id];
                                             onChange({ ...value, genreIds: next });
                                         }}
+                                        whileTap={{ scale: 0.93 }}
+                                        animate={isSelected ? { scale: 1.04 } : { scale: 1 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
                                         className={cn(
                                             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                                             isSelected
@@ -438,9 +463,22 @@ export function BookEditor({
                                                 : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent",
                                         )}
                                     >
-                                        {isSelected && <Check className="h-3 w-3" />}
+                                        <AnimatePresence initial={false}>
+                                            {isSelected && (
+                                                <motion.span
+                                                    key="check"
+                                                    initial={{ opacity: 0, scale: 0.4, width: 0 }}
+                                                    animate={{ opacity: 1, scale: 1, width: "0.75rem" }}
+                                                    exit={{ opacity: 0, scale: 0.4, width: 0 }}
+                                                    transition={{ duration: 0.15, ease: "easeOut" }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <Check className="h-3 w-3" />
+                                                </motion.span>
+                                            )}
+                                        </AnimatePresence>
                                         {gn.name}
-                                    </button>
+                                    </motion.button>
                                 );
                             })}
                         </div>
@@ -456,7 +494,7 @@ export function BookEditor({
                             className="resize-none"
                         />
                     </EditSection>
-                </div>
+                </motion.div>
             </div>
         </div>
     );
@@ -472,7 +510,12 @@ function EditSection({
     children: React.ReactNode;
 }) {
     return (
-        <div className="py-5 first:pt-0">
+        <motion.div
+            variants={{
+                hidden: { opacity: 0, y: 16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" }},
+            }}
+            className="py-5 first:pt-0">
             <div className="mb-4 flex items-center gap-2">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
                     {icon}
@@ -482,7 +525,7 @@ function EditSection({
                 </span>
             </div>
             {children}
-        </div>
+        </motion.div>
     );
 }
 
@@ -529,8 +572,10 @@ function ToggleRow({
                 : "";
 
     return (
-        <label
+        <motion.label
             data-active={checked}
+            animate={checked ? { scale: 1.015 } : { scale: 1 }}
+            transition={{ type: "spring", stiffness: 350, damping: 22 }}
             className={cn(
                 "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 transition-all duration-150 hover:border-border",
                 activeRing,
@@ -544,6 +589,6 @@ function ToggleRow({
                 </div>
             </div>
             <Switch checked={checked} onCheckedChange={onCheckedChange} />
-        </label>
+        </motion.label>
     );
 }
