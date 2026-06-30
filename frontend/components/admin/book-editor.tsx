@@ -1,29 +1,40 @@
 import { getBookCoverThumbnailUrl } from "@/lib/media"
-import type React from "react";
 import Image from "next/image";
+import {useCallback, useRef, useState} from "react";
 import {
     BookOpen,
+    BookText,
     Calendar,
     Check,
     Eye,
+    Hash,
     ImageIcon,
     Languages,
     LayoutGrid,
     LucideBookOpenText,
-    Hash,
     Sparkles,
     Tag,
     Type,
     User,
-    BookText,
+    X,
 } from "lucide-react";
 import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating } from "@readory/shared";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectSeparator,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
+import {Switch} from "@/components/ui/switch";
+import {Textarea} from "@/components/ui/textarea";
+import {Badge} from "@/components/ui/badge";
+import {cn} from "@/lib/utils";
 
 type OptionItem = { id: number; name: string };
 
@@ -52,6 +63,109 @@ type BookEditorStat = {
     small?: boolean;
 };
 
+function PillInput({
+                       pills,
+                       onAdd,
+                       onRemove,
+                       icon,
+                       placeholder,
+                       className,
+                   }: {
+    pills: string[];
+    onAdd: (value: string) => void;
+    onRemove: (index: number) => void;
+    icon?: React.ReactNode;
+    placeholder?: string;
+    className?: string;
+}) {
+    const [inputValue, setInputValue] = useState("");
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const commitValue = useCallback(
+        (raw: string) => {
+            const trimmed = raw.trim();
+            if (trimmed.length > 0) {
+                onAdd(trimmed);
+            }
+            setInputValue("");
+        },
+        [onAdd],
+    );
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" || e.key === "," || e.key === "Tab") {
+            e.preventDefault();
+            commitValue(inputValue);
+        } else if (e.key === "Backspace" && inputValue === "" && pills.length > 0) {
+            onRemove(pills.length - 1);
+        }
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        // If comma is typed mid-word, split and commit
+        if (val.includes(",")) {
+            const parts = val.split(",");
+            // commit all but last part
+            parts.slice(0, -1).forEach((p) => commitValue(p));
+            setInputValue(parts[parts.length - 1]);
+        } else {
+            setInputValue(val);
+        }
+    };
+
+    const handleBlur = () => {
+        // Do NOT auto-commit on blur per spec: only committed pills are sent
+    };
+
+    return (
+        <div
+            className={cn(
+                "flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs transition-[color,box-shadow]",
+                "focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
+                "dark:bg-input/30",
+                className,
+            )}
+            onClick={() => inputRef.current?.focus()}
+        >
+            {icon && (
+                <span className="pointer-events-none shrink-0 text-muted-foreground">
+                    {icon}
+                </span>
+            )}
+            {pills.map((pill, i) => (
+                <Badge
+                    key={i}
+                    variant="secondary"
+                    className="flex h-6 shrink-0 items-center gap-1 rounded-full px-2 py-0 text-xs font-medium"
+                >
+                    <span className="max-w-35 truncate">{pill}</span>
+                    <button
+                        type="button"
+                        aria-label={`Remove ${pill}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemove(i);
+                        }}
+                        className="ms-0.5 shrink-0 rounded-full p-0.5 text-secondary-foreground/60 transition-colors hover:bg-secondary-foreground/20 hover:text-secondary-foreground focus:outline-none"
+                    >
+                        <X className="h-3 w-3" />
+                    </button>
+                </Badge>
+            ))}
+            <input
+                ref={inputRef}
+                value={inputValue}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                placeholder={pills.length === 0 ? placeholder : ""}
+                className="h-6 min-w-20 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+            />
+        </div>
+    );
+}
+
 export function BookEditor({
                                value,
                                onChange,
@@ -72,10 +186,35 @@ export function BookEditor({
     coverAlt: string;
     stats?: BookEditorStat[];
 }) {
+    // Translators pills
+    const handleAddTranslator = (v: string) => {
+        const current = value.translators ?? [];
+        if (!current.includes(v)) {
+            onChange({ ...value, translators: [...current, v] });
+        }
+    };
+    const handleRemoveTranslator = (i: number) => {
+        const current = value.translators ?? [];
+        onChange({ ...value, translators: current.filter((_, idx) => idx !== i) });
+    };
+
+    // Alternative titles pills
+    const handleAddAltTitle = (v: string) => {
+        const current = value.alternativeTitles ?? [];
+        if (!current.includes(v)) {
+            onChange({ ...value, alternativeTitles: [...current, v] });
+        }
+    };
+    const handleRemoveAltTitle = (i: number) => {
+        const current = value.alternativeTitles ?? [];
+        onChange({ ...value, alternativeTitles: current.filter((_, idx) => idx !== i) });
+    };
+
     const coverUrl = value.coverImage ? getBookCoverThumbnailUrl(value.coverImage) : '/placeholder.svg';
 
     return (
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-[240px_1fr]">
+            {/* Cover */}
             <div className="mx-auto w-40 self-start sm:w-52 lg:sticky lg:top-20 lg:w-full">
                 <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-muted shadow-xl ring-1 ring-black/5 dark:ring-white/5">
                     <div className="aspect-2/3 w-full">
@@ -103,19 +242,15 @@ export function BookEditor({
 
             <div className="min-w-0">
                 <div className="space-y-0 divide-y divide-border/60">
-                    <EditSection
-                        icon={<Eye className="h-4 w-4" />}
-                        title={t("DisplaySettings")}
-                    >
+                    {/* Display Settings */}
+                    <EditSection icon={<Eye className="h-4 w-4" />} title={t("DisplaySettings")}>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <ToggleRow
                                 icon={<Eye className="h-4 w-4 text-muted-foreground" />}
                                 label={t("Publish")}
                                 description={t("MarkPublished")}
                                 checked={value.isPublished ?? false}
-                                onCheckedChange={(checked) =>
-                                    onChange({ ...value, isPublished: checked })
-                                }
+                                onCheckedChange={(checked) => onChange({ ...value, isPublished: checked })}
                                 activeColor="emerald"
                             />
                             <ToggleRow
@@ -123,24 +258,20 @@ export function BookEditor({
                                 label={t("Featured")}
                                 description={t("MarkFeatured")}
                                 checked={value.isFeatured ?? false}
-                                onCheckedChange={(checked) =>
-                                    onChange({ ...value, isFeatured: checked })
-                                }
+                                onCheckedChange={(checked) => onChange({ ...value, isFeatured: checked })}
                                 activeColor="amber"
                             />
                         </div>
                     </EditSection>
 
-                    <EditSection
-                        icon={<BookOpen className="h-4 w-4" />}
-                        title={t("BasicInfo")}
-                    >
+                    {/* Basic Info */}
+                    <EditSection icon={<BookOpen className="h-4 w-4" />} title={t("BasicInfo")}>
                         <div className="space-y-4">
                             <EditField label={t("BookTitle")} required>
                                 <div className="relative">
                                     <BookText className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                     <Input
-                                        value={value.title || ''}
+                                        value={value.title || ""}
                                         onChange={(e) => onChange({ ...value, title: e.target.value })}
                                         className="h-11 ps-9 text-base font-medium"
                                         placeholder={t("BookTitlePlaceholder")}
@@ -153,7 +284,7 @@ export function BookEditor({
                                     <div className="relative">
                                         <Type className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
-                                            value={value.originalTitle || ''}
+                                            value={value.originalTitle || ""}
                                             onChange={(e) => onChange({ ...value, originalTitle: e.target.value })}
                                             placeholder={t("OriginalTitlePlaceholder")}
                                             className="ps-9"
@@ -164,7 +295,7 @@ export function BookEditor({
                                     <div className="relative">
                                         <User className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
-                                            value={value.author || ''}
+                                            value={value.author || ""}
                                             onChange={(e) => onChange({ ...value, author: e.target.value })}
                                             className="ps-9"
                                             placeholder={t("BookAuthorPlaceholder")}
@@ -173,36 +304,40 @@ export function BookEditor({
                                 </EditField>
                             </div>
 
+                            {/* Alternative Titles */}
                             <EditField label={t("AlternativeTitles")}>
-                                <div className="relative">
-                                    <Hash className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        value={(value.alternativeTitles || []).join(',')}
-                                        onChange={(e) => onChange({ ...value, alternativeTitles: e.target.value.split(',')})}
-                                        className="ps-9"
-                                        placeholder={t("AlternativeTitlesPlaceholder")}
-                                    />
-                                </div>
+                                <PillInput
+                                    pills={value.alternativeTitles ?? []}
+                                    onAdd={handleAddAltTitle}
+                                    onRemove={handleRemoveAltTitle}
+                                    icon={<Hash className="h-4 w-4" />}
+                                    placeholder={t("AlternativeTitlesPlaceholder")}
+                                />
                             </EditField>
 
                             <div className="grid gap-4 sm:grid-cols-2">
+                                {/* Translators */}
                                 <EditField label={t("Translators")}>
-                                    <div className="relative">
-                                        <Languages className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            value={(value.translators || []).join(',')}
-                                            onChange={(e) => onChange({ ...value, translators: e.target.value.split(',')})}
-                                            className="ps-9"
-                                            placeholder={t("TranslatorsPlaceholder")}
-                                        />
-                                    </div>
+                                    <PillInput
+                                        pills={value.translators ?? []}
+                                        onAdd={handleAddTranslator}
+                                        onRemove={handleRemoveTranslator}
+                                        icon={<Languages className="h-4 w-4" />}
+                                        placeholder={t("TranslatorsPlaceholder")}
+                                    />
                                 </EditField>
+
                                 <EditField label={t("PublicationYear")}>
                                     <div className="relative">
                                         <Calendar className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                                         <Input
-                                            value={value.publicationYear ?? ''}
-                                            onChange={(e) => onChange({ ...value, publicationYear: e.target.value ? Number(e.target.value) : null })}
+                                            value={value.publicationYear ?? ""}
+                                            onChange={(e) =>
+                                                onChange({
+                                                    ...value,
+                                                    publicationYear: e.target.value ? Number(e.target.value) : null,
+                                                })
+                                            }
                                             className="ps-9"
                                             placeholder={t("PublicationYearPlaceholder")}
                                         />
@@ -212,28 +347,26 @@ export function BookEditor({
                         </div>
                     </EditSection>
 
-                    <EditSection
-                        icon={<LayoutGrid className="h-4 w-4" />}
-                        title={t("Classification")}
-                    >
+                    {/* Classification */}
+                    <EditSection icon={<LayoutGrid className="h-4 w-4" />} title={t("Classification")}>
                         <div className="grid gap-4 sm:grid-cols-3">
                             <EditField required label={t("BookType")}>
-                                <div className="relative">
-                                    <Select
-                                        dir={isRTL ? "rtl" : "ltr"}
-                                        value={`${value.typeId}` || ''}
-                                        onValueChange={(e) => onChange({ ...value, typeId: Number(e) })}
-                                    >
-                                        <SelectTrigger className="w-full">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent position="popper">
-                                            {types.map((tp) => (
-                                                <SelectItem key={tp.id} value={`${tp.id}`}>{tp.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <Select
+                                    dir={isRTL ? "rtl" : "ltr"}
+                                    value={`${value.typeId}` || ""}
+                                    onValueChange={(e) => onChange({ ...value, typeId: Number(e) })}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper">
+                                        {types.map((tp) => (
+                                            <SelectItem key={tp.id} value={`${tp.id}`}>
+                                                {tp.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </EditField>
 
                             <EditField label={t("BookStatus")}>
@@ -247,7 +380,9 @@ export function BookEditor({
                                     </SelectTrigger>
                                     <SelectContent position="popper">
                                         {BOOK_STATUS_VALUES.map((status: string) => (
-                                            <SelectItem key={status} value={status}>{t(`BookStatus_${status}`)}</SelectItem>
+                                            <SelectItem key={status} value={status}>
+                                                {t(`BookStatus_${status}`)}
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -256,8 +391,10 @@ export function BookEditor({
                             <EditField label={t("AgeRating")}>
                                 <Select
                                     dir={isRTL ? "rtl" : "ltr"}
-                                    value={value.ageRating || ''}
-                                    onValueChange={(ageRating) => onChange({ ...value, ageRating: ageRating !== "None" ? ageRating as AgeRating: null })}
+                                    value={value.ageRating || ""}
+                                    onValueChange={(ageRating) =>
+                                        onChange({ ...value, ageRating: ageRating !== "None" ? ageRating as AgeRating: null })
+                                    }
                                 >
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder={t("SelectAgeRating")} />
@@ -267,7 +404,9 @@ export function BookEditor({
                                         <SelectSeparator />
                                         <SelectGroup>
                                             {AGE_RATING_VALUES.map((ageRating: string) => (
-                                                <SelectItem key={ageRating} value={ageRating}>{t(`AgeRating_${ageRating}`)}</SelectItem>
+                                                <SelectItem key={ageRating} value={ageRating}>
+                                                    {t(`AgeRating_${ageRating}`)}
+                                                </SelectItem>
                                             ))}
                                         </SelectGroup>
                                     </SelectContent>
@@ -276,10 +415,8 @@ export function BookEditor({
                         </div>
                     </EditSection>
 
-                    <EditSection
-                        icon={<Tag className="h-4 w-4" />}
-                        title={t("BookGenres")}
-                    >
+                    {/* Genres */}
+                    <EditSection icon={<Tag className="h-4 w-4" />} title={t("BookGenres")}>
                         <div className="flex flex-wrap gap-2">
                             {genres.map((gn) => {
                                 const isSelected = value.genreIds?.includes(gn.id);
@@ -290,16 +427,16 @@ export function BookEditor({
                                         onClick={() => {
                                             const current = value.genreIds || [];
                                             const next = isSelected
-                                                ? current.filter(id => id !== gn.id)
+                                                ? current.filter((id) => id !== gn.id)
                                                 : [...current, gn.id];
                                             onChange({ ...value, genreIds: next });
                                         }}
-                                        className={[
+                                        className={cn(
                                             "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition-all duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
                                             isSelected
                                                 ? "border-primary bg-primary text-primary-foreground shadow-sm"
                                                 : "border-border bg-background text-foreground hover:border-primary/50 hover:bg-accent",
-                                        ].join(' ')}
+                                        )}
                                     >
                                         {isSelected && <Check className="h-3 w-3" />}
                                         {gn.name}
@@ -309,15 +446,11 @@ export function BookEditor({
                         </div>
                     </EditSection>
 
-                    <EditSection
-                        icon={<LucideBookOpenText className="h-4 w-4" />}
-                        title={t("BookDescription")}
-                    >
+                    {/* Description */}
+                    <EditSection icon={<LucideBookOpenText className="h-4 w-4" />} title={t("BookDescription")}>
                         <Textarea
-                            value={value.description || ''}
-                            onChange={(e) =>
-                                onChange({ ...value, description: e.target.value })
-                            }
+                            value={value.description || ""}
+                            onChange={(e) => onChange({ ...value, description: e.target.value })}
                             placeholder={t("BookDescriptionPlaceholder")}
                             rows={5}
                             className="resize-none"
@@ -398,10 +531,10 @@ function ToggleRow({
     return (
         <label
             data-active={checked}
-            className={[
+            className={cn(
                 "flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border/60 bg-background px-4 py-3 transition-all duration-150 hover:border-border",
                 activeRing,
-            ].join(' ')}
+            )}
         >
             <div className="flex min-w-0 items-center gap-3">
                 <span className="shrink-0 text-muted-foreground">{icon}</span>
@@ -410,10 +543,7 @@ function ToggleRow({
                     <p className="mt-1 truncate text-[11px] text-muted-foreground">{description}</p>
                 </div>
             </div>
-            <Switch
-                checked={checked}
-                onCheckedChange={onCheckedChange}
-            />
+            <Switch checked={checked} onCheckedChange={onCheckedChange} />
         </label>
     );
 }
