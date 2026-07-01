@@ -1,12 +1,13 @@
 "use client"
 
 import useSWR from "swr"
-import { TrendingSection, TrendingSkeleton } from "@/components/trending-section"
-import { LatestSection, LatestSectionSkeleton } from "@/components/latest-section"
+import { TrendingSection, TrendingSkeleton } from "@/components/Home/trending-section"
+import { LatestSection, LatestSectionSkeleton } from "@/components/Home/latest-section"
 import { GenresSection, GenresSectionSkeleton } from "@/components/genres-section"
-import { HeroCarousel, HeroSkeleton } from "@/components/hero-carousel";
+import { HeroCarousel, HeroSkeleton } from "@/components/Home/hero-carousel";
 import {BookType, BookGenre, BookCardData} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
+import {PopularSection, PopularSkeleton} from "@/components/Home/popular-section";
 
 interface Chapter {
     id: number
@@ -27,6 +28,7 @@ interface HomeContent {
     hero: BookCardData[]
     latest: LatestBook[]
     trending: BookCardData[]
+    popular: BookCardData[]
     genres: BookGenre[]
 }
 
@@ -46,6 +48,9 @@ export default function Home() {
 
                 {/* Latest Updates Section */}
                 {isLoading || !data ? <LatestSectionSkeleton /> : data?.latest && <LatestSection books={data.latest} />}
+
+                {/* popular Section */}
+                {isLoading || !data ? <PopularSkeleton /> : data?.popular && <PopularSection books={data.popular} />}
 
                 {/* Genres Section */}
                 {isLoading || !data ? <GenresSectionSkeleton /> : data?.genres && <GenresSection genres={data.genres} />}

@@ -336,8 +336,10 @@
   "HomePage": {
     "By": "by",
     "StartReading": "Start Reading",
-    "Trending": "Trending",
-    "MostPopular": "Most Popular Right Now",
+    "Trending": "Trending Now",
+    "TrendingDescription": "Discover the books everyone is talking about right now",
+    "MostPopular": "All-Time Favorites",
+    "MostPopularDescription": "Explore the most popular books loved by readers across the platform",
     "FreshDrops": "Fresh Drops",
     "LatestUpdates": "Latest Updates",
     "Explore": "Explore",

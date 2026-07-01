@@ -17,7 +17,7 @@ export class PublicService {
             this.CACHE_KEY_HOME_CONTENT,
             { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
             async () => {
-                const [featuredBooks, latestUpdates, trendingBooks, topGenres] = await Promise.all([
+                const [featuredBooks, latestUpdates, trendingBooks, topGenres, mostPopularBooks] = await Promise.all([
                     this.prisma.book.findMany({
                         where: { isPublished: true, isFeatured: true },
                         take: 5,
@@ -60,9 +60,9 @@ export class PublicService {
                         },
                     }),
                     this.prisma.book.findMany({
-                        where: { isPublished: true, ratingCount: { gte: 5 } },
+                        where: { isPublished: true },
                         take: 10,
-                        orderBy: [{ ratingAvg: 'desc' }, { ratingCount: 'desc' }, { updatedAt: 'desc' }],
+                        orderBy: { popularityScore: 'desc' },
                         select: {
                             id: true,
                             title: true,
@@ -78,11 +78,22 @@ export class PublicService {
                     this.prisma.genre.findMany({
                         take: 8,
                         orderBy: { books: { _count: 'desc' } },
+                        select: { id: true, name: true, slug: true, iconKey: true },
+                    }),
+                    this.prisma.book.findMany({
+                        where: { isPublished: true, ratingCount: { gte: 5 } },
+                        take: 10,
+                        orderBy: [{ ratingAvg: 'desc' }, { ratingCount: 'desc' }, { updatedAt: 'desc' }],
                         select: {
                             id: true,
-                            name: true,
-                            slug: true,
-                            iconKey: true,
+                            title: true,
+                            coverImage: true,
+                            author: true,
+                            type: { select: { id: true, name: true, slug: true } },
+                            chapterCount: true,
+                            genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
+                            ratingAvg: true,
+                            ratingCount: true,
                         },
                     }),
                 ]);
@@ -112,6 +123,17 @@ export class PublicService {
                         })),
                     })),
                     trending: trendingBooks.map((b) => ({
+                        id: b.id,
+                        title: b.title,
+                        author: b.author,
+                        coverImage: b.coverImage,
+                        type: b.type,
+                        genres: b.genres.map((g) => g.genre),
+                        chapterCount: b.chapterCount,
+                        ratingAvg: Number(b.ratingAvg),
+                        ratingCount: b.ratingCount,
+                    })),
+                    popular: mostPopularBooks.map((b) => ({
                         id: b.id,
                         title: b.title,
                         author: b.author,
