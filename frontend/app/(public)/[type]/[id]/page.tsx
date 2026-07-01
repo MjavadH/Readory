@@ -618,8 +618,8 @@ export default function BookDetailsPage() {
             <section>
               <div className="mb-5 flex items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold sm:text-2xl">{t("MayLike")}</h2>
-                  <p className="text-sm text-muted-foreground">{t("SimilarBooks")}</p>
+                  <h2 className="text-xl font-bold sm:text-2xl">{t("SimilarBooks")}</h2>
+                  <p className="text-sm text-muted-foreground">{t("MayLike")}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
