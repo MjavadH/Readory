@@ -6,9 +6,6 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { AppPagination } from "@/components/app-pagination"
 import {
-    TrendingUp,
-    TrendingDown,
-    Minus,
     ArrowDownCircle,
     ArrowUpCircle,
     Wallet,
@@ -19,35 +16,6 @@ import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
 
-function GrowthIndicator({ value }: { value?: number }) {
-    const t = useTranslations('AdminPage.Transactions');
-    if (value === undefined) return null
-    if (value === 0) {
-        return (
-            <div className="flex items-center text-xs font-medium text-muted-foreground bg-muted/20 px-2 py-1 rounded-full">
-                <Minus className="me-1 size-3" />
-                <span>{t("NoChange")}</span>
-            </div>
-        )
-    }
-
-    const isPositive = value > 0
-
-    return (
-        <div
-            className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${
-                isPositive
-                    ? "text-green-700 bg-green-500/10 dark:text-green-400"
-                    : "text-red-700 bg-red-500/10 dark:text-red-400"
-            }`}
-        >
-            {isPositive ? <TrendingUp className="me-1 size-3" /> : <TrendingDown className="me-1 size-3" />}
-            <span>
-        {Math.abs(value).toFixed(1)}% {isPositive ? t("Growth") : t("Drop")}
-      </span>
-        </div>
-    )
-}
 
 interface Transaction {
     id: number
@@ -176,28 +144,28 @@ export default function AdminTransactions() {
                 {/* Stats Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard
+                        index={0}
                         title={t("TotalTransactions")}
                         value={stats.total.toLocaleString()}
                         icon={Activity}
-                        color="blue"
-                        indicator={<GrowthIndicator value={stats.growth?.totalTransactions} />}
-                        animationDelay={0}
+                        accent="primary"
+                        growth={stats.growth?.totalTransactions}
                     />
                     <StatCard
+                        index={1}
                         title={t("Deposits")}
                         value={formatCurrency(stats.creditAmount)}
                         icon={ArrowUpCircle}
-                        color="emerald"
-                        indicator={<GrowthIndicator value={stats.growth?.creditAmount} />}
-                        animationDelay={0.2}
+                        accent="emerald"
+                        growth={stats.growth?.creditAmount}
                     />
                     <StatCard
+                        index={2}
                         title={t("Withdrawals")}
                         value={formatCurrency(stats.debitAmount)}
                         icon={ArrowDownCircle}
-                        color="red"
-                        indicator={<GrowthIndicator value={stats.growth?.debitAmount} />}
-                        animationDelay={0.4}
+                        accent="rose"
+                        growth={stats.growth?.debitAmount}
                     />
                 </div>
 

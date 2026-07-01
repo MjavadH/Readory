@@ -263,26 +263,25 @@ export default function AdminUsers() {
           {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
+                index={0}
                 title={t("TotalUsers")}
                 value={(stats?.totalUsers || 0).toLocaleString()}
                 icon={Users}
-                color="blue"
-                animationDelay={0}
+                accent="primary"
             />
             <StatCard
+                index={1}
                 title={t("ActiveUsers")}
                 value={(stats?.activeUsers || 0).toLocaleString()}
                 icon={Activity}
-                color="green"
-                animationDelay={0.2}
+                accent="emerald"
             />
             <StatCard
+                index={2}
                 title={t("NewUsers")}
                 value={(stats?.newUsers || 0).toLocaleString()}
                 icon={UserPlus}
-                color="violet"
-                className="sm:col-span-2 lg:col-span-1"
-                animationDelay={0.4}
+                accent="amber"
             />
           </div>
 

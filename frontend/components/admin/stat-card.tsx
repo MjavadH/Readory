@@ -1,82 +1,92 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
-import { motion } from "framer-motion";
+"use client"
 
-// Pre-defined color variants to ensure Tailwind generates the classes
-const colorVariants = {
-    blue: {
-        card: "from-blue-500/5 to-blue-500/10",
-        iconBg: "bg-blue-500/10 ring-blue-500/20",
-        icon: "text-blue-600 dark:text-blue-500",
-    },
-    emerald: {
-        card: "from-emerald-500/5 to-emerald-500/10",
-        iconBg: "bg-emerald-500/10 ring-emerald-500/20",
-        icon: "text-emerald-600 dark:text-emerald-500",
-    },
-    amber: {
-        card: "from-amber-500/5 to-amber-500/10",
-        iconBg: "bg-amber-500/10 ring-amber-500/20",
-        icon: "text-amber-600 dark:text-amber-500",
-    },
-    red: {
-        card: "from-red-500/5 to-red-500/10",
-        iconBg: "bg-red-500/10 ring-red-500/20",
-        icon: "text-red-600 dark:text-red-500",
-    },
-    green: {
-        card: "from-green-500/5 to-green-500/10",
-        iconBg: "bg-green-500/10 ring-green-500/20",
-        icon: "text-green-600 dark:text-green-500",
-    },
-    violet: {
-        card: "from-violet-500/5 to-violet-500/10",
-        iconBg: "bg-violet-500/10 ring-violet-500/20",
-        icon: "text-violet-600 dark:text-violet-500",
-    },
-};
+import { motion } from "framer-motion"
+import { ArrowDownRight, ArrowUpRight, type LucideIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
-interface StatCardProps {
-    title: string;
-    value: string | number;
-    icon: LucideIcon;
-    color?: keyof typeof colorVariants;
-    className?: string;
-    indicator?: React.ReactNode;
-    animationDelay?: number;
+export interface StatCardProps {
+  title: string
+  value: string
+  hint?: string
+  icon: LucideIcon
+  growth?: number | null
+  accent?: "primary" | "emerald" | "amber" | "rose"
+  index?: number
 }
 
-export function StatCard({title, value, icon: Icon, color = "blue", className, indicator, animationDelay = 0}: StatCardProps) {
-    const styles = colorVariants[color] || colorVariants.blue;
+const accentMap: Record<NonNullable<StatCardProps["accent"]>, string> = {
+  primary: "bg-primary/10 text-primary",
+  emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+  amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  rose: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
+}
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: animationDelay, duration: 0.35 }}
-            >
-            <Card className={cn("border-border/50 bg-linear-to-br", styles.card, className)}>
-                <CardContent className="flex items-center justify-between gap-4 py-4">
-                    <div className="flex items-center gap-4">
-                        <div
-                            className={cn(
-                                "flex size-12 items-center justify-center rounded-xl ring-1",
-                                styles.iconBg
-                            )}
-                        >
-                            <Icon className={cn("size-6", styles.icon)} />
-                        </div>
-                        <div>
-                            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-                                {title}
-                            </p>
-                            <p className="text-xl sm:text-2xl font-bold">{value}</p>
-                        </div>
-                    </div>
-                    {indicator && <div>{indicator}</div>}
-                </CardContent>
-            </Card>
-        </motion.div>
-    );
+export function StatCard({
+  title,
+  value,
+  hint,
+  icon: Icon,
+  growth,
+  accent = "primary",
+  index = 0,
+}: StatCardProps) {
+  const t = useTranslations("AdminPage.Dashboard")
+  const hasGrowth = typeof growth === "number" && Number.isFinite(growth)
+  const isUp = hasGrowth && (growth as number) >= 0
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05, ease: "easeOut" }}
+    >
+      <Card className="h-full overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {title}
+          </CardTitle>
+          <div
+            className={cn(
+              "grid h-9 w-9 shrink-0 place-items-center rounded-xl",
+              accentMap[accent]
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <div className="truncate text-2xl font-bold tracking-tight text-foreground">
+            {value}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            {hasGrowth && (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+                  isUp
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                )}
+              >
+                {isUp ? (
+                  <ArrowUpRight className="h-3 w-3" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3" />
+                )}
+                {`${isUp ? "+" : ""}${(growth as number).toFixed(1)}%`}
+              </span>
+            )}
+            {hint && <span className="text-muted-foreground">{hint}</span>}
+            {hasGrowth && !hint && (
+              <span className="text-muted-foreground">
+                {t("VsPrevious30d")}
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  )
 }

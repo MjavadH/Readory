@@ -98,12 +98,35 @@ export class DashboardController {
         return this.dashboardService.getReadingProgress(userId, Number(page), Number(limit));
     }
 
-    @Get('admin')
+    @Get('admin/overview')
     @UseGuards(RolesGuard)
     @Roles(RoleName.ADMIN)
-    async getAdminStats(@Request() req: any) {
+    async getAdminOverview(@Request() req: any) {
         const userId = req.user.id || req.user.userId;
+        return this.dashboardService.getAdminOverview(req.user.permissions || [], Number(userId));
+    }
 
-        return this.dashboardService.getAdminDashboardStats(req.user.permissions, Number(userId));
+    @Get('admin/finance')
+    @UseGuards(RolesGuard)
+    @Roles(RoleName.ADMIN)
+    async getAdminFinance(@Request() req: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.dashboardService.getAdminFinanceData(req.user.permissions || [], Number(userId));
+    }
+
+    @Get('admin/content')
+    @UseGuards(RolesGuard)
+    @Roles(RoleName.ADMIN)
+    async getAdminContent(@Request() req: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.dashboardService.getAdminContentAnalytics(req.user.permissions || [], Number(userId));
+    }
+
+    @Get('admin/users')
+    @UseGuards(RolesGuard)
+    @Roles(RoleName.ADMIN)
+    async getAdminUsers(@Request() req: any) {
+        const userId = req.user.id || req.user.userId;
+        return this.dashboardService.getAdminUserAnalytics(req.user.permissions || [], Number(userId));
     }
 }

@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { WalletsService } from '../wallets/wallets.service';
+import { CacheManager } from '../cache/cache.manager';
 import {
   clampInt,
   normalizePagination,
   calculateGrowth,
   enrichLibraryGroups,
-} from '../common/index.js';
+} from '../common';
 
 type OverviewOptions = {
   txLimit: number;
@@ -20,6 +21,7 @@ export class DashboardService {
     private prisma: PrismaService,
     private readonly authService: AuthService,
     private readonly walletsService: WalletsService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   private async countDistinctBooks(userId: number) {
@@ -195,21 +197,14 @@ export class DashboardService {
   }
 
   async getReadingProgress(userId: number, page = 1, limit = 24) {
-    const {
-      page: pageSafe,
-      limit: limitSafe,
-      skip,
-    } = normalizePagination(page, limit, 100);
+    const { page: pageSafe, limit: limitSafe, skip } = normalizePagination(page, limit, 100);
 
     const total = await this.prisma.readingProgress.count({
       where: { userId, percent: { lt: 100 } },
     });
 
     const progressEntries = await this.prisma.readingProgress.findMany({
-      where: {
-        userId,
-        percent: { lt: 100 },
-      },
+      where: { userId, percent: { lt: 100 } },
       include: {
         book: {
           select: {
@@ -221,11 +216,7 @@ export class DashboardService {
           },
         },
         chapter: {
-          select: {
-            title: true,
-            index: true,
-            pageCount: true,
-          },
+          select: { title: true, index: true, pageCount: true },
         },
       },
       orderBy: { updatedAt: 'desc' },
@@ -241,10 +232,7 @@ export class DashboardService {
           index: p.chapter.index,
           pageCount: p.chapter.pageCount,
         },
-        progress: {
-          lastPage: p.lastPage,
-          percent: p.percent,
-        },
+        progress: { lastPage: p.lastPage, percent: p.percent },
         lastReadAt: p.updatedAt,
       })),
       total,
@@ -253,257 +241,278 @@ export class DashboardService {
     };
   }
 
-  async getAdminDashboardStats(permissions: string[], userId: number) {
-    const isSuperAdmin = userId === 1;
-
-    const canViewFinance =
-      isSuperAdmin || permissions.includes('MANAGE_FINANCE');
-    const canViewUsers =
-      isSuperAdmin ||
-      permissions.includes('MANAGE_USERS') ||
-      permissions.includes('MANAGE_STAFF');
-    const canViewBooks = isSuperAdmin || permissions.includes('MANAGE_BOOKS');
-
+  private getRollingDates() {
     const now = new Date();
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(now.getDate() - 30);
+    const d30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const d60 = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-    const sixtyDaysAgo = new Date();
-    sixtyDaysAgo.setDate(now.getDate() - 60);
+    // Normalized to the first day of 5 months ago to establish a clean 6-month historical window
+    const m6 = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    m6.setHours(0, 0, 0, 0);
 
-    const [
-      totalUsers,
-      newUsersLast30,
-      newUsersPrev30,
-      activeUsers,
-      totalBooks,
-      totalChapters,
-      newBooksLast30,
-      newBooksPrev30,
-      financeStats,
-      recentTransactions,
-      recentUsers,
-      recentBooks,
-      recentChapters,
-      userChartData,
-      genreStats,
-      typeStats,
-    ] = await Promise.all([
-      // Users
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      this.prisma.user.count({
-        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-      }),
-      this.prisma.user.count({
-        where: { lastLoginAt: { gte: thirtyDaysAgo } },
-      }),
+    return { now, d30, d60, m6 };
+  }
 
-      // Content
-      this.prisma.book.count(),
-      this.prisma.chapter.count(),
-      this.prisma.book.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-      this.prisma.book.count({
-        where: { createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo } },
-      }),
+  async getAdminOverview(permissions: string[], userId: number) {
+    const isSuperAdmin = userId === 1;
+    const canViewFinance = isSuperAdmin || permissions.includes('MANAGE_FINANCE');
 
-      // Finance
-      canViewFinance
-        ? this.getFinanceStats(thirtyDaysAgo, sixtyDaysAgo)
-        : Promise.resolve(null),
+    return this.cacheManager.getOrSet(
+        'admin:dashboard:overview',
+        { ttlSeconds: 300, earlyRefreshWindowSeconds: 30 },
+        async () => {
+          const { d30, d60 } = this.getRollingDates();
 
-      // Recents
-      canViewFinance
-        ? this.prisma.walletTransaction.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            include: {
-              wallet: { include: { user: { select: { username: true } } } },
+          const [
+            totalUsers,
+            newUsersLast30,
+            newUsersPrev30,
+            totalBooks,
+            totalChapters,
+            financeCurrent,
+            financePrev,
+          ] = await Promise.all([
+            this.prisma.user.count(),
+            this.prisma.user.count({ where: { createdAt: { gte: d30 } } }),
+            this.prisma.user.count({ where: { createdAt: { gte: d60, lt: d30 } } }),
+            this.prisma.book.count(),
+            this.prisma.chapter.count(),
+            canViewFinance
+                ? this.prisma.walletTransaction.aggregate({
+                  where: { type: 'CREDIT', createdAt: { gte: d30 } },
+                  _sum: { amount: true },
+                })
+                : Promise.resolve({ _sum: { amount: 0 } }),
+            canViewFinance
+                ? this.prisma.walletTransaction.aggregate({
+                  where: { type: 'CREDIT', createdAt: { gte: d60, lt: d30 } },
+                  _sum: { amount: true },
+                })
+                : Promise.resolve({ _sum: { amount: 0 } }),
+          ]);
+
+          return {
+            users: {
+              total: totalUsers,
+              new30d: newUsersLast30,
+              growthPercent: calculateGrowth(newUsersLast30, newUsersPrev30),
             },
-          })
-        : Promise.resolve([]),
-      canViewUsers
-        ? this.prisma.user.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            select: { id: true, username: true, email: true, createdAt: true },
-          })
-        : Promise.resolve([]),
-      canViewBooks
-        ? this.prisma.book.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
+            content: {
+              books: totalBooks,
+              chapters: totalChapters,
+            },
+            finance: canViewFinance
+                ? {
+                  revenue30d: Number(financeCurrent._sum.amount || 0),
+                  growthPercent: calculateGrowth(
+                      Number(financeCurrent._sum.amount || 0),
+                      Number(financePrev._sum.amount || 0),
+                  ),
+                }
+                : null,
+          };
+        },
+    );
+  }
+
+  async getAdminFinanceData(permissions: string[], userId: number) {
+    const isSuperAdmin = userId === 1;
+    if (!isSuperAdmin && !permissions.includes('MANAGE_FINANCE')) return null;
+
+    return this.cacheManager.getOrSet(
+        'admin:dashboard:finance',
+        { ttlSeconds: 1800, earlyRefreshWindowSeconds: 120 },
+        async () => {
+          const { d30 } = this.getRollingDates();
+
+          const [recentTxs, topWallets, totalSystemBalances, recentActivity] = await Promise.all([
+            this.prisma.walletTransaction.findMany({
+              where: { type: 'CREDIT', createdAt: { gte: d30 } },
+              select: { amount: true, createdAt: true },
+            }),
+            this.prisma.walletTransaction.groupBy({
+              by: ['walletId'],
+              where: { type: 'CREDIT' },
+              _sum: { amount: true },
+              orderBy: { _sum: { amount: 'desc' } },
+              take: 5,
+            }),
+            this.prisma.wallet.aggregate({
+              _sum: { balance: true },
+            }),
+            this.prisma.walletTransaction.groupBy({
+              by: ['type'],
+              where: { createdAt: { gte: d30 } },
+              _sum: { amount: true },
+            }),
+          ]);
+
+          const walletIds = topWallets.map((w) => w.walletId);
+          const walletsMeta = await this.prisma.wallet.findMany({
+            where: { id: { in: walletIds } },
             select: {
               id: true,
-              title: true,
-              author: true,
-              createdAt: true,
-              coverImage: true,
+              user: { select: { id: true, username: true, email: true } },
             },
-          })
-        : Promise.resolve([]),
-      canViewBooks
-        ? this.prisma.chapter.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            include: { book: { select: { title: true } } },
-          })
-        : Promise.resolve([]),
+          });
 
-      // Charts
-      canViewUsers ? this.getUserRegistrationChart() : Promise.resolve([]),
-      canViewBooks ? this.getGenreStats() : Promise.resolve([]),
-      canViewBooks ? this.getTypeStats() : Promise.resolve([]),
-    ]);
+          const topSpenders = topWallets.map((w) => ({
+            spent: Number(w._sum.amount || 0),
+            user: walletsMeta.find((meta) => meta.id === w.walletId)?.user,
+          }));
 
-    return {
-      summary: {
-        users: canViewUsers
-          ? {
-              total: totalUsers,
-              new: newUsersLast30,
-              active: activeUsers,
-              growth: calculateGrowth(newUsersLast30, newUsersPrev30),
+          const chartMap = new Map<string, number>();
+          for (let i = 0; i < 30; i++) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            chartMap.set(d.toISOString().split('T')[0], 0);
+          }
+
+          recentTxs.forEach((t) => {
+            const day = t.createdAt.toISOString().split('T')[0];
+            if (chartMap.has(day)) {
+              chartMap.set(day, chartMap.get(day)! + Number(t.amount));
             }
-          : null,
-        content: {
-          books: totalBooks,
-          chapters: totalChapters,
-          growth: calculateGrowth(newBooksLast30, newBooksPrev30),
+          });
+
+          const credit30d = Number(recentActivity.find((a) => a.type === 'CREDIT')?._sum.amount || 0);
+          const debit30d = Number(recentActivity.find((a) => a.type === 'DEBIT')?._sum.amount || 0);
+
+          return {
+            riskManagement: {
+              stagnantCapital: Number(totalSystemBalances._sum.balance || 0),
+              deposit30d: credit30d,
+              spent30d: debit30d,
+              burnRateRatio: credit30d > 0 ? Number((debit30d / credit30d).toFixed(4)) : 0,
+            },
+            topSpenders,
+            dailyRevenue: Array.from(chartMap.entries())
+                .map(([date, amount]) => ({ date, amount }))
+                .sort((a, b) => a.date.localeCompare(b.date)),
+          };
         },
-        finance: financeStats,
-      },
-      charts: {
-        userRegistrations: userChartData,
-        genreDistribution: genreStats,
-        typeDistribution: typeStats,
-      },
-      recent: {
-        transactions: recentTransactions.map((t) => ({
-          id: t.id,
-          username: t.wallet?.user?.username || 'Unknown',
-          amount: Number(t.amount),
-          type: t.type,
-          createdAt: t.createdAt,
-        })),
-        users: recentUsers,
-        books: recentBooks,
-        chapters: recentChapters.map((c) => ({
-          id: c.id,
-          title: c.title,
-          bookTitle: c.book.title,
-          createdAt: c.createdAt,
-        })),
-      },
-    };
+    );
   }
 
-  private async getFinanceStats(startDate: Date, prevDate: Date) {
-    const currentMonthAgg = await this.prisma.walletTransaction.aggregate({
-      where: { type: 'CREDIT', createdAt: { gte: startDate } },
-      _sum: { amount: true },
-    });
-    const prevMonthAgg = await this.prisma.walletTransaction.aggregate({
-      where: { type: 'CREDIT', createdAt: { gte: prevDate, lt: startDate } },
-      _sum: { amount: true },
-    });
-    const totalRevenueAgg = await this.prisma.walletTransaction.aggregate({
-      where: { type: 'CREDIT' },
-      _sum: { amount: true },
-    });
+  async getAdminContentAnalytics(permissions: string[], userId: number) {
+    const isSuperAdmin = userId === 1;
+    if (!isSuperAdmin && !permissions.includes('MANAGE_BOOKS')) return null;
 
-    const transactions = await this.prisma.walletTransaction.findMany({
-      where: { type: 'CREDIT', createdAt: { gte: startDate } },
-      select: { amount: true, createdAt: true },
-    });
+    return this.cacheManager.getOrSet(
+        'admin:dashboard:content',
+        { ttlSeconds: 900, earlyRefreshWindowSeconds: 60 },
+        async () => {
+          const [topAccessed, topRated, trending, genreDist, typeDist] = await Promise.all([
+            this.prisma.accessRecord.groupBy({
+              by: ['bookId'],
+              _count: { bookId: true },
+              orderBy: { _count: { bookId: 'desc' } },
+              take: 5,
+            }),
+            this.prisma.book.findMany({
+              where: { ratingCount: { gte: 5 } },
+              orderBy: { ratingAvg: 'desc' },
+              take: 5,
+              select: { id: true, title: true, ratingAvg: true, ratingCount: true },
+            }),
+            this.prisma.book.findMany({
+              orderBy: { popularityScore: 'desc' },
+              take: 10,
+              select: { id: true, title: true, popularityScore: true, coverImage: true },
+            }),
+            this.prisma.genre.findMany({
+              select: { name: true, _count: { select: { books: true } } },
+              orderBy: { books: { _count: 'desc' } },
+              take: 8,
+            }),
+            this.prisma.bookType.findMany({
+              select: { name: true, _count: { select: { books: true } } },
+            }),
+          ]);
 
-    const chartMap = new Map<string, number>();
-    for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      chartMap.set(key, 0);
+          const bookIds = topAccessed.map((t) => t.bookId);
+          const booksMeta = await this.prisma.book.findMany({
+            where: { id: { in: bookIds } },
+            select: { id: true, title: true, coverImage: true },
+          });
+
+          return {
+            trendingBooks: trending.map((b) => ({
+              ...b,
+              popularityScore: Number(b.popularityScore),
+            })),
+            topAccessedBooks: topAccessed.map((access) => ({
+              accessCount: access._count.bookId,
+              book: booksMeta.find((b) => b.id === access.bookId),
+            })),
+            highestRatedBooks: topRated.map((b) => ({
+              ...b,
+              ratingAvg: Number(b.ratingAvg),
+            })),
+            genreDistribution: genreDist.map((g) => ({
+              name: g.name,
+              count: g._count.books,
+            })),
+            typeDistribution: typeDist.map((t) => ({
+              name: t.name,
+              count: t._count.books,
+            })),
+          };
+        },
+    );
+  }
+
+  async getAdminUserAnalytics(permissions: string[], userId: number) {
+    const isSuperAdmin = userId === 1;
+    if (!isSuperAdmin && !permissions.includes('MANAGE_USERS') && !permissions.includes('MANAGE_STAFF')) {
+      return null;
     }
 
-    transactions.forEach((t) => {
-      const day = t.createdAt.toISOString().split('T')[0];
-      chartMap.set(day, (chartMap.get(day) || 0) + Number(t.amount));
-    });
+    return this.cacheManager.getOrSet(
+        'admin:dashboard:users',
+        { ttlSeconds: 3600, earlyRefreshWindowSeconds: 300 },
+        async () => {
+          const { m6 } = this.getRollingDates();
 
-    const chartData = Array.from(chartMap.entries())
-      .map(([date, amount]) => ({ date, amount }))
-      .sort((a, b) => a.date.localeCompare(b.date));
+          const [recentUsers, bannedCount, roleDist] = await Promise.all([
+            this.prisma.user.findMany({
+              where: { createdAt: { gte: m6 } },
+              select: { createdAt: true },
+            }),
+            this.prisma.user.count({ where: { isBanned: true } }),
+            this.prisma.role.findMany({
+              select: { name: true, _count: { select: { users: true } } },
+            }),
+          ]);
 
-    return {
-      totalRevenue: Number(totalRevenueAgg._sum.amount || 0),
-      monthlyRevenue: Number(currentMonthAgg._sum.amount || 0),
-      growth: calculateGrowth(
-        Number(currentMonthAgg._sum.amount),
-        Number(prevMonthAgg._sum.amount),
-      ),
-      chartData,
-    };
-  }
+          const monthMap = new Map<string, number>();
+          const currentDate = new Date();
 
-  private async getUserRegistrationChart() {
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-    sixMonthsAgo.setDate(1);
+          for (let i = 0; i < 6; i++) {
+            const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+            const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+            monthMap.set(isoFormat, 0);
+          }
 
-    const users = await this.prisma.user.findMany({
-      where: { createdAt: { gte: sixMonthsAgo } },
-      select: { createdAt: true },
-    });
+          recentUsers.forEach((u) => {
+            const d = u.createdAt;
+            const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+            if (monthMap.has(isoFormat)) {
+              monthMap.set(isoFormat, monthMap.get(isoFormat)! + 1);
+            }
+          });
 
-    const monthMap = new Map<string, number>();
-    for (let i = 0; i < 6; i++) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const key = d.toLocaleString('default', { month: 'short' });
-      if (!monthMap.has(key)) monthMap.set(key, 0);
-    }
-
-    users.forEach((u) => {
-      const key = u.createdAt.toLocaleString('default', { month: 'short' });
-      if (monthMap.has(key)) monthMap.set(key, (monthMap.get(key) || 0) + 1);
-    });
-
-    return Array.from(monthMap.entries())
-      .map(([month, users]) => ({ month, users }))
-      .reverse();
-  }
-
-  private async getGenreStats() {
-    const genres = await this.prisma.genre.findMany({
-      include: { _count: { select: { books: true } } },
-    });
-
-    const sorted = genres
-      .map((g) => ({ name: g.name, value: g._count.books }))
-      .sort((a, b) => b.value - a.value);
-
-    if (sorted.length <= 5) return sorted;
-
-    const top5 = sorted.slice(0, 5);
-    const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
-
-    return [...top5, { name: 'Others', value: others }];
-  }
-
-  private async getTypeStats() {
-    const types = await this.prisma.bookType.findMany({
-      include: { _count: { select: { books: true } } },
-    });
-
-    const sorted = types
-      .map((t) => ({ name: t.name, value: t._count.books }))
-      .sort((a, b) => b.value - a.value);
-
-    if (sorted.length <= 5) return sorted;
-
-    const top5 = sorted.slice(0, 5);
-    const others = sorted.slice(5).reduce((acc, curr) => acc + curr.value, 0);
-
-    return [...top5, { name: 'Others', value: others }];
+          return {
+            bannedTotal: bannedCount,
+            roleDistribution: roleDist.map((r) => ({
+              role: r.name,
+              count: r._count.users,
+            })),
+            registrationTimeline: Array.from(monthMap.entries())
+                .map(([date, count]) => ({ date, count }))
+                .sort((a, b) => a.date.localeCompare(b.date)),
+          };
+        },
+    );
   }
 }

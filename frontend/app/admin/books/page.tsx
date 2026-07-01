@@ -289,25 +289,25 @@ export default function AdminBooks() {
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                     <StatCard
+                        index={0}
                         title={t("TotalBooks")}
                         value={stats.total.toLocaleString()}
                         icon={BookOpen}
-                        color="blue"
-                        animationDelay={0}
+                        accent="primary"
                     />
                     <StatCard
+                        index={1}
                         title={t("Published")}
                         value={stats.Published.toLocaleString()}
                         icon={CheckCircle2}
-                        color="emerald"
-                        animationDelay={0.2}
+                        accent="emerald"
                     />
                     <StatCard
+                        index={2}
                         title={t("Drafts")}
                         value={stats.Drafts.toLocaleString()}
                         icon={Clock}
-                        color="amber"
-                        animationDelay={0.4}
+                        accent="amber"
                     />
                 </div>
 
