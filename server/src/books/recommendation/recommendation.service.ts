@@ -30,6 +30,7 @@ export class RecommendationService {
         ratingCount: number;
         favoriteCount: number;
         lastContentUpdate: Date;
+        recentPurchasesCount: number;
     }) {
         const ratingAvg = Number(args.ratingAvg);
 
@@ -43,29 +44,40 @@ export class RecommendationService {
                     POPULARITY_MIN_VOTES)) *
             POPULARITY_GLOBAL_MEAN;
 
+        // Max 40 points
         const ratingScore =
-            (weightedRating / 5) * 50;
+            (weightedRating / 5) * 40;
 
+        // Max 20 points
         const favoriteScore = Math.min(
-            30,
-            Math.log2(args.favoriteCount + 1) * 5,
+            20,
+            Math.log2(args.favoriteCount + 1) * 3.5,
         );
 
+        // Max 10 points
         const confidenceScore = Math.min(
             10,
             Math.log10(args.ratingCount + 1) * 5,
         );
 
+        // Max 10 points
         const freshnessScore =
             this.calculateFreshnessScore(
                 args.lastContentUpdate,
             ) * 10;
 
+        // Max 20 points - Logarithmic scaling for recent purchases
+        const purchaseScore = Math.min(
+            20,
+            Math.log2(args.recentPurchasesCount + 1) * 4,
+        );
+
         return (
             ratingScore +
             favoriteScore +
             confidenceScore +
-            freshnessScore
+            freshnessScore +
+            purchaseScore
         );
     }
 
@@ -88,6 +100,17 @@ export class RecommendationService {
             return;
         }
 
+        // Count purchases in the last 14 days for dynamic trending
+        const choiceDate = new Date();
+        choiceDate.setDate(choiceDate.getDate() - 14);
+
+        const recentPurchasesCount = await tx.accessRecord.count({
+            where: {
+                bookId: bookId,
+                purchasedAt: { gte: choiceDate },
+            },
+        });
+
         const updated =
             book.lastContentUpdate ?? book.updatedAt;
 
@@ -97,6 +120,7 @@ export class RecommendationService {
                 ratingCount: book.ratingCount,
                 favoriteCount: book.favoriteCount,
                 lastContentUpdate: updated,
+                recentPurchasesCount,
             });
 
         await tx.book.update({

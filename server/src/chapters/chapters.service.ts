@@ -12,7 +12,8 @@ import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ListChaptersDto } from './dto/list-chapters.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
-import { normalizeQ } from '../common/index.js';
+import { normalizeQ } from '../common';
+import {RecommendationService} from "../books/recommendation/recommendation.service";
 
 @Injectable()
 export class ChaptersService {
@@ -22,6 +23,7 @@ export class ChaptersService {
     private publicService: PublicService,
     private readonly cacheManager: CacheManager,
     private readonly chapterCache: ChapterCache,
+    private readonly recommendationService: RecommendationService,
   ) {}
 
   private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
@@ -294,8 +296,14 @@ export class ChaptersService {
         where: { userId, chapterId },
       });
       if (existing) return existing;
-      return this.prisma.accessRecord.create({
-        data: { userId, chapterId, bookId: chapter.book.id },
+
+      // Recalculate inside a transaction for consistency
+      return this.prisma.$transaction(async (tx) => {
+        const record = await tx.accessRecord.create({
+          data: { userId, chapterId, bookId: chapter.book.id },
+        });
+        await this.recommendationService.recalculatePopularity(tx, chapter.book.id);
+        return record;
       });
     }
 
@@ -307,13 +315,19 @@ export class ChaptersService {
     // Debit + access record in tx
     return this.prisma.$transaction(async (tx) => {
       await this.walletsService.debit(
-        userId,
-        chapter.price!.toNumber(),
-        `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
+          userId,
+          chapter.price!.toNumber(),
+          `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
       );
-      return tx.accessRecord.create({
+
+      const record = await tx.accessRecord.create({
         data: { userId, chapterId, bookId: chapter.book.id },
       });
+
+      // Recalculate popularity within the same transaction context
+      await this.recommendationService.recalculatePopularity(tx, chapter.book.id);
+
+      return record;
     });
   }
 }

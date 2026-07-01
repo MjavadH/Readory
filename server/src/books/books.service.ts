@@ -1110,10 +1110,7 @@ export class BooksService {
         },
       });
 
-      await this.recommendationService.recalculatePopularity(
-          tx,
-          bookId,
-      );
+      await this.recommendationService.recalculatePopularity(tx, bookId);
 
       return {
         rating,
@@ -1181,10 +1178,7 @@ export class BooksService {
           },
         });
 
-        await this.recommendationService.recalculatePopularity(
-            tx,
-            bookId,
-        );
+        await this.recommendationService.recalculatePopularity(tx, bookId);
 
         return {
           favorited: false,
@@ -1207,10 +1201,7 @@ export class BooksService {
         },
       });
 
-      await this.recommendationService.recalculatePopularity(
-          tx,
-          bookId,
-      );
+      await this.recommendationService.recalculatePopularity(tx, bookId);
 
       return {
         favorited: true,
