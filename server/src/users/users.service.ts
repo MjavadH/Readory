@@ -4,12 +4,14 @@ import { CacheManager } from '../cache/cache.manager';
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as argon2 from 'argon2';
+import {MailService} from "../mail/mail.service";
 
 @Injectable()
 export class UsersService {
     constructor(
         private prisma: PrismaService,
-        private readonly cacheManager: CacheManager
+        private readonly cacheManager: CacheManager,
+        private mailService: MailService
     ) {}
 
     async updateLastLogin(userId: number) {
@@ -153,7 +155,7 @@ export class UsersService {
         const tempData = { email, username, passwordHash, verificationCode };
         await this.cacheManager.setString(redisKey, JSON.stringify(tempData), 120);
 
-        // TODO: Send email via a real email service
+        await this.mailService.sendUserConfirmation(email, username, verificationCode);
 
         return { message: 'Verification code sent. Please confirm your email.', tempEmail: email };
     }

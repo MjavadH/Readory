@@ -1,113 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-// Enumerations
-enum RoleName {
-  USER
-  ADMIN
-}
-
-enum TransactionType {
-  CREDIT
-  DEBIT
-}
-
-enum ChapterContentType {
-  images
-  text
-}
-
-// User roles
 model Role {
   id    Int      @id @default(autoincrement())
   name  RoleName @unique
   users User[]
 }
 
-// Application users
 model User {
   id              Int               @id @default(autoincrement())
   email           String            @unique
-  username        String            @unique
   passwordHash    String
   roleId          Int?
-  role            Role?             @relation(fields: [roleId], references: [id])
-  wallet          Wallet?
-  accessRecords   AccessRecord[]
-  lastLoginAt     DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+  lastLoginAt     DateTime?
+  username        String            @unique
   isBanned        Boolean           @default(false)
   permissions     String[]
+  accessRecords   AccessRecord[]
   BookRating      BookRating[]
-  readingProgress ReadingProgress[]
   favoriteBooks   FavoriteBook[]
+  readingProgress ReadingProgress[]
+  role            Role?             @relation(fields: [roleId], references: [id])
+  wallet          Wallet?
 }
 
-// Wallet for each user
 model Wallet {
   id           Int                 @id @default(autoincrement())
   userId       Int                 @unique
-  user         User                @relation(fields: [userId], references: [id])
   balance      Decimal             @default(0) @db.Decimal(12, 2)
+  user         User                @relation(fields: [userId], references: [id])
   transactions WalletTransaction[]
 }
 
-// Individual wallet transactions
 model WalletTransaction {
   id        Int             @id @default(autoincrement())
   walletId  Int
-  wallet    Wallet          @relation(fields: [walletId], references: [id])
   amount    Decimal         @db.Decimal(12, 2)
   type      TransactionType
   createdAt DateTime        @default(now())
   reference String?
+  wallet    Wallet          @relation(fields: [walletId], references: [id])
 }
 
-// Books
 model Book {
-  id                Int      @id @default(autoincrement())
+  id                Int               @id @default(autoincrement())
   title             String
-  originalTitle     String?
-  alternativeTitles String[] @default([])
   author            String?
   description       String?
-  typeId            Int
-  type              BookType @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  // Stores Media.code
   coverImage        String?
-  coverMedia        Media?   @relation(fields: [coverImage], references: [code], onDelete: SetNull)
-
-  isPublished       Boolean     @default(false)
-  isFeatured        Boolean     @default(false)
-  status            String      @default("UPCOMING")
+  isPublished       Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  isFeatured        Boolean           @default(false)
+  ratingAvg         Decimal           @default(0) @db.Decimal(3, 2)
+  ratingCount       Int               @default(0)
+  typeId            Int
+  originalTitle     String?
+  alternativeTitles String[]          @default([])
+  status            String            @default("UPCOMING")
   ageRating         String?
   publicationYear   Int?
-  translators       String[]    @default([])
+  translators       String[]          @default([])
   lastContentUpdate DateTime?
-  chapterCount      Int         @default(0)
-  chapters          Chapter[]
+  chapterCount      Int               @default(0)
+  favoriteCount     Int               @default(0)
+  popularityScore   Decimal           @default(0) @db.Decimal(8, 4)
+  AccessRecord      AccessRecord[]
+  coverMedia        Media?            @relation(fields: [coverImage], references: [code])
+  type              BookType          @relation(fields: [typeId], references: [id])
   genres            BookGenre[]
-
-  ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
-  ratingCount Int     @default(0)
-
-  favoriteCount   Int     @default(0)
-  popularityScore Decimal @default(0) @db.Decimal(8, 4)
-
-  ratings     BookRating[]
-  favoritedBy FavoriteBook[]
-
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  AccessRecord    AccessRecord[]
-  readingProgress ReadingProgress[]
+  ratings           BookRating[]
+  chapters          Chapter[]
+  favoritedBy       FavoriteBook[]
+  readingProgress   ReadingProgress[]
 
   @@index([ratingAvg, ratingCount])
   @@index([isPublished, isFeatured])
@@ -120,12 +93,12 @@ model BookType {
   id        Int      @id @default(autoincrement())
   name      String   @unique
   slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   iconKey   String?
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)
   books     Book[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([isActive, sortOrder])
 }
@@ -137,9 +110,8 @@ model BookRating {
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, bookId])
   @@index([bookId])
@@ -149,41 +121,39 @@ model Genre {
   id            Int         @id @default(autoincrement())
   name          String      @unique
   slug          String      @unique
-  iconKey       String?
-  isFeatured    Boolean     @default(false)
-  featuredOrder Int         @default(0)
-  books         BookGenre[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  featuredOrder Int         @default(0)
+  isFeatured    Boolean     @default(false)
+  iconKey       String?
+  books         BookGenre[]
 }
 
 model BookGenre {
   bookId  Int
   genreId Int
-
-  book  Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  book    Book  @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  genre   Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
   @@id([bookId, genreId])
   @@index([genreId])
 }
 
-// Chapters of each book
 model Chapter {
   id              Int                 @id @default(autoincrement())
   bookId          Int
-  book            Book                @relation(fields: [bookId], references: [id])
   title           String
   index           Int
   price           Decimal?            @db.Decimal(12, 2)
   isFree          Boolean             @default(false)
-  contentPath     String? // path to stored images or PDF
+  contentPath     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
   contentType     ChapterContentType?
   pageCount       Int                 @default(0)
   contentVersion  Int                 @default(0)
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
   accessRecords   AccessRecord[]
+  book            Book                @relation(fields: [bookId], references: [id])
   readingProgress ReadingProgress[]
 
   @@unique([bookId, index])
@@ -197,25 +167,23 @@ model ReadingProgress {
   lastPage  Int      @default(1)
   percent   Int      @default(0)
   updatedAt DateTime @updatedAt
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book    Book    @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, chapterId])
   @@index([userId, bookId])
 }
 
-// Records of which users purchased which chapters
 model AccessRecord {
   id          Int      @id @default(autoincrement())
   userId      Int
   chapterId   Int
-  user        User     @relation(fields: [userId], references: [id])
-  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   purchasedAt DateTime @default(now())
-  Book        Book     @relation(fields: [bookId], references: [id])
   bookId      Int
+  Book        Book     @relation(fields: [bookId], references: [id])
+  chapter     Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, chapterId])
   @@index([userId, purchasedAt])
@@ -226,10 +194,10 @@ model Media {
   id         Int      @id @default(autoincrement())
   code       String   @unique
   filename   String   @unique
-  storageKey String   @unique
   mimeType   String
   size       Int
   createdAt  DateTime @default(now())
+  storageKey String   @unique
   Book       Book[]
 }
 
@@ -238,10 +206,24 @@ model FavoriteBook {
   userId    Int
   bookId    Int
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  book Book @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, bookId])
   @@index([userId, createdAt])
+}
+
+enum RoleName {
+  USER
+  ADMIN
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum ChapterContentType {
+  images
+  text
 }
