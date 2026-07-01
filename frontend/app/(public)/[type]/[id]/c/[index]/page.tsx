@@ -918,7 +918,7 @@ export default function ChapterPage() {
                 >
                     <div className="mx-auto w-full px-4 lg:max-w-3/4">
                         <article
-                            className="prose prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
+                            className="prose max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
                             dangerouslySetInnerHTML={{ __html: textHtml }}
                         />
                     </div>
