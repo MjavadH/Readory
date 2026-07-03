@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
-import { Check, ChevronDown } from "lucide-react"
+import { Check, ChevronDown, Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -13,9 +13,10 @@ import { cn } from "@/lib/utils"
 import Image from "next/image"
 import { getSupportedLocales, type SupportedLocale } from "@/i18n/locales"
 import { useLocaleInfo } from "@/hooks/use-locale-info"
+import * as React from "react";
 
 interface LanguageSwitcherProps {
-    variant?: "default" | "mobile" | "inline"
+    variant?: "default" | "mobile" | "sidebar"
 }
 
 export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
@@ -92,33 +93,54 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
         )
     }
 
-    if (variant === "inline") {
+    if (variant === "sidebar") {
         return (
-            <div className="flex items-center gap-2 p-1 rounded-lg bg-accent/50 border border-border">
-                {supportedLocales.map((lang) => (
-                    <button
-                        key={lang.code}
-                        onClick={() => handleLanguageChange(lang.code)}
-                        disabled={isPending}
-                        className={cn(
-                            "px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1.5",
-                            currentLocale === lang.code
-                                ? "bg-primary text-primary-foreground shadow-sm"
-                                : "text-foreground hover:bg-background/50",
-                            isPending && "opacity-50 cursor-not-allowed"
-                        )}
+            <DropdownMenu>
+                <DropdownMenuTrigger dir={currentLanguage.isRTL ? "rtl" : "ltr"} asChild>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-full justify-between gap-2 px-2 text-sm font-medium hover:bg-accent"
+                        title={currentLanguage.nativeName}
                     >
-                        <Image
-                            src={lang.flag}
-                            alt={lang.nativeName}
-                            width={16}
-                            height={12}
-                            className="rounded-sm object-cover"
-                        />
-                        <span>{lang.code.toUpperCase()}</span>
-                    </button>
-                ))}
-            </div>
+                        <span className="flex min-w-0 items-center gap-2">
+                            <Languages className="h-4 w-4 shrink-0 opacity-70" />
+                            <span className="truncate">{currentLanguage.nativeName}</span>
+                        </span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    side="top"
+                    align="end"
+                    sideOffset={8}
+                    className="grid w-56 grid-cols-2 gap-1 p-1.5"
+                >
+                    {supportedLocales.map((lang) => {
+                        const active = currentLocale === lang.code
+                        return (
+                            <DropdownMenuItem
+                                key={lang.code}
+                                onClick={() => handleLanguageChange(lang.code)}
+                                className={cn(
+                                    "flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-xs",
+                                    active && "bg-accent font-semibold",
+                                    supportedLocales.length % 2 && "last:col-span-2"
+                                )}
+                            >
+                                <Image
+                                    src={lang.flag}
+                                    alt={lang.nativeName}
+                                    width={16}
+                                    height={12}
+                                    className="rounded-[2px] object-cover"
+                                />
+                                <span className="truncate">{lang.nativeName}</span>
+                                {active && <Check className="ms-auto h-3 w-3" />}
+                            </DropdownMenuItem>
+                        )
+                    })}
+                </DropdownMenuContent>
+            </DropdownMenu>
         )
     }
 

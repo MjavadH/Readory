@@ -40,8 +40,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {BrandLogo} from "@/components/brand-logo";
-import {ThemeSwitcher} from "@/components/theme-toggle";
+import {ThemeSwitcher} from "@/components/theme-switcher";
 import {useTranslations} from "next-intl";
+import {LanguageSwitcher} from "@/components/language-switcher";
+import {useLocaleInfo} from "@/hooks/use-locale-info";
 
 interface CurrentUser {
   userId: number
@@ -58,6 +60,7 @@ export function AdminSidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
+  const {isRTL} = useLocaleInfo()
 
   const { has, loading, isSuperAdmin } = usePermission()
 
@@ -242,8 +245,6 @@ export function AdminSidebar() {
 
           {/* Footer */}
           <div className="p-4 border-t border-sidebar-border/50 space-y-2 bg-linear-to-t from-sidebar-accent/20 to-transparent">
-            <ThemeSwitcher variant="sidebar" isCollapsed={isCollapsed} />
-
             {currentUser && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -299,7 +300,10 @@ export function AdminSidebar() {
                         </div>
                       </div>
                     </div>
+                    <ThemeSwitcher variant="sidebar" />
+                    <LanguageSwitcher variant="sidebar" />
                     <DropdownMenuItem
+                        dir={isRTL ? "rtl" : "ltr"}
                         onClick={() => setIsLogoutDialogOpen(true)}
                         className="cursor-pointer text-destructive focus:text-destructive"
                     >

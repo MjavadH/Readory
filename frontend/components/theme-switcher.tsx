@@ -12,17 +12,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {useTranslations} from "next-intl";
+import {useLocaleInfo} from "@/hooks/use-locale-info";
 
 type ThemeVariant = "desktop" | "mobile" | "sidebar"
 
 interface ThemeSwitcherProps {
     variant?: ThemeVariant
-    isCollapsed?: boolean
 }
 
-export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: ThemeSwitcherProps) {
+export function ThemeSwitcher({variant = "desktop"}: ThemeSwitcherProps) {
     const t = useTranslations('General');
     const { theme, setTheme } = useTheme()
+    const { isRTL } = useLocaleInfo()
     const [mounted, setMounted] = React.useState(false)
 
     React.useEffect(() => setMounted(true), [])
@@ -64,35 +65,37 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
 
     //Sidebar Variant
     if (variant === "sidebar") {
-        const CurrentIcon =
-            theme === "light" ? Sun : theme === "dark" ? Moon : Monitor
+        const CurrentIcon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor
 
         return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            <DropdownMenu dir={isRTL ? "rtl" : "ltr"}>
+                <DropdownMenuTrigger dir={isRTL ? "rtl" : "ltr"} asChild>
                     <Button
                         variant="ghost"
-                        size={isCollapsed ? "icon" : "default"}
-                        className={cn(
-                            "w-full hover:bg-sidebar-accent",
-                            isCollapsed ? "justify-center" : "justify-start"
-                        )}
-                        title={isCollapsed ? "Change theme" : undefined}
+                        size="sm"
+                        className="h-9 w-full justify-between gap-2 px-2 text-sm font-medium hover:bg-accent"
+                        title={t("Theme")}
                     >
-                        <CurrentIcon className="h-4 w-4 shrink-0" />
-                        {!isCollapsed && <span className="ml-2">{t("Theme")}</span>}
+                        <span className="flex min-w-0 items-center gap-2">
+                            <CurrentIcon className="h-4 w-4 shrink-0 opacity-70" />
+                            <span className="truncate">{t("Theme")}</span>
+                        </span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" align="end" className="w-40">
+                <DropdownMenuContent side="top" align="end" sideOffset={8} className="grid w-56 gap-1 grid-cols-2 p-1">
                     {options.map((opt) => {
                         const Icon = opt.icon
+                        const active = theme === opt.value
                         return (
                             <DropdownMenuItem
                                 key={opt.value}
                                 onClick={() => setTheme(opt.value)}
-                                className="cursor-pointer"
+                                className={cn(
+                                    "cursor-pointer last:col-span-2 rounded-md text-sm justify-center",
+                                    active && "bg-accent font-semibold"
+                                )}
                             >
-                                <Icon className="me-2 h-4 w-4" />
+                                <Icon className="h-4 w-4 opacity-80" />
                                 {opt.label}
                             </DropdownMenuItem>
                         )
@@ -116,16 +119,18 @@ export function ThemeSwitcher({variant = "desktop", isCollapsed = false,}: Theme
                     <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuContent align="end" className="grid w-56 gap-1 grid-cols-2 p-1">
                 {options.map((opt) => {
                     const Icon = opt.icon
                     return (
                         <DropdownMenuItem
                             key={opt.value}
                             onClick={() => setTheme(opt.value)}
-                            className={cn(theme === opt.value && "bg-accent")}
+                            className={cn(
+                                "cursor-pointer last:col-span-2 rounded-md text-sm justify-center",
+                                theme === opt.value && "bg-accent")}
                         >
-                            <Icon className="me-2 h-4 w-4" />
+                            <Icon className="me-2 h-4 w-4 opacity-80" />
                             {opt.label}
                         </DropdownMenuItem>
                     )

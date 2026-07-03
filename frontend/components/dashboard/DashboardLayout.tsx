@@ -4,7 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { ReactNode } from "react";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { ThemeSwitcher } from "@/components/theme-toggle";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {LanguageSwitcher} from "@/components/language-switcher";
 
 interface DashboardLayoutProps {

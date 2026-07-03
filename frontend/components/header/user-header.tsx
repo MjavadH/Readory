@@ -28,7 +28,7 @@ import {BookGenre} from "@/lib/types";
 import { WalletCard } from "@/components/header/wallet-card"
 import { TypeCarousel } from "@/components/header/type-carousel"
 import { GenreCarousel } from "@/components/header/genre-carousel"
-import { ThemeSwitcher } from "@/components/theme-toggle";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {useTranslations} from "next-intl";
 import {LanguageSwitcher} from "@/components/language-switcher";
 
