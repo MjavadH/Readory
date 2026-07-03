@@ -39,6 +39,22 @@ import {
     ChaptersSection,
     type ChaptersSectionChapter,
 } from "@/components/chapters-section";
+import { AuthorRole } from "@shared/author-metadata";
+import type { BookAuthorEntry } from "@/components/admin/authors/authors-field";
+
+function hydrateAuthors(
+    raw: BookDetailsData["authors"] | undefined,
+): BookAuthorEntry[] {
+    if (!raw) return [];
+
+    return raw
+        .filter((a) => a.id != null)
+        .map((a) => ({
+            authorId: a.id,
+            role: a.role as AuthorRole,
+            name: a.name,
+        }));
+}
 
 type ChaptersResponse = {
     items: ChaptersSectionChapter[];
@@ -80,7 +96,11 @@ export default function AdminBookDetail() {
 
     const [editMode, setEditMode] = useState(false);
     const [editedBook, setEditedBook] = useState<
-        Partial<BookDetailsData> & { typeId?: number; genreIds?: number[] }
+        Omit<Partial<BookDetailsData>, "authors"> & {
+        typeId?: number;
+        genreIds?: number[];
+        authors?: BookAuthorEntry[];
+    }
     >({});
 
     const [deleteBookDialog, setDeleteBookDialog] = useState(false);
@@ -126,6 +146,7 @@ export default function AdminBookDetail() {
                 ...data,
                 typeId: data.type?.id,
                 genreIds: data.genres?.map((g: { id: number }) => g.id) || [],
+                authors: hydrateAuthors(data.authors),
             });
         } catch (error) {
             toast.error(getApiErrorMessage(error, t("FailedLoadDetails")));
@@ -167,7 +188,10 @@ export default function AdminBookDetail() {
         try {
             await apiClient.patch(`/books/${book.id}`, {
                 title: editedBook.title,
-                author: editedBook.author,
+                authors: editedBook.authors?.map(({ authorId, role }) => ({
+                    authorId,
+                    role,
+                })),
                 description: editedBook.description,
                 originalTitle: editedBook.originalTitle,
                 alternativeTitles: editedBook.alternativeTitles,
@@ -347,6 +371,7 @@ export default function AdminBookDetail() {
                                             typeId: book.type?.id,
                                             genreIds:
                                                 book.genres?.map((g: { id: number }) => g.id) || [],
+                                            authors: hydrateAuthors(book.authors),
                                         });
                                     }}
                                 >

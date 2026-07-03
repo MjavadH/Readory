@@ -16,6 +16,7 @@ import { BookTypesModule } from './book-types/book-types.module';
 import { StorageModule } from './storage/storage.module';
 import { ReaderModule } from './reader/reader.module';
 import { MailModule } from './mail/mail.module';
+import { AuthorModule } from './author/author.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { MailModule } from './mail/mail.module';
     StorageModule,
     ReaderModule,
     MailModule,
+    AuthorModule,
   ],
   controllers: [],
   providers: [],

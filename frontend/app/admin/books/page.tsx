@@ -24,6 +24,7 @@ import { BookStatus, type AgeRating } from "@readory/shared"
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
 import {useLocaleInfo} from "@/hooks/use-locale-info";
+import type { BookAuthorEntry } from "@/components/admin/authors/authors-field"
 
 type StatusFilter = "all" | "published" | "draft" | "featured"
 
@@ -77,7 +78,7 @@ export default function AdminBooks() {
         title: "",
         originalTitle: "",
         alternativeTitles: [] as string[],
-        author: "",
+        authors: [] as BookAuthorEntry[],
         typeId: undefined as number | undefined,
         description: "",
         coverImage: "",
@@ -193,6 +194,7 @@ export default function AdminBooks() {
                 ...newBook,
                 publicationYear: newBook.publicationYear ?? undefined,
                 genreIds: newBook.genreIds,
+                authors: newBook.authors.map(({ authorId, role }) => ({ authorId, role })),
             })
 
             await fetchBooks()
@@ -201,7 +203,7 @@ export default function AdminBooks() {
                 title: "",
                 originalTitle: "",
                 alternativeTitles: [] as string[],
-                author: "",
+                authors: [] as BookAuthorEntry[],
                 typeId: bookTypes[0]?.id,
                 description: "",
                 coverImage: "",
@@ -228,7 +230,7 @@ export default function AdminBooks() {
             title: "",
             originalTitle: "",
             alternativeTitles: [] as string[],
-            author: "",
+            authors: [] as BookAuthorEntry[],
             typeId: bookTypes[0]?.id,
             description: "",
             coverImage: "",
@@ -333,7 +335,7 @@ export default function AdminBooks() {
                                     ...value,
                                     title: value.title || "",
                                     originalTitle: value.originalTitle || "",
-                                    author: value.author || "",
+                                    authors: value.authors || [],
                                     description: value.description || "",
                                     coverImage: value.coverImage || "",
                                     typeId: value.typeId,

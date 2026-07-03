@@ -15,7 +15,6 @@ import {
     Sparkles,
     Tag,
     Type,
-    User,
     X,
 } from "lucide-react";
 import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating } from "@readory/shared";
@@ -36,6 +35,7 @@ import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {cn} from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { AuthorsField, type BookAuthorEntry } from "@/components/admin/authors/authors-field";
 
 type OptionItem = { id: number; name: string };
 
@@ -43,7 +43,7 @@ export type BookEditorValue = {
     title?: string;
     originalTitle?: string | null;
     alternativeTitles?: string[];
-    author?: string | null;
+    authors?: BookAuthorEntry[];
     description?: string | null;
     coverImage?: string;
     isFeatured?: boolean;
@@ -313,42 +313,6 @@ export function BookEditor({
                                         />
                                     </div>
                                 </EditField>
-                                <EditField label={t("BookAuthorPlaceholder")}>
-                                    <div className="relative">
-                                        <User className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            value={value.author || ""}
-                                            onChange={(e) => onChange({ ...value, author: e.target.value })}
-                                            className="ps-9"
-                                            placeholder={t("BookAuthorPlaceholder")}
-                                        />
-                                    </div>
-                                </EditField>
-                            </div>
-
-                            {/* Alternative Titles */}
-                            <EditField label={t("AlternativeTitles")}>
-                                <PillInput
-                                    pills={value.alternativeTitles ?? []}
-                                    onAdd={handleAddAltTitle}
-                                    onRemove={handleRemoveAltTitle}
-                                    icon={<Hash className="h-4 w-4" />}
-                                    placeholder={t("AlternativeTitlesPlaceholder")}
-                                />
-                            </EditField>
-
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                {/* Translators */}
-                                <EditField label={t("Translators")}>
-                                    <PillInput
-                                        pills={value.translators ?? []}
-                                        onAdd={handleAddTranslator}
-                                        onRemove={handleRemoveTranslator}
-                                        icon={<Languages className="h-4 w-4" />}
-                                        placeholder={t("TranslatorsPlaceholder")}
-                                    />
-                                </EditField>
-
                                 <EditField label={t("PublicationYear")}>
                                     <div className="relative">
                                         <Calendar className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -366,6 +330,38 @@ export function BookEditor({
                                     </div>
                                 </EditField>
                             </div>
+
+                            {/* Authors */}
+                            <EditField label={t("Authors")}>
+                                <AuthorsField
+                                    value={value.authors ?? []}
+                                    onChange={(authors) => onChange({ ...value, authors })}
+                                    isRTL={isRTL}
+                                    t={t}
+                                />
+                            </EditField>
+
+                            {/* Alternative Titles */}
+                            <EditField label={t("AlternativeTitles")}>
+                                <PillInput
+                                    pills={value.alternativeTitles ?? []}
+                                    onAdd={handleAddAltTitle}
+                                    onRemove={handleRemoveAltTitle}
+                                    icon={<Hash className="h-4 w-4" />}
+                                    placeholder={t("AlternativeTitlesPlaceholder")}
+                                />
+                            </EditField>
+
+                            {/* Translators */}
+                            <EditField label={t("Translators")}>
+                                <PillInput
+                                    pills={value.translators ?? []}
+                                    onAdd={handleAddTranslator}
+                                    onRemove={handleRemoveTranslator}
+                                    icon={<Languages className="h-4 w-4" />}
+                                    placeholder={t("TranslatorsPlaceholder")}
+                                />
+                            </EditField>
                         </div>
                     </EditSection>
 

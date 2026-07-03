@@ -48,7 +48,8 @@ export class BookTypesService {
     if (!bookType) {
       throw new NotFoundException('book type not found');
     }
-    return this.prisma.book.findMany({
+
+    const books = await this.prisma.book.findMany({
       where: {
         typeId: bookType.id,
         isPublished: true,
@@ -58,9 +59,25 @@ export class BookTypesService {
         id: true,
         title: true,
         coverImage: true,
-        author: true,
         type: { select: { id: true, name: true, slug: true } },
+        authors: {
+          select: {
+            role: true,
+            author: { select: { name: true } },
+          },
+        },
       },
+    });
+
+    return books.map((book) => {
+      const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+      return {
+        id: book.id,
+        title: book.title,
+        coverImage: book.coverImage,
+        type: book.type,
+        author: mainAuthor ? mainAuthor.author.name : null,
+      };
     });
   }
 

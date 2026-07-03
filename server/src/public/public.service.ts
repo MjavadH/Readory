@@ -27,7 +27,12 @@ export class PublicService {
                             title: true,
                             description: true,
                             coverImage: true,
-                            author: true,
+                            authors: {
+                                select: {
+                                    role: true,
+                                    author: { select: { name: true } },
+                                },
+                            },
                             type: { select: { name: true, slug: true, iconKey: true } },
                             genres: {
                                 select: { genre: { select: { name: true, slug: true, iconKey: true } } },
@@ -67,7 +72,12 @@ export class PublicService {
                             id: true,
                             title: true,
                             coverImage: true,
-                            author: true,
+                            authors: {
+                                select: {
+                                    role: true,
+                                    author: { select: { name: true } },
+                                },
+                            },
                             type: { select: { id: true, name: true, slug: true } },
                             chapterCount: true,
                             genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
@@ -88,7 +98,12 @@ export class PublicService {
                             id: true,
                             title: true,
                             coverImage: true,
-                            author: true,
+                            authors: {
+                                select: {
+                                    role: true,
+                                    author: { select: { name: true } },
+                                },
+                            },
                             type: { select: { id: true, name: true, slug: true } },
                             chapterCount: true,
                             genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
@@ -99,17 +114,20 @@ export class PublicService {
                 ]);
 
                 return {
-                    hero: featuredBooks.map((b) => ({
-                        id: b.id,
-                        title: b.title,
-                        description: b.description ? `${b.description.substring(0, 200)}...` : '',
-                        coverImage: b.coverImage,
-                        type: b.type,
-                        genres: b.genres.map((g) => g.genre),
-                        author: b.author,
-                        ratingAvg: b.ratingAvg,
-                        ratingCount: b.ratingCount,
-                    })),
+                    hero: featuredBooks.map((b) => {
+                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        return {
+                            id: b.id,
+                            title: b.title,
+                            description: b.description ? `${b.description.substring(0, 200)}...` : '',
+                            coverImage: b.coverImage,
+                            type: b.type,
+                            genres: b.genres.map((g) => g.genre),
+                            author: mainAuthor ? mainAuthor.author.name : null,
+                            ratingAvg: b.ratingAvg,
+                            ratingCount: b.ratingCount,
+                        };
+                    }),
                     latest: latestUpdates.map((b) => ({
                         id: b.id,
                         title: b.title,
@@ -122,28 +140,34 @@ export class PublicService {
                             free: c.isFree,
                         })),
                     })),
-                    trending: trendingBooks.map((b) => ({
-                        id: b.id,
-                        title: b.title,
-                        author: b.author,
-                        coverImage: b.coverImage,
-                        type: b.type,
-                        genres: b.genres.map((g) => g.genre),
-                        chapterCount: b.chapterCount,
-                        ratingAvg: Number(b.ratingAvg),
-                        ratingCount: b.ratingCount,
-                    })),
-                    popular: mostPopularBooks.map((b) => ({
-                        id: b.id,
-                        title: b.title,
-                        author: b.author,
-                        coverImage: b.coverImage,
-                        type: b.type,
-                        genres: b.genres.map((g) => g.genre),
-                        chapterCount: b.chapterCount,
-                        ratingAvg: Number(b.ratingAvg),
-                        ratingCount: b.ratingCount,
-                    })),
+                    trending: trendingBooks.map((b) => {
+                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        return {
+                            id: b.id,
+                            title: b.title,
+                            author: mainAuthor ? mainAuthor.author.name : null,
+                            coverImage: b.coverImage,
+                            type: b.type,
+                            genres: b.genres.map((g) => g.genre),
+                            chapterCount: b.chapterCount,
+                            ratingAvg: Number(b.ratingAvg),
+                            ratingCount: b.ratingCount,
+                        };
+                    }),
+                    popular: mostPopularBooks.map((b) => {
+                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        return {
+                            id: b.id,
+                            title: b.title,
+                            author: mainAuthor ? mainAuthor.author.name : null,
+                            coverImage: b.coverImage,
+                            type: b.type,
+                            genres: b.genres.map((g) => g.genre),
+                            chapterCount: b.chapterCount,
+                            ratingAvg: Number(b.ratingAvg),
+                            ratingCount: b.ratingCount,
+                        };
+                    }),
                     genres: topGenres,
                 };
             },
@@ -175,15 +199,33 @@ export class PublicService {
                             select: {
                                 id: true,
                                 title: true,
-                                author: true,
                                 type: { select: { id: true, name: true, slug: true } },
                                 ratingAvg: true,
                                 ratingCount: true,
                                 coverImage: true,
+                                authors: {
+                                    select: {
+                                        role: true,
+                                        author: { select: { name: true } },
+                                    },
+                                },
                             },
                         });
 
-                        return { ...g, books };
+                        const formattedBooks = books.map((b) => {
+                            const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                            return {
+                                id: b.id,
+                                title: b.title,
+                                type: b.type,
+                                ratingAvg: b.ratingAvg,
+                                ratingCount: b.ratingCount,
+                                coverImage: b.coverImage,
+                                author: mainAuthor ? mainAuthor.author.name : null,
+                            };
+                        });
+
+                        return { ...g, books: formattedBooks };
                     }),
                 );
 

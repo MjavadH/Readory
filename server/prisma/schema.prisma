@@ -53,7 +53,6 @@ model WalletTransaction {
 model Book {
   id                Int               @id @default(autoincrement())
   title             String
-  author            String?
   description       String?
   coverImage        String?
   isPublished       Boolean           @default(false)
@@ -77,6 +76,7 @@ model Book {
   coverMedia        Media?            @relation(fields: [coverImage], references: [code])
   type              BookType          @relation(fields: [typeId], references: [id])
   genres            BookGenre[]
+  authors           BookAuthor[]
   ratings           BookRating[]
   chapters          Chapter[]
   favoritedBy       FavoriteBook[]
@@ -213,6 +213,31 @@ model FavoriteBook {
   @@index([userId, createdAt])
 }
 
+model Author {
+  id           Int          @id @default(autoincrement())
+  name         String
+  originalName String?
+  slug         String       @unique
+  biography    String?
+  gender       AuthorGender @default(UNKNOWN)
+  bookCount    Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  books        BookAuthor[]
+}
+
+model BookAuthor {
+  bookId   Int
+  authorId Int
+  role     AuthorRole @default(AUTHOR)
+  book     Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author   Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, authorId])
+  @@index([authorId])
+  @@index([bookId])
+}
+
 enum RoleName {
   USER
   ADMIN
@@ -226,4 +251,20 @@ enum TransactionType {
 enum ChapterContentType {
   images
   text
+}
+
+enum AuthorGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum AuthorRole {
+  AUTHOR
+  ARTIST
+  ILLUSTRATOR
+  STORY
+  ADAPTATION
+  TRANSLATOR
+  EDITOR
 }

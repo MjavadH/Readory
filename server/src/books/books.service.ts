@@ -75,15 +75,15 @@ export class BooksService {
     cursor?: string;
   }) {
     const isDefaultView =
-      (!args.types || args.types.length === 0) &&
-      (!args.genres || args.genres.length === 0) &&
-      (!args.q || args.q.trim() === '') &&
-      !args.cursor &&
-      (args.sort === 'recently_updated' || !args.sort);
+        (!args.types || args.types.length === 0) &&
+        (!args.genres || args.genres.length === 0) &&
+        (!args.q || args.q.trim() === '') &&
+        !args.cursor &&
+        (args.sort === 'recently_updated' || !args.sort);
 
     if (isDefaultView) {
       const cached = await this.cacheManager.getString(
-        this.CACHE_KEY_BROWSE_DEFAULT,
+          this.CACHE_KEY_BROWSE_DEFAULT,
       );
       if (cached) {
         return JSON.parse(cached);
@@ -100,7 +100,6 @@ export class BooksService {
       type: { isActive: true },
     };
 
-    // Category/type filter
     if (args.types?.length) {
       where.type = { is: { slug: { in: args.types } } };
     }
@@ -109,13 +108,12 @@ export class BooksService {
       where.OR = this.buildBookSearchWhere(q);
     }
 
-    // Genre filter (AND semantics: must include ALL slugs)
     if (args.genres?.length) {
       const existingAnd = Array.isArray(where.AND)
-        ? where.AND
-        : where.AND
-          ? [where.AND]
-          : [];
+          ? where.AND
+          : where.AND
+              ? [where.AND]
+              : [];
 
       where.AND = [
         ...existingAnd,
@@ -129,8 +127,8 @@ export class BooksService {
     const take = limit + 1;
 
     const { orderBy, seekWhere, cursorValue } = this.buildBrowseSort(
-      sort,
-      cursor,
+        sort,
+        cursor,
     );
 
     const rows = await this.prisma.book.findMany({
@@ -142,7 +140,12 @@ export class BooksService {
         title: true,
         coverImage: true,
         type: { select: { name: true, slug: true } },
-        author: true,
+        authors: {
+          select: {
+            role: true,
+            author: { select: { name: true } },
+          },
+        },
         ratingAvg: true,
         ratingCount: true,
         isFeatured: true,
@@ -158,20 +161,23 @@ export class BooksService {
     const hasMore = rows.length > limit;
     const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
-    const items = pageRows.map((b) => ({
-      id: b.id,
-      title: b.title,
-      coverImage: b.coverImage,
-      type: b.type,
-      author: b.author,
-      ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
-      ratingCount: b.ratingCount,
-      genres: b.genres.map((g) => g.genre),
-      isFeatured: b.isFeatured,
-      status: b.status,
-      chapterCount: b.chapterCount,
-      updatedAt: (b.lastContentUpdate ?? b.updatedAt).toISOString(),
-    }));
+    const items = pageRows.map((b) => {
+      const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+      return {
+        id: b.id,
+        title: b.title,
+        coverImage: b.coverImage,
+        type: b.type,
+        author: mainAuthor ? mainAuthor.author.name : null,
+        ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
+        ratingCount: b.ratingCount,
+        genres: b.genres.map((g) => g.genre),
+        isFeatured: b.isFeatured,
+        status: b.status,
+        chapterCount: b.chapterCount,
+        updatedAt: (b.lastContentUpdate ?? b.updatedAt).toISOString(),
+      };
+    });
 
     let nextCursor: string | null = null;
     if (hasMore) {
@@ -183,9 +189,9 @@ export class BooksService {
 
     if (isDefaultView) {
       await this.cacheManager.setString(
-        this.CACHE_KEY_BROWSE_DEFAULT,
-        JSON.stringify(result),
-        90,
+          this.CACHE_KEY_BROWSE_DEFAULT,
+          JSON.stringify(result),
+          90,
       );
     }
 
@@ -359,7 +365,6 @@ export class BooksService {
       { title: { contains: q, mode: 'insensitive' } },
       { originalTitle: { contains: q, mode: 'insensitive' } },
       { alternativeTitles: { has: q } },
-      { author: { contains: q, mode: 'insensitive' } },
     ];
   }
 
@@ -654,7 +659,12 @@ export class BooksService {
           title: true,
           originalTitle: true,
           alternativeTitles: true,
-          author: true,
+          authors: {
+            select: {
+              role: true,
+              author: { select: { name: true } },
+            },
+          },
           coverImage: true,
           isPublished: true,
           isFeatured: true,
@@ -678,8 +688,17 @@ export class BooksService {
       }),
     ]);
 
+    const formattedBooks = books.map((b) => {
+      const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+      return {
+        ...b,
+        author: mainAuthor ? mainAuthor.author.name : null,
+        authors: undefined,
+      };
+    });
+
     return {
-      books: books,
+      books: formattedBooks,
       hasMore: skip + books.length < total,
       stats: { total, Published: published, Drafts: drafts },
       page,
@@ -705,7 +724,11 @@ export class BooksService {
         async () => {
           const sourceBook = await this.prisma.book.findUnique({
             where: { id: bookId, isPublished: true },
-            select: { id: true, typeId: true, genres: { select: { genreId: true } } },
+            select: {
+              id: true,
+              typeId: true,
+              genres: { select: { genreId: true } },
+            },
           });
 
           if (!sourceBook) {
@@ -713,7 +736,6 @@ export class BooksService {
           }
 
           const genreIds = sourceBook.genres.map((g) => g.genreId);
-
           const safeGenreIds = genreIds.length > 0 ? genreIds : [-1];
 
           const rankedCandidates = await this.prisma.$queryRaw<{ id: number; score: number }[]>`
@@ -771,40 +793,58 @@ export class BooksService {
             return { items: [], generatedAt: new Date().toISOString() };
           }
 
-          const candidateIds = rankedCandidates.map(c => c.id);
-          const scoreMap = new Map(rankedCandidates.map(c => [c.id, c.score]));
+          const candidateIds = rankedCandidates.map((c) => c.id);
+          const scoreMap = new Map(rankedCandidates.map((c) => [c.id, c.score]));
 
           const fullBooks = await this.prisma.book.findMany({
             where: { id: { in: candidateIds } },
             select: {
-              id: true, title: true, coverImage: true, author: true,
+              id: true,
+              title: true,
+              coverImage: true,
+              authors: {
+                select: {
+                  role: true,
+                  author: { select: { name: true } },
+                },
+              },
               type: { select: { name: true, slug: true } },
-              ratingAvg: true, ratingCount: true, popularityScore: true,
-              isFeatured: true, chapterCount: true, updatedAt: true, lastContentUpdate: true,
+              ratingAvg: true,
+              ratingCount: true,
+              popularityScore: true,
+              isFeatured: true,
+              chapterCount: true,
+              updatedAt: true,
+              lastContentUpdate: true,
               genres: {
                 select: {
-                  genre: { select: { id: true, name: true, slug: true } }
-                }
-              }
-            }
+                  genre: { select: { id: true, name: true, slug: true } },
+                },
+              },
+            },
           });
 
           const items = fullBooks
-              .map(book => ({
-                id: book.id,
-                title: book.title,
-                coverImage: book.coverImage,
-                author: book.author,
-                type: book.type,
-                ratingAvg: Number(book.ratingAvg.toFixed(2)),
-                ratingCount: book.ratingCount,
-                popularityScore: Number(book.popularityScore),
-                genres: book.genres.map(g => g.genre).sort((a, b) => a.name.localeCompare(b.name)),
-                chapterCount: book.chapterCount,
-                isFeatured: book.isFeatured,
-                updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
-                score: Number(scoreMap.get(book.id)?.toFixed(4) || 0)
-              }))
+              .map((book) => {
+                const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+                return {
+                  id: book.id,
+                  title: book.title,
+                  coverImage: book.coverImage,
+                  author: mainAuthor ? mainAuthor.author.name : null,
+                  type: book.type,
+                  ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
+                  ratingCount: book.ratingCount,
+                  popularityScore: Number(book.popularityScore),
+                  genres: book.genres
+                      .map((g) => g.genre)
+                      .sort((a, b) => a.name.localeCompare(b.name)),
+                  chapterCount: book.chapterCount,
+                  isFeatured: book.isFeatured,
+                  updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
+                  score: Number(scoreMap.get(book.id)?.toFixed(4) || 0),
+                };
+              })
               .sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 return b.popularityScore - a.popularityScore; // Tie-breaker
@@ -827,7 +867,12 @@ export class BooksService {
         title: true,
         originalTitle: true,
         alternativeTitles: true,
-        author: true,
+        authors: {
+          select: {
+            role: true,
+            author: { select: { id: true, name: true, slug: true } },
+          },
+        },
         description: true,
         coverImage: true,
         isFeatured: true,
@@ -856,6 +901,12 @@ export class BooksService {
     return {
       ...book,
       genres: book.genres.map((g) => g.genre),
+      authors: book.authors.map((a) => ({
+        id: a.author.id,
+        name: a.author.name,
+        slug: a.author.slug,
+        role: a.role,
+      })),
     };
   }
 
@@ -868,7 +919,12 @@ export class BooksService {
         title: true,
         originalTitle: true,
         alternativeTitles: true,
-        author: true,
+        authors: {
+          select: {
+            role: true,
+            author: { select: { id: true, name: true, slug: true } },
+          },
+        },
         description: true,
         coverImage: true,
         isFeatured: true,
@@ -899,6 +955,12 @@ export class BooksService {
     return {
       ...book,
       genres: book.genres.map((g) => g.genre),
+      authors: book.authors.map((a) => ({
+        id: a.author.id,
+        name: a.author.name,
+        slug: a.author.slug,
+        role: a.role,
+      })),
     };
   }
 
@@ -940,7 +1002,7 @@ export class BooksService {
     title: string;
     originalTitle?: string;
     alternativeTitles?: string[];
-    author?: string;
+    authors?: { authorId: number; role: any }[];
     description?: string;
     coverImage?: string;
     isPublished?: boolean;
@@ -952,7 +1014,8 @@ export class BooksService {
     typeId: number;
     genreIds: number[];
   }) {
-    const { genreIds, typeId, ...rest } = data;
+    const { genreIds, typeId, authors, ...rest } = data;
+
     const foundType = await this.prisma.bookType.findUnique({
       where: { id: typeId },
       select: { id: true },
@@ -974,7 +1037,6 @@ export class BooksService {
 
     if (rest.originalTitle !== undefined) payload.originalTitle = rest.originalTitle;
     if (rest.alternativeTitles !== undefined) payload.alternativeTitles = rest.alternativeTitles;
-    if (rest.author !== undefined) payload.author = rest.author;
     if (rest.description !== undefined) payload.description = rest.description;
     if (rest.coverImage !== undefined) {
       payload.coverMedia = { connect: { code: rest.coverImage } };
@@ -986,15 +1048,36 @@ export class BooksService {
     if (rest.publicationYear !== undefined) payload.publicationYear = rest.publicationYear;
     if (rest.translators !== undefined) payload.translators = rest.translators;
 
-    const created = await this.prisma.book.create({
-      data: payload,
-      include: {
-        coverMedia: { select: { code: true, filename: true } },
-        genres: {
-          select: { genre: { select: { id: true, name: true, slug: true } } },
+    if (authors && authors.length > 0) {
+      payload.authors = {
+        create: authors.map((a) => ({
+          author: { connect: { id: a.authorId } },
+          role: a.role,
+        })),
+      };
+    }
+
+    const created = await this.prisma.$transaction(async (tx) => {
+      const book = await tx.book.create({
+        data: payload,
+        include: {
+          coverMedia: { select: { code: true, filename: true } },
+          genres: {
+            select: { genre: { select: { id: true, name: true, slug: true } } },
+          },
+          type: { select: { id: true, name: true, slug: true } },
+          authors: { select: { role: true, author: { select: { id: true, name: true } } } },
         },
-        type: { select: { id: true, name: true, slug: true } },
-      },
+      });
+
+      if (authors && authors.length > 0) {
+        await tx.author.updateMany({
+          where: { id: { in: authors.map((a) => a.authorId) } },
+          data: { bookCount: { increment: 1 } },
+        });
+      }
+
+      return book;
     });
 
     await this.publicService.clearGenresPageCache();
@@ -1004,41 +1087,48 @@ export class BooksService {
 
   // Admin: update a book
   async update(
-    id: number,
-    data: Partial<{
-      title: string;
-      originalTitle?: string;
-      alternativeTitles?: string[];
-      author?: string;
-      description?: string;
-      coverImage?: string;
-      isPublished?: boolean;
-      isFeatured?: boolean;
-      status?: BookStatus;
-      ageRating?: AgeRating;
-      publicationYear?: number;
-      translators?: string[];
-      typeId?: number;
-      genreIds?: number[];
-    }>,
+      id: number,
+      data: Partial<{
+        title: string;
+        originalTitle?: string;
+        alternativeTitles?: string[];
+        authors?: { authorId: number; role: any }[];
+        description?: string;
+        coverImage?: string;
+        isPublished?: boolean;
+        isFeatured?: boolean;
+        status?: BookStatus;
+        ageRating?: AgeRating;
+        publicationYear?: number;
+        translators?: string[];
+        typeId?: number;
+        genreIds?: number[];
+      }>,
   ) {
-    const { genreIds, typeId, coverImage, ...rest } = data;
+    const { genreIds, typeId, coverImage, authors, ...rest } = data;
+
+    const currentBook = await this.prisma.book.findUnique({
+      where: { id },
+      select: { authors: { select: { authorId: true } } },
+    });
+
+    if (!currentBook) throw new NotFoundException('book not found');
+
     let typeConnect: Prisma.BookUpdateInput = {};
-    if (typeId !== undefined)
-      typeConnect = { type: { connect: { id: typeId } } };
+    if (typeId !== undefined) typeConnect = { type: { connect: { id: typeId } } };
 
     const updateData: Prisma.BookUpdateInput = {
       ...rest,
       ...(coverImage !== undefined
-        ? {
+          ? {
             coverMedia: coverImage
-              ? { connect: { code: coverImage } }
-              : { disconnect: true },
+                ? { connect: { code: coverImage } }
+                : { disconnect: true },
           }
-        : {}),
+          : {}),
       ...typeConnect,
       ...(genreIds
-        ? {
+          ? {
             genres: {
               deleteMany: {},
               create: genreIds.map((genreId) => ({
@@ -1046,20 +1136,56 @@ export class BooksService {
               })),
             },
           }
-        : {}),
+          : {}),
     };
 
+    let addedIds: number[] = [];
+    let removedIds: number[] = [];
+
+    if (authors !== undefined) {
+      const currentAuthorIds = currentBook.authors.map((a) => a.authorId);
+      const newAuthorIds = authors.map((a) => a.authorId);
+
+      addedIds = newAuthorIds.filter((id) => !currentAuthorIds.includes(id));
+      removedIds = currentAuthorIds.filter((id) => !newAuthorIds.includes(id));
+
+      updateData.authors = {
+        deleteMany: {},
+        create: authors.map((a) => ({
+          author: { connect: { id: a.authorId } },
+          role: a.role,
+        })),
+      };
+    }
+
     try {
-      const updated = await this.prisma.book.update({
-        where: { id },
-        data: updateData,
-        include: {
-          coverMedia: { select: { code: true, filename: true } },
-          genres: {
-            select: { genre: { select: { id: true, name: true, slug: true } } },
+      const updated = await this.prisma.$transaction(async (tx) => {
+        if (removedIds.length > 0) {
+          await tx.author.updateMany({
+            where: { id: { in: removedIds } },
+            data: { bookCount: { decrement: 1 } },
+          });
+        }
+
+        if (addedIds.length > 0) {
+          await tx.author.updateMany({
+            where: { id: { in: addedIds } },
+            data: { bookCount: { increment: 1 } },
+          });
+        }
+
+        return tx.book.update({
+          where: { id },
+          data: updateData,
+          include: {
+            coverMedia: { select: { code: true, filename: true } },
+            genres: {
+              select: { genre: { select: { id: true, name: true, slug: true } } },
+            },
+            type: { select: { id: true, name: true, slug: true } },
+            authors: { select: { role: true, author: { select: { id: true, name: true } } } },
           },
-          type: { select: { id: true, name: true, slug: true } },
-        },
+        });
       });
 
       await this.publicService.clearGenresPageCache();
@@ -1129,13 +1255,26 @@ export class BooksService {
   }
 
   async deleteById(id: number) {
-    const record = await this.prisma.book.findUnique({ where: { id } });
+    const record = await this.prisma.book.findUnique({
+      where: { id },
+      select: { authors: { select: { authorId: true } } },
+    });
+
     if (!record) throw new NotFoundException('book not found');
 
-    await this.prisma.book.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      const authorIds = record.authors.map((a) => a.authorId);
+      if (authorIds.length > 0) {
+        await tx.author.updateMany({
+          where: { id: { in: authorIds } },
+          data: { bookCount: { decrement: 1 } },
+        });
+      }
+
+      await tx.book.delete({ where: { id } });
+    });
 
     await this.invalidateCache();
-
     return { id, deleted: true };
   }
 
@@ -1236,7 +1375,12 @@ export class BooksService {
             select: {
               id: true,
               title: true,
-              author: true,
+              authors: {
+                select: {
+                  role: true,
+                  author: { select: { name: true } },
+                },
+              },
               coverImage: true,
               ratingAvg: true,
               ratingCount: true,
@@ -1253,16 +1397,19 @@ export class BooksService {
       }),
     ]);
 
-    const data = favorites.map(({ book }) => ({
-      id: book.id,
-      title: book.title,
-      author: book.author,
-      coverImage: book.coverImage,
-      ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
-      ratingCount: book.ratingCount,
-      updatedAt: book.updatedAt.toISOString(),
-      type: book.type,
-    }));
+    const data = favorites.map(({ book }) => {
+      const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+      return {
+        id: book.id,
+        title: book.title,
+        author: mainAuthor ? mainAuthor.author.name : null,
+        coverImage: book.coverImage,
+        ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
+        ratingCount: book.ratingCount,
+        updatedAt: book.updatedAt.toISOString(),
+        type: book.type,
+      };
+    });
 
     return {
       data,

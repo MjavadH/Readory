@@ -37,22 +37,25 @@ export async function enrichLibraryGroups(
   if (bookIds.length === 0) return [];
 
   const books = await prisma.book.findMany({
-      where: { id: { in: bookIds } },
-      select: {
-        id: true,
-        title: true,
-        author: true,
-        coverImage: true,
-        updatedAt: true,
-        chapterCount: true,
-        type: { select: { slug: true } },
+    where: { id: { in: bookIds } },
+    select: {
+      id: true,
+      title: true,
+      authors: {
+        select: {
+          role: true,
+          author: { select: { name: true } },
+        },
       },
-    });
+      coverImage: true,
+      updatedAt: true,
+      chapterCount: true,
+      type: { select: { slug: true } },
+    },
+  });
 
   const byBookId = new Map<number, (typeof books)[number]>();
   for (const b of books) byBookId.set(b.id, b);
-
-
 
   const items: EnrichedLibraryItem[] = [];
   for (const g of groups) {
@@ -63,15 +66,17 @@ export async function enrichLibraryGroups(
     const purchasedChapters = g._count._all;
     const totalChapters = book.chapterCount;
     const purchasedPercent =
-      totalChapters <= 0
-        ? 0
-        : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+        totalChapters <= 0
+            ? 0
+            : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+
+    const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
 
     items.push({
       book: {
         id: book.id,
         title: book.title,
-        author: book.author,
+        author: mainAuthor ? mainAuthor.author.name : null,
         coverImage: book.coverImage,
         updatedAt: book.updatedAt,
         chapterCount: book.chapterCount,

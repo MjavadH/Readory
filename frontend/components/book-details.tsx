@@ -26,7 +26,12 @@ export type BookDetailsData = {
   title: string;
   originalTitle?: string | null;
   alternativeTitles?: string[];
-  author?: string | null;
+  authors?: Array<{
+      id: number;
+      name: string;
+      role: string;
+      slug: string;
+  }>;
   description?: string | null;
   coverImage: string;
   isFeatured: boolean;
@@ -349,12 +354,34 @@ export function BookDetails({
                     )}
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
-                  <span className="inline-flex min-w-0 items-center gap-2 text-sm font-medium">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                      <User className="h-3.5 w-3.5" />
-                    </span>
-                    <span className="truncate">{book.author || t("UnknownAuthor")}</span>
-                  </span>
+                        <div className="flex flex-wrap items-center gap-3">
+                            {book.authors && book.authors.length > 0 ? (
+                                book.authors.map((item, index) => {
+                                    const authorName = item.name || t("UnknownAuthor");
+                                    const roleLabel = item.role;
+
+                                    return (
+                                        <span
+                                            key={index}
+                                            className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium"
+                                        >
+                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                                                <User className="h-3 w-3 text-muted-foreground" />
+                                            </span>
+                                            <span className="truncate">{authorName}</span>
+                                            <span className="text-xs text-muted-foreground">({roleLabel})</span>
+                                        </span>
+                                    );
+                                })
+                            ) : (
+                                <span className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium">
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                                        <User className="h-3 w-3 text-muted-foreground" />
+                                    </span>
+                                    <span className="truncate">{t("UnknownAuthor")}</span>
+                                </span>
+                            )}
+                        </div>
                         {translators.length > 0 && (
                             <span className="inline-flex min-w-0 items-center gap-2 text-sm font-medium">
                                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">

@@ -20,6 +20,7 @@ import {
   Crown,
   SquareLibrary,
   LayoutDashboard,
+  UserRoundPen
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -86,6 +87,7 @@ export function AdminSidebar() {
       title: t("Catalog"),
       items: [
         { label: t("Books"), icon: BookOpen, path: "/admin/books", show: has("MANAGE_BOOKS") },
+        { label: t("Authors"), icon: UserRoundPen, path: "/admin/authors", show: has("MANAGE_BOOKS") },
         { label: t("Genres"), icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
         { label: t("BooksType"), icon: SquareLibrary, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
         { label: t("MediaLibrary"), icon: ImageIcon, path: "/admin/media", show: has("MANAGE_BOOKS") },

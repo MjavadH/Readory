@@ -165,8 +165,13 @@ export class DashboardService {
             id: true,
             type: { select: { slug: true, iconKey: true } },
             title: true,
-            author: true,
             coverImage: true,
+            authors: {
+              select: {
+                role: true,
+                author: { select: { name: true } },
+              },
+            },
           },
         },
         chapter: {
@@ -181,8 +186,16 @@ export class DashboardService {
 
     if (!row) return null;
 
+    const mainAuthor = row.book.authors.find((a) => a.role === 'AUTHOR') || row.book.authors[0];
+
     return {
-      book: row.book,
+      book: {
+        id: row.book.id,
+        type: row.book.type,
+        title: row.book.title,
+        coverImage: row.book.coverImage,
+        author: mainAuthor ? mainAuthor.author.name : null,
+      },
       chapter: {
         title: row.chapter.title,
         index: row.chapter.index,
@@ -210,9 +223,14 @@ export class DashboardService {
           select: {
             id: true,
             title: true,
-            author: true,
             coverImage: true,
             type: { select: { slug: true, iconKey: true } },
+            authors: {
+              select: {
+                role: true,
+                author: { select: { name: true } },
+              },
+            },
           },
         },
         chapter: {
@@ -225,16 +243,26 @@ export class DashboardService {
     });
 
     return {
-      data: progressEntries.map((p) => ({
-        book: p.book,
-        chapter: {
-          title: p.chapter.title,
-          index: p.chapter.index,
-          pageCount: p.chapter.pageCount,
-        },
-        progress: { lastPage: p.lastPage, percent: p.percent },
-        lastReadAt: p.updatedAt,
-      })),
+      data: progressEntries.map((p) => {
+        const mainAuthor = p.book.authors.find((a) => a.role === 'AUTHOR') || p.book.authors[0];
+
+        return {
+          book: {
+            id: p.book.id,
+            title: p.book.title,
+            coverImage: p.book.coverImage,
+            type: p.book.type,
+            author: mainAuthor ? mainAuthor.author.name : null,
+          },
+          chapter: {
+            title: p.chapter.title,
+            index: p.chapter.index,
+            pageCount: p.chapter.pageCount,
+          },
+          progress: { lastPage: p.lastPage, percent: p.percent },
+          lastReadAt: p.updatedAt,
+        };
+      }),
       total,
       page: pageSafe,
       lastPage: Math.max(1, Math.ceil(total / limitSafe)),
