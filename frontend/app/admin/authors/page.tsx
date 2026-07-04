@@ -18,26 +18,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination"
-
 import {apiClient} from "@/lib/api-client"
 import {AuthorEditor, type AuthorEditorValue, type AuthorFieldErrors,} from "@/components/admin/authors/author-editor"
 import {type AuthorRow, AuthorsGrid, AuthorsGridSkeleton} from "@/components/admin/authors/authors-grid"
 import {useToast} from "@/providers/toast-provider";
 import {AuthorGender} from "@shared/author-metadata";
+import {AppPagination} from "@/components/app-pagination";
 
 const PAGE_SIZE = 24
 
 type ListEnvelope = {
   data: AuthorRow[]
-  meta: { total: number; page: number; limit: number; totalPages: number }
+  meta: { total: number; page: number; lastPage: number }
 }
 
 const emptyValue: AuthorEditorValue = {
@@ -72,6 +64,7 @@ export default function AdminAuthorsPage() {
   const t = useTranslations("Authors")
   const g = useTranslations("General")
   const toast = useToast();
+  const authorsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const [q, setQ] = useState("")
   const [debouncedQ, setDebouncedQ] = useState("")
@@ -246,20 +239,11 @@ export default function AdminAuthorsPage() {
     }
   }
 
-  const totalPages = meta?.totalPages ?? 1
+  const totalPages = meta?.lastPage ?? 1
   const isEmpty = !loading && !listError && rows.length === 0
 
-  const pageNumbers = useMemo(() => {
-    const pages: number[] = []
-    const window = 2
-    for (let p = Math.max(1, page - window); p <= Math.min(totalPages, page + window); p++) {
-      pages.push(p)
-    }
-    return pages
-  }, [page, totalPages])
-
   return (
-      <div className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
+      <div ref={authorsSectionRef} className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
         {/* Header */}
         <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -349,47 +333,16 @@ export default function AdminAuthorsPage() {
         </div>
 
         {/* Pagination */}
-        {!loading && !listError && totalPages > 1 ? (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        if (page > 1) setPage((p) => p - 1)
-                      }}
-                      aria-disabled={page <= 1}
-                      className={page <= 1 ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-                {pageNumbers.map((p) => (
-                    <PaginationItem key={p}>
-                      <PaginationLink
-                          href="#"
-                          isActive={p === page}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            setPage(p)
-                          }}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        if (page < totalPages) setPage((p) => p + 1)
-                      }}
-                      aria-disabled={page >= totalPages}
-                      className={page >= totalPages ? "pointer-events-none opacity-50" : ""}
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+        {!loading && !listError && meta && totalPages > 1 ? (
+            <AppPagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={meta.total}
+                pageSize={PAGE_SIZE}
+                itemLabel={t("Author")}
+                onPageChange={(p) => setPage(p)}
+                scrollTarget={authorsSectionRef}
+            />
         ) : null}
 
         {/* Create / Edit dialog */}

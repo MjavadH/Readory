@@ -729,7 +729,17 @@
     "Validation_MaxLength": "Must be at most {max} characters.",
     "AuthorGender_MALE": "Male",
     "AuthorGender_FEMALE": "Female",
-    "AuthorGender_UNKNOWN": "Unknown"
+    "AuthorGender_UNKNOWN": "Unknown",
+    "LoadError": "We couldn't load this author's profile. Please try again later",
+    "Author": "Author",
+    "BookCount": "{count, plural, one {# book} other {# books}}",
+    "UpdatedOn": "Updated {date}",
+    "SlugLabel": "Profile slug",
+    "Biography": "Biography",
+    "ShowLess": "Show less",
+    "ShowMore": "Show more",
+    "BooksByAuthor": "Books by {name}",
+    "NoBooks": "This author doesn't have any published books yet."
   },
   "UserHeader": {
     "Books": "Books",

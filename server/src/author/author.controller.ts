@@ -46,6 +46,18 @@ export class AuthorController {
     return this.authorService.findAll({ page, limit, q });
   }
 
+  @Get('public/:slug')
+  async getPublicProfile(
+      @Param('slug') slug: string,
+      @Query('page') page: string = '1',
+      @Query('limit') limit: string = '18',
+  ) {
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const limitNumber = Math.min(50, Math.max(1, parseInt(limit, 10) || 18));
+
+    return this.authorService.getPublicProfile(slug, pageNumber, limitNumber);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.authorService.findOne(id);

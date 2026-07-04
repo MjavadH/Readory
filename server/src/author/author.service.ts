@@ -111,6 +111,85 @@ export class AuthorService {
     );
   }
 
+  async getPublicProfile(slug: string, page: number, limit: number) {
+    const skip = (page - 1) * limit;
+
+    const version = await this.cacheManager.getVersion(this.LIST_VERSION_KEY);
+    const cacheKey = `author:public_profile:${version}:${slug}:p${page}:l${limit}`;
+
+    return this.cacheManager.getOrSet(
+        cacheKey,
+        { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
+        async () => {
+          const author = await this.prisma.author.findUnique({
+            where: { slug },
+            select: {
+              id: true,
+              name: true,
+              originalName: true,
+              slug: true,
+              biography: true,
+              gender: true,
+              bookCount: true,
+              updatedAt: true,
+            },
+          });
+
+          if (!author) {
+            throw new NotFoundException('The specified author was not found.');
+          }
+
+          const [totalBooks, books] = await this.prisma.$transaction([
+            this.prisma.book.count({
+              where: {
+                isPublished: true,
+                authors: { some: { authorId: author.id } },
+              },
+            }),
+            this.prisma.book.findMany({
+              where: {
+                isPublished: true,
+                authors: { some: { authorId: author.id } },
+              },
+              orderBy: { updatedAt: 'desc' },
+              skip,
+              take: limit,
+              select: {
+                id: true,
+                title: true,
+                coverImage: true,
+                ratingAvg: true,
+                ratingCount: true,
+                type: {select: {name: true, slug: true,},},
+                genres: {
+                  include: {
+                    genre: { select: { id: true, name: true, slug: true } },
+                  },
+                  take: 2,
+                },
+                chapterCount: true,
+                updatedAt: true,
+              },
+            }),
+          ]);
+
+          return {
+            author,
+            books: books.map((book) => ({
+              ...book,
+              genres: book.genres.map((g) => g.genre),
+            })),
+            pagination: {
+              total: totalBooks,
+              page,
+              limit,
+              totalPages: Math.max(1, Math.ceil(totalBooks / limit)),
+            },
+          };
+        },
+    );
+  }
+
   async update(id: number, updateAuthorDto: UpdateAuthorDto) {
     await this.findOne(id);
 

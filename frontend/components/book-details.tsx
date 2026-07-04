@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { AppIcon } from "@/components/AppIcon";
 import { formatUpdateTime } from "@/lib/time";
 import type { AgeRating, BookStatus, IconKey } from "@readory/shared";
+import Link from "next/link";
 
 export type BookDetailsData = {
   id: number;
@@ -361,16 +362,18 @@ export function BookDetails({
                                     const roleLabel = item.role;
 
                                     return (
-                                        <span
-                                            key={index}
-                                            className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium"
-                                        >
-                                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                                                <User className="h-3 w-3 text-muted-foreground" />
+                                        <Link key={item.slug} href={`/author/${item.slug}`}>
+                                            <span
+                                                key={index}
+                                                className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium"
+                                            >
+                                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
+                                                    <User className="h-3 w-3 text-muted-foreground" />
+                                                </span>
+                                                <span className="truncate">{authorName}</span>
+                                                <span className="text-xs text-muted-foreground">({roleLabel})</span>
                                             </span>
-                                            <span className="truncate">{authorName}</span>
-                                            <span className="text-xs text-muted-foreground">({roleLabel})</span>
-                                        </span>
+                                        </Link>
                                     );
                                 })
                             ) : (

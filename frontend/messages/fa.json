@@ -730,7 +730,17 @@
     "Validation_MaxLength": "حداکثر {max} کاراکتر مجاز است.",
     "AuthorGender_MALE": "مرد",
     "AuthorGender_FEMALE": "زن",
-    "AuthorGender_UNKNOWN": "نامشخص"
+    "AuthorGender_UNKNOWN": "نامشخص",
+    "LoadError": "بارگیری پروفایل این نویسنده انجام نشد. لطفاً بعداً دوباره تلاش کنید.",
+    "Author": "نویسنده",
+    "BookCount": "{count, plural, one {# کتاب} other {# کتاب}}",
+    "UpdatedOn": "آخرین بروزرسانی: {date}",
+    "SlugLabel": "اسلاگ پروفایل",
+    "Biography": "زندگینامه",
+    "ShowLess": "نمایش کمتر",
+    "ShowMore": "نمایش بیشتر",
+    "BooksByAuthor": "کتاب‌های {name}",
+    "NoBooks": "این نویسنده هنوز هیچ کتاب منتشرشده‌ای ندارد"
   },
   "UserHeader": {
     "Books": "کتاب‌ها",
