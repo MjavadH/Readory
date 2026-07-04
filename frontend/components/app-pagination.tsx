@@ -1,5 +1,3 @@
-"use client"
-
 import type { MouseEvent, RefObject } from "react"
 
 import {

@@ -8,7 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
 import { UpdateGenreDto } from './dto/update-genre.dto';
-import { slugify } from '../common/index.js';
+import { slugify } from '../common';
 
 @Injectable()
 export class GenresService {
