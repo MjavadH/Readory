@@ -190,9 +190,6 @@ export default function AdminDashboardPage() {
                   index={1}
                   title={t("TotalBooks")}
                   value={numberFmt.format(o.content.books)}
-                  hint={t("NTotalChapters", {
-                    NChapters: numberFmt.format(o.content.chapters),
-                  })}
                   icon={BookMarked}
                   accent="emerald"
               />

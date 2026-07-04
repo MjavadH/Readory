@@ -85,7 +85,7 @@ export function FinanceSection({ data }: { data: FinanceData }) {
           />
           <RiskCard
             title={t("BurnRate")}
-            value={`${(risk.burnRateRatio * 100).toFixed(1)}%`}
+            value={`${formatter.format(Number((risk.burnRateRatio * 100).toFixed(0)))}%`}
             icon={<Flame className="h-4 w-4" />}
             accent="text-amber-500 bg-amber-500/10"
             delay={0.15}
