@@ -7,21 +7,21 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import {Separator} from "@/components/ui/separator";
-import {AuthorGender} from "@shared/author-metadata";
+import {ContributorGender} from "@shared/contributor-metadata";
 
-export type AuthorRow = {
+export type ContributorRow = {
   id: string
   name: string
   originalName?: string | null
   slug: string
   biography?: string | null
-  gender?: AuthorGender
+  gender?: ContributorGender
 }
 
 type Props = {
-  authors: AuthorRow[]
-  onEdit: (author: AuthorRow) => void
-  onDelete: (author: AuthorRow) => void
+  contributors: ContributorRow[]
+  onEdit: (contributors: ContributorRow) => void
+  onDelete: (contributors: ContributorRow) => void
 }
 
 const cardVariants = {
@@ -30,8 +30,8 @@ const cardVariants = {
   exit: { opacity: 0, y: -8, scale: 0.97 },
 }
 
-export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
-  const t = useTranslations("Authors")
+export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
+  const t = useTranslations("Contributors")
   const g = useTranslations("General")
 
   return (
@@ -40,9 +40,9 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
       className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       <AnimatePresence mode="popLayout">
-        {authors.map((author) => (
+        {contributors.map((contributors) => (
           <motion.div
-            key={author.id}
+            key={contributors.id}
             layout
             variants={cardVariants}
             initial="hidden"
@@ -56,14 +56,14 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
                 <div className="flex items-center text-center gap-3">
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-base font-semibold leading-tight">
-                      {author.name}
+                      {contributors.name}
                     </h3>
-                    {author.originalName ? (
+                    {contributors.originalName ? (
                       <p
                         className="truncate text-sm text-muted-foreground"
                         dir="auto"
                       >
-                        {author.originalName}
+                        {contributors.originalName}
                       </p>
                     ) : null}
                   </div>
@@ -74,18 +74,18 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
                     dir="ltr"
                     className="inline-flex items-center rounded-md border border-input bg-muted/40 px-2 py-0.5 font-mono text-muted-foreground"
                   >
-                    {author.slug}
+                    {contributors.slug}
                   </span>
-                  {author.gender ? (
+                  {contributors.gender ? (
                     <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-secondary-foreground">
-                      {t(`AuthorGender_${author.gender}`)}
+                      {t(`ContributorGender_${contributors.gender}`)}
                     </span>
                   ) : null}
                 </div>
 
-                {author.biography ? (
+                {contributors.biography ? (
                   <p className={cn("text-sm text-muted-foreground line-clamp-3")}>
-                    {author.biography}
+                    {contributors.biography}
                   </p>
                 ) : (
                   <p className="text-sm italic text-muted-foreground/70">
@@ -99,8 +99,8 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
                     variant="outline"
                     size="sm"
                     className="flex-1"
-                    onClick={() => onEdit(author)}
-                    aria-label={t("EditAuthor")}
+                    onClick={() => onEdit(contributors)}
+                    aria-label={t("EditContributor")}
                   >
                     <Pencil className="me-2 h-3.5 w-3.5" />
                     {g("Edit")}
@@ -109,8 +109,8 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => onDelete(author)}
-                    aria-label={t("DeleteAuthor")}
+                    onClick={() => onDelete(contributors)}
+                    aria-label={t("DeleteContributor")}
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -125,7 +125,7 @@ export function AuthorsGrid({ authors, onEdit, onDelete }: Props) {
   )
 }
 
-export function AuthorsGridSkeleton({ count = 8 }: { count?: number }) {
+export function ContributorsGridSkeleton({ count = 8 }: { count?: number }) {
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: count }).map((_, i) => (

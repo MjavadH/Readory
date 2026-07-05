@@ -6,7 +6,6 @@ import {
   Clock,
   EyeOff,
   Heart,
-  Languages,
   Plus,
   Send,
   Sparkles,
@@ -19,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppIcon } from "@/components/AppIcon";
 import { formatUpdateTime } from "@/lib/time";
-import type { AgeRating, BookStatus, IconKey } from "@readory/shared";
+import { ContributorRole, CONTRIBUTOR_ROLE_ICONS, type AgeRating, type BookStatus, type IconKey } from "@readory/shared";
 import Link from "next/link";
 
 export type BookDetailsData = {
@@ -27,7 +26,7 @@ export type BookDetailsData = {
   title: string;
   originalTitle?: string | null;
   alternativeTitles?: string[];
-  authors?: Array<{
+  contributors?: Array<{
       id: number;
       name: string;
       role: string;
@@ -40,7 +39,6 @@ export type BookDetailsData = {
   status: BookStatus;
   ageRating?: AgeRating | null;
   publicationYear?: number | null;
-  translators?: string[];
   chapterCount: number;
   lastContentUpdate?: string | null;
   ratingAvg: number;
@@ -185,7 +183,6 @@ export function BookDetails({
   };
 
   const alternativeTitles = book.alternativeTitles?.filter(Boolean) ?? [];
-  const translators = book.translators?.filter(Boolean) ?? [];
   const isDraft = book.isPublished === false;
 
   return (
@@ -324,7 +321,7 @@ export function BookDetails({
                     )}
                   </motion.div>
 
-                  {/* Title + author */}
+                  {/* Title + contributors */}
                   <motion.div
                       variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
                       className="min-w-0 space-y-3"
@@ -356,21 +353,26 @@ export function BookDetails({
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
                         <div className="flex flex-wrap items-center gap-3">
-                            {book.authors && book.authors.length > 0 ? (
-                                book.authors.map((item, index) => {
-                                    const authorName = item.name || t("UnknownAuthor");
+                            {book.contributors && book.contributors.length > 0 ? (
+                                book.contributors.map((item, index) => {
+                                    const contributorName = item.name || t("UnknownContributor");
                                     const roleLabel = item.role;
+                                    const roleIconKey = CONTRIBUTOR_ROLE_ICONS[item.role as ContributorRole];
 
                                     return (
-                                        <Link key={item.slug} href={`/author/${item.slug}`}>
+                                        <Link key={item.slug} href={`/contributor/${item.slug}`}>
                                             <span
                                                 key={index}
                                                 className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium"
                                             >
                                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
-                                                    <User className="h-3 w-3 text-muted-foreground" />
+                                                    {roleIconKey ? (
+                                                        <AppIcon name={roleIconKey as IconKey} className="h-3 w-3 text-muted-foreground" />
+                                                    ) : (
+                                                        <User className="h-3 w-3 text-muted-foreground" />
+                                                    )}
                                                 </span>
-                                                <span className="truncate">{authorName}</span>
+                                                <span className="truncate">{contributorName}</span>
                                                 <span className="text-xs text-muted-foreground">({roleLabel})</span>
                                             </span>
                                         </Link>
@@ -381,21 +383,10 @@ export function BookDetails({
                                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
                                         <User className="h-3 w-3 text-muted-foreground" />
                                     </span>
-                                    <span className="truncate">{t("UnknownAuthor")}</span>
+                                    <span className="truncate">{t("UnknownContributor")}</span>
                                 </span>
                             )}
                         </div>
-                        {translators.length > 0 && (
-                            <span className="inline-flex min-w-0 items-center gap-2 text-sm font-medium">
-                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                                    <Languages className="h-3.5 w-3.5" />
-                                </span>
-                                <span className="min-w-0 truncate">
-                                    <span className="text-muted-foreground/80">{t("TranslatedBy")}:</span>{" "}
-                                    <span className="text-foreground">{translators.join(",")}</span>
-                                </span>
-                            </span>
-                        )}
                     </div>
                   </motion.div>
 

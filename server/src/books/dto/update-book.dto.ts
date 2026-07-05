@@ -1,6 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import { AgeRating, BookStatus } from '@readory/shared';
-import { BookAuthorDto } from './create-book.dto';
+import { BookContributorDto } from './create-book.dto';
 import {
     ArrayNotEmpty,
     IsArray,
@@ -54,15 +54,9 @@ export class UpdateBookDto {
 
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
-    @MaxLength(200, { each: true })
-    translators?: string[];
-
-    @IsOptional()
-    @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => BookAuthorDto)
-    authors?: BookAuthorDto[];
+    @Type(() => BookContributorDto)
+    contributors?: BookContributorDto[];
 
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
     @IsOptional()

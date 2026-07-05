@@ -29,6 +29,14 @@ export const ICON_KEYS = [
   "tragedy",
   "sliceOfLife",
   "wallet",
+  "author",
+  "translator",
+  "illustrator",
+  "editor",
+  "cleaner",
+  "typesetter",
+  "rawProvider",
+  "supervisor",
 ] as const;
 
 export type IconKey = (typeof ICON_KEYS)[number];

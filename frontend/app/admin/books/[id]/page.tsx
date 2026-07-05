@@ -39,19 +39,19 @@ import {
     ChaptersSection,
     type ChaptersSectionChapter,
 } from "@/components/chapters-section";
-import { AuthorRole } from "@shared/author-metadata";
-import type { BookAuthorEntry } from "@/components/admin/authors/authors-field";
+import { ContributorRole } from "@shared/contributor-metadata";
+import type { BookContributorEntry } from "@/components/admin/contributors/contributors-field";
 
-function hydrateAuthors(
-    raw: BookDetailsData["authors"] | undefined,
-): BookAuthorEntry[] {
+function hydrateContributors(
+    raw: BookDetailsData["contributors"] | undefined,
+): BookContributorEntry[] {
     if (!raw) return [];
 
     return raw
         .filter((a) => a.id != null)
         .map((a) => ({
-            authorId: a.id,
-            role: a.role as AuthorRole,
+            contributorId: a.id,
+            role: a.role as ContributorRole,
             name: a.name,
         }));
 }
@@ -96,10 +96,10 @@ export default function AdminBookDetail() {
 
     const [editMode, setEditMode] = useState(false);
     const [editedBook, setEditedBook] = useState<
-        Omit<Partial<BookDetailsData>, "authors"> & {
+        Omit<Partial<BookDetailsData>, "contributors"> & {
         typeId?: number;
         genreIds?: number[];
-        authors?: BookAuthorEntry[];
+        contributors?: BookContributorEntry[];
     }
     >({});
 
@@ -146,7 +146,7 @@ export default function AdminBookDetail() {
                 ...data,
                 typeId: data.type?.id,
                 genreIds: data.genres?.map((g: { id: number }) => g.id) || [],
-                authors: hydrateAuthors(data.authors),
+                contributors: hydrateContributors(data.contributors),
             });
         } catch (error) {
             toast.error(getApiErrorMessage(error, t("FailedLoadDetails")));
@@ -188,8 +188,8 @@ export default function AdminBookDetail() {
         try {
             await apiClient.patch(`/books/${book.id}`, {
                 title: editedBook.title,
-                authors: editedBook.authors?.map(({ authorId, role }) => ({
-                    authorId,
+                contributors: editedBook.contributors?.map(({ contributorId, role }) => ({
+                    contributorId,
                     role,
                 })),
                 description: editedBook.description,
@@ -198,7 +198,6 @@ export default function AdminBookDetail() {
                 status: editedBook.status,
                 ageRating: editedBook.ageRating,
                 publicationYear: editedBook.publicationYear,
-                translators: editedBook.translators,
                 isPublished: editedBook.isPublished,
                 isFeatured: editedBook.isFeatured,
                 coverImage: editedBook.coverImage,
@@ -371,7 +370,7 @@ export default function AdminBookDetail() {
                                             typeId: book.type?.id,
                                             genreIds:
                                                 book.genres?.map((g: { id: number }) => g.id) || [],
-                                            authors: hydrateAuthors(book.authors),
+                                            contributors: hydrateContributors(book.contributors),
                                         });
                                     }}
                                 >

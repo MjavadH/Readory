@@ -4,7 +4,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { AgeRating, BookStatus } from '@readory/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
@@ -22,6 +21,8 @@ import {
   RELATED_POPULARITY_WEIGHT,
   RELATED_TYPE_WEIGHT
 } from "./recommendation/recommendation.constants";
+import {CreateBookDto} from "./dto/create-book.dto"
+import {UpdateBookDto} from "./dto/update-book.dto";
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -140,10 +141,10 @@ export class BooksService {
         title: true,
         coverImage: true,
         type: { select: { name: true, slug: true } },
-        authors: {
+        contributors: {
           select: {
             role: true,
-            author: { select: { name: true } },
+            contributor: { select: { name: true } },
           },
         },
         ratingAvg: true,
@@ -162,13 +163,13 @@ export class BooksService {
     const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
     const items = pageRows.map((b) => {
-      const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+      const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
       return {
         id: b.id,
         title: b.title,
         coverImage: b.coverImage,
         type: b.type,
-        author: mainAuthor ? mainAuthor.author.name : null,
+        contributors: mainContributor ? mainContributor.contributor.name : null,
         ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
         ratingCount: b.ratingCount,
         genres: b.genres.map((g) => g.genre),
@@ -659,10 +660,10 @@ export class BooksService {
           title: true,
           originalTitle: true,
           alternativeTitles: true,
-          authors: {
+          contributors: {
             select: {
               role: true,
-              author: { select: { name: true } },
+              contributor: { select: { name: true } },
             },
           },
           coverImage: true,
@@ -671,7 +672,6 @@ export class BooksService {
           status: true,
           ageRating: true,
           publicationYear: true,
-          translators: true,
           chapterCount: true,
           lastContentUpdate: true,
           ratingAvg: true,
@@ -689,11 +689,10 @@ export class BooksService {
     ]);
 
     const formattedBooks = books.map((b) => {
-      const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+      const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
       return {
         ...b,
-        author: mainAuthor ? mainAuthor.author.name : null,
-        authors: undefined,
+        contributors: mainContributor ? mainContributor.contributor.name : null,
       };
     });
 
@@ -802,10 +801,10 @@ export class BooksService {
               id: true,
               title: true,
               coverImage: true,
-              authors: {
+              contributors: {
                 select: {
                   role: true,
-                  author: { select: { name: true } },
+                  contributor: { select: { name: true } },
                 },
               },
               type: { select: { name: true, slug: true } },
@@ -826,12 +825,12 @@ export class BooksService {
 
           const items = fullBooks
               .map((book) => {
-                const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+                const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
                 return {
                   id: book.id,
                   title: book.title,
                   coverImage: book.coverImage,
-                  author: mainAuthor ? mainAuthor.author.name : null,
+                  contributors: mainContributor ? mainContributor.contributor.name : null,
                   type: book.type,
                   ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
                   ratingCount: book.ratingCount,
@@ -867,10 +866,10 @@ export class BooksService {
         title: true,
         originalTitle: true,
         alternativeTitles: true,
-        authors: {
+        contributors: {
           select: {
             role: true,
-            author: { select: { id: true, name: true, slug: true } },
+            contributor: { select: { id: true, name: true, slug: true } },
           },
         },
         description: true,
@@ -879,7 +878,6 @@ export class BooksService {
         status: true,
         ageRating: true,
         publicationYear: true,
-        translators: true,
         chapterCount: true,
         lastContentUpdate: true,
         ratingAvg: true,
@@ -901,10 +899,10 @@ export class BooksService {
     return {
       ...book,
       genres: book.genres.map((g) => g.genre),
-      authors: book.authors.map((a) => ({
-        id: a.author.id,
-        name: a.author.name,
-        slug: a.author.slug,
+      contributors: book.contributors.map((a) => ({
+        id: a.contributor.id,
+        name: a.contributor.name,
+        slug: a.contributor.slug,
         role: a.role,
       })),
     };
@@ -919,10 +917,10 @@ export class BooksService {
         title: true,
         originalTitle: true,
         alternativeTitles: true,
-        authors: {
+        contributors: {
           select: {
             role: true,
-            author: { select: { id: true, name: true, slug: true } },
+            contributor: { select: { id: true, name: true, slug: true } },
           },
         },
         description: true,
@@ -931,7 +929,6 @@ export class BooksService {
         status: true,
         ageRating: true,
         publicationYear: true,
-        translators: true,
         chapterCount: true,
         lastContentUpdate: true,
         isPublished: true,
@@ -955,10 +952,10 @@ export class BooksService {
     return {
       ...book,
       genres: book.genres.map((g) => g.genre),
-      authors: book.authors.map((a) => ({
-        id: a.author.id,
-        name: a.author.name,
-        slug: a.author.slug,
+      contributors: book.contributors.map((a) => ({
+        id: a.contributor.id,
+        name: a.contributor.name,
+        slug: a.contributor.slug,
         role: a.role,
       })),
     };
@@ -998,23 +995,8 @@ export class BooksService {
   }
 
   // Admin: create a new book
-  async create(data: {
-    title: string;
-    originalTitle?: string;
-    alternativeTitles?: string[];
-    authors?: { authorId: number; role: any }[];
-    description?: string;
-    coverImage?: string;
-    isPublished?: boolean;
-    isFeatured?: boolean;
-    status?: BookStatus;
-    ageRating?: AgeRating;
-    publicationYear?: number;
-    translators?: string[];
-    typeId: number;
-    genreIds: number[];
-  }) {
-    const { genreIds, typeId, authors, ...rest } = data;
+  async create(data: CreateBookDto) {
+    const { genreIds, typeId, contributors, ...rest } = data;
 
     const foundType = await this.prisma.bookType.findUnique({
       where: { id: typeId },
@@ -1046,12 +1028,11 @@ export class BooksService {
     if (rest.status !== undefined) payload.status = rest.status;
     if (rest.ageRating !== undefined) payload.ageRating = rest.ageRating;
     if (rest.publicationYear !== undefined) payload.publicationYear = rest.publicationYear;
-    if (rest.translators !== undefined) payload.translators = rest.translators;
 
-    if (authors && authors.length > 0) {
-      payload.authors = {
-        create: authors.map((a) => ({
-          author: { connect: { id: a.authorId } },
+    if (contributors && contributors.length > 0) {
+      payload.contributors = {
+        create: contributors.map((a) => ({
+          contributor: { connect: { id: a.contributorId } },
           role: a.role,
         })),
       };
@@ -1066,13 +1047,13 @@ export class BooksService {
             select: { genre: { select: { id: true, name: true, slug: true } } },
           },
           type: { select: { id: true, name: true, slug: true } },
-          authors: { select: { role: true, author: { select: { id: true, name: true } } } },
+          contributors: { select: { role: true, contributor: { select: { id: true, name: true } } } },
         },
       });
 
-      if (authors && authors.length > 0) {
-        await tx.author.updateMany({
-          where: { id: { in: authors.map((a) => a.authorId) } },
+      if (contributors && contributors.length > 0) {
+        await tx.contributor.updateMany({
+          where: { id: { in: contributors.map((a) => a.contributorId) } },
           data: { bookCount: { increment: 1 } },
         });
       }
@@ -1088,28 +1069,13 @@ export class BooksService {
   // Admin: update a book
   async update(
       id: number,
-      data: Partial<{
-        title: string;
-        originalTitle?: string;
-        alternativeTitles?: string[];
-        authors?: { authorId: number; role: any }[];
-        description?: string;
-        coverImage?: string;
-        isPublished?: boolean;
-        isFeatured?: boolean;
-        status?: BookStatus;
-        ageRating?: AgeRating;
-        publicationYear?: number;
-        translators?: string[];
-        typeId?: number;
-        genreIds?: number[];
-      }>,
+      data: UpdateBookDto,
   ) {
-    const { genreIds, typeId, coverImage, authors, ...rest } = data;
+    const { genreIds, typeId, coverImage, contributors, ...rest } = data;
 
     const currentBook = await this.prisma.book.findUnique({
       where: { id },
-      select: { authors: { select: { authorId: true } } },
+      select: { contributors: { select: { contributorId: true } } },
     });
 
     if (!currentBook) throw new NotFoundException('book not found');
@@ -1142,17 +1108,17 @@ export class BooksService {
     let addedIds: number[] = [];
     let removedIds: number[] = [];
 
-    if (authors !== undefined) {
-      const currentAuthorIds = currentBook.authors.map((a) => a.authorId);
-      const newAuthorIds = authors.map((a) => a.authorId);
+    if (contributors !== undefined) {
+      const currentContributorIds = currentBook.contributors.map((a) => a.contributorId);
+      const newContributorIds = contributors.map((a) => a.contributorId);
 
-      addedIds = newAuthorIds.filter((id) => !currentAuthorIds.includes(id));
-      removedIds = currentAuthorIds.filter((id) => !newAuthorIds.includes(id));
+      addedIds = newContributorIds.filter((id) => !currentContributorIds.includes(id));
+      removedIds = currentContributorIds.filter((id) => !newContributorIds.includes(id));
 
-      updateData.authors = {
+      updateData.contributors = {
         deleteMany: {},
-        create: authors.map((a) => ({
-          author: { connect: { id: a.authorId } },
+        create: contributors.map((a) => ({
+          contributor: { connect: { id: a.contributorId } },
           role: a.role,
         })),
       };
@@ -1161,14 +1127,14 @@ export class BooksService {
     try {
       const updated = await this.prisma.$transaction(async (tx) => {
         if (removedIds.length > 0) {
-          await tx.author.updateMany({
+          await tx.contributor.updateMany({
             where: { id: { in: removedIds } },
             data: { bookCount: { decrement: 1 } },
           });
         }
 
         if (addedIds.length > 0) {
-          await tx.author.updateMany({
+          await tx.contributor.updateMany({
             where: { id: { in: addedIds } },
             data: { bookCount: { increment: 1 } },
           });
@@ -1183,7 +1149,7 @@ export class BooksService {
               select: { genre: { select: { id: true, name: true, slug: true } } },
             },
             type: { select: { id: true, name: true, slug: true } },
-            authors: { select: { role: true, author: { select: { id: true, name: true } } } },
+            contributors: { select: { role: true, contributor: { select: { id: true, name: true } } } },
           },
         });
       });
@@ -1257,16 +1223,16 @@ export class BooksService {
   async deleteById(id: number) {
     const record = await this.prisma.book.findUnique({
       where: { id },
-      select: { authors: { select: { authorId: true } } },
+      select: { contributors: { select: { contributorId: true } } },
     });
 
     if (!record) throw new NotFoundException('book not found');
 
     await this.prisma.$transaction(async (tx) => {
-      const authorIds = record.authors.map((a) => a.authorId);
-      if (authorIds.length > 0) {
-        await tx.author.updateMany({
-          where: { id: { in: authorIds } },
+      const contributorIds = record.contributors.map((a) => a.contributorId);
+      if (contributorIds.length > 0) {
+        await tx.contributor.updateMany({
+          where: { id: { in: contributorIds } },
           data: { bookCount: { decrement: 1 } },
         });
       }
@@ -1375,10 +1341,10 @@ export class BooksService {
             select: {
               id: true,
               title: true,
-              authors: {
+              contributors: {
                 select: {
                   role: true,
-                  author: { select: { name: true } },
+                  contributor: { select: { name: true } },
                 },
               },
               coverImage: true,
@@ -1398,11 +1364,11 @@ export class BooksService {
     ]);
 
     const data = favorites.map(({ book }) => {
-      const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+      const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
       return {
         id: book.id,
         title: book.title,
-        author: mainAuthor ? mainAuthor.author.name : null,
+        contributors: mainContributor ? mainContributor.contributor.name : null,
         coverImage: book.coverImage,
         ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
         ratingCount: book.ratingCount,

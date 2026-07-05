@@ -7,30 +7,30 @@ import {Textarea} from "@/components/ui/textarea"
 import {Label} from "@/components/ui/label"
 import {Button} from "@/components/ui/button"
 import {cn} from "@/lib/utils"
-import {AuthorGender, AUTHOR_GENDER_VALUES} from "@shared/author-metadata";
+import {ContributorGender, CONTRIBUTOR_GENDER_VALUES} from "@shared/contributor-metadata";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {useLocaleInfo} from "@/hooks/use-locale-info";
 
-export type AuthorEditorValue = {
+export type ContributorEditorValue = {
   name: string
   originalName: string
   slug: string
   biography: string
-  gender: AuthorGender
+  gender: ContributorGender
 }
 
-export type AuthorFieldErrors = Partial<Record<keyof AuthorEditorValue, string>>
+export type ContributorFieldErrors = Partial<Record<keyof ContributorEditorValue, string>>
 
-export type AuthorEditorMode = "create" | "edit"
+export type ContributorEditorMode = "create" | "edit"
 
-type AuthorEditorProps = {
-  mode: AuthorEditorMode
-  value: AuthorEditorValue
-  onChange: (patch: Partial<AuthorEditorValue>) => void
+type ContributorEditorProps = {
+  mode: ContributorEditorMode
+  value: ContributorEditorValue
+  onChange: (patch: Partial<ContributorEditorValue>) => void
   onSubmit: () => void | Promise<void>
   onCancel: () => void
   submitting?: boolean
-  serverErrors?: AuthorFieldErrors
+  serverErrors?: ContributorFieldErrors
   formError?: string | null
 }
 
@@ -49,7 +49,7 @@ function slugify(input: string): string {
     .replace(/^-|-$/g, "")
 }
 
-export function AuthorEditor({
+export function ContributorsEditor({
   mode,
   value,
   onChange,
@@ -58,12 +58,12 @@ export function AuthorEditor({
   submitting = false,
   serverErrors,
   formError,
-}: AuthorEditorProps) {
-  const t = useTranslations("Authors")
+}: ContributorEditorProps) {
+  const t = useTranslations("Contributors")
   const g = useTranslations("General")
   const { isRTL } = useLocaleInfo()
 
-  const [touched, setTouched] = useState<Record<keyof AuthorEditorValue, boolean>>({
+  const [touched, setTouched] = useState<Record<keyof ContributorEditorValue, boolean>>({
     name: false,
     originalName: false,
     slug: false,
@@ -82,7 +82,7 @@ export function AuthorEditor({
     }
   }, [value.name, slugManuallyEdited])
 
-  const clientErrors: AuthorFieldErrors = {}
+  const clientErrors: ContributorFieldErrors = {}
   if (!value.name.trim()) clientErrors.name = t("Validation_NameRequired")
   else if (value.name.length > 255) clientErrors.name = t("Validation_MaxLength", { max: 255 })
   if (!value.slug.trim()) clientErrors.slug = t("Validation_SlugRequired")
@@ -93,7 +93,7 @@ export function AuthorEditor({
   if (value.gender.length > 50)
     clientErrors.gender = t("Validation_MaxLength", { max: 50 })
 
-  const errorFor = (field: keyof AuthorEditorValue): string | undefined => {
+  const errorFor = (field: keyof ContributorEditorValue): string | undefined => {
     if (serverErrors?.[field]) return serverErrors[field]
     if (touched[field] && clientErrors[field]) return clientErrors[field]
     return undefined
@@ -125,11 +125,11 @@ export function AuthorEditor({
       {/* Name + Slug */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="author-name">
+          <Label htmlFor="contributors-name">
             {t("Field_Name")} <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="author-name"
+            id="contributors-name"
             value={value.name}
             onChange={(e) => onChange({ name: e.target.value })}
             onBlur={() => setTouched((s) => ({ ...s, name: true }))}
@@ -137,22 +137,22 @@ export function AuthorEditor({
             maxLength={255}
             autoComplete="off"
             aria-invalid={!!errorFor("name")}
-            aria-describedby={errorFor("name") ? "author-name-error" : undefined}
+            aria-describedby={errorFor("name") ? "contributors-name-error" : undefined}
             className={inputClass(!!errorFor("name"))}
           />
           {errorFor("name") ? (
-            <p id="author-name-error" className="text-xs text-destructive">
+            <p id="contributors-name-error" className="text-xs text-destructive">
               {errorFor("name")}
             </p>
           ) : null}
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="author-slug">
+          <Label htmlFor="contributors-slug">
             {t("Field_Slug")} <span className="text-destructive">*</span>
           </Label>
           <Input
-            id="author-slug"
+            id="contributors-slug"
             value={value.slug}
             onChange={(e) => {
               setSlugManuallyEdited(true)
@@ -165,16 +165,16 @@ export function AuthorEditor({
             autoComplete="off"
             aria-invalid={!!errorFor("slug")}
             aria-describedby={
-              errorFor("slug") ? "author-slug-error" : "author-slug-hint"
+              errorFor("slug") ? "contributors-slug-error" : "contributors-slug-hint"
             }
             className={inputClass(!!errorFor("slug"))}
           />
           {errorFor("slug") ? (
-            <p id="author-slug-error" className="text-xs text-destructive">
+            <p id="contributors-slug-error" className="text-xs text-destructive">
               {errorFor("slug")}
             </p>
           ) : (
-            <p id="author-slug-hint" className="text-xs text-muted-foreground">
+            <p id="contributors-slug-hint" className="text-xs text-muted-foreground">
               {t("Field_SlugHint")}
             </p>
           )}
@@ -184,9 +184,9 @@ export function AuthorEditor({
       {/* Original name + Gender */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="author-original-name">{t("Field_OriginalName")}</Label>
+          <Label htmlFor="contributors-original-name">{t("Field_OriginalName")}</Label>
           <Input
-            id="author-original-name"
+            id="contributors-original-name"
             value={value.originalName}
             onChange={(e) => onChange({ originalName: e.target.value })}
             onBlur={() => setTouched((s) => ({ ...s, originalName: true }))}
@@ -202,19 +202,19 @@ export function AuthorEditor({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="author-gender">{t("Field_Gender")}</Label>
+          <Label htmlFor="contributors-gender">{t("Field_Gender")}</Label>
           <Select
               dir={isRTL ? "rtl" : "ltr"}
-              value={value.gender || AuthorGender.UNKNOWN}
-              onValueChange={(g) => onChange({ ...value, gender: g as AuthorGender })}
+              value={value.gender || ContributorGender.UNKNOWN}
+              onValueChange={(g) => onChange({ ...value, gender: g as ContributorGender })}
           >
             <SelectTrigger className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper">
-              {AUTHOR_GENDER_VALUES.map((gender) => (
+              {CONTRIBUTOR_GENDER_VALUES.map((gender) => (
                   <SelectItem key={gender} value={gender}>
-                    {t(`AuthorGender_${gender}`)}
+                    {t(`ContributorGender_${gender}`)}
                   </SelectItem>
               ))}
             </SelectContent>
@@ -227,9 +227,9 @@ export function AuthorEditor({
 
       {/* Biography */}
       <div className="space-y-1.5">
-        <Label htmlFor="author-biography">{t("Field_Biography")}</Label>
+        <Label htmlFor="contributors-biography">{t("Field_Biography")}</Label>
         <Textarea
-          id="author-biography"
+          id="contributors-biography"
           value={value.biography}
           onChange={(e) => onChange({ biography: e.target.value })}
           placeholder={t("Placeholder_Biography")}

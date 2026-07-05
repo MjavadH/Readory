@@ -166,10 +166,10 @@ export class DashboardService {
             type: { select: { slug: true, iconKey: true } },
             title: true,
             coverImage: true,
-            authors: {
+            contributors: {
               select: {
                 role: true,
-                author: { select: { name: true } },
+                contributor: { select: { name: true } },
               },
             },
           },
@@ -186,7 +186,7 @@ export class DashboardService {
 
     if (!row) return null;
 
-    const mainAuthor = row.book.authors.find((a) => a.role === 'AUTHOR') || row.book.authors[0];
+    const mainContributor = row.book.contributors.find((a) => a.role === 'AUTHOR') || row.book.contributors[0];
 
     return {
       book: {
@@ -194,7 +194,7 @@ export class DashboardService {
         type: row.book.type,
         title: row.book.title,
         coverImage: row.book.coverImage,
-        author: mainAuthor ? mainAuthor.author.name : null,
+        contributors: mainContributor ? mainContributor.contributor.name : null,
       },
       chapter: {
         title: row.chapter.title,
@@ -225,10 +225,10 @@ export class DashboardService {
             title: true,
             coverImage: true,
             type: { select: { slug: true, iconKey: true } },
-            authors: {
+            contributors: {
               select: {
                 role: true,
-                author: { select: { name: true } },
+                contributor: { select: { name: true } },
               },
             },
           },
@@ -244,7 +244,7 @@ export class DashboardService {
 
     return {
       data: progressEntries.map((p) => {
-        const mainAuthor = p.book.authors.find((a) => a.role === 'AUTHOR') || p.book.authors[0];
+        const mainContributor = p.book.contributors.find((a) => a.role === 'AUTHOR') || p.book.contributors[0];
 
         return {
           book: {
@@ -252,7 +252,7 @@ export class DashboardService {
             title: p.book.title,
             coverImage: p.book.coverImage,
             type: p.book.type,
-            author: mainAuthor ? mainAuthor.author.name : null,
+            contributors: mainContributor ? mainContributor.contributor.name : null,
           },
           chapter: {
             title: p.chapter.title,

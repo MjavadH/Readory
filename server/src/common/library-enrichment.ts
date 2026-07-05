@@ -10,7 +10,7 @@ export type EnrichedLibraryItem = {
   book: {
     id: number;
     title: string;
-    author: string | null;
+    contributors: string | null;
     coverImage: string | null;
     updatedAt: Date;
     chapterCount: number;
@@ -41,10 +41,10 @@ export async function enrichLibraryGroups(
     select: {
       id: true,
       title: true,
-      authors: {
+      contributors: {
         select: {
           role: true,
-          author: { select: { name: true } },
+          contributor: { select: { name: true } },
         },
       },
       coverImage: true,
@@ -70,13 +70,13 @@ export async function enrichLibraryGroups(
             ? 0
             : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
 
-    const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+    const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
 
     items.push({
       book: {
         id: book.id,
         title: book.title,
-        author: mainAuthor ? mainAuthor.author.name : null,
+        contributors: mainContributor ? mainContributor.contributor.name : null,
         coverImage: book.coverImage,
         updatedAt: book.updatedAt,
         chapterCount: book.chapterCount,

@@ -156,7 +156,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
 
                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 sm:mb-4">
                                 <span className="text-sm font-medium text-secondary-foreground/70">
-                                    {t("By")} {book.author}
+                                    {t("By")} {book.contributors}
                                 </span>
                                 {book.ratingAvg && (
                                     <>

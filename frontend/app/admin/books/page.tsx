@@ -24,7 +24,7 @@ import { BookStatus, type AgeRating } from "@readory/shared"
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
 import {useLocaleInfo} from "@/hooks/use-locale-info";
-import type { BookAuthorEntry } from "@/components/admin/authors/authors-field"
+import type { BookContributorEntry } from "@/components/admin/contributors/contributors-field"
 
 type StatusFilter = "all" | "published" | "draft" | "featured"
 
@@ -78,7 +78,7 @@ export default function AdminBooks() {
         title: "",
         originalTitle: "",
         alternativeTitles: [] as string[],
-        authors: [] as BookAuthorEntry[],
+        contributors: [] as BookContributorEntry[],
         typeId: undefined as number | undefined,
         description: "",
         coverImage: "",
@@ -88,7 +88,6 @@ export default function AdminBooks() {
         status: BookStatus.Upcoming,
         ageRating: undefined as AgeRating | undefined,
         publicationYear: null as number | null,
-        translators: [] as string[],
     })
 
     useEffect(() => {
@@ -129,7 +128,7 @@ export default function AdminBooks() {
                 title: book.title,
                 coverImage: book.coverImage || "",
                 type: book.type,
-                author: book.author,
+                contributors: book.contributors,
                 description: book.description,
                 ratingAvg: book.ratingAvg,
                 ratingCount: book.ratingCount,
@@ -194,7 +193,7 @@ export default function AdminBooks() {
                 ...newBook,
                 publicationYear: newBook.publicationYear ?? undefined,
                 genreIds: newBook.genreIds,
-                authors: newBook.authors.map(({ authorId, role }) => ({ authorId, role })),
+                contributors: newBook.contributors.map(({ contributorId, role }) => ({ contributorId, role })),
             })
 
             await fetchBooks()
@@ -203,7 +202,7 @@ export default function AdminBooks() {
                 title: "",
                 originalTitle: "",
                 alternativeTitles: [] as string[],
-                authors: [] as BookAuthorEntry[],
+                contributors: [] as BookContributorEntry[],
                 typeId: bookTypes[0]?.id,
                 description: "",
                 coverImage: "",
@@ -213,7 +212,6 @@ export default function AdminBooks() {
                 status: BookStatus.Upcoming,
                 ageRating: undefined,
                 publicationYear: null as number | null,
-                translators: [] as string[],
             })
             setNewCoverLabel("")
             toast.success(t("BookCreatedSuccessfully"))
@@ -230,7 +228,7 @@ export default function AdminBooks() {
             title: "",
             originalTitle: "",
             alternativeTitles: [] as string[],
-            authors: [] as BookAuthorEntry[],
+            contributors: [] as BookContributorEntry[],
             typeId: bookTypes[0]?.id,
             description: "",
             coverImage: "",
@@ -240,7 +238,6 @@ export default function AdminBooks() {
             status: BookStatus.Upcoming,
             ageRating: undefined,
             publicationYear: null as number | null,
-            translators: [] as string[],
         })
         setNewCoverLabel("")
     }
@@ -335,13 +332,12 @@ export default function AdminBooks() {
                                     ...value,
                                     title: value.title || "",
                                     originalTitle: value.originalTitle || "",
-                                    authors: value.authors || [],
+                                    contributors: value.contributors || [],
                                     description: value.description || "",
                                     coverImage: value.coverImage || "",
                                     typeId: value.typeId,
                                     genreIds: value.genreIds || [],
                                     alternativeTitles: value.alternativeTitles || [],
-                                    translators: value.translators || [],
                                     publicationYear: value.publicationYear ?? null,
                                     ageRating: value.ageRating ?? undefined,
                                 })}

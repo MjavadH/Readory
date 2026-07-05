@@ -65,7 +65,7 @@ type ReaderContextResponse = {
 type BookDetailsResponse = {
     id: number;
     title: string;
-    author?: string | null;
+    contributors?: string | null;
     coverImage: string;
     type: PurchaseDialogBook["type"];
 };
@@ -348,7 +348,7 @@ export default function ChapterPage() {
                             setBook({
                                 id: b.id,
                                 title: b.title,
-                                author: b.author,
+                                contributors: b.contributors,
                                 coverImage: b.coverImage,
                                 type: b.type,
                             });
@@ -798,7 +798,7 @@ export default function ChapterPage() {
                                                 {book.title}
                                             </h2>
                                             <p className="truncate text-sm text-muted-foreground">
-                                                {book.author || t("UnknownAuthor")}
+                                                {book.contributors || t("UnknownContributor")}
                                             </p>
                                             <Badge
                                                 variant="outline"

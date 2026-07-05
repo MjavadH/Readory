@@ -91,7 +91,7 @@ export function ContinueReadingCard({ progress }: Props) {
                 <div className="flex-1 flex flex-col justify-between py-1">
                     <div>
                         <h3 className="text-2xl font-bold tracking-tight mb-1 group-hover:text-primary transition-colors line-clamp-1">{progress.book.title}</h3>
-                        <p className="text-muted-foreground font-medium mb-3">{progress.book.author}</p>
+                        <p className="text-muted-foreground font-medium mb-3">{progress.book.contributors}</p>
 
                         <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
                             <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-xl border border-border/50">

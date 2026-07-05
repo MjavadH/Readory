@@ -55,7 +55,7 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                 "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 className
             )}
-            aria-label={`View ${book.title}${book.author ? ` by ${book.author}` : ""}`}
+            aria-label={`View ${book.title}${book.contributors ? ` by ${book.contributors}` : ""}`}
         >
             {/* Cover Image Container */}
             <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-muted">
@@ -160,10 +160,10 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                     {book.title}
                 </h3>
 
-                {/* Author */}
-                {book.author && (
+                {/* Contributor */}
+                {book.contributors && (
                     <p className="line-clamp-1 text-xs text-muted-foreground">
-                        {book.author}
+                        {book.contributors}
                     </p>
                 )}
 

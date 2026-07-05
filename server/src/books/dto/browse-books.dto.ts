@@ -26,7 +26,7 @@ export class BrowseBooksDto {
 
     @IsOptional()
     @IsString()
-    q?: string; // title or author
+    q?: string; // title
 
     @IsOptional()
     @IsIn(['newest', 'oldest', 'most_popular', 'recently_updated'])

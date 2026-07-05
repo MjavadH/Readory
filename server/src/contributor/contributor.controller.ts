@@ -11,9 +11,9 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
 } from '@nestjs/common';
-import { AuthorService } from './author.service';
-import { CreateAuthorDto } from './dto/create-author.dto';
-import { UpdateAuthorDto } from './dto/update-author.dto';
+import { ContributorService } from './contributor.service';
+import { CreateContributorDto } from './dto/create-contributor.dto';
+import { UpdateContributorDto } from './dto/update-contributor.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
@@ -22,16 +22,16 @@ import { RoleName } from '@prisma/client';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 
-@Controller('author')
-export class AuthorController {
-  constructor(private readonly authorService: AuthorService) {}
+@Controller('contributor')
+export class ContributorController {
+  constructor(private readonly contributorService: ContributorService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Post()
-  create(@Body() createAuthorDto: CreateAuthorDto) {
-    return this.authorService.create(createAuthorDto);
+  create(@Body() createContributorDto: CreateContributorDto) {
+    return this.contributorService.create(createContributorDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -43,7 +43,7 @@ export class AuthorController {
       @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
       @Query('q') q?: string,
   ) {
-    return this.authorService.findAll({ page, limit, q });
+    return this.contributorService.findAll({ page, limit, q });
   }
 
   @Get('public/:slug')
@@ -55,12 +55,12 @@ export class AuthorController {
     const pageNumber = Math.max(1, parseInt(page, 10) || 1);
     const limitNumber = Math.min(50, Math.max(1, parseInt(limit, 10) || 18));
 
-    return this.authorService.getPublicProfile(slug, pageNumber, limitNumber);
+    return this.contributorService.getPublicProfile(slug, pageNumber, limitNumber);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.authorService.findOne(id);
+    return this.contributorService.findOne(id);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -69,9 +69,9 @@ export class AuthorController {
   @Patch(':id')
   update(
       @Param('id', ParseIntPipe) id: number,
-      @Body() updateAuthorDto: UpdateAuthorDto,
+      @Body() updateContributorDto: UpdateContributorDto,
   ) {
-    return this.authorService.update(id, updateAuthorDto);
+    return this.contributorService.update(id, updateContributorDto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -79,6 +79,6 @@ export class AuthorController {
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    return this.authorService.remove(id);
+    return this.contributorService.remove(id);
   }
 }

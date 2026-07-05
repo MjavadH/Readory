@@ -18,7 +18,7 @@ interface ApiFeaturedGenre {
         id: number;
         title: string;
         coverImage: string;
-        author: string | null;
+        contributors: string | null;
         type: BookType;
         ratingAvg: number | null;
         ratingCount: number;

@@ -6,20 +6,20 @@ import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
-type AuthorResult = {
+type ContributorResult = {
     id: number;
     name: string;
     originalName?: string | null;
 };
 
-type AuthorListResponse = {
-    data: AuthorResult[];
+type ContributorListResponse = {
+    data: ContributorResult[];
     meta?: unknown;
 };
 
-export type AuthorSearchValue = { id: number; name: string } | null;
+export type ContributorSearchValue = { id: number; name: string } | null;
 
-export function AuthorSearchInput({
+export function ContributorsSearchInput({
                                       value,
                                       onChange,
                                       isRTL,
@@ -27,15 +27,15 @@ export function AuthorSearchInput({
                                       excludeIds = [],
                                       placeholder,
                                   }: {
-    value: AuthorSearchValue;
-    onChange: (next: AuthorSearchValue) => void;
+    value: ContributorSearchValue;
+    onChange: (next: ContributorSearchValue) => void;
     isRTL: boolean;
     t: (key: string, values?: Record<string, string | number | Date>) => string;
     excludeIds?: number[];
     placeholder?: string;
 }) {
     const [query, setQuery] = useState("");
-    const [results, setResults] = useState<AuthorResult[]>([]);
+    const [results, setResults] = useState<ContributorResult[]>([]);
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [highlight, setHighlight] = useState(0);
@@ -73,7 +73,7 @@ export function AuthorSearchInput({
             abortRef.current = controller;
             setLoading(true);
             try {
-                const res = await apiClient.get<AuthorListResponse>("/author", {
+                const res = await apiClient.get<ContributorListResponse>("/contributor", {
                     query: { q, page: 1, limit: 10 },
                     signal: controller.signal,
                 });
@@ -94,8 +94,8 @@ export function AuthorSearchInput({
     const filtered = results.filter((r) => !excludeIds.includes(r.id));
 
     const commitSelect = useCallback(
-        (author: AuthorResult) => {
-            onChange({ id: author.id, name: author.name });
+        (contributors: ContributorResult) => {
+            onChange({ id: contributors.id, name: contributors.name });
             setQuery("");
             setResults([]);
             setOpen(false);
@@ -147,7 +147,7 @@ export function AuthorSearchInput({
                         setTimeout(() => inputRef.current?.focus(), 0);
                     }}
                     className="h-6 w-6 shrink-0 p-0 text-muted-foreground hover:text-foreground"
-                    aria-label={t("RemoveAuthor")}
+                    aria-label={t("RemoveContributor")}
                 >
                     <X className="h-3.5 w-3.5" />
                 </Button>
@@ -171,7 +171,7 @@ export function AuthorSearchInput({
                     }}
                     onFocus={() => setOpen(true)}
                     onKeyDown={handleKeyDown}
-                    placeholder={placeholder ?? t("SearchAuthors")}
+                    placeholder={placeholder ?? t("SearchContributors")}
                     className="ps-9 pe-9"
                     autoComplete="off"
                     aria-autocomplete="list"
@@ -205,20 +205,20 @@ export function AuthorSearchInput({
                         )}
                         {!loading && showEmpty && (
                             <div className="px-3 py-2 text-sm text-muted-foreground">
-                                {t("NoAuthorsFound")}
+                                {t("NoContributorsFound")}
                             </div>
                         )}
                         {!loading &&
-                            filtered.map((author, i) => (
+                            filtered.map((contributors, i) => (
                                 <button
                                     type="button"
-                                    key={author.id}
+                                    key={contributors.id}
                                     role="option"
                                     aria-selected={i === highlight}
                                     onMouseEnter={() => setHighlight(i)}
                                     onMouseDown={(e) => {
                                         e.preventDefault();
-                                        commitSelect(author);
+                                        commitSelect(contributors);
                                     }}
                                     className={cn(
                                         "flex w-full items-center gap-2 px-3 py-2 text-start text-sm transition-colors",
@@ -228,11 +228,11 @@ export function AuthorSearchInput({
                                     )}
                                 >
                                     <span className="min-w-0 flex-1 truncate font-medium">
-                                        {author.name}
+                                        {contributors.name}
                                     </span>
-                                    {author.originalName && (
+                                    {contributors.originalName && (
                                         <span className="shrink-0 truncate text-xs text-muted-foreground">
-                                            {author.originalName}
+                                            {contributors.originalName}
                                         </span>
                                     )}
                                 </button>

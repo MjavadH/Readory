@@ -27,10 +27,10 @@ export class PublicService {
                             title: true,
                             description: true,
                             coverImage: true,
-                            authors: {
+                            contributors: {
                                 select: {
                                     role: true,
-                                    author: { select: { name: true } },
+                                    contributor: { select: { name: true } },
                                 },
                             },
                             type: { select: { name: true, slug: true, iconKey: true } },
@@ -72,10 +72,10 @@ export class PublicService {
                             id: true,
                             title: true,
                             coverImage: true,
-                            authors: {
+                            contributors: {
                                 select: {
                                     role: true,
-                                    author: { select: { name: true } },
+                                    contributor: { select: { name: true } },
                                 },
                             },
                             type: { select: { id: true, name: true, slug: true } },
@@ -98,10 +98,10 @@ export class PublicService {
                             id: true,
                             title: true,
                             coverImage: true,
-                            authors: {
+                            contributors: {
                                 select: {
                                     role: true,
-                                    author: { select: { name: true } },
+                                    contributor: { select: { name: true } },
                                 },
                             },
                             type: { select: { id: true, name: true, slug: true } },
@@ -115,7 +115,7 @@ export class PublicService {
 
                 return {
                     hero: featuredBooks.map((b) => {
-                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
                         return {
                             id: b.id,
                             title: b.title,
@@ -123,7 +123,7 @@ export class PublicService {
                             coverImage: b.coverImage,
                             type: b.type,
                             genres: b.genres.map((g) => g.genre),
-                            author: mainAuthor ? mainAuthor.author.name : null,
+                            contributors: mainContributor ? mainContributor.contributor.name : null,
                             ratingAvg: b.ratingAvg,
                             ratingCount: b.ratingCount,
                         };
@@ -141,11 +141,11 @@ export class PublicService {
                         })),
                     })),
                     trending: trendingBooks.map((b) => {
-                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
                         return {
                             id: b.id,
                             title: b.title,
-                            author: mainAuthor ? mainAuthor.author.name : null,
+                            contributors: mainContributor ? mainContributor.contributor.name : null,
                             coverImage: b.coverImage,
                             type: b.type,
                             genres: b.genres.map((g) => g.genre),
@@ -155,11 +155,11 @@ export class PublicService {
                         };
                     }),
                     popular: mostPopularBooks.map((b) => {
-                        const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                        const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
                         return {
                             id: b.id,
                             title: b.title,
-                            author: mainAuthor ? mainAuthor.author.name : null,
+                            contributors: mainContributor ? mainContributor.contributor.name : null,
                             coverImage: b.coverImage,
                             type: b.type,
                             genres: b.genres.map((g) => g.genre),
@@ -203,17 +203,17 @@ export class PublicService {
                                 ratingAvg: true,
                                 ratingCount: true,
                                 coverImage: true,
-                                authors: {
+                                contributors: {
                                     select: {
                                         role: true,
-                                        author: { select: { name: true } },
+                                        contributor: { select: { name: true } },
                                     },
                                 },
                             },
                         });
 
                         const formattedBooks = books.map((b) => {
-                            const mainAuthor = b.authors.find((a) => a.role === 'AUTHOR') || b.authors[0];
+                            const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
                             return {
                                 id: b.id,
                                 title: b.title,
@@ -221,7 +221,7 @@ export class PublicService {
                                 ratingAvg: b.ratingAvg,
                                 ratingCount: b.ratingCount,
                                 coverImage: b.coverImage,
-                                author: mainAuthor ? mainAuthor.author.name : null,
+                                contributors: mainContributor ? mainContributor.contributor.name : null,
                             };
                         });
 

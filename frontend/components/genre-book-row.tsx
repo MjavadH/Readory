@@ -14,7 +14,7 @@ interface GenreBook {
     id: number;
     title: string;
     coverImage: string;
-    author: string | null;
+    contributors: string | null;
     type: BookType;
     ratingAvg: number | null;
     ratingCount: number;
@@ -156,7 +156,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
                             title: book.title,
                             coverImage: book.coverImage,
                             type: book.type,
-                            author: book.author ?? undefined,
+                            contributors: book.contributors ?? undefined,
                             ratingAvg: book.ratingAvg ?? undefined,
                             ratingCount: book.ratingCount,
                         };

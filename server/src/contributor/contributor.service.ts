@@ -3,44 +3,44 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateAuthorDto } from './dto/create-author.dto';
-import { UpdateAuthorDto } from './dto/update-author.dto';
+import { CreateContributorDto } from './dto/create-contributor.dto';
+import { UpdateContributorDto } from './dto/update-contributor.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { normalizeQ, normalizePagination, paginationMeta, normalizeSlug } from '../common';
 
 @Injectable()
-export class AuthorService {
-  private readonly CACHE_NAMESPACE = 'author';
-  private readonly LIST_VERSION_KEY = 'author:list:version';
+export class ContributorService {
+  private readonly CACHE_NAMESPACE = 'contributor';
+  private readonly LIST_VERSION_KEY = 'contributor:list:version';
 
   constructor(
       private readonly prisma: PrismaService,
       private readonly cacheManager: CacheManager,
   ) {}
 
-  async create(createAuthorDto: CreateAuthorDto) {
-    const slug = createAuthorDto.slug;
+  async create(createContributorDto: CreateContributorDto) {
+    const slug = createContributorDto.slug;
 
-    const existingAuthor = await this.prisma.author.findUnique({
+    const existingContributor = await this.prisma.contributor.findUnique({
       where: { slug },
     });
-    if (existingAuthor) {
-      throw new ConflictException('An author with this slug already exists.');
+    if (existingContributor) {
+      throw new ConflictException('An contributor with this slug already exists.');
     }
 
-    const author = await this.prisma.author.create({
+    const contributor = await this.prisma.contributor.create({
       data: {
-        name: createAuthorDto.name,
-        originalName: createAuthorDto.originalName,
+        name: createContributorDto.name,
+        originalName: createContributorDto.originalName,
         slug,
-        biography: createAuthorDto.biography,
-        gender: createAuthorDto.gender || 'UNKNOWN',
+        biography: createContributorDto.biography,
+        gender: createContributorDto.gender || 'UNKNOWN',
       },
     });
 
     await this.cacheManager.bumpVersion(this.LIST_VERSION_KEY);
-    return author;
+    return contributor;
   }
 
   async findAll(args: { page: number; limit: number; q?: string }) {
@@ -74,13 +74,13 @@ export class AuthorService {
               : {};
 
           const [data, total] = await Promise.all([
-            this.prisma.author.findMany({
+            this.prisma.contributor.findMany({
               where: whereCond,
               skip: pagination.skip,
               take: pagination.limit,
               orderBy: { createdAt: 'desc' },
             }),
-            this.prisma.author.count({ where: whereCond }),
+            this.prisma.contributor.count({ where: whereCond }),
           ]);
 
           return {
@@ -98,15 +98,15 @@ export class AuthorService {
         cacheKey,
         { ttlSeconds: 86400, earlyRefreshWindowSeconds: 3600 },
         async () => {
-          const author = await this.prisma.author.findUnique({
+          const contributor = await this.prisma.contributor.findUnique({
             where: { id },
           });
 
-          if (!author) {
-            throw new NotFoundException(`No author with ID ${id} was found.`);
+          if (!contributor) {
+            throw new NotFoundException(`No contributor with ID ${id} was found.`);
           }
 
-          return author;
+          return contributor;
         },
     );
   }
@@ -115,13 +115,13 @@ export class AuthorService {
     const skip = (page - 1) * limit;
 
     const version = await this.cacheManager.getVersion(this.LIST_VERSION_KEY);
-    const cacheKey = `author:public_profile:${version}:${slug}:p${page}:l${limit}`;
+    const cacheKey = `contributor:public_profile:${version}:${slug}:p${page}:l${limit}`;
 
     return this.cacheManager.getOrSet(
         cacheKey,
         { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
         async () => {
-          const author = await this.prisma.author.findUnique({
+          const contributors = await this.prisma.contributor.findUnique({
             where: { slug },
             select: {
               id: true,
@@ -135,21 +135,21 @@ export class AuthorService {
             },
           });
 
-          if (!author) {
-            throw new NotFoundException('The specified author was not found.');
+          if (!contributors) {
+            throw new NotFoundException('The specified contributor was not found.');
           }
 
           const [totalBooks, books] = await this.prisma.$transaction([
             this.prisma.book.count({
               where: {
                 isPublished: true,
-                authors: { some: { authorId: author.id } },
+                contributors: { some: { contributorId: contributors.id } },
               },
             }),
             this.prisma.book.findMany({
               where: {
                 isPublished: true,
-                authors: { some: { authorId: author.id } },
+                contributors: { some: { contributorId: contributors.id } },
               },
               orderBy: { updatedAt: 'desc' },
               skip,
@@ -174,7 +174,7 @@ export class AuthorService {
           ]);
 
           return {
-            author,
+            contributors,
             books: books.map((book) => ({
               ...book,
               genres: book.genres.map((g) => g.genre),
@@ -190,29 +190,29 @@ export class AuthorService {
     );
   }
 
-  async update(id: number, updateAuthorDto: UpdateAuthorDto) {
+  async update(id: number, updateContributorDto: UpdateContributorDto) {
     await this.findOne(id);
 
-    let newSlug = updateAuthorDto.slug;
+    let newSlug = updateContributorDto.slug;
 
     if (newSlug) {
       newSlug = normalizeSlug(newSlug);
-      const existing = await this.prisma.author.findUnique({
+      const existing = await this.prisma.contributor.findUnique({
         where: { slug: newSlug },
       });
       if (existing && existing.id !== id) {
-        throw new ConflictException('An author with this slug already exists.');
+        throw new ConflictException('An contributor with this slug already exists.');
       }
     }
 
-    const updatedAuthor = await this.prisma.author.update({
+    const updatedContributor = await this.prisma.contributor.update({
       where: { id },
       data: {
-        name: updateAuthorDto.name,
-        originalName: updateAuthorDto.originalName,
+        name: updateContributorDto.name,
+        originalName: updateContributorDto.originalName,
         ...(newSlug && { slug: newSlug }),
-        biography: updateAuthorDto.biography,
-        gender: updateAuthorDto.gender,
+        biography: updateContributorDto.biography,
+        gender: updateContributorDto.gender,
       },
     });
 
@@ -221,13 +221,13 @@ export class AuthorService {
       this.cacheManager.del(this.cacheManager.buildKey(this.CACHE_NAMESPACE, 'detail', id)),
     ]);
 
-    return updatedAuthor;
+    return updatedContributor;
   }
 
   async remove(id: number) {
     await this.findOne(id);
 
-    await this.prisma.author.delete({
+    await this.prisma.contributor.delete({
       where: { id },
     });
 
@@ -236,6 +236,6 @@ export class AuthorService {
       this.cacheManager.del(this.cacheManager.buildKey(this.CACHE_NAMESPACE, 'detail', id)),
     ]);
 
-    return { message: 'The author was successfully removed.' };
+    return { message: 'The contributor was successfully removed.' };
   }
 }

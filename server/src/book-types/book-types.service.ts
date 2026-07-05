@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { slugify } from '../common/index.js';
+import { slugify } from '../common';
 
 @Injectable()
 export class BookTypesService {
@@ -60,23 +60,23 @@ export class BookTypesService {
         title: true,
         coverImage: true,
         type: { select: { id: true, name: true, slug: true } },
-        authors: {
+        contributors: {
           select: {
             role: true,
-            author: { select: { name: true } },
+            contributor: { select: { name: true } },
           },
         },
       },
     });
 
     return books.map((book) => {
-      const mainAuthor = book.authors.find((a) => a.role === 'AUTHOR') || book.authors[0];
+      const mainAuthor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
       return {
         id: book.id,
         title: book.title,
         coverImage: book.coverImage,
         type: book.type,
-        author: mainAuthor ? mainAuthor.author.name : null,
+        contributors: mainAuthor ? mainAuthor.contributor.name : null,
       };
     });
   }

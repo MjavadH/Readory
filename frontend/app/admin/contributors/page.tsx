@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react"
+import React, {useCallback, useEffect, useRef, useState} from "react"
 import {useTranslations} from "next-intl"
 import {AnimatePresence, motion} from "framer-motion"
 import {Loader2, Plus, Search, UserX} from "lucide-react"
@@ -19,38 +19,38 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {apiClient} from "@/lib/api-client"
-import {AuthorEditor, type AuthorEditorValue, type AuthorFieldErrors,} from "@/components/admin/authors/author-editor"
-import {type AuthorRow, AuthorsGrid, AuthorsGridSkeleton} from "@/components/admin/authors/authors-grid"
+import {ContributorsEditor, type ContributorEditorValue, type ContributorFieldErrors,} from "@/components/admin/contributors/contributors-editor"
+import {type ContributorRow, ContributorsGrid, ContributorsGridSkeleton} from "@/components/admin/contributors/contributors-grid"
 import {useToast} from "@/providers/toast-provider";
-import {AuthorGender} from "@shared/author-metadata";
+import {ContributorGender} from "@shared/contributor-metadata";
 import {AppPagination} from "@/components/app-pagination";
 
 const PAGE_SIZE = 24
 
 type ListEnvelope = {
-  data: AuthorRow[]
+  data: ContributorRow[]
   meta: { total: number; page: number; lastPage: number }
 }
 
-const emptyValue: AuthorEditorValue = {
+const emptyValue: ContributorEditorValue = {
   name: "",
   originalName: "",
   slug: "",
   biography: "",
-  gender: AuthorGender.UNKNOWN,
+  gender: ContributorGender.UNKNOWN,
 }
 
-function toEditorValue(a: AuthorRow): AuthorEditorValue {
+function toEditorValue(a: ContributorRow): ContributorEditorValue {
   return {
     name: a.name ?? "",
     originalName: a.originalName ?? "",
     slug: a.slug ?? "",
     biography: a.biography ?? "",
-    gender: a.gender ?? AuthorGender.UNKNOWN,
+    gender: a.gender ?? ContributorGender.UNKNOWN,
   }
 }
 
-function toPayload(v: AuthorEditorValue) {
+function toPayload(v: ContributorEditorValue) {
   return {
     name: v.name.trim(),
     slug: v.slug.trim(),
@@ -60,17 +60,17 @@ function toPayload(v: AuthorEditorValue) {
   }
 }
 
-export default function AdminAuthorsPage() {
-  const t = useTranslations("Authors")
+export default function AdminContributorsPage() {
+  const t = useTranslations("Contributors")
   const g = useTranslations("General")
   const toast = useToast();
-  const authorsSectionRef = useRef<HTMLDivElement | null>(null);
+  const contributorsSectionRef = useRef<HTMLDivElement | null>(null);
 
   const [q, setQ] = useState("")
   const [debouncedQ, setDebouncedQ] = useState("")
   const [page, setPage] = useState(1)
 
-  const [rows, setRows] = useState<AuthorRow[]>([])
+  const [rows, setRows] = useState<ContributorRow[]>([])
   const [meta, setMeta] = useState<ListEnvelope["meta"] | null>(null)
   const [loading, setLoading] = useState(true)
   const [listError, setListError] = useState<string | null>(null)
@@ -79,13 +79,13 @@ export default function AdminAuthorsPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const [editorMode, setEditorMode] = useState<"create" | "edit">("create")
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editorValue, setEditorValue] = useState<AuthorEditorValue>(emptyValue)
+  const [editorValue, setEditorValue] = useState<ContributorEditorValue>(emptyValue)
   const [submitting, setSubmitting] = useState(false)
-  const [serverErrors, setServerErrors] = useState<AuthorFieldErrors>({})
+  const [serverErrors, setServerErrors] = useState<ContributorFieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
 
   // Delete state
-  const [deleteTarget, setDeleteTarget] = useState<AuthorRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ContributorRow | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   // Debounce search
@@ -110,7 +110,7 @@ export default function AdminAuthorsPage() {
       if (debouncedQ) params.set("q", debouncedQ)
       params.set("page", String(page))
       params.set("limit", String(PAGE_SIZE))
-      const res = await apiClient.get<ListEnvelope>(`/author?${params.toString()}`, {
+      const res = await apiClient.get<ListEnvelope>(`/contributor?${params.toString()}`, {
         signal: ctrl.signal,
       })
       setRows(res.data)
@@ -137,18 +137,18 @@ export default function AdminAuthorsPage() {
     setEditorOpen(true)
   }
 
-  const openEdit = (author: AuthorRow) => {
+  const openEdit = (contributors: ContributorRow) => {
     setEditorMode("edit")
-    setEditingId(author.id)
-    setEditorValue(toEditorValue(author))
+    setEditingId(contributors.id)
+    setEditorValue(toEditorValue(contributors))
     setServerErrors({})
     setFormError(null)
     setEditorOpen(true)
   }
 
-  const handlePatch = (patch: Partial<AuthorEditorValue>) => {
+  const handlePatch = (patch: Partial<ContributorEditorValue>) => {
     setEditorValue((v: any) => ({ ...v, ...patch }))
-    const keys = Object.keys(patch) as (keyof AuthorEditorValue)[]
+    const keys = Object.keys(patch) as (keyof ContributorEditorValue)[]
     if (keys.some((k) => serverErrors[k])) {
       setServerErrors((s: any) => {
         const next = { ...s }
@@ -158,10 +158,10 @@ export default function AdminAuthorsPage() {
     }
   }
 
-  const parseApiError = (err: any): { field: AuthorFieldErrors; message: string } => {
+  const parseApiError = (err: any): { field: ContributorFieldErrors; message: string } => {
     const status: number | undefined = err?.status
     const body = err?.body ?? err?.data
-    const fieldErrors: AuthorFieldErrors = {}
+    const fieldErrors: ContributorFieldErrors = {}
     let message = err?.message || t("SaveFailed")
 
     if (status === 401 || status === 403) {
@@ -170,7 +170,7 @@ export default function AdminAuthorsPage() {
       if (body?.errors && typeof body.errors === "object") {
         for (const [k, v] of Object.entries(body.errors)) {
           if (k in emptyValue) {
-            fieldErrors[k as keyof AuthorEditorValue] = Array.isArray(v)
+            fieldErrors[k as keyof ContributorEditorValue] = Array.isArray(v)
                 ? String(v[0])
                 : String(v)
           }
@@ -192,7 +192,7 @@ export default function AdminAuthorsPage() {
     try {
       const payload = toPayload(editorValue)
       if (editorMode === "create") {
-        const created = await apiClient.post<AuthorRow>("/author", payload)
+        const created = await apiClient.post<ContributorRow>("/contributor", payload)
         toast.success(t("SaveSuccess_Create"))
         setEditorOpen(false)
         // Optimistically prepend if on page 1 & no filter, else refresh
@@ -203,7 +203,7 @@ export default function AdminAuthorsPage() {
           fetchList()
         }
       } else if (editingId) {
-        const updated = await apiClient.patch<AuthorRow>(`/author/${editingId}`, payload)
+        const updated = await apiClient.patch<ContributorRow>(`/contributor/${editingId}`, payload)
         toast.success(t("SaveSuccess_Update"))
         setEditorOpen(false)
         setRows((r) => r.map((a) => (a.id === updated.id ? updated : a)))
@@ -222,7 +222,7 @@ export default function AdminAuthorsPage() {
     if (!deleteTarget) return
     setDeleting(true)
     try {
-      await apiClient.delete(`/author/${deleteTarget.id}`)
+      await apiClient.delete(`/contributor/${deleteTarget.id}`)
       toast.success(t("DeleteSuccess"))
       setRows((r) => r.filter((a) => a.id !== deleteTarget.id))
       setMeta((m) => (m ? { ...m, total: Math.max(0, m.total - 1) } : m))
@@ -243,7 +243,7 @@ export default function AdminAuthorsPage() {
   const isEmpty = !loading && !listError && rows.length === 0
 
   return (
-      <div ref={authorsSectionRef} className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
+      <div ref={contributorsSectionRef} className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
         {/* Header */}
         <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -257,7 +257,7 @@ export default function AdminAuthorsPage() {
           </div>
           <Button onClick={openCreate} className="sm:self-end">
             <Plus className="me-2 h-4 w-4" />
-            {t("NewAuthor")}
+            {t("NewContributor")}
           </Button>
         </motion.div>
 
@@ -284,7 +284,7 @@ export default function AdminAuthorsPage() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.15 }}
                 >
-                  <AuthorsGridSkeleton count={8} />
+                  <ContributorsGridSkeleton count={8} />
                 </motion.div>
             ) : listError ? (
                 <motion.div
@@ -309,12 +309,12 @@ export default function AdminAuthorsPage() {
                 >
                   <UserX className="h-10 w-10 text-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    {debouncedQ ? t("NoResults") : t("NoAuthors")}
+                    {debouncedQ ? t("NoResults") : t("NoContributors")}
                   </p>
                   {!debouncedQ ? (
                       <Button size="sm" onClick={openCreate}>
                         <Plus className="me-2 h-4 w-4" />
-                        {t("NewAuthor")}
+                        {t("NewContributor")}
                       </Button>
                   ) : null}
                 </motion.div>
@@ -326,7 +326,7 @@ export default function AdminAuthorsPage() {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                 >
-                  <AuthorsGrid authors={rows} onEdit={openEdit} onDelete={setDeleteTarget} />
+                  <ContributorsGrid contributors={rows} onEdit={openEdit} onDelete={setDeleteTarget} />
                 </motion.div>
             )}
           </AnimatePresence>
@@ -339,9 +339,9 @@ export default function AdminAuthorsPage() {
                 totalPages={totalPages}
                 totalItems={meta.total}
                 pageSize={PAGE_SIZE}
-                itemLabel={t("Author")}
+                itemLabel={t("Contributor")}
                 onPageChange={(p) => setPage(p)}
-                scrollTarget={authorsSectionRef}
+                scrollTarget={contributorsSectionRef}
             />
         ) : null}
 
@@ -355,13 +355,13 @@ export default function AdminAuthorsPage() {
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>
-                {editorMode === "create" ? t("NewAuthor") : t("EditAuthor")}
+                {editorMode === "create" ? t("NewContributor") : t("EditContributor")}
               </DialogTitle>
               <DialogDescription>
                 {editorMode === "create" ? t("CreateDescription") : t("EditDescription")}
               </DialogDescription>
             </DialogHeader>
-            <AuthorEditor
+            <ContributorsEditor
                 mode={editorMode}
                 value={editorValue}
                 onChange={handlePatch}

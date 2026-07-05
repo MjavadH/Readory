@@ -67,7 +67,6 @@ model Book {
   status            String            @default("UPCOMING")
   ageRating         String?
   publicationYear   Int?
-  translators       String[]          @default([])
   lastContentUpdate DateTime?
   chapterCount      Int               @default(0)
   favoriteCount     Int               @default(0)
@@ -76,7 +75,7 @@ model Book {
   coverMedia        Media?            @relation(fields: [coverImage], references: [code])
   type              BookType          @relation(fields: [typeId], references: [id])
   genres            BookGenre[]
-  authors           BookAuthor[]
+  contributors      BookContributor[]
   ratings           BookRating[]
   chapters          Chapter[]
   favoritedBy       FavoriteBook[]
@@ -213,28 +212,31 @@ model FavoriteBook {
   @@index([userId, createdAt])
 }
 
-model Author {
-  id           Int          @id @default(autoincrement())
+model Contributor {
+  id           Int               @id @default(autoincrement())
   name         String
   originalName String?
-  slug         String       @unique
+  slug         String            @unique
   biography    String?
-  gender       AuthorGender @default(UNKNOWN)
-  bookCount    Int          @default(0)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  books        BookAuthor[]
+  gender       ContributorGender @default(UNKNOWN)
+  bookCount    Int               @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  books BookContributor[]
 }
 
-model BookAuthor {
-  bookId   Int
-  authorId Int
-  role     AuthorRole @default(AUTHOR)
-  book     Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  author   Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+model BookContributor {
+  bookId        Int
+  contributorId Int
+  role          ContributorRole @default(AUTHOR)
 
-  @@id([bookId, authorId])
-  @@index([authorId])
+  book        Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  contributor Contributor @relation(fields: [contributorId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, contributorId, role])
+  @@index([contributorId])
   @@index([bookId])
 }
 
@@ -253,18 +255,19 @@ enum ChapterContentType {
   text
 }
 
-enum AuthorGender {
+enum ContributorGender {
   MALE
   FEMALE
   UNKNOWN
 }
 
-enum AuthorRole {
+enum ContributorRole {
   AUTHOR
-  ARTIST
-  ILLUSTRATOR
-  STORY
-  ADAPTATION
   TRANSLATOR
+  ILLUSTRATOR
   EDITOR
+  CLEANER
+  TYPESETTER
+  RAW_PROVIDER
+  SUPERVISOR
 }

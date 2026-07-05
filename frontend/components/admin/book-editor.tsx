@@ -35,7 +35,10 @@ import {Textarea} from "@/components/ui/textarea";
 import {Badge} from "@/components/ui/badge";
 import {cn} from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { AuthorsField, type BookAuthorEntry } from "@/components/admin/authors/authors-field";
+import {
+    ContributorsField,
+    BookContributorEntry
+} from "@/components/admin/contributors/contributors-field";
 
 type OptionItem = { id: number; name: string };
 
@@ -43,7 +46,7 @@ export type BookEditorValue = {
     title?: string;
     originalTitle?: string | null;
     alternativeTitles?: string[];
-    authors?: BookAuthorEntry[];
+    contributors?: BookContributorEntry[];
     description?: string | null;
     coverImage?: string;
     isFeatured?: boolean;
@@ -51,7 +54,6 @@ export type BookEditorValue = {
     status?: BookStatus;
     ageRating?: AgeRating | null;
     publicationYear?: number | null;
-    translators?: string[];
     typeId?: number;
     genreIds?: number[];
 };
@@ -195,16 +197,6 @@ export function BookEditor({
     coverAlt: string;
     stats?: BookEditorStat[];
 }) {
-    const handleAddTranslator = (v: string) => {
-        const current = value.translators ?? [];
-        if (!current.includes(v)) {
-            onChange({ ...value, translators: [...current, v] });
-        }
-    };
-    const handleRemoveTranslator = (i: number) => {
-        const current = value.translators ?? [];
-        onChange({ ...value, translators: current.filter((_, idx) => idx !== i) });
-    };
 
     const handleAddAltTitle = (v: string) => {
         const current = value.alternativeTitles ?? [];
@@ -331,11 +323,11 @@ export function BookEditor({
                                 </EditField>
                             </div>
 
-                            {/* Authors */}
-                            <EditField label={t("Authors")}>
-                                <AuthorsField
-                                    value={value.authors ?? []}
-                                    onChange={(authors) => onChange({ ...value, authors })}
+                            {/* Contributors */}
+                            <EditField label={t("Contributors")}>
+                                <ContributorsField
+                                    value={value.contributors ?? []}
+                                    onChange={(contributors) => onChange({ ...value, contributors })}
                                     isRTL={isRTL}
                                     t={t}
                                 />
@@ -349,17 +341,6 @@ export function BookEditor({
                                     onRemove={handleRemoveAltTitle}
                                     icon={<Hash className="h-4 w-4" />}
                                     placeholder={t("AlternativeTitlesPlaceholder")}
-                                />
-                            </EditField>
-
-                            {/* Translators */}
-                            <EditField label={t("Translators")}>
-                                <PillInput
-                                    pills={value.translators ?? []}
-                                    onAdd={handleAddTranslator}
-                                    onRemove={handleRemoveTranslator}
-                                    icon={<Languages className="h-4 w-4" />}
-                                    placeholder={t("TranslatorsPlaceholder")}
                                 />
                             </EditField>
                         </div>

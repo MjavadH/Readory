@@ -23,7 +23,7 @@ import type { IconKey } from "@readory/shared";
 export interface PurchaseDialogBook {
     id: number;
     title: string;
-    author?: string | null;
+    contributors?: string | null;
     coverImage: string;
     type: { name: string; iconKey: IconKey };
 }
@@ -221,7 +221,7 @@ export function ChapterPurchaseDialog({
                                 {book.title}
                             </h3>
                             <p className="truncate text-sm text-muted-foreground">
-                                {book.author || t("UnknownAuthor")}
+                                {book.contributors || t("UnknownContributor")}
                             </p>
                             <Badge
                                 variant="outline"

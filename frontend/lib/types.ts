@@ -23,7 +23,7 @@ export interface BookCardData {
     alternativeTitles?: string[];
     coverImage: string;
     type: BookType;
-    author?: string;
+    contributors?: string;
     description?: string;
     ratingAvg?: number;
     ratingCount?: number;
@@ -33,7 +33,6 @@ export interface BookCardData {
     status?: BookStatus;
     ageRating?: AgeRating | null;
     publicationYear?: number | null;
-    translators?: string[];
     chapterCount?: number;
     lastContentUpdate?: string | null;
     updatedAt?: string;
@@ -67,7 +66,7 @@ export interface ReadingProgress {
     book: {
         id: number;
         title: string;
-        author: string;
+        contributors: string;
         coverImage: string;
         type: { slug: string, iconKey?: IconKey };
     };

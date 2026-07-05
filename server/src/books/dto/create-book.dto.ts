@@ -1,18 +1,18 @@
 import { Transform, Type } from 'class-transformer';
 import { AgeRating, BookStatus } from '@readory/shared';
-import { AuthorRole } from '@readory/shared';
+import { ContributorRole } from '@prisma/client';
 import {
     ArrayNotEmpty, IsArray, IsBoolean,
     IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength, ValidateNested,
 } from 'class-validator';
 
-export class BookAuthorDto {
+export class BookContributorDto {
     @IsInt()
     @Type(() => Number)
-    authorId!: number;
+    contributorId!: number;
 
-    @IsEnum(AuthorRole)
-    role!: AuthorRole;
+    @IsEnum(ContributorRole)
+    role!: ContributorRole;
 }
 
 export class CreateBookDto {
@@ -52,15 +52,9 @@ export class CreateBookDto {
 
     @IsOptional()
     @IsArray()
-    @IsString({ each: true })
-    @MaxLength(200, { each: true })
-    translators?: string[];
-
-    @IsOptional()
-    @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => BookAuthorDto)
-    authors?: BookAuthorDto[];
+    @Type(() => BookContributorDto)
+    contributors?: BookContributorDto[];
 
     @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
     @IsOptional()
