@@ -25,7 +25,8 @@
       "UserManager": "User Manager",
       "Administrator": "Administrator",
       "LogoutTitle": "Are you absolutely sure?",
-      "LogoutDescription": "You are about to sign out of your admin account. You will need to login again to access the dashboard"
+      "LogoutDescription": "You are about to sign out of your admin account. You will need to login again to access the dashboard",
+      "AuditLog": "Audit Log"
     },
     "Dashboard": {
       "Title": "Dashboard",
@@ -261,6 +262,31 @@
       "ManageFinanceDescription": "Can view transactions and adjust balances",
       "ManageStaff": "Manage Staff",
       "ManageStaffDescription": "Can manage other admins (Super Admin only)"
+    },
+    "AuditLog": {
+      "AuditLog": "Audit Log",
+      "Title": "Audit Log",
+      "Description": "Review security-sensitive administrative actions.",
+      "Filters": "Filters",
+      "SearchPlaceholder": "Search admin, target, target ID, or request ID",
+      "AllActions": "All actions",
+      "AllCategories": "All categories",
+      "AllSeverities": "All severities",
+      "DateTime": "Date & Time",
+      "Admin": "Admin",
+      "Action": "Action",
+      "Category": "Category",
+      "TargetType": "Target Type",
+      "Target": "Target",
+      "Severity": "Severity",
+      "IpAddress": "IP Address",
+      "Details": "Details",
+      "Empty": "No audit logs found.",
+      "DiffView": "Diff View",
+      "RawJson": "Raw JSON",
+      "RequestId": "Request ID",
+      "UserAgent": "User Agent",
+      "Logs": "logs"
     }
   },
   "Auth": {

@@ -26,7 +26,8 @@
       "UserManager": "مدیریت کاربران",
       "Administrator": "ادمین",
       "LogoutTitle": "آیا از این کار مطمئنید؟",
-      "LogoutDescription": "شما از اکانت ادمین خارج میشوید و برای دسترسی مجدد به داشبورد باید دوباره وارد شوید"
+      "LogoutDescription": "شما از اکانت ادمین خارج میشوید و برای دسترسی مجدد به داشبورد باید دوباره وارد شوید",
+      "AuditLog": "گزارش ممیزی"
     },
     "Dashboard": {
       "Title": "داشبورد",
@@ -262,6 +263,31 @@
       "ManageFinanceDescription": "می‌تواند تراکنش‌ها را مشاهده و موجودی‌ها را تنظیم کند",
       "ManageStaff": "مدیریت کارکنان",
       "ManageStaffDescription": "می‌تواند سایر ادمین‌ها را مدیریت کند (فقط ابرادمین)"
+    },
+    "AuditLog": {
+      "AuditLog": "گزارش ممیزی",
+      "Title": "گزارش ممیزی",
+      "Description": "اقدامات مدیریتی حساس را بررسی کنید.",
+      "Filters": "فیلترها",
+      "SearchPlaceholder": "جستجوی مدیر، هدف، شناسه هدف یا درخواست",
+      "AllActions": "همه اقدامات",
+      "AllCategories": "همه دسته‌ها",
+      "AllSeverities": "همه سطوح",
+      "DateTime": "تاریخ و زمان",
+      "Admin": "مدیر",
+      "Action": "اقدام",
+      "Category": "دسته",
+      "TargetType": "نوع هدف",
+      "Target": "هدف",
+      "Severity": "سطح",
+      "IpAddress": "آدرس IP",
+      "Details": "جزئیات",
+      "Empty": "گزارش ممیزی یافت نشد.",
+      "DiffView": "نمای تغییرات",
+      "RawJson": "JSON خام",
+      "RequestId": "شناسه درخواست",
+      "UserAgent": "عامل کاربر",
+      "Logs": "گزارش"
     }
   },
   "Auth": {
