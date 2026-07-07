@@ -9,6 +9,11 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { RoleName } from '@prisma/client';
 import { CreateBookTypeDto } from './dto/create-book-type.dto';
 import { UpdateBookTypeDto } from './dto/update-book-type.dto';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditCategory,
+} from '../audit-log/constants/audit-log.constants';
 
 @Controller('book-types')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
@@ -23,16 +28,31 @@ export class BookTypesController {
     }
 
     @Post()
+    @Audit({
+        action: AuditAction.BOOK_TYPE_CREATED,
+        category: AuditCategory.CONTENT,
+        targetType: 'BookType',
+    })
     async create(@Body() dto: CreateBookTypeDto) {
         return this.bookTypesService.create(dto);
     }
 
     @Patch(':id')
+    @Audit({
+        action: AuditAction.BOOK_TYPE_UPDATED,
+        category: AuditCategory.CONTENT,
+        targetType: 'BookType',
+    })
     async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBookTypeDto) {
         return this.bookTypesService.update(id, dto);
     }
 
     @Delete(':id')
+    @Audit({
+        action: AuditAction.BOOK_TYPE_DELETED,
+        category: AuditCategory.CONTENT,
+        targetType: 'BookType',
+    })
     async remove(@Param('id', ParseIntPipe) id: number) {
         return this.bookTypesService.remove(id);
     }

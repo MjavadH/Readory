@@ -42,6 +42,12 @@ const comparableKey = (item: unknown) =>
   isObject(item) && item.id != null
     ? String(item.id)
     : JSON.stringify(normalize(item));
+const arrayKey = (item: unknown, seen: Map<string, number>) => {
+  const key = comparableKey(item);
+  const count = seen.get(key) ?? 0;
+  seen.set(key, count + 1);
+  return `${key}:${count}`;
+};
 
 export function generateAuditDiff(
   before: unknown,
@@ -53,11 +59,13 @@ export function generateAuditDiff(
     const prev = Array.isArray(before) ? before : [];
     const next = Array.isArray(after) ? after : [];
     const entries: AuditDiffEntry[] = [];
+    const prevSeen = new Map<string, number>();
+    const nextSeen = new Map<string, number>();
     const prevMap = new Map(
-      prev.map((item, index) => [comparableKey(item), { item, index }]),
+      prev.map((item, index) => [arrayKey(item, prevSeen), { item, index }]),
     );
     const nextMap = new Map(
-      next.map((item, index) => [comparableKey(item), { item, index }]),
+      next.map((item, index) => [arrayKey(item, nextSeen), { item, index }]),
     );
     for (const [key, value] of prevMap) {
       const nextValue = nextMap.get(key);
@@ -115,6 +123,7 @@ export function generateAuditDiff(
             childAfter,
             childPath,
           );
+          if (isObject(childBefore) || isObject(childAfter)) return children;
           return [
             {
               path: childPath,
