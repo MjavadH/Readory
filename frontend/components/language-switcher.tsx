@@ -176,7 +176,7 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
                 </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-56 rounded-lg p-1">
+            <DropdownMenuContent align={currentLanguage.isRTL ? "start" : "end"} className="w-56 rounded-lg p-1">
                 {supportedLocales.map((lang) => (
                     <DropdownMenuItem
                         key={lang.code}

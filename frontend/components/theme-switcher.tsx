@@ -119,7 +119,7 @@ export function ThemeSwitcher({variant = "desktop"}: ThemeSwitcherProps) {
                     <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="grid w-56 gap-1 grid-cols-2 p-1">
+            <DropdownMenuContent align={isRTL ? "start" : "end"} className="grid w-56 gap-1 grid-cols-2 p-1">
                 {options.map((opt) => {
                     const Icon = opt.icon
                     return (

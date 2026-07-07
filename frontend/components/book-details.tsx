@@ -261,7 +261,7 @@ export function BookDetails({
                     <div className="relative flex items-center gap-1">
                       <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
                       <span className="text-sm font-bold text-foreground">
-                    {ratingValue.toFixed(1)}
+                    {ratingValue.toFixed(2)}
                   </span>
                     </div>
                     <span className="relative text-xs text-muted-foreground">·</span>
