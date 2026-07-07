@@ -32,6 +32,10 @@ export class AuditLogService {
       after: safeAfter as any,
       diff: generateAuditDiff(safeBefore, safeAfter) as any,
     };
+    this.enqueueLogWrite(payload);
+  }
+
+  private enqueueLogWrite(payload: AuditLogInput & { diff?: unknown }): void {
     setImmediate(
       () =>
         void this.repo
@@ -84,6 +88,20 @@ export class AuditLogService {
     targetId: string,
     query: AuditLogQueryDto,
   ) {
-    return this.findMany({ ...query, targetType, targetId });
+    const version = await this.cache.getVersion(AUDIT_LOG_CACHE_VERSION_KEY);
+    const key = this.cache.buildHashedKey(AUDIT_LOG_CACHE.HISTORY_NAMESPACE, {
+      version,
+      targetType,
+      targetId,
+      query,
+    });
+    return this.cache.getOrSet(
+      key,
+      {
+        ttlSeconds: AUDIT_LOG_CACHE.HISTORY_TTL_SECONDS,
+        earlyRefreshWindowSeconds: AUDIT_LOG_CACHE.EARLY_REFRESH_SECONDS,
+      },
+      () => this.repo.findMany({ ...query, targetType, targetId }),
+    );
   }
 }

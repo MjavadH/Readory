@@ -34,7 +34,7 @@ describe('generateAuditDiff', () => {
         'isPublished',
         'deletedReason',
         'genres',
-        'metadata',
+        'metadata.publishedAt',
       ]),
     );
     expect(paths).not.toContain('updatedAt');
@@ -46,5 +46,31 @@ describe('generateAuditDiff', () => {
         }),
       ]),
     );
+  });
+
+  it('shows array additions and removals instead of replacing the whole array', () => {
+    const diff = generateAuditDiff(['Fantasy', 'Sci-Fi'], ['Fantasy', 'Adventure']);
+
+    expect(diff).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: 'removed', before: 'Sci-Fi' }),
+        expect.objectContaining({ type: 'added', after: 'Adventure' }),
+      ]),
+    );
+  });
+
+  it('only shows modified nested object fields', () => {
+    const diff = generateAuditDiff(
+      { metadata: { title: 'Same', flags: { featured: false } } },
+      { metadata: { title: 'Same', flags: { featured: true } } },
+    );
+
+    expect(diff).toEqual([
+      expect.objectContaining({
+        path: 'metadata.flags.featured',
+        before: false,
+        after: true,
+      }),
+    ]);
   });
 });
