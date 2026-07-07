@@ -17,6 +17,7 @@ import { StorageModule } from './storage/storage.module';
 import { ReaderModule } from './reader/reader.module';
 import { MailModule } from './mail/mail.module';
 import { ContributorModule } from './contributor/contributor.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ContributorModule } from './contributor/contributor.module';
     ReaderModule,
     MailModule,
     ContributorModule,
+    AuditLogModule,
   ],
   controllers: [],
   providers: [],

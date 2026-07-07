@@ -271,3 +271,33 @@ enum ContributorRole {
   RAW_PROVIDER
   SUPERVISOR
 }
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  actorId    String?
+  actorName  String?
+  actorRole  String?
+  ipAddress  String?
+  userAgent  String?
+  action     String
+  category   String
+  severity   String   @default("INFO")
+  targetType String?
+  targetId   String?
+  targetName String?
+  requestId  String?
+  metadata   Json?
+  before     Json?
+  after      Json?
+  diff       Json?
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType])
+  @@index([targetId])
+  @@index([category])
+  @@index([severity])
+  @@index([targetType, targetId])
+}

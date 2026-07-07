@@ -21,6 +21,7 @@ import {
   SquareLibrary,
   LayoutDashboard,
   UserRoundPen,
+  ClipboardList,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -115,6 +116,7 @@ export function AdminSidebar() {
       title: t("System"),
       items: [
         { label: t("AdminStaff"), icon: Lock, path: "/admin/staff", show: has("MANAGE_STAFF") },
+        { label: t("AuditLog"), icon: ClipboardList, path: "/admin/audit-log", show: has("MANAGE_STAFF") },
         { label: t("Settings"), icon: Settings, path: "/admin/settings" },
       ],
     },
