@@ -21,6 +21,11 @@ import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditCategory,
+} from '../audit-log/constants/audit-log.constants';
 
 @Controller('contributor')
 export class ContributorController {
@@ -30,6 +35,11 @@ export class ContributorController {
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Post()
+  @Audit({
+    action: AuditAction.CONTRIBUTOR_CREATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Contributor',
+  })
   create(@Body() createContributorDto: CreateContributorDto) {
     return this.contributorService.create(createContributorDto);
   }
@@ -39,23 +49,27 @@ export class ContributorController {
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Get()
   findAll(
-      @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-      @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
-      @Query('q') q?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
+    @Query('q') q?: string,
   ) {
     return this.contributorService.findAll({ page, limit, q });
   }
 
   @Get('public/:slug')
   async getPublicProfile(
-      @Param('slug') slug: string,
-      @Query('page') page: string = '1',
-      @Query('limit') limit: string = '18',
+    @Param('slug') slug: string,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '18',
   ) {
     const pageNumber = Math.max(1, parseInt(page, 10) || 1);
     const limitNumber = Math.min(50, Math.max(1, parseInt(limit, 10) || 18));
 
-    return this.contributorService.getPublicProfile(slug, pageNumber, limitNumber);
+    return this.contributorService.getPublicProfile(
+      slug,
+      pageNumber,
+      limitNumber,
+    );
   }
 
   @Get(':id')
@@ -67,9 +81,14 @@ export class ContributorController {
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Patch(':id')
+  @Audit({
+    action: AuditAction.CONTRIBUTOR_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Contributor',
+  })
   update(
-      @Param('id', ParseIntPipe) id: number,
-      @Body() updateContributorDto: UpdateContributorDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateContributorDto: UpdateContributorDto,
   ) {
     return this.contributorService.update(id, updateContributorDto);
   }
@@ -78,6 +97,11 @@ export class ContributorController {
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Delete(':id')
+  @Audit({
+    action: AuditAction.CONTRIBUTOR_DELETED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Contributor',
+  })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.contributorService.remove(id);
   }

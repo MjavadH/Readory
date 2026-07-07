@@ -1,4 +1,14 @@
-import {Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards,} from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -8,56 +18,79 @@ import { GenresService } from './genres.service';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
-import {RolesGuard} from "../auth/roles.guard";
+import { RolesGuard } from '../auth/roles.guard';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import {
+  AuditAction,
+  AuditCategory,
+} from '../audit-log/constants/audit-log.constants';
 
 @Controller('genres')
 export class GenresController {
-    constructor(private readonly genresService: GenresService) {}
+  constructor(private readonly genresService: GenresService) {}
 
-    @Get()
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async adminList() {
-        return this.genresService.adminListAll();
-    }
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async adminList() {
+    return this.genresService.adminListAll();
+  }
 
-    @Get('listAll')
-    async list() {
-        return this.genresService.listAll();
-    }
+  @Get('listAll')
+  async list() {
+    return this.genresService.listAll();
+  }
 
-    @Get('featured')
-    async featured() {
-        return this.genresService.listFeatured();
-    }
+  @Get('featured')
+  async featured() {
+    return this.genresService.listFeatured();
+  }
 
-    @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async create(@Body() dto: CreateGenreDto) {
-        return this.genresService.create(dto);
-    }
+  @Post()
+  @Audit({
+    action: AuditAction.GENRE_CREATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Genre',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async create(@Body() dto: CreateGenreDto) {
+    return this.genresService.create(dto);
+  }
 
-    @Patch(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateGenreDto) {
-        return this.genresService.update(id, dto);
-    }
+  @Patch(':id')
+  @Audit({
+    action: AuditAction.GENRE_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Genre',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateGenreDto,
+  ) {
+    return this.genresService.update(id, dto);
+  }
 
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-    @Roles(RoleName.ADMIN)
-    @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-    async delete(@Param('id', ParseIntPipe) id: number) {
-        return this.genresService.delete(id);
-    }
+  @Delete(':id')
+  @Audit({
+    action: AuditAction.GENRE_DELETED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Genre',
+  })
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async delete(@Param('id', ParseIntPipe) id: number) {
+    return this.genresService.delete(id);
+  }
 
-    @Get(':slug')
-    async getBySlug(@Param('slug') slug: string) {
-        return this.genresService.findBySlug(slug);
-    }
+  @Get(':slug')
+  async getBySlug(@Param('slug') slug: string) {
+    return this.genresService.findBySlug(slug);
+  }
 }
