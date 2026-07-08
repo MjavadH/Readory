@@ -35,7 +35,7 @@ export type BookDetailsData = {
   description?: string | null;
   coverImage: string;
   isFeatured: boolean;
-  isPublished?: boolean;
+  publishStatus?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
   status: BookStatus;
   ageRating?: AgeRating | null;
   publicationYear?: number | null;
@@ -183,7 +183,7 @@ export function BookDetails({
   };
 
   const alternativeTitles = book.alternativeTitles?.filter(Boolean) ?? [];
-  const isDraft = book.isPublished === false;
+  const isDraft = book.publishStatus !== "PUBLISHED";
 
   return (
       <section

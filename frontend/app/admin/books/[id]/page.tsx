@@ -198,7 +198,7 @@ export default function AdminBookDetail() {
                 status: editedBook.status,
                 ageRating: editedBook.ageRating,
                 publicationYear: editedBook.publicationYear,
-                isPublished: editedBook.isPublished,
+                publishStatus: editedBook.publishStatus,
                 isFeatured: editedBook.isFeatured,
                 coverImage: editedBook.coverImage,
                 typeId: editedBook.typeId,

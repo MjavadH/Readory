@@ -97,7 +97,7 @@ export class BooksService {
     const q = normalizeQ(args.q);
 
     const where: Prisma.BookWhereInput = {
-      isPublished: true,
+      publishStatus: 'PUBLISHED',
       type: { isActive: true },
     };
 
@@ -634,10 +634,10 @@ export class BooksService {
       case 'all':
         break;
       case 'published':
-        where.isPublished = true;
+        where.publishStatus = 'PUBLISHED';
         break;
       case 'draft':
-        where.isPublished = false;
+        where.publishStatus = 'DRAFT';
         break;
       case 'featured':
         where.isFeatured = true;
@@ -648,8 +648,8 @@ export class BooksService {
 
     const [total, published, drafts, books] = await this.prisma.$transaction([
       this.prisma.book.count(),
-      this.prisma.book.count({ where: { isPublished: true } }),
-      this.prisma.book.count({ where: { isPublished: false } }),
+      this.prisma.book.count({ where: { publishStatus: 'PUBLISHED' } }),
+      this.prisma.book.count({ where: { publishStatus: 'DRAFT' } }),
       this.prisma.book.findMany({
         where,
         orderBy: { updatedAt: 'desc' },
@@ -667,7 +667,7 @@ export class BooksService {
             },
           },
           coverImage: true,
-          isPublished: true,
+          publishStatus: true,
           isFeatured: true,
           status: true,
           ageRating: true,
@@ -722,7 +722,7 @@ export class BooksService {
         },
         async () => {
           const sourceBook = await this.prisma.book.findUnique({
-            where: { id: bookId, isPublished: true },
+            where: { id: bookId, publishStatus: 'PUBLISHED' },
             select: {
               id: true,
               typeId: true,
@@ -758,7 +758,7 @@ export class BooksService {
                        WHERE bg."bookId" = b.id
                      ) AS target_genre_count
                    FROM "Book" b
-                   WHERE b."isPublished" = true
+                   WHERE b."publishStatus" = 'PUBLISHED'
                      AND b.id != ${bookId}::integer
               AND (
               b."typeId" = ${sourceBook.typeId}::integer
@@ -860,7 +860,7 @@ export class BooksService {
   // Get book
   async findById(id: number) {
     const book = await this.prisma.book.findUnique({
-      where: { id, isPublished: true },
+      where: { id, publishStatus: 'PUBLISHED' },
       select: {
         id: true,
         title: true,
@@ -931,7 +931,7 @@ export class BooksService {
         publicationYear: true,
         chapterCount: true,
         lastContentUpdate: true,
-        isPublished: true,
+        publishStatus: true,
         ratingAvg: true,
         ratingCount: true,
         updatedAt: true,
@@ -1023,7 +1023,7 @@ export class BooksService {
     if (rest.coverImage !== undefined) {
       payload.coverMedia = { connect: { code: rest.coverImage } };
     }
-    if (rest.isPublished !== undefined) payload.isPublished = rest.isPublished;
+    if (rest.publishStatus !== undefined) payload.publishStatus = rest.publishStatus;
     if (rest.isFeatured !== undefined) payload.isFeatured = rest.isFeatured;
     if (rest.status !== undefined) payload.status = rest.status;
     if (rest.ageRating !== undefined) payload.ageRating = rest.ageRating;

@@ -5,7 +5,7 @@ describe('generateAuditDiff', () => {
     const before = {
       title: 'Old Title',
       status: 'DRAFT',
-      isPublished: false,
+      publishStatus: 'DRAFT',
       deletedReason: null,
       updatedAt: '2026-01-01T00:00:00.000Z',
       genres: [{ id: 1, name: 'Fantasy' }],
@@ -14,7 +14,7 @@ describe('generateAuditDiff', () => {
     const after = {
       title: 'New Title',
       status: 'PUBLISHED',
-      isPublished: true,
+      publishStatus: 'PUBLISHED',
       deletedReason: 'duplicate',
       updatedAt: '2026-01-02T00:00:00.000Z',
       genres: [
@@ -31,7 +31,7 @@ describe('generateAuditDiff', () => {
       expect.arrayContaining([
         'title',
         'status',
-        'isPublished',
+        'publishStatus',
         'deletedReason',
         'genres',
         'metadata.publishedAt',

@@ -48,6 +48,22 @@ interface BookStats {
 
 const ITEMS_PER_PAGE = 24
 
+type NewBookForm = {
+    title: string
+    originalTitle: string
+    alternativeTitles: string[]
+    contributors: BookContributorEntry[]
+    typeId: number | undefined
+    description: string
+    coverImage: string
+    genreIds: number[]
+    publishStatus: "DRAFT" | "SCHEDULED" | "PUBLISHED"
+    isFeatured: boolean
+    status: BookStatus
+    ageRating: AgeRating | undefined
+    publicationYear: number | null
+}
+
 export default function AdminBooks() {
     const t = useTranslations('Books');
     const g = useTranslations('General');
@@ -74,7 +90,7 @@ export default function AdminBooks() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showAddCard, setShowAddCard] = useState(false)
 
-    const [newBook, setNewBook] = useState({
+    const [newBook, setNewBook] = useState<NewBookForm>({
         title: "",
         originalTitle: "",
         alternativeTitles: [] as string[],
@@ -83,7 +99,7 @@ export default function AdminBooks() {
         description: "",
         coverImage: "",
         genreIds: [] as number[],
-        isPublished: false,
+        publishStatus: "DRAFT",
         isFeatured: false,
         status: BookStatus.Upcoming,
         ageRating: undefined as AgeRating | undefined,
@@ -134,7 +150,7 @@ export default function AdminBooks() {
                 ratingCount: book.ratingCount,
                 genres: (book.genres || []).map((g: any) => g.genre),
                 isFeatured: book.isFeatured,
-                isPublished: book.isPublished,
+                publishStatus: book.publishStatus,
                 chapterCount: book.chapterCount || 0,
                 updatedAt: book.lastContentUpdate || book.updatedAt,
             }))
@@ -207,7 +223,7 @@ export default function AdminBooks() {
                 description: "",
                 coverImage: "",
                 genreIds: [],
-                isPublished: false,
+                publishStatus: "DRAFT",
                 isFeatured: false,
                 status: BookStatus.Upcoming,
                 ageRating: undefined,
@@ -233,7 +249,7 @@ export default function AdminBooks() {
             description: "",
             coverImage: "",
             genreIds: [],
-            isPublished: false,
+            publishStatus: "DRAFT",
             isFeatured: false,
             status: BookStatus.Upcoming,
             ageRating: undefined,

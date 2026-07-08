@@ -74,7 +74,7 @@ describe('AppModule (e2e)', () => {
       data: {
         title: 'E2E Book',
         typeId: type.id,
-        isPublished: true,
+        publishStatus: 'PUBLISHED',
         isFeatured: true,
       },
     });

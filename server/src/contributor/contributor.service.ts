@@ -142,13 +142,13 @@ export class ContributorService {
           const [totalBooks, books] = await this.prisma.$transaction([
             this.prisma.book.count({
               where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
                 contributors: { some: { contributorId: contributors.id } },
               },
             }),
             this.prisma.book.findMany({
               where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
                 contributors: { some: { contributorId: contributors.id } },
               },
               orderBy: { updatedAt: 'desc' },

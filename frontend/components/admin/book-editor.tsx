@@ -49,7 +49,7 @@ export type BookEditorValue = {
     description?: string | null;
     coverImage?: string;
     isFeatured?: boolean;
-    isPublished?: boolean;
+    publishStatus?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
     status?: BookStatus;
     ageRating?: AgeRating | null;
     publicationYear?: number | null;
@@ -262,8 +262,8 @@ export function BookEditor({
                                 icon={<Eye className="h-4 w-4 text-muted-foreground" />}
                                 label={t("Publish")}
                                 description={t("MarkPublished")}
-                                checked={value.isPublished ?? false}
-                                onCheckedChange={(checked) => onChange({ ...value, isPublished: checked })}
+                                checked={value.publishStatus === "PUBLISHED"}
+                                onCheckedChange={(checked) => onChange({ ...value, publishStatus: checked ? "PUBLISHED" : "DRAFT" })}
                                 activeColor="emerald"
                             />
                             <ToggleRow

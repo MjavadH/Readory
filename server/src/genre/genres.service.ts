@@ -114,7 +114,7 @@ export class GenresService {
       id: genre.id,
       name: genre.name,
       slug: genre.slug,
-      books: genre.books.map((bg) => bg.book).filter((b) => b.isPublished),
+      books: genre.books.map((bg) => bg.book).filter((b) => b.publishStatus === 'PUBLISHED'),
     };
   }
 
