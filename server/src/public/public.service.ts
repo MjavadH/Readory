@@ -1,116 +1,37 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
+import {DashboardService} from "../dashboard/dashboard.service";
 
 @Injectable()
 export class PublicService {
     constructor(
         private prisma: PrismaService,
         private readonly cacheManager: CacheManager,
+        private readonly dashboardService: DashboardService
     ) {}
 
-    private readonly CACHE_KEY_HOME_CONTENT = 'home_content_data';
+    private readonly CACHE_KEY_HOME_PUBLIC_CONTENT = 'home_public_content_data';
+    private readonly CACHE_KEY_HOME_PERSONALIZED_CONTENT = 'home_personalized_content';
     private readonly CACHE_KEY_GENRES_PAGE = 'genres_page_data';
 
-    async getHomeContent() {
+    async getPublicHomeContent(){
         return this.cacheManager.getOrSet(
-            this.CACHE_KEY_HOME_CONTENT,
+            this.CACHE_KEY_HOME_PUBLIC_CONTENT,
             { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
             async () => {
-                const [featuredBooks, latestUpdates, trendingBooks, topGenres, mostPopularBooks] = await Promise.all([
-                    this.prisma.book.findMany({
-                        where: { isPublished: true, isFeatured: true },
-                        take: 5,
-                        orderBy: { updatedAt: 'desc' },
-                        select: {
-                            id: true,
-                            title: true,
-                            description: true,
-                            coverImage: true,
-                            contributors: {
-                                select: {
-                                    role: true,
-                                    contributor: { select: { name: true } },
-                                },
-                            },
-                            type: { select: { name: true, slug: true, iconKey: true } },
-                            genres: {
-                                select: { genre: { select: { name: true, slug: true, iconKey: true } } },
-                                take: 3,
-                            },
-                            ratingAvg: true,
-                            ratingCount: true,
-                        },
-                    }),
-                    this.prisma.book.findMany({
-                        where: { isPublished: true },
-                        take: 12,
-                        orderBy: { lastContentUpdate: 'desc' },
-                        select: {
-                            id: true,
-                            title: true,
-                            coverImage: true,
-                            updatedAt: true,
-                            lastContentUpdate: true,
-                            type: { select: { id: true, name: true, slug: true } },
-                            chapters: {
-                                take: 2,
-                                orderBy: { index: 'desc' },
-                                select: {
-                                    id: true,
-                                    index: true,
-                                    isFree: true,
-                                },
-                            },
-                        },
-                    }),
-                    this.prisma.book.findMany({
-                        where: { isPublished: true },
-                        take: 10,
-                        orderBy: { popularityScore: 'desc' },
-                        select: {
-                            id: true,
-                            title: true,
-                            coverImage: true,
-                            contributors: {
-                                select: {
-                                    role: true,
-                                    contributor: { select: { name: true } },
-                                },
-                            },
-                            type: { select: { id: true, name: true, slug: true } },
-                            chapterCount: true,
-                            genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
-                            ratingAvg: true,
-                            ratingCount: true,
-                        },
-                    }),
-                    this.prisma.genre.findMany({
-                        take: 8,
-                        orderBy: { books: { _count: 'desc' } },
-                        select: { id: true, name: true, slug: true, iconKey: true },
-                    }),
-                    this.prisma.book.findMany({
-                        where: { isPublished: true, ratingCount: { gte: 5 } },
-                        take: 10,
-                        orderBy: [{ ratingAvg: 'desc' }, { ratingCount: 'desc' }, { updatedAt: 'desc' }],
-                        select: {
-                            id: true,
-                            title: true,
-                            coverImage: true,
-                            contributors: {
-                                select: {
-                                    role: true,
-                                    contributor: { select: { name: true } },
-                                },
-                            },
-                            type: { select: { id: true, name: true, slug: true } },
-                            chapterCount: true,
-                            genres: { select: { genre: { select: { id: true, name: true, slug: true } } } },
-                            ratingAvg: true,
-                            ratingCount: true,
-                        },
-                    }),
+                const [
+                    featuredBooks,
+                    latestUpdates,
+                    trendingBooks,
+                    topGenres,
+                    popularBooks
+                ] = await Promise.all([
+                    this.getFeaturedBooks(),
+                    this.getLatestBooks(),
+                    this.getTrendingBooks(),
+                    this.getTopGenres(),
+                    this.getPopularBooks()
                 ]);
 
                 return {
@@ -154,7 +75,7 @@ export class PublicService {
                             ratingCount: b.ratingCount,
                         };
                     }),
-                    popular: mostPopularBooks.map((b) => {
+                    popular: popularBooks.map((b) => {
                         const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
                         return {
                             id: b.id,
@@ -170,8 +91,267 @@ export class PublicService {
                     }),
                     genres: topGenres,
                 };
-            },
+            }
         );
+    }
+
+    async getUserPersonalizedContent(userId:number){
+        const cacheKey =
+            this.cacheManager.buildKey(
+                this.CACHE_KEY_HOME_PERSONALIZED_CONTENT,
+                userId
+            );
+        return this.cacheManager.getOrSet(
+            cacheKey,
+            { ttlSeconds: 300, jitterSeconds: 30, earlyRefreshWindowSeconds: 60},
+            async()=>{
+                const continueReading =
+                    await this.dashboardService
+                        .getContinueReading(userId);
+                return {
+                    continueReading,
+                };
+            }
+        );
+    }
+
+    private async getFeaturedBooks() {
+        return this.prisma.book.findMany({
+            where: {
+                isPublished: true,
+                isFeatured: true,
+            },
+            take: 5,
+            orderBy: {
+                updatedAt: 'desc',
+            },
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                coverImage: true,
+
+                contributors: {
+                    select: {
+                        role: true,
+                        contributor: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+
+                type: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        iconKey: true,
+                    },
+                },
+
+                genres: {
+                    take: 3,
+                    select: {
+                        genre: {
+                            select: {
+                                name: true,
+                                slug: true,
+                                iconKey: true,
+                            },
+                        },
+                    },
+                },
+
+                ratingAvg: true,
+                ratingCount: true,
+            },
+        });
+    }
+
+    private async getLatestBooks() {
+        return this.prisma.book.findMany({
+            where: {
+                isPublished: true,
+            },
+
+            take: 12,
+
+            orderBy: {
+                lastContentUpdate: 'desc',
+            },
+
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+
+                updatedAt: true,
+                lastContentUpdate: true,
+
+                type: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                    },
+                },
+
+                chapters: {
+                    take: 2,
+                    orderBy: {
+                        index: 'desc',
+                    },
+                    select: {
+                        id: true,
+                        index: true,
+                        isFree: true,
+                    },
+                },
+            },
+        });
+    }
+
+    private async getTrendingBooks() {
+        return this.prisma.book.findMany({
+            where: {
+                isPublished: true,
+            },
+
+            take: 10,
+
+            orderBy: {
+                popularityScore: 'desc',
+            },
+
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+
+                contributors: {
+                    select: {
+                        role: true,
+                        contributor: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+
+                type: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                    },
+                },
+
+                chapterCount: true,
+
+                genres: {
+                    select: {
+                        genre: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
+                },
+
+                ratingAvg: true,
+                ratingCount: true,
+            },
+        });
+    }
+
+    private async getTopGenres() {
+        return this.prisma.genre.findMany({
+            take: 8,
+
+            orderBy: {
+                books: {
+                    _count: 'desc',
+                },
+            },
+
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                iconKey: true,
+            },
+        });
+    }
+
+    private async getPopularBooks() {
+        return this.prisma.book.findMany({
+            where: {
+                isPublished: true,
+                ratingCount: {
+                    gte: 5,
+                },
+            },
+
+            take: 10,
+
+            orderBy: [
+                {
+                    ratingAvg: 'desc',
+                },
+                {
+                    ratingCount: 'desc',
+                },
+                {
+                    updatedAt: 'desc',
+                },
+            ],
+
+            select: {
+                id: true,
+                title: true,
+                coverImage: true,
+
+                contributors: {
+                    select: {
+                        role: true,
+                        contributor: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+
+                type: {
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                    },
+                },
+
+                chapterCount: true,
+
+                genres: {
+                    select: {
+                        genre: {
+                            select: {
+                                id: true,
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
+                },
+
+                ratingAvg: true,
+                ratingCount: true,
+            },
+        });
     }
 
     async getGenresPage() {
@@ -240,7 +420,7 @@ export class PublicService {
     }
 
     async clearHomeCache() {
-        await this.cacheManager.del(this.CACHE_KEY_HOME_CONTENT);
+        await this.cacheManager.del(this.CACHE_KEY_HOME_PUBLIC_CONTENT);
     }
 
     async clearGenresPageCache() {

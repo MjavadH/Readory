@@ -1,8 +1,9 @@
-import {Controller, Get, Param, Query} from '@nestjs/common';
+import {Controller, Get, Param, Query, Request, UseGuards} from '@nestjs/common';
 import { PublicService } from './public.service';
 import { BookTypesService } from '../book-types/book-types.service'
 import { BooksService } from '../books/books.service';
 import { BrowseGenreDto } from '../books/dto/browse-genre.dto';
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 @Controller('public')
 export class PublicController {
@@ -14,7 +15,16 @@ export class PublicController {
 
     @Get('content')
     async getHomeContent() {
-        return this.publicService.getHomeContent();
+        return this.publicService.getPublicHomeContent();
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('personalized')
+    async getPersonalizedContent(
+        @Request() req:any,
+    ) {
+        const userId = req.user.userId ?? req.user.id;
+        return this.publicService.getUserPersonalizedContent(userId);
     }
 
     @Get('genres')

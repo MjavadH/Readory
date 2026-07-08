@@ -3,11 +3,14 @@
 import useSWR from "swr"
 import { TrendingSection, TrendingSkeleton } from "@/components/Home/trending-section"
 import { LatestSection, LatestSectionSkeleton } from "@/components/Home/latest-section"
-import { GenresSection, GenresSectionSkeleton } from "@/components/genres-section"
+import { GenresSection, GenresSectionSkeleton } from "@/components/Home/genres-section"
 import { HeroCarousel, HeroSkeleton } from "@/components/Home/hero-carousel";
-import {BookType, BookGenre, BookCardData} from "@/lib/types"
+import {BookType, BookGenre, BookCardData, ReadingProgress} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
 import {PopularSection, PopularSkeleton} from "@/components/Home/popular-section";
+import {ContinueReadingCard, ContinueReadingCardSkeleton} from "@/components/dashboard/ContinueReadingCard";
+import {BookMarked, Sparkles} from "lucide-react";
+import {useTranslations} from "next-intl";
 
 interface Chapter {
     id: number
@@ -32,28 +35,48 @@ interface HomeContent {
     genres: BookGenre[]
 }
 
+interface PersonalizedContent {
+    continueReading: ReadingProgress
+}
+
 const fetcher = (url: string) => apiClient.get<HomeContent>(url)
+const PersonalizedFetcher = (url: string) => apiClient.get<PersonalizedContent>(url)
 
 export default function Home() {
-    const { data, isLoading } = useSWR<HomeContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/content`, fetcher)
+    const { data: homeData, isLoading: homeLoading } = useSWR<HomeContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/content`, fetcher)
+    const { data: personalizedData } = useSWR<PersonalizedContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/personalized`, PersonalizedFetcher)
+    const t = useTranslations('UserDashboard');
 
     return (
         <main className="min-h-screen bg-background">
             <div className="container mx-auto px-4 py-12 space-y-16">
                 {/* Hero Section */}
-                <section>{isLoading || !data ? <HeroSkeleton /> : <HeroCarousel books={data.hero} />}</section>
+                <section>{homeLoading || !homeData ? <HeroSkeleton /> : <HeroCarousel books={homeData.hero} />}</section>
 
                 {/* Trending Section */}
-                {isLoading || !data ? <TrendingSkeleton /> : data?.trending && <TrendingSection books={data.trending} />}
+                {homeLoading || !homeData ? <TrendingSkeleton /> : homeData?.trending && <TrendingSection books={homeData.trending} />}
 
                 {/* Latest Updates Section */}
-                {isLoading || !data ? <LatestSectionSkeleton /> : data?.latest && <LatestSection books={data.latest} />}
+                {homeLoading || !homeData ? <LatestSectionSkeleton /> : homeData?.latest && <LatestSection books={homeData.latest} />}
 
                 {/* popular Section */}
-                {isLoading || !data ? <PopularSkeleton /> : data?.popular && <PopularSection books={data.popular} />}
+                {homeLoading || !homeData ? <PopularSkeleton /> : homeData?.popular && <PopularSection books={homeData.popular} />}
+
+                {/* ContinueReading Section */}
+                {personalizedData && personalizedData?.continueReading && (
+                    <section className="space-y-6">
+                        <div className="flex items-center justify-between px-2">
+                            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+                                <BookMarked className="w-6 h-6 text-primary" />
+                                {t("ContinueReading")}
+                            </h2>
+                        </div>
+                        <ContinueReadingCard progress={personalizedData.continueReading} />
+                    </section>
+                )}
 
                 {/* Genres Section */}
-                {isLoading || !data ? <GenresSectionSkeleton /> : data?.genres && <GenresSection genres={data.genres} />}
+                {homeLoading || !homeData ? <GenresSectionSkeleton /> : homeData?.genres && <GenresSection genres={homeData.genres} />}
 
             </div>
         </main>

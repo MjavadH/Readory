@@ -150,7 +150,7 @@ export class DashboardService {
     };
   }
 
-  private async getContinueReading(userId: number) {
+  async getContinueReading(userId: number) {
     const row = await this.prisma.readingProgress.findFirst({
       where: { userId, percent: { lt: 100 } },
       orderBy: { updatedAt: 'desc' },
