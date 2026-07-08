@@ -68,8 +68,8 @@ export class CreateBookDto {
     coverImage?: string;
 
     @IsOptional()
-    @IsBoolean()
-    isPublished?: boolean;
+    @IsString()
+    publishStatus?: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED';
 
     @IsOptional()
     @IsBoolean()

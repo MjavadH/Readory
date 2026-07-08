@@ -118,7 +118,7 @@ export class PublicService {
     private async getFeaturedBooks() {
         return this.prisma.book.findMany({
             where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
                 isFeatured: true,
             },
             take: 5,
@@ -172,7 +172,7 @@ export class PublicService {
     private async getLatestBooks() {
         return this.prisma.book.findMany({
             where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
             },
 
             take: 12,
@@ -215,7 +215,7 @@ export class PublicService {
     private async getTrendingBooks() {
         return this.prisma.book.findMany({
             where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
             },
 
             take: 10,
@@ -290,7 +290,7 @@ export class PublicService {
     private async getPopularBooks() {
         return this.prisma.book.findMany({
             where: {
-                isPublished: true,
+                publishStatus: 'PUBLISHED',
                 ratingCount: {
                     gte: 5,
                 },
@@ -370,7 +370,7 @@ export class PublicService {
                     featuredGenres.map(async (g) => {
                         const books = await this.prisma.book.findMany({
                             where: {
-                                isPublished: true,
+                                publishStatus: 'PUBLISHED',
                                 genres: { some: { genreId: g.id } },
                                 type: { isActive: true },
                             },

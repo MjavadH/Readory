@@ -55,7 +55,6 @@ model Book {
   title             String
   description       String?
   coverImage        String?
-  isPublished       Boolean           @default(false)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   isFeatured        Boolean           @default(false)
@@ -65,6 +64,7 @@ model Book {
   originalTitle     String?
   alternativeTitles String[]          @default([])
   status            String            @default("UPCOMING")
+  publishStatus     String            @default("DRAFT")
   ageRating         String?
   publicationYear   Int?
   lastContentUpdate DateTime?
@@ -82,7 +82,7 @@ model Book {
   readingProgress   ReadingProgress[]
 
   @@index([ratingAvg, ratingCount])
-  @@index([isPublished, isFeatured])
+  @@index([publishStatus, isFeatured])
   @@index([createdAt])
   @@index([updatedAt])
   @@index([lastContentUpdate])
@@ -151,6 +151,7 @@ model Chapter {
   contentType     ChapterContentType?
   pageCount       Int                 @default(0)
   contentVersion  Int                 @default(0)
+  publishStatus   String              @default("DRAFT")
   accessRecords   AccessRecord[]
   book            Book                @relation(fields: [bookId], references: [id])
   readingProgress ReadingProgress[]
@@ -270,6 +271,39 @@ enum ContributorRole {
   TYPESETTER
   RAW_PROVIDER
   SUPERVISOR
+}
+
+model ScheduledPublication {
+  id              Int                        @id @default(autoincrement())
+  targetType      ScheduledTargetType
+  targetId        Int
+  publishAt       DateTime
+  status          ScheduledPublicationStatus @default(Pending)
+  statusChangedAt DateTime?
+  retryCount      Int                        @default(0)
+  maxRetries      Int                        @default(3)
+  lastAttemptAt   DateTime?
+  error           String?
+  createdById     Int?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+
+  @@index([status, publishAt])
+  @@index([targetType, targetId])
+}
+
+enum ScheduledPublicationStatus {
+  Pending
+  Processing
+  Published
+  Canceled
+  FAILED
+}
+
+enum ScheduledTargetType {
+  BOOK
+  Chapter
+  BLOG_POST
 }
 
 model AuditLog {

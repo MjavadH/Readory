@@ -3,8 +3,7 @@ import { AgeRating, BookStatus } from '@readory/shared';
 import { BookContributorDto } from './create-book.dto';
 import {
     ArrayNotEmpty,
-    IsArray,
-    IsBoolean,
+    IsArray, IsBoolean,
     IsEnum,
     IsInt,
     IsOptional,
@@ -69,8 +68,8 @@ export class UpdateBookDto {
     coverImage?: string;
 
     @IsOptional()
-    @IsBoolean()
-    isPublished?: boolean;
+    @IsString()
+    publishStatus?: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED';
 
     @IsOptional()
     @IsBoolean()

@@ -29,7 +29,7 @@ export interface BookCardData {
     ratingCount?: number;
     genres?: BookGenre[];
     isFeatured?: boolean;
-    isPublished?: boolean;
+    publishStatus?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
     status?: BookStatus;
     ageRating?: AgeRating | null;
     publicationYear?: number | null;

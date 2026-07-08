@@ -52,7 +52,7 @@ export class BookTypesService {
     const books = await this.prisma.book.findMany({
       where: {
         typeId: bookType.id,
-        isPublished: true,
+        publishStatus: 'PUBLISHED',
       },
       orderBy: { createdAt: 'desc' },
       select: {

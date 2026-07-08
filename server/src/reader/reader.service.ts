@@ -129,7 +129,7 @@ export class ReaderService {
     await this.enforceRateLimit('session', userId, 10, 60);
 
     const chapter = await this.prisma.chapter.findFirst({
-      where: { bookId, index: chapterIndex, book: { isPublished: true } },
+      where: { bookId, index: chapterIndex, book: { publishStatus: 'PUBLISHED' } },
       select: {
         id: true,
         bookId: true,

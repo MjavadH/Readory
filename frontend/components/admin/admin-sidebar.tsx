@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   UserRoundPen,
   ClipboardList,
+  CalendarClock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -95,6 +96,7 @@ export function AdminSidebar() {
         { label: t("Genres"), icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
         { label: t("BooksType"), icon: SquareLibrary, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
         { label: t("MediaLibrary"), icon: ImageIcon, path: "/admin/media", show: has("MANAGE_BOOKS") },
+        { label: t("ScheduledPublishing"), icon: CalendarClock, path: "/admin/scheduled-publications", show: has("MANAGE_BOOKS") },
       ],
     },
     {

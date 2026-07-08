@@ -18,6 +18,7 @@ import { ReaderModule } from './reader/reader.module';
 import { MailModule } from './mail/mail.module';
 import { ContributorModule } from './contributor/contributor.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
+import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publishing.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
     MailModule,
     ContributorModule,
     AuditLogModule,
+    ScheduledPublishingModule,
   ],
   controllers: [],
   providers: [],
