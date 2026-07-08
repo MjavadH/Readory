@@ -286,7 +286,10 @@
       "RawJson": "Raw JSON",
       "RequestId": "Request ID",
       "UserAgent": "User Agent",
-      "Logs": "logs"
+      "Logs": "logs",
+      "Refresh": "Refresh",
+      "From": "From",
+      "To": "To"
     }
   },
   "Auth": {

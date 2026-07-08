@@ -27,7 +27,7 @@ import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import {
   AuditAction,
   AuditCategory,
-} from '../audit-log/constants/audit-log.constants';
+} from '@readory/shared';
 
 @Controller('users')
 export class UsersController {
@@ -219,7 +219,7 @@ export class UsersController {
 
   @Post(':id/balance/credit')
   @Audit({
-    action: AuditAction.PREMIUM_GRANTED,
+    action: AuditAction.BALANCE_CREDIT,
     category: AuditCategory.FINANCE,
     targetType: 'User',
   })
@@ -238,7 +238,7 @@ export class UsersController {
 
   @Post(':id/balance/debit')
   @Audit({
-    action: AuditAction.PREMIUM_REMOVED,
+    action: AuditAction.BALANCE_DEBIT,
     category: AuditCategory.FINANCE,
     targetType: 'User',
   })

@@ -25,6 +25,11 @@ import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import {
+    AuditAction,
+    AuditCategory,
+} from '@readory/shared';
 
 type RenameMediaBody = { filename: string };
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9 _-]{3,80}$/;
@@ -47,6 +52,11 @@ export class MediaController {
 
 
     @Post()
+    @Audit({
+        action: AuditAction.MEDIA_UPLOADED,
+        category: AuditCategory.CONTENT,
+        targetType: 'Media',
+    })
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
@@ -115,6 +125,11 @@ export class MediaController {
     }
 
     @Patch(':code')
+    @Audit({
+        action: AuditAction.MEDIA_UPDATED,
+        category: AuditCategory.CONTENT,
+        targetType: 'Media',
+    })
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
@@ -132,6 +147,11 @@ export class MediaController {
     }
 
     @Delete(':code')
+    @Audit({
+        action: AuditAction.MEDIA_DELETED,
+        category: AuditCategory.CONTENT,
+        targetType: 'Media',
+    })
     @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
     @Roles(RoleName.ADMIN)
     @RequirePermissions(AdminPermissions.MANAGE_BOOKS)

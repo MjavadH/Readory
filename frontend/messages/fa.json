@@ -287,7 +287,10 @@
       "RawJson": "JSON خام",
       "RequestId": "شناسه درخواست",
       "UserAgent": "عامل کاربر",
-      "Logs": "گزارش"
+      "Logs": "گزارش",
+      "Refresh": "تازه‌سازی",
+      "From": "از",
+      "To": "به"
     }
   },
   "Auth": {

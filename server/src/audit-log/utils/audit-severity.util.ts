@@ -1,4 +1,4 @@
-import { AuditAction, AuditSeverity } from '../constants/audit-log.constants';
+import { AuditAction, AuditSeverity } from '@readory/shared';
 
 export function inferAuditSeverity(
   action: AuditAction,

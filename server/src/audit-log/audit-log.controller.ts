@@ -22,9 +22,11 @@ import { AuditLogQueryDto } from './dto/audit-log-query.dto';
 @RequirePermissions(AdminPermissions.MANAGE_STAFF)
 export class AuditLogController {
   constructor(private readonly auditLog: AuditLogService) {}
+
   @Get() findMany(@Query() query: AuditLogQueryDto) {
     return this.auditLog.findMany(query);
   }
+
   @Get('entity/:targetType/:targetId') history(
     @Param('targetType') targetType: string,
     @Param('targetId') targetId: string,
@@ -32,6 +34,7 @@ export class AuditLogController {
   ) {
     return this.auditLog.findEntityHistory(targetType, targetId, query);
   }
+
   @Get(':id') async findOne(@Param('id') id: string) {
     const log = await this.auditLog.findById(id);
     if (!log) throw new NotFoundException('Audit log not found');

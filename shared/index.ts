@@ -1,3 +1,4 @@
 export * from './icon-keys.js'
 export * from './book-metadata.js'
 export * from './contributor-metadata.js'
+export * from './audit-log-metadata.js'

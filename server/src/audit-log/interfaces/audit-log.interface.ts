@@ -2,7 +2,7 @@ import {
   AuditAction,
   AuditCategory,
   AuditSeverity,
-} from '../constants/audit-log.constants';
+} from '@readory/shared';
 
 export interface AuditActorSnapshot {
   id?: number | string | null;

@@ -25,7 +25,7 @@ import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import {
   AuditAction,
   AuditCategory,
-} from '../audit-log/constants/audit-log.constants';
+} from '@readory/shared';
 
 @Controller('contributor')
 export class ContributorController {

@@ -7,10 +7,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { tap } from 'rxjs/operators';
-import {
-  AuditAction,
-  AUDIT_LOG_METADATA_KEY,
-} from '../constants/audit-log.constants';
+import { AuditAction } from '@readory/shared'
+import { AUDIT_LOG_METADATA_KEY } from '../constants/audit-log.constants';
 import { AuditLogService } from '../audit-log.service';
 import { AuditLogDecoratorOptions } from '../interfaces/audit-log.interface';
 import { PrismaService } from '../../prisma/prisma.service';
