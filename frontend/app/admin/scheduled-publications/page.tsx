@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from "react"
-import { CalendarClock, Check, Loader2, Pencil, Send, X } from "lucide-react"
+import {BookOpen, CalendarClock, Check, Loader2, Pencil, Send, X} from "lucide-react"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { useToast } from "@/providers/toast-provider"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { BookPicker } from "@/components/admin/book-picker"
+import type { BookCardData } from "@/lib/types"
 
 type TargetType = "BOOK" | "Chapter" | "BLOG_POST"
 type Schedule = {
@@ -24,6 +26,18 @@ type Schedule = {
   maxRetries: number
   lastAttemptAt?: string | null
   error?: string | null
+}
+
+type BookData = {
+  books: BookCardData[]
+  hasMore: boolean
+  stats: {
+    total: number
+    Published: number
+    Drafts: number
+  }
+  page: number
+  limit: number
 }
 
 const toLocalInput = (iso: string) => {
@@ -40,6 +54,39 @@ export default function ScheduledPublicationsPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState({ targetType: "BOOK" as TargetType, targetId: "", publishAt: "", maxRetries: "3" })
   const formatter = useMemo(() => new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short", timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }), [])
+
+  // Book Picker
+  const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [draftBooks, setDraftBooks] = useState<BookCardData[]>([])
+  const [bookSearch, setBookSearch] = useState("")
+  const [bookPage, setBookPage] = useState(1)
+  const [bookTotalItems, setBookTotalItems] = useState(0)
+  const [bookTotalPages, setBookTotalPages] = useState(1)
+  const [isFetchingBooks, setIsFetchingBooks] = useState(false)
+  const limit = 12
+
+  useEffect(() => {
+    if (!isPickerOpen) return
+
+    const fetchBooks = async () => {
+      setIsFetchingBooks(true)
+      try {
+        const res = await apiClient.get<BookData>(`/books/allBooks?status=draft&page=${bookPage}&limit=${limit}&q=${bookSearch}`)
+
+        setDraftBooks(res.books)
+        const total = res.stats.Drafts
+        setBookTotalItems(total)
+        setBookTotalPages(Math.ceil(total / limit))
+      } catch (e) {
+        toast.error(getApiErrorMessage(e, "Failed to load draft books"))
+      } finally {
+        setIsFetchingBooks(false)
+      }
+    }
+
+    const timer = setTimeout(fetchBooks, 300)
+    return () => clearTimeout(timer)
+  }, [isPickerOpen, bookPage, bookSearch])
 
   const load = async () => {
     setLoading(true)
@@ -76,7 +123,19 @@ export default function ScheduledPublicationsPage() {
     <div><h1 className="flex items-center gap-2 text-3xl font-bold"><CalendarClock className="h-7 w-7" /> Scheduled Publishing</h1><p className="text-muted-foreground">Schedule books and chapters by local time; the server stores UTC and publishes from the background worker.</p></div>
     <Card><CardHeader><CardTitle>{editingId ? "Edit schedule time" : "Create schedule"}</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-5">
       <div><Label>Type</Label><Select value={form.targetType} onValueChange={(v) => setForm({ ...form, targetType: v as TargetType })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="BOOK">Book</SelectItem><SelectItem value="Chapter">Chapter</SelectItem><SelectItem value="BLOG_POST">Blog Post</SelectItem></SelectContent></Select></div>
-      <div><Label>Content ID</Label><Input disabled={!!editingId} value={form.targetId} onChange={(e) => setForm({ ...form, targetId: e.target.value })} /></div>
+
+      <div>
+        <Label>Content ID</Label>
+        <div className="flex items-center gap-2 mt-1">
+          <Input disabled={!!editingId} value={form.targetId} onChange={(e) => setForm({ ...form, targetId: e.target.value })} />
+          {!editingId && form.targetType === "BOOK" && (
+              <Button type="button" variant="outline" size="icon" onClick={() => setIsPickerOpen(true)} title="انتخاب کتاب">
+                <BookOpen className="h-4 w-4" />
+              </Button>
+          )}
+        </div>
+      </div>
+
       <div><Label>Publish Date</Label><Input type="datetime-local" value={form.publishAt} onChange={(e) => setForm({ ...form, publishAt: e.target.value })} /></div>
       <div><Label>Max retries</Label><Input type="number" min={0} max={10} value={form.maxRetries} onChange={(e) => setForm({ ...form, maxRetries: e.target.value })} /></div>
       <div className="flex items-end gap-2"><Button onClick={submit} disabled={saving || !form.targetId || !form.publishAt}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Save</Button>{editingId && <Button variant="outline" onClick={reset}>Cancel edit</Button>}</div>
@@ -88,5 +147,26 @@ export default function ScheduledPublicationsPage() {
         </TableRow>)}
       </TableBody></Table>
     </CardContent></Card>
+
+    <BookPicker
+        open={isPickerOpen}
+        onOpenChange={setIsPickerOpen}
+        books={draftBooks}
+        value={Number(form.targetId) || null}
+        onSelect={(book) => {
+          if (book) {
+            setForm({ ...form, targetId: String(book.id) })
+          }
+        }}
+        isLoading={isFetchingBooks}
+        title="Select Book for Publishing"
+        searchQuery={bookSearch}
+        onSearchChange={(q) => { setBookSearch(q); setBookPage(1) }}
+        page={bookPage}
+        onPageChange={setBookPage}
+        totalItems={bookTotalItems}
+        totalPages={bookTotalPages}
+        limit={limit}
+    />
   </div>
 }

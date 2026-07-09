@@ -30,7 +30,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
     async onModuleInit() {
         const bullmq = await import('bullmq');
         const connection = {
-            host: process.env.REDIS_HOST || 'localhost',
+            host: process.env.REDIS_HOST,
             port: parseInt(process.env.REDIS_PORT || '6379', 10),
             maxRetriesPerRequest: null,
         };
@@ -54,7 +54,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
         const [data, total] = await Promise.all([
             this.prisma.scheduledPublication.findMany({
                 where,
-                orderBy: {publishAt: 'asc'},
+                orderBy: {id: 'desc'},
                 skip: (page - 1) * limit,
                 take: limit
             }),
