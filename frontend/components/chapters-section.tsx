@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { AppPagination } from "@/components/app-pagination";
 import { formatUpdateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { PublicationStatus } from "@readory/shared"
 
 export type ChaptersSectionChapter = {
   id: number;
@@ -32,6 +33,7 @@ export type ChaptersSectionChapter = {
   isFree: boolean;
   price: number | null;
   updatedAt: string;
+  publishStatus: PublicationStatus;
 };
 
 type Translator = (key: string, values?: Record<string, string | number | Date>) => string;
@@ -384,18 +386,41 @@ function ChapterCard({
         })
       : `$${Number(chapter.price).toFixed(2)}`;
 
-  const accent = owned
-    ? "from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30"
-    : isFree
-      ? "from-primary/15 to-primary/0 ring-primary/30"
-      : "from-muted-foreground/10 to-transparent ring-border";
+  let accent;
+  let dotColor;
 
-  const dotColor = owned
-    ? "bg-emerald-500"
-    : isFree
-      ? "bg-primary"
-      : "bg-muted-foreground/40";
+  if (isAdmin) {
+    switch (chapter.publishStatus) {
+      case PublicationStatus.DRAFT:
+        accent = "from-yellow-500/15 to-yellow-500/0 ring-yellow-500/30";
+        dotColor = "bg-yellow-500";
+        break;
+      case PublicationStatus.PUBLISHED:
+        accent = "from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30";
+        dotColor = "bg-emerald-500";
+        break;
+      case PublicationStatus.SCHEDULED:
+        accent = "from-blue-500/15 to-blue-500/0 ring-blue-500/30";
+        dotColor = "bg-blue-500";
+        break;
+      default:
+        accent = "from-muted-foreground/10 to-transparent ring-border";
+        dotColor = "bg-muted-foreground/40";
+    }
+  } else {
+    accent = owned
+        ? "from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30"
+        : isFree
+            ? "from-primary/15 to-primary/0 ring-primary/30"
+            : "from-muted-foreground/10 to-transparent ring-border";
 
+    dotColor = owned
+        ? "bg-emerald-500"
+        : isFree
+            ? "bg-primary"
+            : "bg-muted-foreground/40";
+  }
+  
   const cardClasses = cn(
     "group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-4 text-start transition-colors duration-200 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right",
   );

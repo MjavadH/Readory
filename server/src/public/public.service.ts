@@ -199,6 +199,7 @@ export class PublicService {
                 },
 
                 chapters: {
+                    where: { publishStatus: PublicationStatus.PUBLISHED },
                     take: 2,
                     orderBy: {
                         index: 'desc',

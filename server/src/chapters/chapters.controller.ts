@@ -50,7 +50,7 @@ export class ChaptersController {
     @Param('bookId', ParseIntPipe) bookId: number,
     @Query() query: ListChaptersDto,
   ) {
-    return this.chaptersService.listChapters(bookId, query, true);
+    return this.chaptersService.listChapters(bookId, query, true, true);
   }
 
   // Admin: add a new chapter to a book

@@ -9,6 +9,7 @@ import {
     X,
     AlertCircle,
     Unlock,
+    Eye,
 } from "lucide-react";
 import {
     Dialog,
@@ -41,6 +42,7 @@ import {
 } from "@/components/chapters-section";
 import { ContributorRole } from "@shared/contributor-metadata";
 import type { BookContributorEntry } from "@/components/admin/contributors/contributors-field";
+import {PublicationStatus} from "@readory/shared";
 
 function hydrateContributors(
     raw: BookDetailsData["contributors"] | undefined,
@@ -116,6 +118,7 @@ export default function AdminBookDetail() {
         index: 0,
         price: 0,
         isFree: true,
+        publishStatus: PublicationStatus.DRAFT
     });
 
     const loadOptions = useCallback(async () => {
@@ -277,6 +280,7 @@ export default function AdminBookDetail() {
             index: chapters.length + 1,
             price: 0,
             isFree: true,
+            publishStatus: PublicationStatus.DRAFT
         });
         setChapterDialog({ mode: "add" });
     };
@@ -287,6 +291,7 @@ export default function AdminBookDetail() {
             index: chapter.index,
             isFree: chapter.isFree,
             price: chapter.price ?? 0,
+            publishStatus: chapter.publishStatus
         });
         setChapterDialog({ mode: "edit", chapter });
     };
@@ -526,11 +531,27 @@ export default function AdminBookDetail() {
                             />
                         </div>
 
+                        <div className="space-y-2">
+                            <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card px-3 py-2.5">
+                            <span className="flex items-center gap-2 text-sm">
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                {t("Publish")}
+                            </span>
+                                <Switch
+                                    id="publishStatus"
+                                    checked={chapterForm.publishStatus === PublicationStatus.PUBLISHED}
+                                    onCheckedChange={(checked) =>
+                                        setChapterForm({ ...chapterForm, publishStatus: checked ? PublicationStatus.PUBLISHED : PublicationStatus.DRAFT })
+                                    }
+                                />
+                            </label>
+                        </div>
+
                         <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card px-3 py-2.5">
-              <span className="flex items-center gap-2 text-sm">
-                <Unlock className="h-4 w-4 text-muted-foreground" />
-                  {t("FreeChapter")}
-              </span>
+                            <span className="flex items-center gap-2 text-sm">
+                                <Unlock className="h-4 w-4 text-muted-foreground" />
+                                {t("FreeChapter")}
+                            </span>
                             <Switch
                                 id="isFree"
                                 checked={chapterForm.isFree}

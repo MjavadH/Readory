@@ -33,6 +33,7 @@ export class ChaptersService {
     bookId: number,
     query: ListChaptersDto,
     path: boolean = false,
+    Status: boolean = false,
   ) {
     const q = normalizeQ(query.q);
     const page = Number.isInteger(query.page) ? Number(query.page) : 1;
@@ -48,6 +49,7 @@ export class ChaptersService {
 
     const where: Prisma.ChapterWhereInput = {
       bookId,
+      publishStatus: query.publishStatus,
       ...(q
         ? {
             OR: [
@@ -73,6 +75,7 @@ export class ChaptersService {
             isFree: true,
             updatedAt: true,
             contentPath: path,
+            publishStatus: Status,
           },
         }),
         this.prisma.chapter.count({ where }),
@@ -129,12 +132,14 @@ export class ChaptersService {
 
     try {
       const now = new Date();
+      const isPublished = dto.publishStatus === 'PUBLISHED';
       const [chapter] = await this.prisma.$transaction([
         this.prisma.chapter.create({
           data: {
             book: { connect: { id: bookId } },
             title: dto.title,
             index: dto.index,
+            publishStatus: dto.publishStatus,
             isFree,
             price,
             contentPath: dto.contentPath,
@@ -142,7 +147,10 @@ export class ChaptersService {
         }),
         this.prisma.book.update({
           where: { id: bookId },
-          data: { chapterCount: { increment: 1 }, lastContentUpdate: now },
+          data: {
+            ...(isPublished && { chapterCount: { increment: 1 } }),
+            lastContentUpdate: now
+          },
         }),
       ]);
 
@@ -169,6 +177,15 @@ export class ChaptersService {
     });
     if (!existing) throw new NotFoundException('Chapter not found');
 
+    let chapterCountChange = 0;
+    if (dto.publishStatus && existing.publishStatus !== dto.publishStatus) {
+      if (dto.publishStatus === 'PUBLISHED') {
+        chapterCountChange = 1;
+      } else if (existing.publishStatus === 'PUBLISHED') {
+        chapterCountChange = -1;
+      }
+    }
+
     const nextIsFree = dto.isFree ?? existing.isFree;
 
     const nextPrice = nextIsFree
@@ -187,6 +204,7 @@ export class ChaptersService {
           isFree: dto.isFree,
           price: nextPrice,
           contentPath: dto.contentPath,
+          publishStatus: dto.publishStatus
         },
         select: {
           id: true,
@@ -194,13 +212,18 @@ export class ChaptersService {
           index: true,
           price: true,
           isFree: true,
+          publishStatus: true,
         },
       });
 
-      if (dto.contentPath !== undefined) {
+      if (dto.contentPath !== undefined || chapterCountChange !== 0) {
         await this.prisma.book.update({
           where: { id: bookId },
-          data: { lastContentUpdate: now },
+          data: {
+            ...(chapterCountChange > 0 && { chapterCount: { increment: 1 } }),
+            ...(chapterCountChange < 0 && { chapterCount: { decrement: 1 } }),
+            ...(dto.contentPath !== undefined && { lastContentUpdate: now })
+          },
         });
       }
 
@@ -222,12 +245,17 @@ export class ChaptersService {
     });
     if (!existing) throw new NotFoundException('Chapter not found');
 
+    const isPublished = existing.publishStatus === 'PUBLISHED';
     const now = new Date();
+
     await this.prisma.$transaction([
       this.prisma.chapter.delete({ where: { id: chapterId } }),
       this.prisma.book.update({
         where: { id: bookId },
-        data: { chapterCount: { decrement: 1 }, lastContentUpdate: now },
+        data: {
+          ...(isPublished && { chapterCount: { decrement: 1 } }),
+          lastContentUpdate: now
+        },
       }),
     ]);
 
@@ -278,7 +306,7 @@ export class ChaptersService {
   // User: purchase a chapter
   async purchaseChapter(userId: number, chapterId: number) {
     const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId },
+      where: { id: chapterId, publishStatus: "PUBLISHED" },
       select: {
         id: true,
         index: true,

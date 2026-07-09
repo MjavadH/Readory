@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsInt, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import {IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, MaxLength, Min} from 'class-validator';
+import {PublicationStatus} from "@readory/shared";
 
 export class UpdateChapterDto {
     @IsOptional()
@@ -26,4 +27,8 @@ export class UpdateChapterDto {
     @IsString()
     @MaxLength(500)
     contentPath?: string;
+
+    @IsOptional()
+    @IsEnum(PublicationStatus)
+    publishStatus?: PublicationStatus;
 }

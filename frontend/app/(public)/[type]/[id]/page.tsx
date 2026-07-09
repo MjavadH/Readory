@@ -135,7 +135,7 @@ export default function BookDetailsPage() {
     setChaptersLoading(true);
     try {
       const data = await apiClient.get<ChaptersResponse>(
-          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(chapterSearch)}&order=${chaptersOrder}`,
+          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(chapterSearch)}&order=${chaptersOrder}&publishStatus=PUBLISHED`,
       );
       setChapters(data.items);
       setChaptersTotal(data.pagination.total);

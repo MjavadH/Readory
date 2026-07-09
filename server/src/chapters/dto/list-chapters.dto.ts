@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {IsEnum, IsInt, IsOptional, IsString, Max, Min} from 'class-validator';
+import {PublicationStatus} from "@readory/shared";
 
 export class ListChaptersDto {
   @IsOptional()
@@ -22,4 +23,8 @@ export class ListChaptersDto {
   @IsOptional()
   @IsString()
   order?: 'asc' | 'desc' = 'asc';
+
+  @IsOptional()
+  @IsEnum(PublicationStatus)
+  publishStatus: PublicationStatus | undefined
 }
