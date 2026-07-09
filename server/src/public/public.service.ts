@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import {DashboardService} from "../dashboard/dashboard.service";
+import {PublicationStatus} from "@readory/shared";
 
 @Injectable()
 export class PublicService {
@@ -118,7 +119,7 @@ export class PublicService {
     private async getFeaturedBooks() {
         return this.prisma.book.findMany({
             where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
                 isFeatured: true,
             },
             take: 5,
@@ -172,7 +173,7 @@ export class PublicService {
     private async getLatestBooks() {
         return this.prisma.book.findMany({
             where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
             },
 
             take: 12,
@@ -215,7 +216,7 @@ export class PublicService {
     private async getTrendingBooks() {
         return this.prisma.book.findMany({
             where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
             },
 
             take: 10,
@@ -290,7 +291,7 @@ export class PublicService {
     private async getPopularBooks() {
         return this.prisma.book.findMany({
             where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
                 ratingCount: {
                     gte: 5,
                 },
@@ -370,7 +371,7 @@ export class PublicService {
                     featuredGenres.map(async (g) => {
                         const books = await this.prisma.book.findMany({
                             where: {
-                                publishStatus: 'PUBLISHED',
+                                publishStatus: PublicationStatus.PUBLISHED,
                                 genres: { some: { genreId: g.id } },
                                 type: { isActive: true },
                             },

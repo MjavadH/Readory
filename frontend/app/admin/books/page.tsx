@@ -20,7 +20,7 @@ import { MediaPicker } from "@/components/admin/media-picker"
 import { StatCard } from "@/components/admin/stat-card"
 import { BookCard } from "@/components/book-card"
 import type { BookCardData } from "@/lib/types"
-import { BookStatus, type AgeRating } from "@readory/shared"
+import { BookStatus, PublicationStatus, type AgeRating } from "@readory/shared"
 import { motion } from "framer-motion"
 import {useTranslations} from "next-intl";
 import {useLocaleInfo} from "@/hooks/use-locale-info";
@@ -57,7 +57,7 @@ type NewBookForm = {
     description: string
     coverImage: string
     genreIds: number[]
-    publishStatus: "DRAFT" | "SCHEDULED" | "PUBLISHED"
+    publishStatus: PublicationStatus
     isFeatured: boolean
     status: BookStatus
     ageRating: AgeRating | undefined
@@ -99,7 +99,7 @@ export default function AdminBooks() {
         description: "",
         coverImage: "",
         genreIds: [] as number[],
-        publishStatus: "DRAFT",
+        publishStatus: PublicationStatus.DRAFT,
         isFeatured: false,
         status: BookStatus.Upcoming,
         ageRating: undefined as AgeRating | undefined,
@@ -223,7 +223,7 @@ export default function AdminBooks() {
                 description: "",
                 coverImage: "",
                 genreIds: [],
-                publishStatus: "DRAFT",
+                publishStatus: PublicationStatus.DRAFT,
                 isFeatured: false,
                 status: BookStatus.Upcoming,
                 ageRating: undefined,
@@ -249,7 +249,7 @@ export default function AdminBooks() {
             description: "",
             coverImage: "",
             genreIds: [],
-            publishStatus: "DRAFT",
+            publishStatus: PublicationStatus.DRAFT,
             isFeatured: false,
             status: BookStatus.Upcoming,
             ageRating: undefined,

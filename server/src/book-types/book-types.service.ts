@@ -1,4 +1,4 @@
-import type { IconKey } from '@readory/shared';
+import {IconKey, PublicationStatus} from '@readory/shared';
 import {
   BadRequestException,
   Injectable,
@@ -52,7 +52,7 @@ export class BookTypesService {
     const books = await this.prisma.book.findMany({
       where: {
         typeId: bookType.id,
-        publishStatus: 'PUBLISHED',
+        publishStatus: PublicationStatus.PUBLISHED,
       },
       orderBy: { createdAt: 'desc' },
       select: {

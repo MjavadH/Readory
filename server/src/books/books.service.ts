@@ -23,6 +23,7 @@ import {
 } from "./recommendation/recommendation.constants";
 import {CreateBookDto} from "./dto/create-book.dto"
 import {UpdateBookDto} from "./dto/update-book.dto";
+import {PublicationStatus} from "@readory/shared";
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -97,7 +98,7 @@ export class BooksService {
     const q = normalizeQ(args.q);
 
     const where: Prisma.BookWhereInput = {
-      publishStatus: 'PUBLISHED',
+      publishStatus: PublicationStatus.PUBLISHED,
       type: { isActive: true },
     };
 
@@ -634,10 +635,10 @@ export class BooksService {
       case 'all':
         break;
       case 'published':
-        where.publishStatus = 'PUBLISHED';
+        where.publishStatus = PublicationStatus.PUBLISHED;
         break;
       case 'draft':
-        where.publishStatus = 'DRAFT';
+        where.publishStatus = PublicationStatus.DRAFT;
         break;
       case 'featured':
         where.isFeatured = true;
@@ -648,8 +649,8 @@ export class BooksService {
 
     const [total, published, drafts, books] = await this.prisma.$transaction([
       this.prisma.book.count(),
-      this.prisma.book.count({ where: { publishStatus: 'PUBLISHED' } }),
-      this.prisma.book.count({ where: { publishStatus: 'DRAFT' } }),
+      this.prisma.book.count({ where: { publishStatus: PublicationStatus.PUBLISHED } }),
+      this.prisma.book.count({ where: { publishStatus: PublicationStatus.DRAFT } }),
       this.prisma.book.findMany({
         where,
         orderBy: { updatedAt: 'desc' },
@@ -722,7 +723,7 @@ export class BooksService {
         },
         async () => {
           const sourceBook = await this.prisma.book.findUnique({
-            where: { id: bookId, publishStatus: 'PUBLISHED' },
+            where: { id: bookId, publishStatus: PublicationStatus.PUBLISHED },
             select: {
               id: true,
               typeId: true,
@@ -758,7 +759,7 @@ export class BooksService {
                        WHERE bg."bookId" = b.id
                      ) AS target_genre_count
                    FROM "Book" b
-                   WHERE b."publishStatus" = 'PUBLISHED'
+                   WHERE b."publishStatus" = ${PublicationStatus.PUBLISHED}
                      AND b.id != ${bookId}::integer
               AND (
               b."typeId" = ${sourceBook.typeId}::integer
@@ -860,7 +861,7 @@ export class BooksService {
   // Get book
   async findById(id: number) {
     const book = await this.prisma.book.findUnique({
-      where: { id, publishStatus: 'PUBLISHED' },
+      where: { id, publishStatus: PublicationStatus.PUBLISHED },
       select: {
         id: true,
         title: true,

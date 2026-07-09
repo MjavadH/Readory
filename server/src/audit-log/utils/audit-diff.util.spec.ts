@@ -1,11 +1,12 @@
 import { generateAuditDiff } from './audit-diff.util';
+import {PublicationStatus} from "@readory/shared";
 
 describe('generateAuditDiff', () => {
   it('handles nested objects, arrays, nullable values, booleans, enums, and dates while ignoring timestamps', () => {
     const before = {
       title: 'Old Title',
       status: 'DRAFT',
-      publishStatus: 'DRAFT',
+      publishStatus: PublicationStatus.DRAFT,
       deletedReason: null,
       updatedAt: '2026-01-01T00:00:00.000Z',
       genres: [{ id: 1, name: 'Fantasy' }],
@@ -14,7 +15,7 @@ describe('generateAuditDiff', () => {
     const after = {
       title: 'New Title',
       status: 'PUBLISHED',
-      publishStatus: 'PUBLISHED',
+      publishStatus: PublicationStatus.PUBLISHED,
       deletedReason: 'duplicate',
       updatedAt: '2026-01-02T00:00:00.000Z',
       genres: [

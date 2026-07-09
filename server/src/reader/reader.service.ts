@@ -17,6 +17,7 @@ import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { createHash } from 'crypto';
+import {PublicationStatus} from "@readory/shared";
 
 type ReaderTokenPayload = {
   userId: number;
@@ -129,7 +130,7 @@ export class ReaderService {
     await this.enforceRateLimit('session', userId, 10, 60);
 
     const chapter = await this.prisma.chapter.findFirst({
-      where: { bookId, index: chapterIndex, book: { publishStatus: 'PUBLISHED' } },
+      where: { bookId, index: chapterIndex, book: { publishStatus: PublicationStatus.PUBLISHED } },
       select: {
         id: true,
         bookId: true,

@@ -8,6 +8,7 @@ import { UpdateContributorDto } from './dto/update-contributor.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { normalizeQ, normalizePagination, paginationMeta, normalizeSlug } from '../common';
+import {PublicationStatus} from "@readory/shared";
 
 @Injectable()
 export class ContributorService {
@@ -142,13 +143,13 @@ export class ContributorService {
           const [totalBooks, books] = await this.prisma.$transaction([
             this.prisma.book.count({
               where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
                 contributors: { some: { contributorId: contributors.id } },
               },
             }),
             this.prisma.book.findMany({
               where: {
-                publishStatus: 'PUBLISHED',
+                publishStatus: PublicationStatus.PUBLISHED,
                 contributors: { some: { contributorId: contributors.id } },
               },
               orderBy: { updatedAt: 'desc' },

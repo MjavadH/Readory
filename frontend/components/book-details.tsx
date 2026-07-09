@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AppIcon } from "@/components/AppIcon";
 import { formatUpdateTime } from "@/lib/time";
-import { ContributorRole, CONTRIBUTOR_ROLE_ICONS, type AgeRating, type BookStatus, type IconKey } from "@readory/shared";
+import { ContributorRole, CONTRIBUTOR_ROLE_ICONS, PublicationStatus, type AgeRating, type BookStatus, type IconKey } from "@readory/shared";
 import Link from "next/link";
 
 export type BookDetailsData = {
@@ -35,7 +35,7 @@ export type BookDetailsData = {
   description?: string | null;
   coverImage: string;
   isFeatured: boolean;
-  publishStatus?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
+  publishStatus?: PublicationStatus;
   status: BookStatus;
   ageRating?: AgeRating | null;
   publicationYear?: number | null;
@@ -183,7 +183,7 @@ export function BookDetails({
   };
 
   const alternativeTitles = book.alternativeTitles?.filter(Boolean) ?? [];
-  const isDraft = book.publishStatus !== "PUBLISHED";
+  const isDraft = book.publishStatus === PublicationStatus.DRAFT;
 
   return (
       <section

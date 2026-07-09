@@ -4,8 +4,9 @@ import request from 'supertest';
 import cookieParser from 'cookie-parser';
 import { S3Client } from '@aws-sdk/client-s3';
 import { JwtService } from '@nestjs/jwt';
-import { AppModule } from './../src/app.module';
+import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import {PublicationStatus} from "@readory/shared";
 
 describe('AppModule (e2e)', () => {
   let app: INestApplication;
@@ -74,7 +75,7 @@ describe('AppModule (e2e)', () => {
       data: {
         title: 'E2E Book',
         typeId: type.id,
-        publishStatus: 'PUBLISHED',
+        publishStatus: PublicationStatus.PUBLISHED,
         isFeatured: true,
       },
     });

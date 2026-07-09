@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { AgeRating, BookStatus } from '@readory/shared';
+import { AgeRating, BookStatus, PublicationStatus } from '@readory/shared';
 import { ContributorRole } from '@prisma/client';
 import {
     ArrayNotEmpty, IsArray, IsBoolean,
@@ -68,8 +68,8 @@ export class CreateBookDto {
     coverImage?: string;
 
     @IsOptional()
-    @IsString()
-    publishStatus?: 'DRAFT' | 'SCHEDULED' | 'PUBLISHED';
+    @IsEnum(PublicationStatus)
+    publishStatus?: PublicationStatus;
 
     @IsOptional()
     @IsBoolean()

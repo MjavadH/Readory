@@ -64,7 +64,7 @@ model Book {
   originalTitle     String?
   alternativeTitles String[]          @default([])
   status            String            @default("UPCOMING")
-  publishStatus     String            @default("DRAFT")
+  publishStatus     PublicationStatus @default(DRAFT)
   ageRating         String?
   publicationYear   Int?
   lastContentUpdate DateTime?
@@ -151,7 +151,7 @@ model Chapter {
   contentType     ChapterContentType?
   pageCount       Int                 @default(0)
   contentVersion  Int                 @default(0)
-  publishStatus   String              @default("DRAFT")
+  publishStatus   PublicationStatus   @default(DRAFT)
   accessRecords   AccessRecord[]
   book            Book                @relation(fields: [bookId], references: [id])
   readingProgress ReadingProgress[]
@@ -298,6 +298,12 @@ enum ScheduledPublicationStatus {
   Published
   Canceled
   FAILED
+}
+
+enum PublicationStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
 }
 
 enum ScheduledTargetType {

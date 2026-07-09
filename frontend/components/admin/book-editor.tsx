@@ -16,7 +16,7 @@ import {
     Type,
     X,
 } from "lucide-react";
-import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, BookStatus, type AgeRating } from "@readory/shared";
+import { AGE_RATING_VALUES, BOOK_STATUS_VALUES, PublicationStatus, BookStatus, type AgeRating } from "@readory/shared";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
@@ -49,7 +49,7 @@ export type BookEditorValue = {
     description?: string | null;
     coverImage?: string;
     isFeatured?: boolean;
-    publishStatus?: "DRAFT" | "SCHEDULED" | "PUBLISHED";
+    publishStatus?: PublicationStatus;
     status?: BookStatus;
     ageRating?: AgeRating | null;
     publicationYear?: number | null;
@@ -262,8 +262,8 @@ export function BookEditor({
                                 icon={<Eye className="h-4 w-4 text-muted-foreground" />}
                                 label={t("Publish")}
                                 description={t("MarkPublished")}
-                                checked={value.publishStatus === "PUBLISHED"}
-                                onCheckedChange={(checked) => onChange({ ...value, publishStatus: checked ? "PUBLISHED" : "DRAFT" })}
+                                checked={value.publishStatus === PublicationStatus.PUBLISHED}
+                                onCheckedChange={(checked) => onChange({ ...value, publishStatus: checked ? PublicationStatus.PUBLISHED : PublicationStatus.DRAFT })}
                                 activeColor="emerald"
                             />
                             <ToggleRow
