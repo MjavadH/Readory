@@ -80,7 +80,7 @@ export function LibraryCard({ item, className }: Props) {
                 <div className="space-y-3 relative z-10">
                     <div className="min-h-12">
                         <h4 className="font-bold text-lg line-clamp-1 group-hover:text-primary transition-colors tracking-tight">{item.book.title}</h4>
-                        <p className="text-sm text-muted-foreground font-medium">{item.book.author}</p>
+                        <p className="text-sm text-muted-foreground font-medium">{item.book.contributors}</p>
                     </div>
 
                     <div className="space-y-2">

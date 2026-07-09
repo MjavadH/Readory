@@ -8,8 +8,8 @@ import { HeroCarousel, HeroSkeleton } from "@/components/Home/hero-carousel";
 import {BookType, BookGenre, BookCardData, ReadingProgress} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
 import {PopularSection, PopularSkeleton} from "@/components/Home/popular-section";
-import {ContinueReadingCard, ContinueReadingCardSkeleton} from "@/components/dashboard/ContinueReadingCard";
-import {BookMarked, Sparkles} from "lucide-react";
+import { ContinueReadingCard } from "@/components/dashboard/ContinueReadingCard";
+import { BookMarked } from "lucide-react";
 import {useTranslations} from "next-intl";
 
 interface Chapter {
