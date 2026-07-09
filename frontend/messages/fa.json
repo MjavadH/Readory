@@ -160,7 +160,8 @@
       "UploadComplete": " • آپلود کامل شد!",
       "NFilesSelected": "{NFiles} فایل انتخاب شده",
       "More": "مورد دیگر",
-      "BrowseMore": "مرور بیشتر"
+      "BrowseMore": "مرور بیشتر",
+      "Media": "رسانه"
     },
     "Transactions": {
       "Title": "تراکنش‌ها",

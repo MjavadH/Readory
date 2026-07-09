@@ -2,14 +2,15 @@
 
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
-import { Search, Loader2, ChevronLeft, ChevronRight, Check, X } from "lucide-react"
+import { Search, Loader2, Check, X } from "lucide-react"
 import { useToast } from "@/providers/toast-provider";
 import {useTranslations} from "next-intl";
+import {AppPagination} from "@/components/app-pagination";
 
 export type MediaItem = {
     code: string
@@ -47,7 +48,6 @@ export function MediaPicker({
                                 allowClear = true,
                             }: MediaPickerProps) {
     const t = useTranslations('AdminPage.MediaLibrary');
-    const g = useTranslations('General');
     const toast = useToast()
     const [q, setQ] = useState("")
     const [page, setPage] = useState(1)
@@ -58,6 +58,8 @@ export function MediaPicker({
 
     const [isLoading, setIsLoading] = useState(false)
     const [hasLoadedOnce, setHasLoadedOnce] = useState(false)
+
+    const paginationScrollRef = useRef<HTMLDivElement>(null)
 
     // tiny in-memory cache to reduce pressure when navigating pages back/forth
     const cacheRef = useRef(new Map<string, PagedMediaResponse>())
@@ -127,30 +129,6 @@ export function MediaPicker({
         return () => controller.abort()
     }, [open, q, page, itemsPerPage, toast])
 
-    const pageNumbers = useMemo(() => {
-        const tp = totalPages
-        const p = page
-        const len = Math.min(5, tp)
-        const nums: number[] = []
-
-        if (tp <= 5) {
-            for (let i = 1; i <= tp; i++) nums.push(i)
-            return nums
-        }
-        if (p <= 3) {
-            for (let i = 1; i <= len; i++) nums.push(i)
-            return nums
-        }
-        if (p >= tp - 2) {
-            for (let i = tp - 4; i <= tp; i++) nums.push(i)
-            return nums
-        }
-        for (let i = p - 2; i <= p + 2; i++) nums.push(i)
-        return nums
-    }, [page, totalPages])
-
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE
-
     return (
         <Dialog open={open} onOpenChange={onOpenChangeAction}>
             <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -166,7 +144,7 @@ export function MediaPicker({
                 </div>
 
                 {/* Grid */}
-                <div className="relative mt-4">
+                <div ref={paginationScrollRef} className="relative mt-4">
                     {isLoading && hasLoadedOnce && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
                             <Loader2 className="size-6 animate-spin" />
@@ -246,61 +224,20 @@ export function MediaPicker({
                                 {t("NoCover")}
                             </Button>
                         )}
-                        <p className="text-xs text-muted-foreground">
-                            {totalPages > 1 ? (
-                                <>
-                                    {g("Page")} <span className="font-semibold text-foreground">{page}</span> /{" "}
-                                    <span className="font-semibold text-foreground">{totalPages}</span> • {g("Total")}{" "}
-                                    <span className="font-semibold text-foreground">{total}</span>
-                                </>
-                            ) : (
-                                <>
-                                    {g("Total")} <span className="font-semibold text-foreground">{total || items.length}</span>
-                                </>
-                            )}
-                        </p>
                     </div>
 
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                disabled={isLoading || page === 1}
-                            >
-                                <ChevronLeft className="size-4 rtl:rotate-180" />
-                                {g("Prev")}
-                            </Button>
-
-                            <div className="hidden sm:flex items-center gap-1">
-                                {pageNumbers.map((n) => (
-                                    <Button
-                                        key={n}
-                                        type="button"
-                                        variant={n === page ? "default" : "outline"}
-                                        size="sm"
-                                        className="w-9"
-                                        onClick={() => setPage(n)}
-                                        disabled={isLoading}
-                                    >
-                                        {n}
-                                    </Button>
-                                ))}
-                            </div>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                disabled={isLoading || page >= totalPages}
-                            >
-                                {g("Next")}
-                                <ChevronRight className="size-4 rtl:rotate-180" />
-                            </Button>
-                        </div>
+                        <AppPagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            totalItems={total}
+                            pageSize={itemsPerPage}
+                            itemLabel={t("Media")}
+                            onPageChange={setPage}
+                            canGoPrevious={page > 1}
+                            canGoNext={page < totalPages}
+                            scrollTarget={paginationScrollRef}
+                        />
                     )}
                 </div>
             </DialogContent>

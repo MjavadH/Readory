@@ -160,7 +160,8 @@
       "UploadComplete": " • Upload complete!",
       "NFilesSelected": "{NFiles} file(s) selected",
       "More": "more...",
-      "BrowseMore": "Browse more"
+      "BrowseMore": "Browse more",
+      "Media": "Media"
     },
     "Transactions": {
       "Title": "Transactions",
