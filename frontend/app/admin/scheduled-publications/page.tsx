@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState } from "react"
-import {BookOpen, CalendarClock, Check, Loader2, Pencil, Send, X} from "lucide-react"
+import {BookOpen, CalendarClock, Check, FileText, Loader2, Pencil, Send, X} from "lucide-react"
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { useToast } from "@/providers/toast-provider"
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,12 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { BookPicker } from "@/components/admin/book-picker"
 import type { BookCardData } from "@/lib/types"
+import { ChapterPicker, type ChapterItemData } from "@/components/admin/chapter-picker"
+import {useTranslations} from "next-intl";
+import {motion} from "framer-motion";
 
-type TargetType = "BOOK" | "Chapter" | "BLOG_POST"
+type TargetType = "BOOK" | "Chapter"
+
 type Schedule = {
   id: number
   targetType: TargetType
@@ -47,6 +51,7 @@ const toLocalInput = (iso: string) => {
 }
 
 export default function ScheduledPublicationsPage() {
+  const t = useTranslations("AdminPage.ScheduledPublications")
   const toast = useToast()
   const [items, setItems] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,20 +70,56 @@ export default function ScheduledPublicationsPage() {
   const [isFetchingBooks, setIsFetchingBooks] = useState(false)
   const limit = 12
 
+  // Chapter Picker
+  const [isBookForChapter, setIsBookForChapter] = useState(false)
+  const [selectedBookForChapterId, setSelectedBookForChapterId] = useState<number | null>(null)
+
+  const [isChapterPickerOpen, setIsChapterPickerOpen] = useState(false)
+  const [draftChapters, setDraftChapters] = useState<ChapterItemData[]>([])
+  const [chapterSearch, setChapterSearch] = useState("")
+  const [chapterPage, setChapterPage] = useState(1)
+  const [chapterTotalItems, setChapterTotalItems] = useState(0)
+  const [chapterTotalPages, setChapterTotalPages] = useState(1)
+  const [isFetchingChapters, setIsFetchingChapters] = useState(false)
+
+  useEffect(() => {
+    if (!isChapterPickerOpen || !selectedBookForChapterId) return
+
+    const fetchChapters = async () => {
+      setIsFetchingChapters(true)
+      try {
+        const res: any = await apiClient.get(`/books/${selectedBookForChapterId}/chapters/admin?publishStatus=DRAFT&page=${chapterPage}&limit=50&q=${chapterSearch}`)
+        const data = res.data || res
+
+        setDraftChapters(data.items || [])
+        setChapterTotalItems(data.pagination?.total || 0)
+        setChapterTotalPages(data.pagination?.totalPages || 1)
+      } catch (e) {
+        toast.error(getApiErrorMessage(e, "Failed to load chapters"))
+      } finally {
+        setIsFetchingChapters(false)
+      }
+    }
+
+    const timer = setTimeout(fetchChapters, 300)
+    return () => clearTimeout(timer)
+  }, [isChapterPickerOpen, chapterPage, chapterSearch, selectedBookForChapterId])
+
   useEffect(() => {
     if (!isPickerOpen) return
 
     const fetchBooks = async () => {
       setIsFetchingBooks(true)
       try {
-        const res = await apiClient.get<BookData>(`/books/allBooks?status=draft&page=${bookPage}&limit=${limit}&q=${bookSearch}`)
+        const statusFilter = isBookForChapter ? "published" : "draft"
+        const res = await apiClient.get<BookData>(`/books/allBooks?status=${statusFilter}&page=${bookPage}&limit=${limit}&q=${bookSearch}`)
 
         setDraftBooks(res.books)
-        const total = res.stats.Drafts
+        const total = isBookForChapter ? res.stats.Published : res.stats.Drafts
         setBookTotalItems(total)
         setBookTotalPages(Math.ceil(total / limit))
       } catch (e) {
-        toast.error(getApiErrorMessage(e, "Failed to load draft books"))
+        toast.error(getApiErrorMessage(e, "Failed to load books"))
       } finally {
         setIsFetchingBooks(false)
       }
@@ -86,7 +127,7 @@ export default function ScheduledPublicationsPage() {
 
     const timer = setTimeout(fetchBooks, 300)
     return () => clearTimeout(timer)
-  }, [isPickerOpen, bookPage, bookSearch])
+  }, [isPickerOpen, bookPage, bookSearch, isBookForChapter])
 
   const load = async () => {
     setLoading(true)
@@ -122,16 +163,50 @@ export default function ScheduledPublicationsPage() {
   return <div className="space-y-6 p-4 md:p-8">
     <div><h1 className="flex items-center gap-2 text-3xl font-bold"><CalendarClock className="h-7 w-7" /> Scheduled Publishing</h1><p className="text-muted-foreground">Schedule books and chapters by local time; the server stores UTC and publishes from the background worker.</p></div>
     <Card><CardHeader><CardTitle>{editingId ? "Edit schedule time" : "Create schedule"}</CardTitle></CardHeader><CardContent className="grid gap-4 md:grid-cols-5">
-      <div><Label>Type</Label><Select value={form.targetType} onValueChange={(v) => setForm({ ...form, targetType: v as TargetType })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="BOOK">Book</SelectItem><SelectItem value="Chapter">Chapter</SelectItem><SelectItem value="BLOG_POST">Blog Post</SelectItem></SelectContent></Select></div>
+      <div>
+        <Label>Type</Label>
+        <Select
+            value={form.targetType}
+            onValueChange={(v) => {
+              setForm({ ...form, targetType: v as TargetType, targetId: "" })
+              setSelectedBookForChapterId(null)
+            }}
+        >
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="BOOK">Book</SelectItem><SelectItem value="Chapter">Chapter</SelectItem></SelectContent>
+        </Select>
+      </div>
 
       <div>
         <Label>Content ID</Label>
         <div className="flex items-center gap-2 mt-1">
           <Input disabled={!!editingId} value={form.targetId} onChange={(e) => setForm({ ...form, targetId: e.target.value })} />
           {!editingId && form.targetType === "BOOK" && (
-              <Button type="button" variant="outline" size="icon" onClick={() => setIsPickerOpen(true)} title="انتخاب کتاب">
+              <Button type="button" variant="outline" size="icon" onClick={() => { setIsBookForChapter(false); setIsPickerOpen(true); }}>
                 <BookOpen className="h-4 w-4" />
               </Button>
+          )}
+
+          {!editingId && form.targetType === "Chapter" && (
+              <>
+                <Button
+                    type="button"
+                    variant={selectedBookForChapterId ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => { setIsBookForChapter(true); setIsPickerOpen(true); }}
+                >
+                  <BookOpen className="h-4 w-4" />
+                </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={!selectedBookForChapterId}
+                    onClick={() => setIsChapterPickerOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                </Button>
+              </>
           )}
         </div>
       </div>
@@ -148,18 +223,24 @@ export default function ScheduledPublicationsPage() {
       </TableBody></Table>
     </CardContent></Card>
 
+    {/* Book Picker */}
     <BookPicker
         open={isPickerOpen}
         onOpenChange={setIsPickerOpen}
         books={draftBooks}
-        value={Number(form.targetId) || null}
+        value={isBookForChapter ? selectedBookForChapterId : (Number(form.targetId) || null)}
         onSelect={(book) => {
           if (book) {
-            setForm({ ...form, targetId: String(book.id) })
+            if (isBookForChapter) {
+              setSelectedBookForChapterId(book.id)
+              setForm({ ...form, targetId: "" })
+            } else {
+              setForm({ ...form, targetId: String(book.id) })
+            }
           }
         }}
         isLoading={isFetchingBooks}
-        title="Select Book for Publishing"
+        title={isBookForChapter ? "Select Book for Chapters" : "Select Book for Publishing"}
         searchQuery={bookSearch}
         onSearchChange={(q) => { setBookSearch(q); setBookPage(1) }}
         page={bookPage}
@@ -167,6 +248,26 @@ export default function ScheduledPublicationsPage() {
         totalItems={bookTotalItems}
         totalPages={bookTotalPages}
         limit={limit}
+    />
+
+    {/* Chapter Picker */}
+    <ChapterPicker
+        open={isChapterPickerOpen}
+        onOpenChange={setIsChapterPickerOpen}
+        chapters={draftChapters}
+        value={Number(form.targetId) || null}
+        onSelect={(chapter) => {
+          if (chapter) {
+            setForm({ ...form, targetId: String(chapter.id) })
+          }
+        }}
+        isLoading={isFetchingChapters}
+        searchQuery={chapterSearch}
+        onSearchChange={(q) => { setChapterSearch(q); setChapterPage(1) }}
+        page={chapterPage}
+        onPageChange={setChapterPage}
+        totalItems={chapterTotalItems}
+        totalPages={chapterTotalPages}
     />
   </div>
 }

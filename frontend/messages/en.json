@@ -293,6 +293,10 @@
       "Refresh": "Refresh",
       "From": "From",
       "To": "To"
+    },
+    "ScheduledPublications": {
+      "Title": "Scheduled Publishing",
+      "Description": "Schedule books and chapters by local time; the server stores UTC and publishes from the background worker."
     }
   },
   "Auth": {
