@@ -295,8 +295,77 @@
       "To": "To"
     },
     "ScheduledPublications": {
-      "Title": "Scheduled Publishing",
-      "Description": "Schedule books and chapters by local time; the server stores UTC and publishes from the background worker."
+      "Title": "Scheduled Publications",
+      "Description": "Schedule books and chapters to publish automatically at a specific time.",
+      "Form": {
+        "CreateTitle": "Create schedule",
+        "EditTitle": "Edit schedule",
+        "Type": "Type",
+        "TargetType": {
+          "Book": "Book",
+          "Chapter": "Chapter"
+        },
+        "Target": "Target",
+        "SelectBook": "Select book",
+        "SelectChapter": "Select chapter",
+        "NotSelected": "No target selected",
+        "PublishDate": "Publish date",
+        "MaxRetries": "Max retries",
+        "Save": "Save",
+        "CancelEdit": "Cancel edit"
+      },
+      "List": {
+        "Title": "Management",
+        "Content": "Content",
+        "Type": "Type",
+        "PublishDate": "Publish date",
+        "Status": "Status",
+        "Retry": "Retry",
+        "Error": "Error",
+        "Actions": "Actions",
+        "Loading": "Loading…",
+        "Empty": "No scheduled publications yet.",
+        "NoAttempts": "No attempts",
+        "NoError": "—"
+      },
+      "Status": {
+        "Pending": "Pending",
+        "FAILED": "Failed",
+        "Published": "Published",
+        "Canceled": "Canceled"
+      },
+      "Toast": {
+        "Created": "Schedule created",
+        "Updated": "Schedule updated",
+        "Cancelled": "Schedule cancelled",
+        "PublishedNow": "Published immediately",
+        "SaveFailed": "Failed to save schedule",
+        "ActionFailed": "Action failed",
+        "LoadFailed": "Failed to load schedules",
+        "LoadBooksFailed": "Failed to load books",
+        "LoadChaptersFailed": "Failed to load chapters"
+      },
+      "Picker": {
+        "SelectBookForChapters": "Select book for chapters",
+        "SelectBookForPublishing": "Select book for publishing"
+      }
+    },
+    "BookPicker": {
+      "SelectBook": "Select a book",
+      "SearchBookPlaceholder": "Search books by title or author…",
+      "NoBooksFoundMatch": "No books match your search.",
+      "NoBooksProvided": "No books available.",
+      "BooksLabel": "Book"
+    },
+    "ChapterPicker": {
+      "SelectChapter": "Select a chapter",
+      "SearchChapterPlaceholder": "Search chapters by title…",
+      "NoChaptersFoundMatch": "No chapters match your search.",
+      "NoChaptersProvided": "No chapters available.",
+      "ChaptersLabel": "Chapter",
+      "Ch": "Ch",
+      "Chapter": "Chapter",
+      "Free": "Free"
     }
   },
   "Auth": {

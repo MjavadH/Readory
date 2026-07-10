@@ -27,7 +27,8 @@
       "Administrator": "ادمین",
       "LogoutTitle": "آیا از این کار مطمئنید؟",
       "LogoutDescription": "شما از اکانت ادمین خارج میشوید و برای دسترسی مجدد به داشبورد باید دوباره وارد شوید",
-      "AuditLog": "گزارش ممیزی"
+      "AuditLog": "گزارش ممیزی",
+      "ScheduledPublishing": "زمانبندی انتشار"
     },
     "Dashboard": {
       "Title": "داشبورد",
@@ -292,6 +293,79 @@
       "Refresh": "تازه‌سازی",
       "From": "از",
       "To": "به"
+    },
+    "ScheduledPublications": {
+      "Title": "انتشارهای زمان‌بندی‌شده",
+      "Description": "کتاب‌ها و فصل‌ها را برای انتشار خودکار در زمان مشخص برنامه‌ریزی کنید.",
+      "Form": {
+        "CreateTitle": "ایجاد زمان‌بندی",
+        "EditTitle": "ویرایش زمان‌بندی",
+        "Type": "نوع",
+        "TargetType": {
+          "Book": "کتاب",
+          "Chapter": "فصل"
+        },
+        "Target": "مورد انتخاب‌شده",
+        "SelectBook": "انتخاب کتاب",
+        "SelectChapter": "انتخاب فصل",
+        "NotSelected": "موردی انتخاب نشده است",
+        "PublishDate": "تاریخ انتشار",
+        "MaxRetries": "حداکثر تلاش مجدد",
+        "Save": "ذخیره",
+        "CancelEdit": "لغو ویرایش"
+      },
+      "List": {
+        "Title": "مدیریت",
+        "Content": "محتوا",
+        "Type": "نوع",
+        "PublishDate": "تاریخ انتشار",
+        "Status": "وضعیت",
+        "Retry": "تلاش مجدد",
+        "Error": "خطا",
+        "Actions": "عملیات",
+        "Loading": "در حال بارگذاری…",
+        "Empty": "هنوز هیچ انتشار زمان‌بندی‌شده‌ای وجود ندارد.",
+        "NoAttempts": "بدون تلاش",
+        "NoError": "—"
+      },
+      "Status": {
+        "Pending": "در انتظار",
+        "FAILED": "ناموفق",
+        "Published": "منتشر شد",
+        "Canceled": "لغو شد"
+      },
+      "Toast": {
+        "Created": "زمان‌بندی ایجاد شد",
+        "Updated": "زمان‌بندی به‌روزرسانی شد",
+        "Cancelled": "زمان‌بندی لغو شد",
+        "PublishedNow": "بلافاصله منتشر شد",
+        "SaveFailed": "ذخیره‌ی زمان‌بندی ناموفق بود",
+        "ActionFailed": "عملیات ناموفق بود",
+        "LoadFailed": "بارگذاری زمان‌بندی‌ها ناموفق بود",
+        "LoadBooksFailed": "بارگذاری کتاب‌ها ناموفق بود",
+        "LoadChaptersFailed": "بارگذاری فصل‌ها ناموفق بود"
+      },
+      "Picker": {
+        "SelectBookForChapters": "انتخاب کتاب برای فصل‌ها",
+        "SelectBookForPublishing": "انتخاب کتاب برای انتشار"
+      }
+    },
+    "BookPicker": {
+      "SelectBook": "انتخاب کتاب",
+      "SearchBookPlaceholder": "جستجوی کتاب بر اساس عنوان یا نویسنده…",
+      "NoBooksFoundMatch": "هیچ کتابی با جستجوی شما مطابقت ندارد.",
+      "NoBooksProvided": "هیچ کتابی موجود نیست.",
+      "BooksLabel": "کتاب"
+    },
+    "ChapterPicker": {
+      "SelectChapter": "انتخاب فصل",
+      "SearchChapterPlaceholder": "جستجوی فصل بر اساس عنوان…",
+      "NoChaptersFoundMatch": "هیچ فصلی با جستجوی شما مطابقت ندارد.",
+      "NoChaptersProvided": "هیچ فصلی موجود نیست.",
+      "ChaptersLabel": "فصل",
+      "Ch": "فصل",
+      "Chapter": "فصل",
+      "Free": "رایگان"
     }
   },
   "Auth": {
