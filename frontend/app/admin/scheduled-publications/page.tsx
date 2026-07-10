@@ -83,7 +83,7 @@ export default function ScheduledPublicationsPage() {
   const [bookTotalItems, setBookTotalItems] = useState(0)
   const [bookTotalPages, setBookTotalPages] = useState(1)
   const [isFetchingBooks, setIsFetchingBooks] = useState(false)
-  const limit = 12
+  const limit = 18
 
   // Chapter Picker
   const [isBookForChapter, setIsBookForChapter] = useState(false)

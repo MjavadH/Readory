@@ -42,7 +42,7 @@ export function BookPicker({
                                onPageChange,
                                totalItems,
                                totalPages,
-                               limit = 12,
+                               limit = 18,
                            }: BookPickerProps) {
     const t = useTranslations('AdminPage.BookPicker')
     const paginationScrollRef = React.useRef<HTMLDivElement>(null)
@@ -91,7 +91,7 @@ export function BookPicker({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-x-3 gap-y-5">
                             {books.map((book) => {
                                 const isSelected = value === book.id
 
