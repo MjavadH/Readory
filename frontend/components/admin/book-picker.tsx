@@ -1,9 +1,8 @@
 import * as React from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Check, X, Loader2, Star } from "lucide-react"
+import { Search, Check, Loader2, Star, BookOpen } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import type { BookCardData } from "@/lib/types"
@@ -37,7 +36,6 @@ export function BookPicker({
                                isLoading = false,
                                title,
                                description,
-                               allowClear = true,
                                searchQuery,
                                onSearchChange,
                                page,
@@ -51,35 +49,49 @@ export function BookPicker({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-5xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="text-center">{title || t("SelectBook")}</DialogTitle>
-                    {description && (
-                        <DialogDescription className="text-center">{description}</DialogDescription>
-                    )}
-                </DialogHeader>
+            <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-5xl max-h-[90vh] overflow-y-auto p-0 gap-0">
+                {/* Header */}
+                <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-border">
+                    <DialogHeader className="space-y-1">
+                        <DialogTitle className="text-base sm:text-lg font-semibold text-start">
+                            {title || t("SelectBook")}
+                        </DialogTitle>
+                        {description && (
+                            <DialogDescription className="text-xs sm:text-sm text-start">
+                                {description}
+                            </DialogDescription>
+                        )}
+                    </DialogHeader>
 
-                <div className="relative mt-2">
-                    <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                    <Input
-                        value={searchQuery}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder={t("SearchBookPlaceholder")}
-                        className="ps-9 h-11"
-                    />
+                    {/* Search */}
+                    <div className="relative mt-4">
+                        <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                        <Input
+                            value={searchQuery}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            placeholder={t("SearchBookPlaceholder")}
+                            className="ps-9 h-10 bg-muted/40 border-border focus-visible:bg-background"
+                        />
+                    </div>
                 </div>
 
-                <div ref={paginationScrollRef} className="relative mt-4 min-h-75">
+                {/* Body */}
+                <div ref={paginationScrollRef} className="relative px-5 sm:px-6 py-5 min-h-80">
                     {isLoading ? (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
-                            <Loader2 className="size-6 animate-spin text-primary" />
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                            <Loader2 className="size-5 animate-spin text-muted-foreground" />
                         </div>
                     ) : books.length === 0 ? (
-                        <div className="py-16 text-center text-sm text-muted-foreground flex flex-col items-center justify-center h-full">
-                            {searchQuery.trim() ? t("NoBooksFoundMatch") : t("NoBooksProvided")}
+                        <div className="flex flex-col items-center justify-center py-16 text-center gap-2">
+                            <div className="flex items-center justify-center size-12 rounded-full bg-muted">
+                                <BookOpen className="size-5 text-muted-foreground" />
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                                {searchQuery.trim() ? t("NoBooksFoundMatch") : t("NoBooksProvided")}
+                            </p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                             {books.map((book) => {
                                 const isSelected = value === book.id
 
@@ -92,50 +104,52 @@ export function BookPicker({
                                             onOpenChange(false)
                                         }}
                                         className={[
-                                            "group text-left relative flex flex-col overflow-hidden rounded-xl border bg-card hover:shadow-md transition-all outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                            isSelected ? "ring-2 ring-primary border-primary" : "border-border",
+                                            "group text-start relative flex flex-col overflow-hidden rounded-lg border bg-card transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                            isSelected
+                                                ? "border-primary ring-1 ring-primary"
+                                                : "border-border hover:border-foreground/20",
                                         ].join(" ")}
                                     >
                                         <div className="aspect-2/3 w-full bg-muted relative overflow-hidden">
                                             <img
                                                 src={book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : "/placeholder.svg"}
                                                 alt={book.title}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                className="w-full h-full object-cover"
                                                 loading="lazy"
                                             />
 
-                                            <div className="absolute inset-0 bg-linear-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
                                             {book.type && (
-                                                <div className="absolute left-2 top-2 z-10">
-                                                    <Badge variant="secondary" className="bg-background/80 text-[10px] px-1.5 py-0.5 shadow-sm">
+                                                <div className="absolute top-2 ltr:left-2 rtl:right-2 z-10">
+                                                    <Badge variant="secondary" className="bg-background/85 backdrop-blur-sm text-[10px] font-medium px-1.5 py-0.5 border border-border/50">
                                                         {book.type.name}
                                                     </Badge>
                                                 </div>
                                             )}
 
                                             {isSelected && (
-                                                <div className="absolute top-2 right-2 z-10 rounded-full bg-primary text-primary-foreground p-1 shadow-md animate-in zoom-in">
-                                                    <Check className="size-4" />
+                                                <div className="absolute top-2 ltr:right-2 rtl:left-2 z-10 rounded-full bg-primary text-primary-foreground p-1">
+                                                    <Check className="size-3.5" strokeWidth={3} />
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="p-3 flex flex-col gap-1 border-t bg-card/50">
-                                            <h3 className="line-clamp-2 text-sm font-semibold leading-snug group-hover:text-primary transition-colors">
+                                        <div className="p-2.5 flex flex-col gap-1">
+                                            <h3 className="line-clamp-2 text-xs sm:text-sm font-medium leading-snug text-foreground">
                                                 {book.title}
                                             </h3>
 
                                             {book.contributors && (
-                                                <p className="line-clamp-1 text-xs text-muted-foreground">
+                                                <p className="line-clamp-1 text-[11px] text-muted-foreground">
                                                     {book.contributors}
                                                 </p>
                                             )}
 
                                             {book.ratingAvg !== undefined && book.ratingAvg > 0 && (
-                                                <div className="flex items-center gap-1 mt-1">
+                                                <div className="flex items-center gap-1 mt-0.5">
                                                     <Star className="size-3 fill-amber-500 text-amber-500" />
-                                                    <span className="text-xs font-medium">{book.ratingAvg}</span>
+                                                    <span className="text-[11px] font-medium text-muted-foreground">
+                                                        {book.ratingAvg}
+                                                    </span>
                                                 </div>
                                             )}
                                         </div>
@@ -146,23 +160,8 @@ export function BookPicker({
                     )}
                 </div>
 
-                <div className="mt-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t pt-4">
-                    <div className="flex items-center gap-2">
-                        {allowClear && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    onSelect(null)
-                                    onOpenChange(false)
-                                }}
-                            >
-                                <X className="size-4 me-2" />
-                                {t("ClearSelection")}
-                            </Button>
-                        )}
-                    </div>
-
+                {/* Footer */}
+                <div className="px-5 sm:px-6 py-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-muted/20">
                     {totalPages > 1 && (
                         <AppPagination
                             currentPage={page}
