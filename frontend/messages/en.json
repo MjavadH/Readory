@@ -27,7 +27,8 @@
       "LogoutTitle": "Are you absolutely sure?",
       "LogoutDescription": "You are about to sign out of your admin account. You will need to login again to access the dashboard",
       "AuditLog": "Audit Log",
-      "ScheduledPublishing": "Scheduled Publishing"
+      "ScheduledPublishing": "Scheduled Publishing",
+      "More": "More"
     },
     "Dashboard": {
       "Title": "Dashboard",

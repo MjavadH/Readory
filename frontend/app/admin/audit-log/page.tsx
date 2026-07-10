@@ -287,7 +287,7 @@ export default function AuditLogPage() {
   };
 
   return (
-      <div className="mx-auto w-full max-w-400 space-y-4 p-3 sm:p-4 md:space-y-6 md:p-6">
+      <div className="mx-auto w-full max-w-400 space-y-4 p-3 sm:p-4 md:space-y-6 md:p-6 pb-20 sm:pb-0">
         {/* Header */}
         <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">

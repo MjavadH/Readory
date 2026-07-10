@@ -142,7 +142,7 @@ export default function AdminDashboardPage() {
   const o = overview.data
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-0">
       {/* Header */}
       <motion.header
         initial={{ opacity: 0, y: -8 }}

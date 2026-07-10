@@ -28,7 +28,8 @@
       "LogoutTitle": "آیا از این کار مطمئنید؟",
       "LogoutDescription": "شما از اکانت ادمین خارج میشوید و برای دسترسی مجدد به داشبورد باید دوباره وارد شوید",
       "AuditLog": "گزارش ممیزی",
-      "ScheduledPublishing": "زمانبندی انتشار"
+      "ScheduledPublishing": "زمانبندی انتشار",
+      "More": "بیشتر"
     },
     "Dashboard": {
       "Title": "داشبورد",

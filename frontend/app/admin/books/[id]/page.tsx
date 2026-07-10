@@ -335,7 +335,7 @@ export default function AdminBookDetail() {
         : "/placeholder.svg";
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-20 sm:pb-0">
             {/* Sticky toolbar */}
             <div className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/60">
                 <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-10">

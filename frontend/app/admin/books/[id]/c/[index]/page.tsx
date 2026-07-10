@@ -501,7 +501,7 @@ export default function ChapterContentManager() {
   if (loading) return <PageSkeleton />;
 
   return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20 sm:pb-0">
         <div className="relative max-w-6xl mx-auto px-6 py-10 space-y-8">
 
           {/* Header */}

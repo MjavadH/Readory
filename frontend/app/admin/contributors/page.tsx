@@ -243,7 +243,7 @@ export default function AdminContributorsPage() {
   const isEmpty = !loading && !listError && rows.length === 0
 
   return (
-      <div ref={contributorsSectionRef} className="mx-auto w-full max-w-6xl space-y-6 p-4 sm:p-6">
+      <div ref={contributorsSectionRef} className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto pb-20 sm:pb-0">
         {/* Header */}
         <motion.div
             initial={{ opacity: 0, y: -8 }}
