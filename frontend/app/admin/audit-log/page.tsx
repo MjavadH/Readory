@@ -49,6 +49,7 @@ import {
   AUDIT_CATEGORY_VALUES,
   AUDIT_SEVERITY_VALUES
 } from "@readory/shared";
+import DateTimePicker from "@/components/admin/date-time-picker";
 
 type DiffEntry = {
   path: string;
@@ -382,20 +383,22 @@ export default function AuditLogPage() {
               <span className="text-xs font-medium text-muted-foreground">
                 {t("From")}
               </span>
-                  <Input
-                      type="date"
-                      value={params.get("from") ?? ""}
-                      onChange={(e) => updateParam("from", e.target.value, true)}
+                  <DateTimePicker
+                      onChange={(e) => updateParam("from", e.toString(), true)}
+                      showTime={false}
+                      placeholder={"Pick a date"}
+                      max={params.get("to") ? new Date(params.get("to")!) : undefined}
                   />
                 </label>
                 <label className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t("To")}
-              </span>
-                  <Input
-                      type="date"
-                      value={params.get("to") ?? ""}
-                      onChange={(e) => updateParam("to", e.target.value, true)}
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("To")}
+                  </span>
+                  <DateTimePicker
+                      onChange={(e) => updateParam("to", e.toString(), true)}
+                      showTime={false}
+                      placeholder={"Pick a date"}
+                      min={params.get("from") ? new Date(params.get("from")!) : undefined}
                   />
                 </label>
                 <label className="space-y-1.5">
