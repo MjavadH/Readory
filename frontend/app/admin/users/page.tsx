@@ -658,14 +658,15 @@ export default function AdminUsers() {
                                 <p className="text-sm">{t("NoBooksPurchased")}</p>
                               </div>
                           ) : (
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                              <div className="space-y-2 grid sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
                                 {selectedUser.accessRecords.map((chapter) => (
                                     <div
                                         key={chapter.id}
                                         className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
                                     >
                                       <div className="flex-1 min-w-0">
-                                        <p className="font-medium truncate">{chapter.chapterTitle}</p>
+                                        <p className="font-medium text-sm truncate">{chapter.bookTitle}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{chapter.chapterTitle}</p>
                                         <p className="text-xs text-muted-foreground">
                                           {t("Purchased")}{" "}
                                           {new Date(chapter.purchasedAt).toLocaleDateString(g("locale"), {
@@ -720,35 +721,6 @@ export default function AdminUsers() {
                               </p>
                             </div>
                           </div>
-
-                          {selectedUser.accessRecords.length > 0 && (
-                              <div className="border-t border-border/50 pt-4">
-                                <p className="text-sm font-medium mb-3">{t("ChapterPurchaseHistory")}</p>
-                                <div className="space-y-2 max-h-48 overflow-y-auto">
-                                  {selectedUser.accessRecords.map((record) => (
-                                      <div
-                                          key={record.id}
-                                          className="flex items-start justify-between gap-3 p-3 rounded-lg border border-border/50 bg-background/50"
-                                      >
-                                        <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm truncate">{record.chapterTitle}</p>
-                                          <p className="text-xs text-muted-foreground truncate">{record.bookTitle}</p>
-                                          <p className="text-xs text-muted-foreground mt-1">
-                                            {new Date(record.purchasedAt).toLocaleDateString(g("locale"), {
-                                              month: "short",
-                                              day: "numeric",
-                                              year: "numeric",
-                                            })}
-                                          </p>
-                                        </div>
-                                        <div className="shrink-0">
-                                          <p className="font-semibold text-sm">{g("CurrencySymbols")}{(record.price || 0).toFixed(2)}</p>
-                                        </div>
-                                      </div>
-                                  ))}
-                                </div>
-                              </div>
-                          )}
                         </CardContent>
                       </Card>
                     </div>
