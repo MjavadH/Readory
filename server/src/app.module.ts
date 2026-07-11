@@ -19,6 +19,7 @@ import { MailModule } from './mail/mail.module';
 import { ContributorModule } from './contributor/contributor.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publishing.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publ
     ContributorModule,
     AuditLogModule,
     ScheduledPublishingModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],

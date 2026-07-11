@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TransactionType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 import { CacheManager } from '../cache/cache.manager';
 import { clampInt, calculateGrowth } from '../common/index.js';
 
@@ -266,24 +266,28 @@ export class WalletsService {
   }
 
   // Credit the wallet with a certain amount
-  async credit(userId: number, amount: number, reference?: string) {
-    // Ensure amount is positive
+  async credit(
+    userId: number,
+    amount: number,
+    reference?: string,
+    tx?: Prisma.TransactionClient,
+  ) {
     if (amount <= 0) {
       throw new ForbiddenException('Amount must be positive');
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
+    const creditWallet = async (client: Prisma.TransactionClient) => {
+      const wallet = await client.wallet.findUnique({ where: { userId } });
       if (!wallet) {
         throw new NotFoundException('Wallet not found');
       }
-      // Update balance
-      const updatedWallet = await tx.wallet.update({
+
+      const updatedWallet = await client.wallet.update({
         where: { userId },
         data: { balance: { increment: amount } },
       });
-      // Add transaction record
-      await tx.walletTransaction.create({
+
+      await client.walletTransaction.create({
         data: {
           walletId: updatedWallet.id,
           amount,
@@ -291,8 +295,14 @@ export class WalletsService {
           reference,
         },
       });
+
       return updatedWallet;
-    });
+    };
+
+    const result = tx
+      ? await creditWallet(tx)
+      : await this.prisma.$transaction((client) => creditWallet(client));
+
     await this.cacheManager.del('stats:transactions');
 
     return result;
