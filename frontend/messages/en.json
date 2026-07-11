@@ -883,6 +883,17 @@
     "MonthsAgo": "{count, plural, one {# month ago} other {# months ago}}",
     "YearsAgo": "{count, plural, one {# year ago} other {# years ago}}"
   },
+  "Payment": {
+    "Loading": "Verifying your payment...",
+    "Success": "Payment Successful",
+    "SuccessDescription": "Your transaction has been completed successfully.",
+    "Failure": "Payment Failed",
+    "FailureDescription": "We couldn't complete your transaction. Please try again.",
+    "Ref": "Reference",
+    "Invoice": "Invoice",
+    "Back": "Back to Home",
+    "Support": "Need help? Contact our support team."
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "$",

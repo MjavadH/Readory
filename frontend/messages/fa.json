@@ -883,6 +883,17 @@
     "MonthsAgo": "{count, plural, one {# ماه پیش} other {# ماه پیش}}",
     "YearsAgo": "{count, plural, one {# سال پیش} other {# سال پیش}}"
   },
+  "Payment": {
+    "Loading": "در حال بررسی پرداخت شما...",
+    "Success": "پرداخت موفق",
+    "SuccessDescription": "تراکنش شما با موفقیت انجام شد.",
+    "Failure": "پرداخت ناموفق",
+    "FailureDescription": "متأسفانه تراکنش شما انجام نشد. لطفاً دوباره تلاش کنید.",
+    "Ref": "کد پیگیری",
+    "Invoice": "شماره فاکتور",
+    "Back": "بازگشت به صفحه اصلی",
+    "Support": "به کمک نیاز دارید؟ با پشتیبانی تماس بگیرید."
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "ریال",
