@@ -306,19 +306,23 @@ export class ReaderService {
 
       const nowSec = Math.floor(Date.now() / 1000);
       const speedKey = `reader:speed:${payload.userId}:${payload.chapterId}`;
-      await this.redis.zadd(speedKey, nowSec, String(page));
-      await this.redis.expire(speedKey, 10);
-      await this.redis.zremrangebyscore(speedKey, 0, nowSec - 2);
+      const pipeline = this.redis.pipeline();
+      pipeline.zadd(speedKey, nowSec, `${page}:${Math.random()}`); // افزودن یک مقدار یونیک برای ثبت دقیق همه درخواست‌های همزمان
+      pipeline.expire(speedKey, 10);
+      pipeline.zremrangebyscore(speedKey, 0, nowSec - 2);
+      pipeline.zcard(speedKey);
 
-      const recent = await this.redis.zcard(speedKey);
+      const results = await pipeline.exec();
+      const recent = results ? (results[3][1] as number) : 0;
+
       if (recent >= 10) {
         await this.redis.set(blockKey, String(nowSec + 120), 'EX', 120);
         this.logger.warn(
-          `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
+            `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
         );
         throw new HttpException(
-          'Temporarily blocked due to abnormal behavior',
-          429,
+            'Temporarily blocked due to abnormal behavior',
+            429,
         );
       }
     }
@@ -341,14 +345,16 @@ export class ReaderService {
     if (isAdminPreview) return source;
 
     const trace = createHash('sha256').update(token).digest('hex').slice(0, 8);
+    const dynamicRotation = -25 + (parseInt(trace[0]!, 16) % 6) - 3;
+    const dynamicOpacity = 0.3 + (parseInt(trace[1]!, 16) % 10) / 100;
 
-    const watermarkText = `u${payload.userId} c${payload.chapterId} #${trace}`;
+    const watermarkText = `Readory #u${payload.userId}c${payload.chapterId}#${trace}`;
     const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130"
-        fill="white" fill-opacity="0.35"
-        transform="rotate(-25 180 120)"
+        fill="white" fill-opacity="${dynamicOpacity}"
+        transform="rotate(${dynamicRotation} 180 120)"
         font-size="24"
         font-family="Arial, sans-serif"
-        font-weight="600">
+        font-weight="800">
     ${escapeXml(watermarkText)}
   </text>
 </svg>`;
