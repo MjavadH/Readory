@@ -94,17 +94,24 @@ export class PaymentsService {
 
     const refId = verification.refId ?? authority;
 
+    const walletReference = `Gateway Deposit (${normalizedProvider}) | Ref: ${refId}`;
+
     await this.prisma.$transaction(async (tx) => {
-      await tx.paymentInvoice.update({
-        where: { id: invoice.id },
+
+      const updatedInvoice = await tx.paymentInvoice.updateMany({
+        where: { id: invoice.id, status: PaymentStatus.PENDING },
         data: { status: PaymentStatus.SUCCESS, refId },
       });
 
+      if (updatedInvoice.count === 0) {
+        throw new ConflictException('Payment invoice is already processed');
+      }
+
       await this.walletsService.credit(
-        invoice.userId,
-        Number(invoice.amount),
-        refId,
-        tx,
+          invoice.userId,
+          Number(invoice.amount),
+          walletReference,
+          tx,
       );
     });
 
