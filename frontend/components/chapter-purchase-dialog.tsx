@@ -226,7 +226,9 @@ export function ChapterPurchaseDialog({
                                 {book.title}
                             </h3>
                             <p className="truncate text-sm text-muted-foreground">
-                                {book.contributors && (book.contributors[0].name || t("UnknownContributor"))}
+                                {book.contributors && book.contributors.length > 0 && (
+                                    book.contributors[0].name
+                                )}
                             </p>
                             <Badge
                                 variant="outline"
