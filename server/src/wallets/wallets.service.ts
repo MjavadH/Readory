@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, TransactionType } from '@prisma/client';
 import { CacheManager } from '../cache/cache.manager';
-import { clampInt, calculateGrowth } from '../common/index.js';
+import { clampInt, calculateGrowth } from '../common';
 
 type GetWalletOptions = {
   includeTransactions?: boolean;
@@ -309,22 +309,24 @@ export class WalletsService {
   }
 
   // Debit the wallet
-  async debit(userId: number, amount: number, reference?: string) {
+  async debit(userId: number, amount: number, reference?: string, providedTx?: any) {
     if (amount <= 0) {
       throw new ForbiddenException('Amount must be positive');
     }
-    const result = await this.prisma.$transaction(async (tx) => {
+
+    const executeDebit = async (tx: any) => {
       const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet) {
-        throw new NotFoundException('Wallet not found');
-      }
-      if (wallet.balance.toNumber() < amount) {
-        throw new ForbiddenException('Insufficient balance');
-      }
+      if (!wallet) throw new NotFoundException('Wallet not found');
+
       const updatedWallet = await tx.wallet.update({
         where: { userId },
         data: { balance: { decrement: amount } },
       });
+
+      if (updatedWallet.balance.toNumber() < 0) {
+        throw new ForbiddenException('Insufficient balance');
+      }
+
       await tx.walletTransaction.create({
         data: {
           walletId: updatedWallet.id,
@@ -334,7 +336,11 @@ export class WalletsService {
         },
       });
       return updatedWallet;
-    });
+    };
+
+    const result = providedTx
+        ? await executeDebit(providedTx)
+        : await this.prisma.$transaction(executeDebit);
 
     await this.cacheManager.del('stats:transactions');
 

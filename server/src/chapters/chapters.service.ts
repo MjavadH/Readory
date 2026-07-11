@@ -346,6 +346,7 @@ export class ChaptersService {
           userId,
           chapter.price!.toNumber(),
           `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
+          tx
       );
 
       const record = await tx.accessRecord.create({
