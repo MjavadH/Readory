@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
@@ -20,11 +22,19 @@ import { ContributorModule } from './contributor/contributor.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publishing.module';
 import { PaymentsModule } from './payments/payments.module';
+import { RateLimitModule } from './rate-limit/rate-limit.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: Number(process.env.THROTTLE_TTL_MS || 60000),
+        limit: Number(process.env.THROTTLE_LIMIT || 120),
+      },
+    ]),
     RedisModule,
+    RateLimitModule,
     CacheModule,
     PrismaModule,
     UsersModule,
@@ -46,6 +56,6 @@ import { PaymentsModule } from './payments/payments.module';
     PaymentsModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

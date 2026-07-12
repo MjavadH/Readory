@@ -11,6 +11,7 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ChaptersService } from './chapters.service';
 import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
@@ -23,10 +24,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { ListChaptersDto } from './dto/list-chapters.dto';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import {
-  AuditAction,
-  AuditCategory,
-} from '@readory/shared';
+import { AuditAction, AuditCategory } from '@readory/shared';
 
 @Controller('books/:bookId/chapters')
 export class ChaptersController {
@@ -123,6 +121,7 @@ export class ChaptersController {
 
   // User: purchase a chapter
   @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post(':chapterId/purchase')
   async purchase(
     @Param('chapterId', ParseIntPipe) chapterId: number,
