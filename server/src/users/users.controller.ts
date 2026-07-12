@@ -13,6 +13,7 @@ import {
   Post,
   ForbiddenException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { Roles } from '../auth/roles.decorator';
@@ -24,10 +25,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import {
-  AuditAction,
-  AuditCategory,
-} from '@readory/shared';
+import { AuditAction, AuditCategory } from '@readory/shared';
 
 @Controller('users')
 export class UsersController {
@@ -151,6 +149,7 @@ export class UsersController {
     };
   }
 
+  @Throttle({ default: { limit: 6, ttl: 3600000 } })
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(

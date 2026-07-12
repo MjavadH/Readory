@@ -13,6 +13,7 @@ import {
   Query,
   DefaultValuePipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { BooksService } from './books.service';
 import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
@@ -27,10 +28,7 @@ import { RateBookDto } from './dto/rate-book.dto';
 import { BrowseBooksDto } from './dto/browse-books.dto';
 import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import {
-  AuditAction,
-  AuditCategory,
-} from '@readory/shared';
+import { AuditAction, AuditCategory } from '@readory/shared';
 
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 
@@ -140,6 +138,7 @@ export class BooksController {
     return this.booksService.update(id, dto);
   }
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Put(':id/rating')
   @UseGuards(JwtAuthGuard)
   async rateBook(
@@ -151,6 +150,7 @@ export class BooksController {
     return this.booksService.rateBook(Number(userId), id, dto.rating);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/favorite')
   @UseGuards(JwtAuthGuard)
   async toggleFavorite(

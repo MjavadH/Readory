@@ -5,6 +5,8 @@ export interface PaymentDriver {
     description?: string,
   ): Promise<{ authority: string; redirectUrl: string }>;
 
+  getRedirectUrl?(authority: string): string;
+
   verify(
     authority: string,
     amount: number,

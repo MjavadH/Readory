@@ -8,11 +8,14 @@ import { LocalStrategy } from './local.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RateLimitModule } from '../rate-limit/rate-limit.module';
+import { AuthSecurityService } from './security/auth-security.service';
 
 @Module({
   imports: [
     UsersModule,
     PrismaModule,
+    RateLimitModule,
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({
@@ -26,13 +29,15 @@ import { PrismaModule } from '../prisma/prisma.module';
         return {
           secret,
           signOptions: {
-            expiresIn: Number(configService.get<string>('JWT_EXPIRES_IN') || 3600),
+            expiresIn: Number(
+              configService.get<string>('JWT_EXPIRES_IN') || 3600,
+            ),
           },
         };
       },
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, AuthSecurityService, LocalStrategy, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

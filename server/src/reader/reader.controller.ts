@@ -11,6 +11,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateReaderSessionDto } from './dto/create-reader-session.dto';
@@ -30,6 +31,7 @@ type AuthRequest = Request & { user?: { userId?: number } };
 export class ReaderController {
   constructor(private readonly readerService: ReaderService) {}
 
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('session')
   async createSession(
     @Body() body: CreateReaderSessionDto,
@@ -50,17 +52,17 @@ export class ReaderController {
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   async createAdminPreviewSession(
-      @Body() body: CreateReaderSessionDto,
-      @Req() req: AuthRequest,
+    @Body() body: CreateReaderSessionDto,
+    @Req() req: AuthRequest,
   ) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
 
     return this.readerService.createAdminPreviewSession(
-        userId,
-        body.bookId,
-        body.chapterIndex,
-        req,
+      userId,
+      body.bookId,
+      body.chapterIndex,
+      req,
     );
   }
 
@@ -92,8 +94,8 @@ export class ReaderController {
 
   @Get('context')
   async getContext(
-      @Query('bookId', ParseIntPipe) bookId: number,
-      @Req() req: AuthRequest,
+    @Query('bookId', ParseIntPipe) bookId: number,
+    @Req() req: AuthRequest,
   ) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
@@ -101,6 +103,7 @@ export class ReaderController {
     return this.readerService.getReaderContext(userId, bookId);
   }
 
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post('progress')
   async saveProgress(@Body() body: SaveProgressDto, @Req() req: AuthRequest) {
     const userId = req.user?.userId;
