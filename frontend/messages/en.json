@@ -894,6 +894,37 @@
     "Back": "Back to Home",
     "Support": "Need help? Contact our support team."
   },
+  "Footer": {
+    "brand": "Readory",
+    "tagline": "Discover, read and organize your favorite books in one place.",
+    "sections": {
+      "discover": "Discover",
+      "community": "Community",
+      "account": "Account",
+      "legal": "Legal"
+    },
+    "links": {
+      "books": "Books",
+      "genres": "Genres",
+      "collections": "Collections",
+      "newest": "Newest Books",
+      "popular": "Popular Books",
+      "blog": "Blog",
+      "contact": "Contact Us",
+      "login": "Login",
+      "library": "My Library",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "dmca": "DMCA",
+      "copyright": "Copyright"
+    },
+    "certificates": {
+      "title": "Trust & Certificates",
+      "empty": "No Logo"
+    },
+    "copyright": "© {year} Readory. All rights reserved.",
+    "version": "Version 1.0.0"
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "$",
@@ -921,8 +952,6 @@
     "Total": "Total",
     "MorePages": "More pages",
     "Edit": "Edit",
-    "View": "View",
-    "Copyright": "© {Year} Readory. All rights reserved.",
-    "Version": "Version 1.0.0"
+    "View": "View"
   }
 }

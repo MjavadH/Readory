@@ -894,6 +894,37 @@
     "Back": "بازگشت به صفحه اصلی",
     "Support": "به کمک نیاز دارید؟ با پشتیبانی تماس بگیرید."
   },
+  "Footer": {
+    "brand": "ریدوری",
+    "tagline": "کتاب‌های محبوب خود را در یک مکان کشف، مطالعه و سازماندهی کنید.",
+    "sections": {
+      "discover": "کاوش",
+      "community": "انجمن",
+      "account": "حساب کاربری",
+      "legal": "قوانین"
+    },
+    "links": {
+      "books": "کتاب‌ها",
+      "genres": "ژانرها",
+      "collections": "مجموعه‌ها",
+      "newest": "جدیدترین کتاب‌ها",
+      "popular": "پرطرفدارترین کتاب‌ها",
+      "blog": "وبلاگ",
+      "contact": "تماس با ما",
+      "login": "ورود",
+      "library": "کتابخانه من",
+      "privacy": "سیاست حریم خصوصی",
+      "terms": "شرایط استفاده",
+      "dmca": "DMCA",
+      "copyright": "حق نشر"
+    },
+    "certificates": {
+      "title": "اعتماد و گواهی‌نامه‌ها",
+      "empty": "بدون لوگو"
+    },
+    "copyright": "© {year} Readory. تمامی حقوق محفوظ است.",
+    "version": "نسخه ۱.۰.۰"
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "ریال",
@@ -921,8 +952,6 @@
     "Total": "تعداد کل",
     "MorePages": "صفحات بیشتر",
     "Edit": "ویرایش",
-    "View": "مشاهده",
-    "Copyright": "© {Year} Readory. تمامی حقوق محفوظ است.",
-    "Version": "نسخه 1.0.0"
+    "View": "مشاهده"
   }
 }
