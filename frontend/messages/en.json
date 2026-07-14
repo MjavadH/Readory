@@ -921,6 +921,8 @@
     "Total": "Total",
     "MorePages": "More pages",
     "Edit": "Edit",
-    "View": "View"
+    "View": "View",
+    "Copyright": "© {Year} Readory. All rights reserved.",
+    "Version": "Version 1.0.0"
   }
 }
