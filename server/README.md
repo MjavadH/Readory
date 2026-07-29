@@ -86,7 +86,7 @@ Primary data models include:
 - `User`, `Role`, `Wallet`, and `WalletTransaction` for accounts and balances.
 - `Book`, `BookType`, `Genre`, and `BookGenre` for the catalog.
 - `Chapter`, `AccessRecord`, and `ReadingProgress` for purchases and reading state.
-- `BookRating` and `FavoriteBook` for engagement features.
+- `BookRating`, `Collection`, and `CollectionItem` for engagement and curated book lists.
 - `Media` for uploaded media metadata.
 
 Useful Prisma commands from the `server/` directory:

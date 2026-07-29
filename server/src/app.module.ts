@@ -23,6 +23,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publishing.module';
 import { PaymentsModule } from './payments/payments.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
+import { CollectionsModule } from './collections/collections.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
     AuditLogModule,
     ScheduledPublishingModule,
     PaymentsModule,
+    CollectionsModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

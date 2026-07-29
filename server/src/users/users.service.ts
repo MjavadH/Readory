@@ -5,13 +5,15 @@ import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as argon2 from 'argon2';
 import {MailService} from "../mail/mail.service";
+import { CollectionsService } from "../collections/collections.service";
 
 @Injectable()
 export class UsersService {
     constructor(
         private prisma: PrismaService,
         private readonly cacheManager: CacheManager,
-        private mailService: MailService
+        private mailService: MailService,
+        private readonly collectionsService: CollectionsService
     ) {}
 
     async updateLastLogin(userId: number) {
@@ -198,6 +200,8 @@ export class UsersService {
                 wallet: { create: { balance: 0 } },
             },
         });
+
+        await this.collectionsService.ensureFavoritesCollection(newUser.id);
 
         await this.cacheManager.del(redisKey);
         await this.cacheManager.del(attemptKey);
