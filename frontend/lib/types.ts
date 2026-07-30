@@ -161,3 +161,32 @@ export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
     { value: "oldest", label: "Oldest" },
     { value: "most_popular", label: "Most Popular" },
 ];
+
+export type CollectionType = "SYSTEM" | "USER" | "FAVORITES";
+export type CollectionVisibility = "PUBLIC" | "PRIVATE" | "UNLISTED";
+
+export interface CollectionItemData {
+    id: number;
+    position: number;
+    note?: string | null;
+    addedAt: string;
+    book: BookCardData;
+}
+
+export interface CollectionSummary {
+    id: number;
+    ownerId?: number | null;
+    type: CollectionType;
+    title: string;
+    slug: string;
+    description?: string | null;
+    visibility: CollectionVisibility;
+    allowIndexing: boolean;
+    featured: boolean;
+    locked: boolean;
+    bookCount: number;
+    indexable: boolean;
+    createdAt: string;
+    updatedAt: string;
+    items: CollectionItemData[];
+}
