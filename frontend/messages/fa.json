@@ -787,7 +787,11 @@
     "ContributorRole_EDITOR": "ویراستار",
     "ContributorRole_ARTIST": "هنرمند",
     "ContributorRole_STORY": "داستان",
-    "ContributorRole_ADAPTATION": "اقتباس"
+    "ContributorRole_ADAPTATION": "اقتباس",
+    "ContributorRole_CLEANER": "کلینر",
+    "ContributorRole_TYPESETTER": "تایپستر",
+    "ContributorRole_RAW_PROVIDER": "تامین‌کننده",
+    "ContributorRole_SUPERVISOR": "ناظر"
   },
   "Contributors": {
     "Title": "همکاران",
@@ -895,7 +899,7 @@
     "Support": "به کمک نیاز دارید؟ با پشتیبانی تماس بگیرید."
   },
   "Footer": {
-    "brand": "ریدوری",
+    "brand": "Readory",
     "tagline": "کتاب‌های محبوب خود را در یک مکان کشف، مطالعه و سازماندهی کنید.",
     "sections": {
       "discover": "کاوش",

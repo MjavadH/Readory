@@ -787,7 +787,11 @@
     "ContributorRole_EDITOR": "Editor",
     "ContributorRole_ARTIST": "Artist",
     "ContributorRole_STORY": "Story",
-    "ContributorRole_ADAPTATION": "Adaptation"
+    "ContributorRole_ADAPTATION": "Adaptation",
+    "ContributorRole_CLEANER": "cleaner",
+    "ContributorRole_TYPESETTER": "typesetter",
+    "ContributorRole_RAW_PROVIDER": "rawProvider",
+    "ContributorRole_SUPERVISOR": "supervisor"
   },
   "Contributors": {
     "Title": "Contributors",
