@@ -26,7 +26,7 @@ model User {
   permissions     String[]
   accessRecords   AccessRecord[]
   BookRating      BookRating[]
-  favoriteBooks   FavoriteBook[]
+  collections     Collection[]
   readingProgress ReadingProgress[]
   role            Role?             @relation(fields: [roleId], references: [id])
   wallet          Wallet?
@@ -102,7 +102,7 @@ model Book {
   contributors      BookContributor[]
   ratings           BookRating[]
   chapters          Chapter[]
-  favoritedBy       FavoriteBook[]
+  collectionItems   CollectionItem[]
   readingProgress   ReadingProgress[]
 
   @@index([ratingAvg, ratingCount])
@@ -225,18 +225,6 @@ model Media {
   Book       Book[]
 }
 
-model FavoriteBook {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  bookId    Int
-  createdAt DateTime @default(now())
-  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, bookId])
-  @@index([userId, createdAt])
-}
-
 model Contributor {
   id           Int               @id @default(autoincrement())
   name         String
@@ -263,6 +251,56 @@ model BookContributor {
   @@id([bookId, contributorId, role])
   @@index([contributorId])
   @@index([bookId])
+}
+
+model Collection {
+  id            Int                  @id @default(autoincrement())
+  ownerId       Int?
+  type          CollectionType
+  title         String
+  slug          String
+  description   String?
+  visibility    CollectionVisibility @default(PRIVATE)
+  allowIndexing Boolean              @default(false)
+  featured      Boolean              @default(false)
+  locked        Boolean              @default(false)
+  bookCount     Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  owner         User?                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items         CollectionItem[]
+
+  @@unique([ownerId, slug])
+  @@index([type, featured, createdAt])
+  @@index([ownerId, createdAt])
+  @@index([visibility, allowIndexing])
+}
+
+model CollectionItem {
+  id           Int        @id @default(autoincrement())
+  collectionId Int
+  bookId       Int
+  position     Int
+  note         String?
+  addedAt      DateTime   @default(now())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  book         Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, bookId])
+  @@unique([collectionId, position])
+  @@index([bookId])
+}
+
+enum CollectionType {
+  SYSTEM
+  USER
+  FAVORITES
+}
+
+enum CollectionVisibility {
+  PUBLIC
+  PRIVATE
+  UNLISTED
 }
 
 enum RoleName {

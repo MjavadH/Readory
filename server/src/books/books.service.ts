@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { CollectionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
@@ -16,6 +16,7 @@ import {
   slugify,
 } from '../common';
 import {RecommendationService} from "./recommendation/recommendation.service";
+import { CollectionsService } from '../collections/collections.service';
 import {
   RELATED_EXPONENTIAL_DECAY_LAMBDA, RELATED_FRESHNESS_WEIGHT, RELATED_GENRE_WEIGHT,
   RELATED_POPULARITY_WEIGHT,
@@ -60,6 +61,7 @@ export class BooksService {
     private publicService: PublicService,
     private readonly cacheManager: CacheManager,
     private readonly recommendationService: RecommendationService,
+    private readonly collectionsService: CollectionsService,
   ) {}
 
   private readonly CACHE_KEY_BROWSE_DEFAULT = 'books:browse:default';
@@ -978,8 +980,8 @@ export class BooksService {
         where: { userId, chapter: { bookId } },
         select: { chapterId: true },
       }),
-      this.prisma.favoriteBook.findUnique({
-        where: { userId_bookId: { userId, bookId } },
+      this.prisma.collectionItem.findFirst({
+        where: { bookId, collection: { ownerId: userId, type: CollectionType.FAVORITES } },
         select: { id: true },
       }),
     ]);
@@ -1238,7 +1240,20 @@ export class BooksService {
         });
       }
 
+      const collectionCounts = await tx.collectionItem.groupBy({
+        by: ['collectionId'],
+        where: { bookId: id },
+        _count: { _all: true },
+      });
+
       await tx.book.delete({ where: { id } });
+
+      for (const row of collectionCounts) {
+        await tx.collection.update({
+          where: { id: row.collectionId },
+          data: { bookCount: { decrement: row._count._all } },
+        });
+      }
     });
 
     await this.invalidateCache();
@@ -1255,35 +1270,24 @@ export class BooksService {
       throw new NotFoundException('book not found');
     }
 
+    const collection = await this.collectionsService.ensureFavoritesCollection(userId);
+
     const result = await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.favoriteBook.findUnique({
+      await this.lockCollection(tx, collection.id);
+
+      const existing = await tx.collectionItem.findUnique({
         where: {
-          userId_bookId: {
-            userId,
+          collectionId_bookId: {
+            collectionId: collection.id,
             bookId,
           },
         },
       });
 
       if (existing) {
-        await tx.favoriteBook.delete({
-          where: {
-            userId_bookId: {
-              userId,
-              bookId,
-            },
-          },
-        });
-
-        await tx.book.update({
-          where: { id: bookId },
-          data: {
-            favoriteCount: {
-              decrement: 1,
-            },
-          },
-        });
-
+        await tx.collectionItem.delete({ where: { id: existing.id } });
+        await tx.collection.update({ where: { id: collection.id }, data: { bookCount: { decrement: 1 } } });
+        await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { decrement: 1 } } });
         await this.recommendationService.recalculatePopularity(tx, bookId);
 
         return {
@@ -1291,22 +1295,16 @@ export class BooksService {
         };
       }
 
-      await tx.favoriteBook.create({
+      const position = await this.nextItemPosition(tx, collection.id);
+      await tx.collectionItem.create({
         data: {
-          userId,
+          collectionId: collection.id,
           bookId,
+          position,
         },
       });
-
-      await tx.book.update({
-        where: { id: bookId },
-        data: {
-          favoriteCount: {
-            increment: 1,
-          },
-        },
-      });
-
+      await tx.collection.update({ where: { id: collection.id }, data: { bookCount: { increment: 1 } } });
+      await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
       await this.recommendationService.recalculatePopularity(tx, bookId);
 
       return {
@@ -1328,41 +1326,38 @@ export class BooksService {
     const limit = clamp(args.limit, 1, 50);
     const skip = (page - 1) * limit;
 
-    const [total, favorites] = await Promise.all([
-      this.prisma.favoriteBook.count({
-        where: { userId },
-      }),
-      this.prisma.favoriteBook.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          book: {
-            select: {
-              id: true,
-              title: true,
-              contributors: {
-                select: {
-                  role: true,
-                  contributor: { select: { name: true } },
-                },
+    const collection = await this.collectionsService.ensureFavoritesCollection(userId);
+
+    const favorites = await this.prisma.collectionItem.findMany({
+      where: { collectionId: collection.id },
+      orderBy: { position: 'asc' },
+      skip,
+      take: limit,
+      select: {
+        book: {
+          select: {
+            id: true,
+            title: true,
+            contributors: {
+              select: {
+                role: true,
+                contributor: { select: { name: true } },
               },
-              coverImage: true,
-              ratingAvg: true,
-              ratingCount: true,
-              updatedAt: true,
-              type: {
-                select: {
-                  name: true,
-                  slug: true,
-                },
+            },
+            coverImage: true,
+            ratingAvg: true,
+            ratingCount: true,
+            updatedAt: true,
+            type: {
+              select: {
+                name: true,
+                slug: true,
               },
             },
           },
         },
-      }),
-    ]);
+      },
+    });
 
     const data = favorites.map(({ book }) => {
       const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
@@ -1380,10 +1375,22 @@ export class BooksService {
 
     return {
       data,
-      total,
+      total: collection.bookCount,
       page,
-      lastPage: Math.max(1, Math.ceil(total / limit)),
+      lastPage: Math.max(1, Math.ceil(collection.bookCount / limit)),
     };
+  }
+
+  private async lockCollection(tx: Prisma.TransactionClient, collectionId: number) {
+    await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collectionId} FOR UPDATE`;
+  }
+
+  private async nextItemPosition(tx: Prisma.TransactionClient, collectionId: number) {
+    const aggregate = await tx.collectionItem.aggregate({
+      where: { collectionId },
+      _max: { position: true },
+    });
+    return (aggregate._max.position ?? 0) + 1;
   }
 
   private buildRelatedBooksCacheKey(
