@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import {ArrayMaxSize, ArrayNotEmpty, IsArray, IsInt, IsOptional, IsString, MaxLength, Min} from 'class-validator';
 
 export class AddCollectionItemDto {
   @Type(() => Number)
@@ -23,6 +23,7 @@ export class UpdateCollectionItemDto {
 export class ReorderCollectionItemsDto {
   @IsArray()
   @ArrayNotEmpty()
+  @ArrayMaxSize(100)
   @Type(() => Number)
   @IsInt({ each: true })
   itemIds!: number[];

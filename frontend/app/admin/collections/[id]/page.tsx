@@ -5,14 +5,11 @@ import Link from "next/link"
 import { useParams } from "next/navigation"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { motion } from "framer-motion"
-import { AlertCircle, ArrowLeft, ArrowRight, BookOpen, Eye, ListOrdered, Sparkles } from "lucide-react"
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react"
 
 import { apiClient, getApiErrorMessage } from "@/lib/api-client"
-import { formatUpdateTime } from "@/lib/time"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { StatCard } from "@/components/admin/stat-card"
 import { CollectionDetail } from "@/components/collections/collection-detail"
 import type { Collection } from "@/lib/collection-types"
 
@@ -21,7 +18,6 @@ export default function AdminCollectionDetailPage() {
     const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
     const router = useRouter()
     const t = useTranslations("Collections")
-    const tTime = useTranslations("Time")
 
     const [collection, setCollection] = React.useState<Collection | null>(null)
     const [isLoading, setIsLoading] = React.useState(true)
@@ -60,57 +56,6 @@ export default function AdminCollectionDetailPage() {
                         {t("Actions.BackToCollections")}
                     </Link>
                 </Button>
-
-                {isLoading ? (
-                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <Skeleton key={i} className="h-28 w-full rounded-xl" />
-                        ))}
-                    </div>
-                ) : collection ? (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
-                    >
-                        <StatCard
-                            index={0}
-                            icon={BookOpen}
-                            title={t("Stats.Books")}
-                            value={String(collection.bookCount)}
-                            hint={t("Stats.BooksHint")}
-                        />
-                        <StatCard
-                            index={1}
-                            icon={Eye}
-                            accent="emerald"
-                            title={t("Stats.Visibility")}
-                            value={t(`Visibility.${collection.visibility}` as never)}
-                            hint={
-                                collection.indexable
-                                    ? t("Stats.Indexable")
-                                    : t("Stats.NotIndexable")
-                            }
-                        />
-                        <StatCard
-                            index={2}
-                            icon={Sparkles}
-                            accent="amber"
-                            title={t("Stats.Featured")}
-                            value={collection.featured ? t("Yes") : t("No")}
-                            hint={t("Stats.FeaturedHint")}
-                        />
-                        <StatCard
-                            index={3}
-                            icon={ListOrdered}
-                            accent="rose"
-                            title={t("Stats.Updated")}
-                            value={formatUpdateTime(collection.updatedAt, tTime)}
-                            hint={t("Stats.UpdatedHint")}
-                        />
-                    </motion.div>
-                ) : null}
             </div>
 
             {isLoading ? (

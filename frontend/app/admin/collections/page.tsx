@@ -120,8 +120,8 @@ export default function AdminCollectionsPage() {
         const total = collections.length
         const featured = collections.filter((c) => c.featured).length
         const published = collections.filter((c) => c.visibility === "PUBLIC").length
-        const books = collections.reduce((sum, c) => sum + (c.bookCount ?? 0), 0)
-        return { total, featured, published, books }
+        const privateCollection = collections.filter((c) => c.visibility === "PRIVATE").length
+        return { total, featured, published, privateCollection }
     }, [collections])
 
     const openCreate = () => {
@@ -251,19 +251,19 @@ export default function AdminCollectionsPage() {
                             />
                             <StatCard
                                 index={2}
+                                icon={EyeOff}
+                                accent="rose"
+                                title={t("Stats.Private")}
+                                value={String(stats.privateCollection)}
+                                hint={t("Stats.PrivateHint")}
+                            />
+                            <StatCard
+                                index={3}
                                 icon={Sparkles}
                                 accent="amber"
                                 title={t("Stats.Featured")}
                                 value={String(stats.featured)}
                                 hint={t("Stats.FeaturedHint")}
-                            />
-                            <StatCard
-                                index={3}
-                                icon={BookOpen}
-                                accent="rose"
-                                title={t("Stats.Books")}
-                                value={String(stats.books)}
-                                hint={t("Stats.BooksHint")}
                             />
                         </>
                     )}
@@ -336,13 +336,14 @@ export default function AdminCollectionsPage() {
                                         <BookOpen className="h-3 w-3" />
                                         {collection.bookCount}
                                     </Badge>
-                                    <Badge
-                                        variant={collection.featured ? "default" : "outline"}
-                                        className="gap-1 rounded-full text-[10px]"
-                                    >
-                                        <Sparkles className="h-3 w-3" />
-                                        {t("Featured")}
-                                    </Badge>
+                                    {collection.featured &&(
+                                        <Badge
+                                            className="gap-1 rounded-full text-[10px]"
+                                        >
+                                            <Sparkles className="h-3 w-3" />
+                                            {t("Featured")}
+                                        </Badge>
+                                    )}
                                     <Badge
                                         variant={collection.visibility === "PUBLIC" ? "secondary" : "outline"}
                                         className="gap-1 rounded-full text-[10px]"

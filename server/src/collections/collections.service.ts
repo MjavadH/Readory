@@ -232,8 +232,8 @@ export class CollectionsService {
 
   private collectionSelect(itemTake: number) {
     return {
-      id: true, ownerId: true, type: true, title: true, slug: true, description: true, visibility: true, allowIndexing: true, featured: true, locked: true, bookCount: true, createdAt: true, updatedAt: true,
-      items: { orderBy: { position: 'asc' }, take: itemTake, select: { id: true, position: true, note: true, addedAt: true, book: { select: { id: true, slug: true, title: true, coverImage: true, ratingAvg: true, ratingCount: true, updatedAt: true, type: { select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true } }, contributors: { select: { role: true, contributor: { select: { name: true } } } } } } } },
+      id: true, ownerId: true, type: true, title: true, slug: true, description: true, visibility: true, allowIndexing: true, featured: true, locked: true, bookCount: true, updatedAt: true,
+      items: { orderBy: { position: 'asc' }, take: itemTake, select: { id: true, position: true, note: true, addedAt: true, book: { select: { id: true, title: true, coverImage: true, ratingAvg: true, ratingCount: true, updatedAt: true, type: { select: { id: true, name: true, slug: true, } }, genres: {select: {genre: { select: {name: true, slug: true}}}}, contributors: { select: { role: true, contributor: { select: { name: true } } } } } } } },
     } satisfies Prisma.CollectionSelect;
   }
 
@@ -242,8 +242,23 @@ export class CollectionsService {
   }
 
   private serializeBook(book: any) {
-    const mainContributor = book.contributors.find((a: any) => a.role === 'AUTHOR') || book.contributors[0];
-    return { id: book.id, slug: book.slug, title: book.title, contributors: mainContributor ? mainContributor.contributor.name : null, coverImage: book.coverImage, ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)), ratingCount: book.ratingCount, updatedAt: book.updatedAt.toISOString(), type: book.type };
+    const mainContributor =
+        book.contributors.find((a: any) => a.role === 'AUTHOR') ??
+        book.contributors[0];
+
+    return {
+      id: book.id,
+      title: book.title,
+      contributors: mainContributor
+          ? mainContributor.contributor.name
+          : null,
+      genres: book.genres.map((g: any) => g.genre),
+      coverImage: book.coverImage,
+      ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
+      ratingCount: book.ratingCount,
+      updatedAt: book.updatedAt.toISOString(),
+      type: book.type,
+    };
   }
 
   private assertCanView(collection: any, viewerId?: number, isAdmin = false) {
