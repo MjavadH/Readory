@@ -2,6 +2,12 @@ import * as React from "react"
 
 import { apiClient } from "@/lib/api-client"
 
+export type Permission =
+    | "MANAGE_BOOKS"
+    | "MANAGE_USERS"
+    | "MANAGE_FINANCE"
+    | "MANAGE_STAFF"
+
 export type CurrentUser = {
     id: number
     userId: number
@@ -9,7 +15,8 @@ export type CurrentUser = {
     username: string
     walletBalance: number
     roleName?: "ADMIN"
-    permissions?: string[]
+    role?: "ADMIN"
+    permissions?: Permission[]
 }
 
 type Status = "loading" | "authenticated" | "unauthenticated"
@@ -37,8 +44,9 @@ const fetchProfile = (force = false): Promise<CurrentUser | null> => {
         .get<CurrentUser>("/auth/profile")
         .then((user) => {
             hasFetched = true
-            emit({ user, status: "authenticated" })
-            return user
+            const normalizedUser = user ? { ...user, id: user.id ?? user.userId, userId: user.userId ?? user.id, role: user.roleName } : null
+            emit({ user: normalizedUser, status: "authenticated" })
+            return normalizedUser
         })
         .catch(() => {
             hasFetched = true
@@ -84,9 +92,13 @@ export function useCurrentUser() {
         isLoading: snapshot.status === "loading",
         isAuthenticated: snapshot.status === "authenticated",
         isAdmin: snapshot.user?.roleName === "ADMIN",
-        hasPermission: (permission: string) =>
-            snapshot.user?.roleName === "ADMIN" &&
-            Boolean(snapshot.user?.permissions?.includes(permission)),
+        isSuperAdmin: snapshot.user?.id === 1,
+        hasPermission: (permission: Permission | Permission[]) => {
+            if (!snapshot.user || snapshot.user.roleName !== "ADMIN") return false
+            if (snapshot.user.id === 1) return true
+            const required = Array.isArray(permission) ? permission : [permission]
+            return required.some((p) => Boolean(snapshot.user?.permissions?.includes(p)))
+        },
         refresh,
         clear,
     }
