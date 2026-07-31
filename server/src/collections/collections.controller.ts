@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -35,15 +36,15 @@ export class CollectionsController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async getAdminById(@Param('id', ParseIntPipe) id: number) {
-    return this.collectionsService.getAdminById(id);
+  async getAdminById(@Param('id', ParseIntPipe) id: number, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.collectionsService.getAdminById(id, { cursor, limit: limit ? Number(limit) : undefined });
   }
 
   @Get(':slug')
   @UseGuards(OptionalJwtAuthGuard)
-  async getBySlug(@Param('slug') slug: string, @Request() req: any) {
+  async getBySlug(@Param('slug') slug: string, @Query('cursor') cursor: string | undefined, @Query('limit') limit: string | undefined, @Request() req: any) {
     const userId = req.user?.userId ?? req.user?.id;
-    return this.collectionsService.getBySlug(slug, userId ? Number(userId) : undefined, req.user?.roleName === RoleName.ADMIN);
+    return this.collectionsService.getBySlug(slug, userId ? Number(userId) : undefined, req.user?.roleName === RoleName.ADMIN, { cursor, limit: limit ? Number(limit) : undefined });
   }
 
   @Post()
@@ -137,6 +138,7 @@ export class CollectionsController {
   }
 
   @Put(':id/items/reorder')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(JwtAuthGuard)
   @Audit({
     action: AuditAction.COLLECTION_UPDATED,
@@ -159,14 +161,14 @@ export class UserCollectionsController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async getAdminById(@Param('id', ParseIntPipe) id: number) {
-    return this.collectionsService.getAdminById(id);
+  async getAdminById(@Param('id', ParseIntPipe) id: number, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.collectionsService.getAdminById(id, { cursor, limit: limit ? Number(limit) : undefined });
   }
 
   @Get(':slug')
   @UseGuards(OptionalJwtAuthGuard)
-  async getUserCollection(@Param('username') username: string, @Param('slug') slug: string, @Request() req: any) {
+  async getUserCollection(@Param('username') username: string, @Param('slug') slug: string, @Query('cursor') cursor: string | undefined, @Query('limit') limit: string | undefined, @Request() req: any) {
     const userId = req.user?.userId ?? req.user?.id;
-    return this.collectionsService.getUserCollection(username, slug, userId ? Number(userId) : undefined);
+    return this.collectionsService.getUserCollection(username, slug, userId ? Number(userId) : undefined, { cursor, limit: limit ? Number(limit) : undefined });
   }
 }
