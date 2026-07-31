@@ -151,22 +151,32 @@ export function CollectionDetail({
     }
 
     // ---- items ----------------------------------------------------------
-    const [items, setItems] = React.useState<CollectionItem[]>(collection.items ?? [])
+    const collectionItems = React.useMemo(() => collection.items ?? [], [collection.items])
+    const [itemsState, setItemsState] = React.useState(() => ({ source: collectionItems, items: collectionItems }))
+    if (itemsState.source !== collectionItems) setItemsState({ source: collectionItems, items: collectionItems })
+    const items = itemsState.source === collectionItems ? itemsState.items : collectionItems
+    const setItems = React.useCallback((next: CollectionItem[]) => {
+        setItemsState((state) => ({ source: state.source, items: next }))
+    }, [])
     const [pendingItemId, setPendingItemId] = React.useState<number | null>(null)
     const [isReordering, setIsReordering] = React.useState(false)
 
-    React.useEffect(() => {
-        setItems(collection.items ?? [])
-    }, [collection.items])
+    const isOrderDirty = React.useMemo(() => {
+        return items.length === collectionItems.length && items.some((item, index) => item.id !== collectionItems[index]?.id)
+    }, [collectionItems, items])
 
     const persistOrder = async (next: CollectionItem[]) => {
-        const previous = items
-        setItems(next)
+        if (!isOrderDirty) {
+            setManageMode(false)
+            return
+        }
+        const previous = collectionItems
         setIsReordering(true)
         try {
             await apiClient.put(`/collections/${collection.id}/items/reorder`, {
                 itemIds: next.map((item) => item.id),
             })
+            setManageMode(false)
             await onChanged()
         } catch (e) {
             setItems(previous)
@@ -182,7 +192,12 @@ export function CollectionDetail({
         const next = [...items]
         const [moved] = next.splice(index, 1)
         next.splice(target, 0, moved)
-        void persistOrder(next)
+        setItems(next)
+    }
+
+    const toggleManageMode = () => {
+        if (manageMode) void persistOrder(items)
+        else setManageMode(true)
     }
 
     const removeItem = async (item: CollectionItem) => {
@@ -425,7 +440,8 @@ export function CollectionDetail({
                                 size="sm"
                                 variant={manageMode ? "default" : "outline"}
                                 className="gap-1.5"
-                                onClick={() => setManageMode((v) => !v)}
+                                onClick={toggleManageMode}
+                                disabled={isReordering}
                             >
                                 <ListOrdered className="h-3.5 w-3.5" />
                                 {manageMode ? t("Actions.Done") : t("Actions.Manage")}
@@ -489,7 +505,6 @@ export function CollectionDetail({
                                 <Reorder.Item
                                     key={item.id}
                                     value={item}
-                                    onDragEnd={() => void persistOrder(items)}
                                     className="list-none"
                                 >
                                     <ManageRow
