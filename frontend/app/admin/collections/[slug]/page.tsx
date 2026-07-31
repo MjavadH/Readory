@@ -31,7 +31,7 @@ export default function AdminCollectionDetailPage() {
         if (!slug) return
         setError(null)
         try {
-            const res = await apiClient.get<Collection>(`/collections/${slug}`)
+            const res = await apiClient.get<Collection>(`/collections/admin/${slug}`)
             setCollection(res)
         } catch (e) {
             setError(getApiErrorMessage(e, t("Toast.LoadFailed")))

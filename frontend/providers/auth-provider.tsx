@@ -1,72 +1,48 @@
 "use client"
 
-import React, { createContext, useContext, useEffect, useState } from "react"
-import { apiClient } from "@/lib/api-client"
-
-export type Permission =
-  | "MANAGE_BOOKS"
-  | "MANAGE_USERS"
-  | "MANAGE_FINANCE"
-  | "MANAGE_STAFF"
-
-interface User {
-  id: number
-  username: string
-  role?: "ADMIN"
-  permissions?: Permission[]
-}
+import React, { createContext, useContext } from "react"
+import { CurrentUser, Permission, useCurrentUser } from "@/hooks/use-current-user"
 
 interface AuthContextType {
-  user: User | null
+  user: CurrentUser | null
   loading: boolean
-}
-
-type ProfileResponse = {
-  id?: number
-  userId?: number
-  username: string
-  roleName?: "ADMIN"
-  permissions?: Permission[]
+  status: "loading" | "authenticated" | "unauthenticated"
+  isAuthenticated: boolean
+  isAdmin: boolean
+  isSuperAdmin: boolean
+  hasPermission: (permission: Permission | Permission[]) => boolean
+  refresh: () => Promise<CurrentUser | null>
+  clear: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  status: "loading",
+  isAuthenticated: false,
+  isAdmin: false,
+  isSuperAdmin: false,
+  hasPermission: () => false,
+  refresh: async () => null,
+  clear: () => undefined,
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const currentUser = useCurrentUser()
+  const value = React.useMemo<AuthContextType>(() => ({
+    user: currentUser.user,
+    loading: currentUser.isLoading,
+    status: currentUser.status,
+    isAuthenticated: currentUser.isAuthenticated,
+    isAdmin: currentUser.isAdmin,
+    isSuperAdmin: currentUser.isSuperAdmin,
+    hasPermission: currentUser.hasPermission,
+    refresh: currentUser.refresh,
+    clear: currentUser.clear,
+  }), [currentUser])
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await apiClient.get<ProfileResponse>("/auth/profile")
-        const normalizedId = data.id ?? data.userId
-
-        if (data.roleName === "ADMIN" && normalizedId) {
-          setUser({
-            id: normalizedId,
-            username: data.username,
-            role: "ADMIN",
-            permissions: data.permissions || [],
-          })
-          return
-        }
-
-        setUser(null)
-      } catch (error) {
-        console.error("Auth Error:", error)
-        setUser(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    void fetchProfile()
-  }, [])
-
-  return <AuthContext.Provider value={{ user, loading }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => useContext(AuthContext)
+export type { CurrentUser, Permission }

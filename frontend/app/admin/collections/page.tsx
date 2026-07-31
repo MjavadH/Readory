@@ -42,6 +42,10 @@ export default function AdminCollectionsPage() {
 
     const [collections, setCollections] = React.useState<Collection[]>([])
     const [isLoading, setIsLoading] = React.useState(true)
+    const [isLoadingMore, setIsLoadingMore] = React.useState(false)
+    const [nextCursor, setNextCursor] = React.useState<string | undefined>()
+    const [hasMore, setHasMore] = React.useState(false)
+    const loadMoreRef = React.useRef<HTMLDivElement>(null)
     const [search, setSearch] = React.useState("")
     const [isSaving, setIsSaving] = React.useState(false)
     const [pendingId, setPendingId] = React.useState<number | null>(null)
@@ -52,18 +56,43 @@ export default function AdminCollectionsPage() {
 
     const load = React.useCallback(async () => {
         try {
-            const res = await apiClient.get<Collection[]>("/collections")
-            setCollections(Array.isArray(res) ? res : [])
+            const res = await apiClient.get<{ items: Collection[]; nextCursor?: string; hasMore?: boolean }>("/collections/admin?limit=24")
+            setCollections(res.items ?? [])
+            setNextCursor(res.nextCursor)
+            setHasMore(Boolean(res.hasMore))
         } catch (e) {
             toast.error(getApiErrorMessage(e, t("Toast.LoadFailed")))
         } finally {
             setIsLoading(false)
         }
-    }, [])
+    }, [t, toast])
 
     React.useEffect(() => {
         void load()
     }, [load])
+
+    const loadMore = React.useCallback(async () => {
+        if (!nextCursor || isLoadingMore) return
+        setIsLoadingMore(true)
+        try {
+            const res = await apiClient.get<{ items: Collection[]; nextCursor?: string; hasMore?: boolean }>(`/collections/admin?limit=24&cursor=${encodeURIComponent(nextCursor)}`)
+            setCollections((prev) => [...prev, ...(res.items ?? [])])
+            setNextCursor(res.nextCursor)
+            setHasMore(Boolean(res.hasMore))
+        } catch (e) {
+            toast.error(getApiErrorMessage(e, t("Toast.LoadFailed")))
+        } finally {
+            setIsLoadingMore(false)
+        }
+    }, [isLoadingMore, nextCursor, t, toast])
+
+    React.useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0]?.isIntersecting && hasMore && !search.trim()) void loadMore()
+        }, { threshold: 0.1, rootMargin: "100px" })
+        if (loadMoreRef.current) observer.observe(loadMoreRef.current)
+        return () => observer.disconnect()
+    }, [hasMore, loadMore, search])
 
     const filtered = React.useMemo(() => {
         const q = search.trim().toLowerCase()
@@ -108,6 +137,8 @@ export default function AdminCollectionsPage() {
                 slug: form.slug.trim() || undefined,
                 description: form.description.trim() || undefined,
                 featured: form.featured,
+                visibility: form.visibility,
+                allowIndexing: form.allowIndexing,
             }
             if (editing) await apiClient.patch(`/collections/${editing.id}`, body)
             else await apiClient.post("/collections/system", body)
@@ -254,6 +285,7 @@ export default function AdminCollectionsPage() {
                     <p className="max-w-xs px-6 text-xs text-muted-foreground">{t("Empty.Hint")}</p>
                 </div>
             ) : (
+                <>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <AnimatePresence initial={false}>
                         {filtered.map((collection, index) => (
@@ -271,7 +303,7 @@ export default function AdminCollectionsPage() {
 
                                     <div className="min-w-0 flex-1 text-start">
                                         <Link
-                                            href={`/admin/collections/${collection.slug}`}
+                                            href={`/admin/collections/${collection.id}`}
                                             className="line-clamp-1 text-sm font-semibold outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                                             dir="auto"
                                         >
@@ -324,7 +356,7 @@ export default function AdminCollectionsPage() {
 
                                 <div className="mt-auto flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-2.5">
                                     <Button asChild size="sm" variant="secondary" className="h-8 flex-1 text-xs">
-                                        <Link href={`/admin/collections/${collection.slug}`}>
+                                        <Link href={`/admin/collections/${collection.id}`}>
                                             {t("Actions.ManageBooks")}
                                         </Link>
                                     </Button>
@@ -384,6 +416,14 @@ export default function AdminCollectionsPage() {
                         ))}
                     </AnimatePresence>
                 </div>
+                {hasMore && !search.trim() && (
+                    <div ref={loadMoreRef} className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {isLoadingMore && Array.from({ length: 3 }).map((_, i) => (
+                            <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+                        ))}
+                    </div>
+                )}
+                </>
             )}
 
             {/* Drawer on mobile, Dialog on tablet/desktop */}

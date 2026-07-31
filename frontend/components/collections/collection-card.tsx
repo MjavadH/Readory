@@ -7,6 +7,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CollectionCover } from "./collection-cover";
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { getBookUrl } from "@/lib/types";
 import type { CollectionSummary } from "@/lib/types";
 
 type CollectionCardProps = {
@@ -26,6 +28,10 @@ export function CollectionCard({
     const t = useTranslations("Collections");
     const hero = variant === "hero";
     const books = collection.items?.map((item) => item.book) ?? [];
+    const { user } = useCurrentUser();
+    const singleBook = collection.bookCount === 1 ? collection.items?.[0]?.book : null;
+    const isOwner = Boolean(user && collection.ownerId && user.id === collection.ownerId);
+    const href = singleBook && !isOwner ? getBookUrl(singleBook) : `/collections/${collection.slug}`;
 
     return (
         <motion.article
@@ -37,7 +43,7 @@ export function CollectionCard({
             className={cn("group h-full", className)}
         >
             <Link
-                href={`/collections/${collection.slug}`}
+                href={href}
                 className={cn(
                     "relative flex h-full flex-col overflow-hidden rounded-3xl border border-border/60 text-start",
                     "bg-card/70 backdrop-blur-sm transition-colors duration-300 hover:border-border hover:bg-card",

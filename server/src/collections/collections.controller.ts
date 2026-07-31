@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
@@ -17,13 +17,31 @@ export class CollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
 
   @Get()
-  async listSystem() {
-    return this.collectionsService.listSystem();
+  async listSystem(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.collectionsService.listSystem({ cursor, limit: limit ? Number(limit) : undefined });
+  }
+
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async listAdmin(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.collectionsService.listAdmin({ cursor, limit: limit ? Number(limit) : undefined });
+  }
+
+  @Get('admin/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async getAdminById(@Param('id', ParseIntPipe) id: number) {
+    return this.collectionsService.getAdminById(id);
   }
 
   @Get(':slug')
-  async getBySlug(@Param('slug') slug: string) {
-    return this.collectionsService.getBySlug(slug);
+  @UseGuards(OptionalJwtAuthGuard)
+  async getBySlug(@Param('slug') slug: string, @Request() req: any) {
+    const userId = req.user?.userId ?? req.user?.id;
+    return this.collectionsService.getBySlug(slug, userId ? Number(userId) : undefined, req.user?.roleName === RoleName.ADMIN);
   }
 
   @Post()
@@ -88,6 +106,14 @@ export class CollectionsController {
 @Controller('u/:username/collections')
 export class UserCollectionsController {
   constructor(private readonly collectionsService: CollectionsService) {}
+
+  @Get('admin/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles(RoleName.ADMIN)
+  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  async getAdminById(@Param('id', ParseIntPipe) id: number) {
+    return this.collectionsService.getAdminById(id);
+  }
 
   @Get(':slug')
   @UseGuards(OptionalJwtAuthGuard)

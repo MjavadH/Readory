@@ -1,7 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { Library } from "lucide-react";
-
-import { CollectionsGrid } from "@/components/collections/collections-grid";
+import { CollectionsClient } from "./CollectionsClient";
 import { apiClient } from "@/lib/api-client";
 import type { CollectionSummary } from "@/lib/types";
 
@@ -16,11 +14,9 @@ export async function generateMetadata() {
 export default async function CollectionsPage() {
     const t = await getTranslations("Collections");
 
-    const collections = await apiClient.get<CollectionSummary[]>("/collections", {
+    const collections = await apiClient.get<{ items: CollectionSummary[]; nextCursor?: string; hasMore?: boolean }>("/collections?limit=24", {
         next: { revalidate: 120 },
     });
-
-    const totalBooks = collections.reduce((sum, c) => sum + (c.bookCount ?? 0), 0);
 
     return (
         <main className="relative">
@@ -44,14 +40,7 @@ export default async function CollectionsPage() {
                     </div>
                 </header>
 
-                {collections.length > 0 ? (
-                    <CollectionsGrid collections={collections} />
-                ) : (
-                    <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-border bg-card/40 px-6 py-16 text-center">
-                        <Library aria-hidden className="size-8 text-muted-foreground/70" />
-                        <p className="text-sm text-muted-foreground sm:text-base">{t("emptyState")}</p>
-                    </div>
-                )}
+                <CollectionsClient initialData={collections} />
             </div>
         </main>
     );

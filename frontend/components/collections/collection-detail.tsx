@@ -1,5 +1,4 @@
 import * as React from "react"
-import Link from "next/link"
 import { AnimatePresence, motion, Reorder } from "framer-motion"
 import { useTranslations } from "next-intl"
 import {
@@ -23,6 +22,7 @@ import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { useToast } from "@/providers/toast-provider"
 import { cn } from "@/lib/utils"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
+import { BookCard } from "@/components/book-card"
 import { formatUpdateTime } from "@/lib/time"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -98,7 +98,7 @@ export function CollectionDetail({
                 slug: form.slug.trim() || undefined,
                 description: form.description.trim() || undefined,
                 ...(isSystem
-                    ? { featured: form.featured }
+                    ? { featured: form.featured, visibility: form.visibility, allowIndexing: form.allowIndexing }
                     : { visibility: form.visibility, allowIndexing: form.allowIndexing }),
             })
             toast.success(t("Toast.Updated"))
@@ -487,43 +487,9 @@ export function CollectionDetail({
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.97 }}
                                         transition={{ duration: 0.25, delay: Math.min(index, 8) * 0.03 }}
-                                        className="group flex flex-col"
+                                        className="flex flex-col"
                                     >
-                                        <Link
-                                            href={bookHref(item.book)}
-                                            className="relative block overflow-hidden rounded-xl border border-border/60 bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                        >
-                                            <div className="aspect-2/3 w-full">
-                                                <img
-                                                    src={getBookCoverThumbnailUrl(item.book.coverImage)}
-                                                    alt={item.book.title}
-                                                    loading="lazy"
-                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                                                />
-                                            </div>
-                                        </Link>
-                                        <h3
-                                            dir="auto"
-                                            className="mt-2 line-clamp-2 text-start text-xs font-medium leading-snug sm:text-sm"
-                                        >
-                                            {item.book.title}
-                                        </h3>
-                                        {item.book.contributors && (
-                                            <p
-                                                dir="auto"
-                                                className="line-clamp-1 text-start text-[11px] text-muted-foreground"
-                                            >
-                                                {item.book.contributors}
-                                            </p>
-                                        )}
-                                        {item.note && (
-                                            <p
-                                                dir="auto"
-                                                className="mt-1 line-clamp-2 rounded-lg bg-muted/60 px-2 py-1 text-start text-[11px] italic text-muted-foreground"
-                                            >
-                                                {item.note}
-                                            </p>
-                                        )}
+                                        <BookCard book={item.book} link={bookHref(item.book)} note={item.note} noteLabel={t("EditNote")} />
                                     </motion.article>
                                 ))}
                             </AnimatePresence>

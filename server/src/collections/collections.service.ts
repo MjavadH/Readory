@@ -33,27 +33,54 @@ export class CollectionsService {
     });
   }
 
-  async listSystem() {
-    const cached = await this.cacheManager.getString(this.CACHE_KEY_SYSTEM_COLLECTIONS);
-    if (cached) return JSON.parse(cached);
+  async listSystem(options?: { cursor?: string; limit?: number }) {
+    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
+    if (!options?.cursor && !options?.limit) {
+      const cached = await this.cacheManager.getString(this.CACHE_KEY_SYSTEM_COLLECTIONS);
+      if (cached) return JSON.parse(cached);
+    }
 
     const rows = await this.prisma.collection.findMany({
       where: { type: CollectionType.SYSTEM, visibility: CollectionVisibility.PUBLIC },
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
+      take: limit + 1,
       select: this.collectionSelect(4),
     });
-    const result = rows.map((row) => this.serializeCollection(row));
-    await this.cacheManager.setString(this.CACHE_KEY_SYSTEM_COLLECTIONS, JSON.stringify(result), 120);
+    const page = rows.slice(0, limit);
+    const result = { items: page.map((row) => this.serializeCollection(row)), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+    if (!options?.cursor && !options?.limit) await this.cacheManager.setString(this.CACHE_KEY_SYSTEM_COLLECTIONS, JSON.stringify(result.items), 120);
     return result;
   }
 
-  async getBySlug(slug: string, viewerId?: number) {
+  async listAdmin(options?: { cursor?: string; limit?: number }) {
+    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
+    const rows = await this.prisma.collection.findMany({
+      orderBy: [{ type: 'asc' }, { featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
+      take: limit + 1,
+      select: this.collectionSelect(4),
+    });
+    const page = rows.slice(0, limit);
+    return { items: page.map((row) => this.serializeCollection(row)), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+  }
+
+  async getAdminById(id: number) {
+    const collection = await this.prisma.collection.findUnique({
+      where: { id },
+      select: this.collectionSelect(100),
+    });
+    if (!collection) throw new NotFoundException('collection not found');
+    return this.serializeCollection(collection);
+  }
+
+  async getBySlug(slug: string, viewerId?: number, isAdmin = false) {
     const collection = await this.prisma.collection.findFirst({
       where: { slug: normalizeSlug(slug) || slug, type: CollectionType.SYSTEM },
       select: this.collectionSelect(100),
     });
     if (!collection) throw new NotFoundException('collection not found');
-    this.assertCanView(collection, viewerId);
+    this.assertCanView(collection, viewerId, isAdmin);
     return this.serializeCollection(collection);
   }
 
@@ -92,7 +119,7 @@ export class CollectionsService {
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
     if (dto.visibility !== undefined) data.visibility = dto.visibility;
-    if (dto.allowIndexing !== undefined && existing.type !== CollectionType.SYSTEM) data.allowIndexing = dto.allowIndexing;
+    if (dto.allowIndexing !== undefined) data.allowIndexing = dto.allowIndexing;
     if (dto.featured !== undefined && existing.type === CollectionType.SYSTEM) data.featured = dto.featured;
     if (dto.slug !== undefined && existing.type !== CollectionType.FAVORITES) data.slug = await this.uniqueSlug(dto.slug, existing.ownerId ?? undefined, id);
 
@@ -218,7 +245,8 @@ export class CollectionsService {
     return { id: book.id, title: book.title, contributors: mainContributor ? mainContributor.contributor.name : null, coverImage: book.coverImage, ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)), ratingCount: book.ratingCount, updatedAt: book.updatedAt.toISOString(), type: book.type };
   }
 
-  private assertCanView(collection: any, viewerId?: number) {
+  private assertCanView(collection: any, viewerId?: number, isAdmin = false) {
+    if (isAdmin) return;
     if (collection.visibility === CollectionVisibility.PUBLIC || collection.visibility === CollectionVisibility.UNLISTED) return;
     if (viewerId && collection.ownerId === viewerId) return;
     throw new NotFoundException('collection not found');

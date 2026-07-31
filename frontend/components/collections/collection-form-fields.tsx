@@ -80,8 +80,7 @@ export function CollectionFormFields({
                 />
             </div>
 
-            {!isSystem && (
-                <div className="space-y-2">
+            <div className="space-y-2">
                     <Label className="text-xs font-medium">{t("Form.Visibility")}</Label>
                     <Select
                         value={value.visibility}
@@ -99,17 +98,25 @@ export function CollectionFormFields({
                     <p className="text-[11px] text-muted-foreground">
                         {t(`Form.VisibilityHint_${value.visibility}` as never)}
                     </p>
-                </div>
-            )}
+            </div>
 
             <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-3">
                 {isSystem ? (
+                    <>
                     <ToggleRow
                         label={t("Form.Featured")}
                         hint={t("Form.FeaturedHint")}
                         checked={value.featured}
                         onCheckedChange={(featured) => patch({ featured })}
                     />
+                    <ToggleRow
+                        label={t("Form.AllowIndexing")}
+                        hint={t("Form.AllowIndexingHint")}
+                        checked={value.allowIndexing}
+                        disabled={value.visibility !== "PUBLIC"}
+                        onCheckedChange={(allowIndexing) => patch({ allowIndexing })}
+                    />
+                    </>
                 ) : (
                     <ToggleRow
                         label={t("Form.AllowIndexing")}

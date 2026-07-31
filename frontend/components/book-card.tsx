@@ -4,7 +4,7 @@ import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Clock } from "lucide-react";
+import { Star, Clock, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import type { BookCardData } from "@/lib/types";
@@ -17,6 +17,8 @@ interface BookCardProps {
     priority?: boolean;
     className?: string;
     link?: string;
+    note?: string | null;
+    noteLabel?: string;
 }
 
 interface BookCardSkeletonProps {
@@ -41,7 +43,7 @@ export function BookCardSkeleton({ className }: BookCardSkeletonProps) {
     );
 }
 
-export function BookCard({ book, priority = false, className, link }: BookCardProps) {
+export function BookCard({ book, priority = false, className, link, note, noteLabel }: BookCardProps) {
     const t = useTranslations('Books');
     const ti = useTranslations('Time');
     const [isImageLoaded, setIsImageLoaded] = useState(false);
@@ -126,6 +128,17 @@ export function BookCard({ book, priority = false, className, link }: BookCardPr
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 shadow-sm" aria-label="Featured book">
                             <Star className="h-3 w-3 fill-background text-background" />
                         </div>
+                    </div>
+                )}
+
+                {/* Note popup - visible on hover */}
+                {note && noteLabel && (
+                    <div className="absolute inset-x-2 bottom-2 z-20 translate-y-2 rounded-lg bg-background/95 p-2 text-start text-[11px] leading-relaxed text-foreground opacity-0 shadow-lg backdrop-blur transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                        <div className="mb-1 flex items-center gap-1 font-semibold text-primary">
+                            <StickyNote className="h-3 w-3" />
+                            <span>{noteLabel}</span>
+                        </div>
+                        <p dir="auto" className="line-clamp-4">{note}</p>
                     </div>
                 )}
 

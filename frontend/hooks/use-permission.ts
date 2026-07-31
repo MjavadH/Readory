@@ -1,19 +1,12 @@
-import { useAuth, Permission } from "@/providers/auth-provider"
+import { useAuth } from "@/providers/auth-provider"
 
 export function usePermission() {
-    const { user, loading } = useAuth()
-
-    const has = (requiredPermission: Permission | Permission[]): boolean => {
-        if (loading || !user) return false
-        if (user.id === 1) return true
-        const required = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
-        return required.some(p => (user.permissions || []).includes(p))
-    }
+    const { user, loading, hasPermission, isSuperAdmin } = useAuth()
 
     return {
-        has,
+        has: hasPermission,
         user,
         loading,
-        isSuperAdmin: user?.id === 1
+        isSuperAdmin
     }
 }
