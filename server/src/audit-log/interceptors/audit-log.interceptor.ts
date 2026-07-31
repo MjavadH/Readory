@@ -35,6 +35,7 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
     if (!meta) return next.handle();
     const req = context.switchToHttp().getRequest();
+    if (meta.adminOnly && req.user?.roleName !== 'ADMIN' && req.user?.role !== 'ADMIN') return next.handle();
     const requestMeta = ensureAuditRequestMetadata(req);
     const idFromReq = meta.targetIdParam
       ? req.params?.[meta.targetIdParam]

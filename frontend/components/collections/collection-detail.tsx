@@ -25,12 +25,22 @@ import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { BookCard } from "@/components/book-card"
 import { formatUpdateTime } from "@/lib/time"
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { ResponsiveModal } from "@/components/responsive-modal"
 import { CollectionFormFields } from "@/components/collections/collection-form-fields"
 import { BookPicker } from "@/components/admin/book-picker"
-import type { BookCardData } from "@/lib/types"
+import { getBookUrl, type BookCardData } from "@/lib/types"
 import {
     collectionToForm,
     type Collection,
@@ -62,7 +72,7 @@ export function CollectionDetail({
                                      collection,
                                      canEdit,
                                      canAddItems = false,
-                                     bookHref = (book) => `/books/${book.slug ?? book.id}`,
+                                     bookHref = (book) => getBookUrl(book),
                                      onChanged,
                                      onDeleted,
                                  }: CollectionDetailProps) {
@@ -76,6 +86,7 @@ export function CollectionDetail({
     const [descExpanded, setDescExpanded] = React.useState(false)
     const [manageMode, setManageMode] = React.useState(false)
     const [isSaving, setIsSaving] = React.useState(false)
+    const [deleteOpen, setDeleteOpen] = React.useState(false)
 
     // ---- collection edit ------------------------------------------------
     const [editOpen, setEditOpen] = React.useState(false)
@@ -126,11 +137,11 @@ export function CollectionDetail({
     }
 
     const deleteCollection = async () => {
-        if (!window.confirm(t("ConfirmDeleteCollection", { title: collection.title }))) return
         setIsSaving(true)
         try {
             await apiClient.delete(`/collections/${collection.id}`)
             toast.success(t("Toast.Deleted"))
+            setDeleteOpen(false)
             onDeleted?.()
         } catch (e) {
             toast.error(getApiErrorMessage(e, t("Toast.DeleteFailed")))
@@ -385,7 +396,7 @@ export function CollectionDetail({
                                         size="sm"
                                         variant="ghost"
                                         className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                        onClick={deleteCollection}
+                                        onClick={() => setDeleteOpen(true)}
                                         disabled={isSaving}
                                     >
                                         <Trash2 className="h-3.5 w-3.5" />
@@ -421,7 +432,31 @@ export function CollectionDetail({
                             </Button>
                         )}
 
-                        {canAddItems && (
+                        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("DeleteCollectionTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("DeleteCollectionDescription", { title: collection.title })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSaving}>{t("Actions.Cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            disabled={isSaving}
+                            onClick={(event) => {
+                                event.preventDefault()
+                                void deleteCollection()
+                            }}
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Actions.Delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {canAddItems && (
                             <Button
                                 size="sm"
                                 className="gap-1.5"
@@ -551,6 +586,30 @@ export function CollectionDetail({
                     className="resize-none text-start"
                 />
             </ResponsiveModal>
+
+            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("DeleteCollectionTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("DeleteCollectionDescription", { title: collection.title })}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSaving}>{t("Actions.Cancel")}</AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            disabled={isSaving}
+                            onClick={(event) => {
+                                event.preventDefault()
+                                void deleteCollection()
+                            }}
+                        >
+                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Actions.Delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {canAddItems && (
                 <BookPicker

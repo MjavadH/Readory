@@ -61,6 +61,7 @@ export class CollectionsController {
     action: AuditAction.COLLECTION_CREATED,
     category: AuditCategory.CONTENT,
     targetType: 'Collection',
+    adminOnly: true,
   })
   async createSystem(@Body() dto: CreateCollectionDto) {
     return this.collectionsService.createSystemCollection(dto);
@@ -68,6 +69,12 @@ export class CollectionsController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    adminOnly: true,
+  })
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCollectionDto, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.update(id, Number(userId), req.user.roleName === RoleName.ADMIN, dto);
@@ -75,6 +82,12 @@ export class CollectionsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_DELETED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    adminOnly: true,
+  })
   async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.delete(id, Number(userId), req.user.roleName === RoleName.ADMIN);
@@ -82,6 +95,13 @@ export class CollectionsController {
 
   @Post(':id/items')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
   async addBook(@Param('id', ParseIntPipe) id: number, @Body() dto: AddCollectionItemDto, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.addBook(id, Number(userId), req.user.roleName === RoleName.ADMIN, dto.bookId, dto.note);
@@ -90,6 +110,13 @@ export class CollectionsController {
 
   @Patch(':id/items/:itemId')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
   async updateItem(@Param('id', ParseIntPipe) id: number, @Param('itemId', ParseIntPipe) itemId: number, @Body() dto: UpdateCollectionItemDto, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.updateItem(id, itemId, Number(userId), req.user.roleName === RoleName.ADMIN, dto.note);
@@ -97,6 +124,13 @@ export class CollectionsController {
 
   @Delete(':id/items/:itemId')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
   async removeBook(@Param('id', ParseIntPipe) id: number, @Param('itemId', ParseIntPipe) itemId: number, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.removeBook(id, itemId, Number(userId), req.user.roleName === RoleName.ADMIN);
@@ -104,6 +138,13 @@ export class CollectionsController {
 
   @Put(':id/items/reorder')
   @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
   async reorder(@Param('id', ParseIntPipe) id: number, @Body() dto: ReorderCollectionItemsDto, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.reorder(id, Number(userId), req.user.roleName === RoleName.ADMIN, dto.itemIds);
