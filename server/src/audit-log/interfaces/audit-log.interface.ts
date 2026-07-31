@@ -51,4 +51,5 @@ export interface AuditLogDecoratorOptions {
     request: any,
   ) => string | number | null | undefined;
   getTargetName?: (result: unknown, request: any) => string | null | undefined;
+  adminOnly?: boolean;
 }

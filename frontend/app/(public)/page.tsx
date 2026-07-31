@@ -5,12 +5,13 @@ import { TrendingSection, TrendingSkeleton } from "@/components/Home/trending-se
 import { LatestSection, LatestSectionSkeleton } from "@/components/Home/latest-section"
 import { GenresSection, GenresSectionSkeleton } from "@/components/Home/genres-section"
 import { HeroCarousel, HeroSkeleton } from "@/components/Home/hero-carousel";
-import {BookType, BookGenre, BookCardData, ReadingProgress} from "@/lib/types"
+import {BookType, BookGenre, BookCardData, ReadingProgress, type CollectionSummary} from "@/lib/types"
 import { apiClient } from "@/lib/api-client"
 import {PopularSection, PopularSkeleton} from "@/components/Home/popular-section";
 import { ContinueReadingCard } from "@/components/dashboard/ContinueReadingCard";
 import { BookMarked } from "lucide-react";
 import {useTranslations} from "next-intl";
+import { FeaturedCollectionsSection, FeaturedCollectionsSkeleton } from "@/components/Home/featured-collections-section"
 
 interface Chapter {
     id: number
@@ -41,10 +42,13 @@ interface PersonalizedContent {
 
 const fetcher = (url: string) => apiClient.get<HomeContent>(url)
 const PersonalizedFetcher = (url: string) => apiClient.get<PersonalizedContent>(url)
+const collectionsFetcher = (url: string) => apiClient.get<{ items: CollectionSummary[]; nextCursor?: string; hasMore?: boolean }>(url)
 
 export default function Home() {
     const { data: homeData, isLoading: homeLoading } = useSWR<HomeContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/content`, fetcher)
     const { data: personalizedData } = useSWR<PersonalizedContent>(`${process.env.NEXT_PUBLIC_API_BASE}/public/personalized`, PersonalizedFetcher)
+    const { data: collectionsData, isLoading: collectionsLoading } = useSWR(`${process.env.NEXT_PUBLIC_API_BASE}/collections?limit=12`, collectionsFetcher)
+    const featuredCollections = (collectionsData?.items ?? []).filter((collection) => collection.featured).slice(0, 4)
     const t = useTranslations('UserDashboard');
 
     return (
@@ -58,6 +62,9 @@ export default function Home() {
 
                 {/* Latest Updates Section */}
                 {homeLoading || !homeData ? <LatestSectionSkeleton /> : homeData?.latest && <LatestSection books={homeData.latest} />}
+
+                {/* Featured Collections Section */}
+                {collectionsLoading ? <FeaturedCollectionsSkeleton /> : <FeaturedCollectionsSection collections={featuredCollections} />}
 
                 {/* popular Section */}
                 {homeLoading || !homeData ? <PopularSkeleton /> : homeData?.popular && <PopularSection books={homeData.popular} />}

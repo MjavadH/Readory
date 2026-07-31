@@ -24,6 +24,16 @@ import { cn } from "@/lib/utils"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { StatCard } from "@/components/admin/stat-card"
@@ -49,6 +59,7 @@ export default function AdminCollectionsPage() {
     const [search, setSearch] = React.useState("")
     const [isSaving, setIsSaving] = React.useState(false)
     const [pendingId, setPendingId] = React.useState<number | null>(null)
+    const [deleteTarget, setDeleteTarget] = React.useState<Collection | null>(null)
 
     const [modalOpen, setModalOpen] = React.useState(false)
     const [editing, setEditing] = React.useState<Collection | null>(null)
@@ -179,11 +190,11 @@ export default function AdminCollectionsPage() {
     }
 
     const remove = async (collection: Collection) => {
-        if (!window.confirm(t("ConfirmDeleteCollection", { title: collection.title }))) return
         setPendingId(collection.id)
         try {
             await apiClient.delete(`/collections/${collection.id}`)
             toast.success(t("Toast.Deleted"))
+            setDeleteTarget(null)
             await load()
         } catch (e) {
             toast.error(getApiErrorMessage(e, t("Toast.DeleteFailed")))
@@ -400,7 +411,7 @@ export default function AdminCollectionsPage() {
                                         className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         aria-label={t("Actions.Delete")}
                                         disabled={pendingId === collection.id || collection.locked}
-                                        onClick={() => void remove(collection)}
+                                        onClick={() => setDeleteTarget(collection)}
                                     >
                                         {pendingId === collection.id ? (
                                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -443,6 +454,32 @@ export default function AdminCollectionsPage() {
             >
                 <CollectionFormFields value={form} onChange={setForm} isSystem />
             </ResponsiveModal>
+
+            <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{t("DeleteCollectionTitle")}</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {deleteTarget ? t("DeleteCollectionDescription", { title: deleteTarget.title }) : null}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={Boolean(deleteTarget && pendingId === deleteTarget.id)}>
+                            {t("Actions.Cancel")}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            variant="destructive"
+                            disabled={Boolean(deleteTarget && pendingId === deleteTarget.id)}
+                            onClick={(event) => {
+                                event.preventDefault()
+                                if (deleteTarget) void remove(deleteTarget)
+                            }}
+                        >
+                            {deleteTarget && pendingId === deleteTarget.id ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Actions.Delete")}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
