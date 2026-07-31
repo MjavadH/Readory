@@ -56,7 +56,8 @@ export class CollectionsService {
   async listAdmin(options?: { cursor?: string; limit?: number }) {
     const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
     const rows = await this.prisma.collection.findMany({
-      orderBy: [{ type: 'asc' }, { featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+      where: { type: CollectionType.SYSTEM },
+      orderBy: [{ type: 'asc' }, { featured: 'desc' }, { updatedAt: 'desc' }, { id: 'desc' }],
       ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
       take: limit + 1,
       select: this.collectionSelect(4),
@@ -107,7 +108,7 @@ export class CollectionsService {
   }
 
   async createSystemCollection(dto: CreateCollectionDto) {
-    return this.createCollection(CollectionType.SYSTEM, null, { ...dto, visibility: CollectionVisibility.PUBLIC, allowIndexing: true });
+    return this.createCollection(CollectionType.SYSTEM, null, { ...dto, allowIndexing: true });
   }
 
   async update(id: number, userId: number | null, isAdmin: boolean, dto: UpdateCollectionDto) {
@@ -206,7 +207,7 @@ export class CollectionsService {
         title: dto.title,
         slug,
         description: dto.description,
-        visibility: type === CollectionType.SYSTEM ? CollectionVisibility.PUBLIC : dto.visibility ?? CollectionVisibility.PRIVATE,
+        visibility: dto.visibility ?? CollectionVisibility.PRIVATE,
         allowIndexing: type === CollectionType.SYSTEM ? true : dto.allowIndexing ?? false,
         featured: type === CollectionType.SYSTEM ? dto.featured ?? false : false,
       },

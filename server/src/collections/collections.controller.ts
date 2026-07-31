@@ -11,6 +11,8 @@ import { CollectionsService } from './collections.service';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 import { AddCollectionItemDto, ReorderCollectionItemsDto, UpdateCollectionItemDto } from './dto/collection-items.dto';
+import {Audit} from "../audit-log/decorators/audit-log.decorator";
+import {AuditAction, AuditCategory} from "@readory/shared";
 
 @Controller('collections')
 export class CollectionsController {
@@ -55,6 +57,11 @@ export class CollectionsController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
+  @Audit({
+    action: AuditAction.COLLECTION_CREATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+  })
   async createSystem(@Body() dto: CreateCollectionDto) {
     return this.collectionsService.createSystemCollection(dto);
   }

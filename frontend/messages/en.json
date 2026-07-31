@@ -877,6 +877,7 @@
     "EditCollection": "Edit collection",
     "EditCollectionHint": "Update the details of this collection.",
     "EditNote": "Edit note",
+    "Note": "Note",
     "NotePlaceholder": "Optional note about this book",
     "AddBookHint": "Search the library and pick a book to add to this collection.",
     "ConfirmDeleteCollection": "Delete “{title}”? This cannot be undone.",

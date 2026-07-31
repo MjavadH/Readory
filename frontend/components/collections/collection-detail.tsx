@@ -489,7 +489,7 @@ export function CollectionDetail({
                                         transition={{ duration: 0.25, delay: Math.min(index, 8) * 0.03 }}
                                         className="flex flex-col"
                                     >
-                                        <BookCard book={item.book} link={bookHref(item.book)} note={item.note} noteLabel={t("EditNote")} />
+                                        <BookCard book={item.book} link={bookHref(item.book)} note={item.note} noteLabel={t("Note")} />
                                     </motion.article>
                                 ))}
                             </AnimatePresence>

@@ -309,9 +309,6 @@ export default function AdminCollectionsPage() {
                                         >
                                             {collection.title}
                                         </Link>
-                                        <p dir="ltr" className="truncate font-mono text-[11px] text-muted-foreground">
-                                            /{collection.slug}
-                                        </p>
                                         {collection.description && (
                                             <p
                                                 dir="auto"

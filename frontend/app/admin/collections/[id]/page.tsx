@@ -17,8 +17,8 @@ import { CollectionDetail } from "@/components/collections/collection-detail"
 import type { Collection } from "@/lib/collection-types"
 
 export default function AdminCollectionDetailPage() {
-    const params = useParams<{ slug: string }>()
-    const slug = params?.slug ?? ""
+    const params = useParams<{ id: string }>();
+    const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
     const router = useRouter()
     const t = useTranslations("Collections")
     const tTime = useTranslations("Time")
@@ -28,17 +28,17 @@ export default function AdminCollectionDetailPage() {
     const [error, setError] = React.useState<string | null>(null)
 
     const load = React.useCallback(async () => {
-        if (!slug) return
+        if (!idParam) return
         setError(null)
         try {
-            const res = await apiClient.get<Collection>(`/collections/admin/${slug}`)
+            const res = await apiClient.get<Collection>(`/collections/admin/${idParam}`)
             setCollection(res)
         } catch (e) {
             setError(getApiErrorMessage(e, t("Toast.LoadFailed")))
         } finally {
             setIsLoading(false)
         }
-    }, [slug, t])
+    }, [idParam, t])
 
     React.useEffect(() => {
         setIsLoading(true)
