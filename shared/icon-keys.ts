@@ -37,6 +37,7 @@ export const ICON_KEYS = [
   "typesetter",
   "rawProvider",
   "supervisor",
+  "collections",
 ] as const;
 
 export type IconKey = (typeof ICON_KEYS)[number];

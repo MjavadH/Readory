@@ -388,6 +388,16 @@ export function UserHeader() {
                   )}
                 </div>
               </NavDropdown>
+              <Link
+                  key="Collections"
+                  href="/collections"
+                  className="flex text-muted-foreground items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent"
+              >
+                <div className="flex h-8 w-8 items-center justify-center">
+                  <AppIcon name="collections" className="h-4 w-4 text-muted-foreground" />
+                </div>
+                {t("Collections")}
+              </Link>
             </nav>
 
             {/* Desktop Search */}
@@ -650,6 +660,13 @@ export function UserHeader() {
                     label={t("AllBooks")}
                     onClick={closeMobile}
                     active={pathname === "/books"}
+                />
+                <MobileNavLink
+                    href="/collections"
+                    icon={"collections"}
+                    label={t("Collections")}
+                    onClick={closeMobile}
+                    active={pathname === "/collections"}
                 />
                 <MobileNavLink
                     href="/genres"

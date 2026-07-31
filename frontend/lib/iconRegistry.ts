@@ -4,7 +4,7 @@ import {
     Skull, Flame, Globe, Home, BookOpen, Library, LayoutDashboard,
     Watch, Volleyball, GraduationCap, Rocket, Search, RefreshCcw,
     MessageCircleHeartIcon, Sword, HeartCrack, CalendarRange, Wallet,
-    Pen, Languages, Palette, Edit, Eraser, Type, FileImage, UserCheck
+    Pen, Languages, Palette, Edit, Eraser, Type, FileImage, UserCheck, Grid2x2
 
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -49,5 +49,6 @@ export const iconRegistry: Record<IconKey, LucideIcon> = {
     typesetter: Type,
     rawProvider: FileImage,
     supervisor: UserCheck,
+    collections: Grid2x2,
 } as const;
 
