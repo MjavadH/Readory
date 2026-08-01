@@ -42,6 +42,7 @@ import { getBookUrl, type BookCardData } from "@/lib/types"
 import {
     collectionToForm,
     type Collection,
+    COLLECTION_SLUG_REGEX,
     type CollectionFormState,
     type CollectionItem,
 } from "@/lib/collection-types"
@@ -96,15 +97,24 @@ export function CollectionDetail({
     }
 
     const saveCollection = async () => {
+        const slug = form.slug.trim()
         if (!form.title.trim()) {
             toast.error(t("Toast.TitleRequired"))
+            return
+        }
+        if (!slug) {
+            toast.error(t("Toast.SlugRequired"))
+            return
+        }
+        if (!COLLECTION_SLUG_REGEX.test(slug)) {
+            toast.error(t("Toast.SlugInvalid"))
             return
         }
         setIsSaving(true)
         try {
             await apiClient.patch(`/collections/${collection.id}`, {
                 title: form.title.trim(),
-                slug: form.slug.trim() || undefined,
+                slug,
                 description: form.description.trim() || undefined,
                 ...(isSystem
                     ? { featured: form.featured, visibility: form.visibility, allowIndexing: form.allowIndexing }

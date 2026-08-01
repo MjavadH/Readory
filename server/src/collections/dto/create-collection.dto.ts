@@ -10,11 +10,11 @@ export class CreateCollectionDto {
   title!: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
-  @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(240)
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: 'slug must be kebab-case (a-z, 0-9, -)' })
-  slug?: string;
+  slug!: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsOptional()

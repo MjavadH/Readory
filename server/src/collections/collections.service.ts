@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { CollectionType, CollectionVisibility, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
-import { normalizeSlug, slugify, toNumber } from '../common';
+import { normalizeSlug, toNumber } from '../common';
 import { CreateCollectionDto } from './dto/create-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
 
@@ -274,7 +274,7 @@ export class CollectionsService {
   }
 
   private async createCollection(type: CollectionType, ownerId: number | null, dto: CreateCollectionDto) {
-    const slug = await this.uniqueSlug(dto.slug || dto.title, ownerId ?? undefined);
+    const slug = await this.uniqueSlug(dto.slug, ownerId ?? undefined);
     const collection = await this.prisma.collection.create({
       data: {
         ownerId,
@@ -293,7 +293,7 @@ export class CollectionsService {
   }
 
   private async uniqueSlug(input: string, ownerId?: number, currentId?: number) {
-    const base = normalizeSlug(input) || slugify(input) || 'collection';
+    const base = normalizeSlug(input);
     let slug = base;
     let index = 2;
     while (

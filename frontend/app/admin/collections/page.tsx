@@ -43,6 +43,7 @@ import {
     collectionToForm,
     emptyCollectionForm,
     type Collection,
+    COLLECTION_SLUG_REGEX,
     type CollectionFormState,
 } from "@/lib/collection-types"
 
@@ -137,15 +138,24 @@ export default function AdminCollectionsPage() {
     }
 
     const save = async () => {
+        const slug = form.slug.trim()
         if (!form.title.trim()) {
             toast.error(t("Toast.TitleRequired"))
+            return
+        }
+        if (!slug) {
+            toast.error(t("Toast.SlugRequired"))
+            return
+        }
+        if (!COLLECTION_SLUG_REGEX.test(slug)) {
+            toast.error(t("Toast.SlugInvalid"))
             return
         }
         setIsSaving(true)
         try {
             const body = {
                 title: form.title.trim(),
-                slug: form.slug.trim() || undefined,
+                slug,
                 description: form.description.trim() || undefined,
                 featured: form.featured,
                 visibility: form.visibility,
