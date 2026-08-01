@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react"
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -39,6 +39,7 @@ import {StatCard} from "@/components/admin/stat-card";
 import { motion } from "framer-motion"
 import { usePermission } from "@/hooks/use-permission"
 import {useTranslations} from "next-intl";
+import {getAvatarUrl} from "@/lib/media";
 
 interface Transaction {
   id: number
@@ -66,6 +67,7 @@ interface User {
   joinedAt: string
   balance: number
   status: "ACTIVE" | "BANNED"
+  avatarKey: string
 }
 
 interface UserDetails extends User {
@@ -334,6 +336,7 @@ export default function AdminUsers() {
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   <Avatar className="size-9 ring-2 ring-border/50">
+                                    <AvatarImage src={getAvatarUrl(user.avatarKey)} alt={user.username ?? ""} />
                                     <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-semibold text-sm">
                                       {user.username.substring(0, 2).toUpperCase()}
                                     </AvatarFallback>
@@ -467,6 +470,7 @@ export default function AdminUsers() {
                     <DialogHeader>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <Avatar className="size-16 ring-2 ring-border">
+                          <AvatarImage src={getAvatarUrl(selectedUser.avatarKey)} alt={selectedUser.username ?? ""} />
                           <AvatarFallback className="bg-linear-to-br from-blue-500/20 to-violet-500/20 text-foreground font-bold text-xl">
                             {selectedUser.username.substring(0, 2).toUpperCase()}
                           </AvatarFallback>

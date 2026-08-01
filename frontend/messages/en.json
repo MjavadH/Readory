@@ -476,7 +476,6 @@
     "Collections": "Collections",
     "CurrentAvatar": "Current avatar",
     "Avatar": "Avatar",
-    "AvatarRequirements": "JPG / WebP. Maximum file size: < 5 MB. Maximum dimensions: 1024 × 1024.",
     "UploadAvatar": "Upload Avatar",
     "AvatarUpdated": "Avatar updated successfully",
     "AvatarUpdateFailed": "Failed to update avatar",

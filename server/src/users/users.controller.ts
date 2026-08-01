@@ -100,6 +100,7 @@ export class UsersController {
       joinedAt: u.createdAt,
       balance: u.wallet?.balance ? u.wallet.balance.toNumber() : 0,
       status: u.isBanned ? 'BANNED' : 'ACTIVE',
+      avatarKey: u.avatarKey,
     }));
     return {
       data: formattedUsers,
@@ -132,6 +133,7 @@ export class UsersController {
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
       status: user.isBanned ? 'BANNED' : 'ACTIVE',
+      avatarKey: user.avatarKey,
 
       wallet: {
         balance: user.wallet?.balance ? Number(user.wallet.balance) : 0,

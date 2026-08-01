@@ -33,7 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { logout } from "@/lib/logout"
 import { apiClient } from "@/lib/api-client"
@@ -57,6 +57,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useTranslations } from "next-intl"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLocaleInfo } from "@/hooks/use-locale-info"
+import {getAvatarUrl} from "@/lib/media";
 
 const COLLAPSED_KEY = "admin-sidebar-collapsed"
 
@@ -64,6 +65,7 @@ interface CurrentUser {
   userId: number
   username: string
   roleName?: "ADMIN"
+  avatarKey?: string
 }
 
 export function AdminSidebar() {
@@ -201,6 +203,7 @@ export function AdminSidebar() {
                 )}
             >
               <Avatar className={cn("shrink-0 ring-2 ring-border", compact ? "h-8 w-8" : "h-9 w-9")}>
+                <AvatarImage src={getAvatarUrl(currentUser.avatarKey)} alt={currentUser.username ?? ""} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                   {currentUser.username.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -219,6 +222,7 @@ export function AdminSidebar() {
           <DropdownMenuContent side="top" align={isRTL ? "start" : "end"} sideOffset={8} className="w-60 p-2">
             <div className="mb-2 flex items-center gap-3 rounded-lg bg-accent/40 px-3 py-2.5">
               <Avatar className="h-10 w-10 ring-2 ring-border">
+                <AvatarImage src={getAvatarUrl(currentUser.avatarKey)} alt={currentUser.username ?? ""} />
                 <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                   {currentUser.username.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -498,6 +502,7 @@ export function AdminSidebar() {
                   <div className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2.5">
                     <div className="flex min-w-0 items-center gap-3">
                       <Avatar className="h-9 w-9 ring-2 ring-border shrink-0">
+                        <AvatarImage src={getAvatarUrl(currentUser.avatarKey)} alt={currentUser.username ?? ""} />
                         <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
                           {currentUser.username.substring(0, 2).toUpperCase()}
                         </AvatarFallback>

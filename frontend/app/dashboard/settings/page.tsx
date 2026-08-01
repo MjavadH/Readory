@@ -18,19 +18,12 @@ import {
     Eye,
     EyeOff,
     AlertCircle,
-    Camera,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/providers/toast-provider";
 import {useTranslations} from "next-intl";
 import { useAuth } from "@/providers/auth-provider";
-import { getAvatarUrl } from "@/lib/media";
-
-function initialsFromUsername(username: string) {
-    const safe = (username || "").trim()
-    if (!safe) return "U"
-    return safe.slice(0, 2).toUpperCase()
-}
+import ProfileCard from "@/components/dashboard/ProfileCard";
 
 export default function SettingsPage() {
     const t = useTranslations('UserDashboard');
@@ -176,18 +169,6 @@ export default function SettingsPage() {
                 </section>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Sidebar Profile Card */}
-                    <div className="lg:col-span-4 space-y-6">
-                        <div className="bg-card border border-border rounded-[2rem] p-8 shadow-xl shadow-black/5 space-y-6">
-                            <div className="flex flex-col items-center text-center space-y-6">
-                                <div className="w-32 h-32 rounded-[2rem] bg-muted" />
-                                <div className="space-y-2 w-full flex flex-col items-center">
-                                    <div className="h-6 w-40 bg-muted rounded-lg" />
-                                    <div className="h-4 w-56 bg-muted rounded-lg" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Forms */}
                     <div className="lg:col-span-8 space-y-10">
@@ -288,45 +269,16 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-card border border-border rounded-[2rem] p-8 shadow-xl shadow-black/5 sticky top-0 overflow-hidden">
-                        <div className="absolute top-0 right-0 p-6 opacity-5">
-                            <Shield className="w-24 h-24" />
-                        </div>
-                        <div className="relative z-10 flex flex-col items-center text-center space-y-6">
-                            <div className="w-32 h-32 rounded-[2rem] bg-linear-to-tr from-primary to-primary-foreground/30 flex items-center justify-center border-4 border-background shadow-2xl overflow-hidden ring-8 ring-primary/5">
-                                {(avatarPreview || profile?.avatarKey) ? (
-                                    <img src={avatarPreview || getAvatarUrl(profile?.avatarKey)} alt={t("CurrentAvatar")} className="h-full w-full object-cover" />
-                                ) : (
-                                    <p className="text-3xl font-bold">{initialsFromUsername(profile?.username || "")}</p>
-                                )}
-                            </div>
-                            <div className="w-full space-y-3 text-start">
-                                <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("Avatar")}</label>
-                                <input
-                                    type="file"
-                                    accept="image/jpeg,image/webp"
-                                    disabled={avatarUploading}
-                                    onChange={(event) => void handleAvatarSelected(event.target.files?.[0])}
-                                    className="w-full text-sm file:me-4 file:rounded-xl file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground file:font-bold"
-                                />
-                                <p className="text-xs text-muted-foreground font-medium">{t("AvatarRequirements")}</p>
-                                {avatarError ? <p className="text-xs text-destructive font-bold">{avatarError}</p> : null}
-                                <button
-                                    type="button"
-                                    disabled={!avatarFile || avatarUploading}
-                                    onClick={() => void handleAvatarUpload()}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                                    {t("UploadAvatar")}
-                                </button>
-                            </div>
-                            <div className="space-y-1">
-                                <h2 className="text-2xl font-bold tracking-tight">{profile?.username}</h2>
-                                <p className="text-muted-foreground font-medium">{profile?.email}</p>
-                            </div>
-                        </div>
-                    </div>
+                    <ProfileCard
+                        profile={profile}
+                        avatarPreview={avatarPreview}
+                        avatarFile={avatarFile}
+                        avatarError={avatarError}
+                        avatarUploading={avatarUploading}
+                        onSelect={handleAvatarSelected}
+                        onUpload={handleAvatarUpload}
+                        onClear={() => void handleAvatarSelected(undefined)}
+                    />
                 </div>
 
                 <div className="lg:col-span-8 space-y-10">
