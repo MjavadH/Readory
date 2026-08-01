@@ -217,18 +217,34 @@ export class CollectionsService {
       const collection = await tx.collection.findUnique({ where: { id } });
       if (!collection) throw new NotFoundException('collection not found');
       this.assertCanManage(collection, userId, isAdmin);
-      const existing = await tx.collectionItem.findMany({ where: { collectionId: id }, select: { id: true }, orderBy: { position: 'asc' } });
-      const set = new Set(itemIds);
-      if (set.size !== existing.length || existing.some((item) => !set.has(item.id))) throw new BadRequestException('itemIds must include every collection item');
+
+      const uniqueItemIds = [...new Set(itemIds)];
+      if (uniqueItemIds.length !== itemIds.length) {
+        throw new BadRequestException('Duplicate item IDs are not allowed');
+      }
+
+      const existing = await tx.collectionItem.findMany({
+        where: { collectionId: id, id: { in: uniqueItemIds } },
+        select: { id: true, position: true },
+        orderBy: { position: 'asc' },
+      });
+
+      if (existing.length !== uniqueItemIds.length) {
+        throw new BadRequestException('Some items do not belong to this collection');
+      }
+
+      const sortedPositions = existing.map((item) => item.position);
+
       await tx.$executeRaw`
         UPDATE "CollectionItem"
-        SET "position" = -reorder.position::int
+        SET "position" = -reorder.new_pos::int
         FROM (
-          SELECT * FROM unnest(${itemIds}::int[]) WITH ORDINALITY AS input(id, position)
-        ) AS reorder
+          SELECT unnest(${uniqueItemIds}::int[]) AS id, unnest(${sortedPositions}::int[]) AS new_pos
+          ) AS reorder
         WHERE "CollectionItem".id = reorder.id
           AND "CollectionItem"."collectionId" = ${id}
       `;
+
       await tx.$executeRaw`
         UPDATE "CollectionItem"
         SET "position" = -"position"
@@ -236,6 +252,7 @@ export class CollectionsService {
           AND "position" < 0
       `;
     });
+
     await this.invalidateAfterItemChange(id);
     return { reordered: true };
   }
@@ -354,7 +371,7 @@ export class CollectionsService {
   }
 
   private normalizeItemLimit(limit?: number) {
-    return Math.min(Math.max(limit || 24, 1), this.userCollectionBookLimit);
+    return Math.min(Math.max(limit || this.userCollectionBookLimit, 1), this.userCollectionBookLimit);
   }
 
   private async detailCacheKey(...segments: Array<string | number | boolean>) {

@@ -84,7 +84,7 @@ function NavDropdown({label, icon: Icon, href, children, isActive,}: {
 
         <div
             className={cn(
-                "absolute top-full left-0 pt-2 transition-all duration-200 origin-top-left",
+                "absolute top-full ltr:left-0 rtl:right-0 pt-2 transition-all duration-200 origin-top-left",
                 open
                     ? "opacity-100 scale-100 pointer-events-auto"
                     : "opacity-0 scale-95 pointer-events-none"

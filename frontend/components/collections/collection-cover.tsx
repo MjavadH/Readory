@@ -29,8 +29,8 @@ export function CollectionCover({
         <div
             className={cn(
                 "group/cover relative isolate overflow-hidden rounded-2xl border border-border/60",
-                "bg-gradient-to-br from-muted/70 via-background to-muted/40 sm:rounded-3xl",
-                "shadow-sm ring-1 ring-inset ring-foreground/[0.04]",
+                "bg-linear-to-br from-muted/70 via-background to-muted/40 sm:rounded-3xl",
+                "shadow-sm ring-1 ring-inset ring-foreground/4",
                 className,
             )}
         >
@@ -52,7 +52,7 @@ export function CollectionCover({
             {/* Fine grid texture */}
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06] [background-image:linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] [background-size:14px_14px]"
+                className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06] bg-[linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] bg-size-[14px_14px]"
             />
 
             {count === 0 ? (
@@ -154,7 +154,7 @@ function CoverTile({
             viewport={{ once: true, amount: 0.3 }}
             transition={{ duration: 0.28, ease: "easeOut", delay: index * 0.05 }}
             className={cn(
-                "relative aspect-[2/3] shrink-0 overflow-hidden rounded-md bg-muted sm:rounded-lg",
+                "relative aspect-2/3 shrink-0 overflow-hidden rounded-md bg-muted sm:rounded-lg",
                 "border border-border/70 shadow-md shadow-foreground/10 dark:shadow-background/60",
                 "ring-1 ring-inset ring-background/30",
                 "transition-transform duration-300 ease-out",
@@ -175,7 +175,7 @@ function CoverTile({
                     className="object-cover"
                 />
             ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/25 via-muted to-muted">
+                <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary/25 via-muted to-muted">
           <span className="line-clamp-3 px-1.5 text-center text-[10px] font-medium leading-tight text-muted-foreground">
             {book?.title}
           </span>
@@ -185,11 +185,11 @@ function CoverTile({
             {/* Spine highlight + page edge, RTL aware */}
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 start-0 w-[6%] bg-gradient-to-r from-foreground/25 to-transparent rtl:bg-gradient-to-l dark:from-background/60"
+                className="pointer-events-none absolute inset-y-0 inset-s-0 w-[6%] bg-linear-to-r from-foreground/25 to-transparent rtl:bg-linear-to-l dark:from-background/60"
             />
             <div
                 aria-hidden
-                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-foreground/25 via-transparent to-background/10"
+                className="pointer-events-none absolute inset-0 bg-linear-to-t from-foreground/25 via-transparent to-background/10"
             />
         </motion.div>
     );
@@ -200,7 +200,7 @@ function EmptyCover({ compact }: { compact: boolean }) {
         <div
             className={cn(
                 "relative flex items-center justify-center",
-                compact ? "aspect-[16/9]" : "aspect-[3/2]",
+                compact ? "aspect-[16/9]" : "aspect-3/2",
             )}
         >
             <div className="flex items-end gap-1.5 opacity-60">
@@ -208,7 +208,7 @@ function EmptyCover({ compact }: { compact: boolean }) {
                     <span
                         key={i}
                         className={cn(
-                            "block aspect-[2/3] w-9 rounded-sm border border-border bg-background/70 shadow-sm sm:w-11",
+                            "block aspect-2/3 w-9 rounded-sm border border-border bg-background/70 shadow-sm sm:w-11",
                             i === 0 && "-rotate-6 rtl:rotate-6",
                             i === 2 && "rotate-6 rtl:-rotate-6",
                         )}
