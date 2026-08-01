@@ -4,9 +4,13 @@ import { getBookCoverThumbnailUrl } from "@/lib/media";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { apiClient, getApiErrorMessage } from "@/lib/api-client";
 import { BookCard } from "@/components/book-card";
 import type { BookCardData } from "@/lib/types";
+import type { Collection } from "@/lib/collection-types";
 import { useToast } from "@/providers/toast-provider";
 import { useTranslations } from "next-intl";
 import { ChapterPurchaseDialog } from "@/components/chapter-purchase-dialog";
@@ -63,6 +67,10 @@ export default function BookDetailsPage() {
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
+  const [userCollections, setUserCollections] = useState<Array<Collection & { containsBook?: boolean }>>([]);
+  const [selectedCollectionIds, setSelectedCollectionIds] = useState<number[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
 
   const [chapters, setChapters] = useState<ChaptersSectionChapter[]>([]);
   const [chaptersPage, setChaptersPage] = useState(1);
@@ -188,6 +196,44 @@ export default function BookDetailsPage() {
     }
   };
 
+
+  const openCollectionDialog = async () => {
+    if (!book) return;
+    if (!isAuthenticated) {
+      toast.error(t("OnlyRegisteredUsers"));
+      return;
+    }
+
+    setCollectionDialogOpen(true);
+    setCollectionsLoading(true);
+    try {
+      const res = await apiClient.get<{ items: Array<Collection & { containsBook?: boolean }> }>(`/collections/mine?limit=48&bookId=${book.id}`);
+      const items = res.items ?? [];
+      setUserCollections(items);
+      setSelectedCollectionIds(items.filter((collection) => collection.containsBook).map((collection) => collection.id));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t("FailedLoadDetails")));
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
+  const saveCollectionSelection = async () => {
+    if (!book) return;
+    setCollectionsLoading(true);
+    try {
+      const existingIds = new Set(userCollections.filter((collection) => collection.containsBook).map((collection) => collection.id));
+      const idsToAdd = selectedCollectionIds.filter((id) => !existingIds.has(id));
+      await Promise.all(idsToAdd.map((id) => apiClient.post(`/collections/${id}/items`, { bookId: book.id })));
+      toast.success(t("AddedToCollections"));
+      setCollectionDialogOpen(false);
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t("UnableSaveRating")));
+    } finally {
+      setCollectionsLoading(false);
+    }
+  };
+
   const handleToggleFavorite = async () => {
     if (!book) return;
     setFavoriteLoading(true);
@@ -282,6 +328,7 @@ export default function BookDetailsPage() {
             isFavorited={isFavorited}
             favoriteLoading={favoriteLoading}
             onToggleFavorite={handleToggleFavorite}
+            onAddToCollection={openCollectionDialog}
             selectedRating={selectedRating}
             hoverRating={hoverRating}
             onHoverRating={setHoverRating}
@@ -344,6 +391,38 @@ export default function BookDetailsPage() {
                 onClose={() => setActionChapter(null)}
             />
         )}
+        <Dialog open={collectionDialogOpen} onOpenChange={setCollectionDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("SelectCollections")}</DialogTitle>
+            </DialogHeader>
+            <div className="max-h-80 space-y-3 overflow-y-auto">
+              {collectionsLoading && userCollections.length === 0 ? (
+                  <div className="h-24 animate-pulse rounded-2xl bg-muted" />
+              ) : userCollections.length > 0 ? (
+                  userCollections.map((collection) => (
+                      <label key={collection.id} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border p-3">
+                        <Checkbox
+                            checked={selectedCollectionIds.includes(collection.id)}
+                            onCheckedChange={(checked) => {
+                              setSelectedCollectionIds((prev) => checked ? [...new Set([...prev, collection.id])] : prev.filter((id) => id !== collection.id))
+                            }}
+                        />
+                        <span className="min-w-0 flex-1 truncate font-medium">{collection.title}</span>
+                        <span className="text-xs text-muted-foreground">{collection.bookCount}</span>
+                      </label>
+                  ))
+              ) : (
+                  <p className="py-8 text-center text-sm text-muted-foreground">{t("NoUserCollections")}</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCollectionDialogOpen(false)} disabled={collectionsLoading}>{g("Cancel")}</Button>
+              <Button onClick={() => void saveCollectionSelection()} disabled={collectionsLoading || userCollections.length === 0}>{g("Save")}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
       </div>
   );
 }
