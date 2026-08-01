@@ -21,6 +21,7 @@ import { useToast } from "@/providers/toast-provider"
 import { cn } from "@/lib/utils"
 import { getBookCoverThumbnailUrl } from "@/lib/media"
 import { BookCard } from "@/components/book-card"
+import { CollectionCover } from "@/components/collections/collection-cover"
 import { formatUpdateTime } from "@/lib/time"
 import { Button } from "@/components/ui/button"
 import {
@@ -291,8 +292,9 @@ export function CollectionDetail({
             ? `${description.slice(0, DESCRIPTION_COLLAPSED_CHARS).trimEnd()}…`
             : description
 
-    const covers = React.useMemo(
-        () => items.slice(0, 4).map((item) => item.book.coverImage),
+    // Feed the scattered-collage cover with real book records (no mock data).
+    const coverBooks = React.useMemo(
+        () => items.slice(0, 5).map((item) => item.book),
         [items],
     )
 
@@ -310,7 +312,11 @@ export function CollectionDetail({
                         <div className="relative overflow-hidden rounded-t-3xl">
                             <div className="absolute inset-0 bg-linear-to-br from-primary/15 via-primary/5 to-transparent" />
                             <div className="relative flex flex-col items-center gap-4 px-5 pb-6 pt-7 text-center sm:px-6 sm:pt-9">
-                                <CoverMosaic covers={covers} title={collection.title} />
+                                <CollectionCover
+                                    books={coverBooks}
+                                    size="hero"
+                                    className="w-full max-w-xs sm:max-w-sm"
+                                />
 
                                 <div className="min-w-0">
                                     <h1
@@ -401,17 +407,17 @@ export function CollectionDetail({
 
                 {/* -------------------------------- items --------------------------- */}
                 <section className="lg:col-span-8">
-                    <motion.div
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: 0.05 }}
-                        className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/50 px-4 py-3"
-                    >
-                        {isReordering && (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                        )}
+                    {canEdit && items.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.35, delay: 0.05 }}
+                            className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-border/60 bg-card/50 px-4 py-3"
+                        >
+                            {isReordering && (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            )}
 
-                        {canEdit && items.length > 0 && (
                             <Button
                                 size="sm"
                                 variant={manageMode ? "default" : "outline"}
@@ -422,48 +428,48 @@ export function CollectionDetail({
                                 <ListOrdered className="h-3.5 w-3.5" />
                                 {manageMode ? t("Actions.Done") : t("Actions.Manage")}
                             </Button>
-                        )}
 
-                        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>{t("DeleteCollectionTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {t("DeleteCollectionDescription", { title: collection.title })}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isSaving}>{t("Actions.Cancel")}</AlertDialogCancel>
-                        <AlertDialogAction
-                            variant="destructive"
-                            disabled={isSaving}
-                            onClick={(event) => {
-                                event.preventDefault()
-                                void deleteCollection()
-                            }}
-                        >
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Actions.Delete")}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                            <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>{t("DeleteCollectionTitle")}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            {t("DeleteCollectionDescription", { title: collection.title })}
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel disabled={isSaving}>{t("Actions.Cancel")}</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            variant="destructive"
+                                            disabled={isSaving}
+                                            onClick={(event) => {
+                                                event.preventDefault()
+                                                void deleteCollection()
+                                            }}
+                                        >
+                                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t("Actions.Delete")}
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
-            {canAddItems && (
-                            <Button
-                                size="sm"
-                                className="gap-1.5"
-                                onClick={() => {
-                                    setPickerSearch("")
-                                    setPickerPage(1)
-                                    setPickerOpen(true)
-                                }}
-                                disabled={isSaving}
-                            >
-                                <Plus className="h-4 w-4" />
-                                {t("Actions.AddBook")}
-                            </Button>
-                        )}
-                    </motion.div>
+                            {canAddItems && (
+                                <Button
+                                    size="sm"
+                                    className="gap-1.5"
+                                    onClick={() => {
+                                        setPickerSearch("")
+                                        setPickerPage(1)
+                                        setPickerOpen(true)
+                                    }}
+                                    disabled={isSaving}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    {t("Actions.AddBook")}
+                                </Button>
+                            )}
+                        </motion.div>
+                    )}
 
                     {items.length === 0 ? (
                         <EmptyItems
@@ -628,47 +634,6 @@ export function CollectionDetail({
 }
 
 /* ------------------------------ sub components ----------------------------- */
-
-function CoverMosaic({ covers, title }: { covers: (string | null | undefined)[]; title: string }) {
-    const list = covers.filter(Boolean).slice(0, 4) as string[]
-
-    if (list.length === 0) {
-        return (
-            <div className="grid h-32 w-24 place-items-center rounded-2xl bg-linear-to-br from-primary/25 via-primary/10 to-secondary ring-1 ring-border/60">
-                <BookOpen className="h-7 w-7 text-primary" />
-            </div>
-        )
-    }
-
-    return (
-        <div
-            className={cn(
-                "grid gap-1.5",
-                list.length === 1 && "w-24 grid-cols-1",
-                list.length === 2 && "w-40 grid-cols-2",
-                list.length === 3 && "w-full max-w-60 grid-cols-3",
-                list.length >= 4 && "w-full max-w-60 grid-cols-2 sm:grid-cols-4",
-            )}
-        >
-            {list.map((cover, index) => (
-                <motion.div
-                    key={`${cover}-${index}`}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="aspect-2/3 overflow-hidden rounded-lg bg-muted ring-1 ring-border/60"
-                >
-                    <img
-                        src={getBookCoverThumbnailUrl(cover)}
-                        alt={title}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                    />
-                </motion.div>
-            ))}
-        </div>
-    )
-}
 
 function MiniStat({
                       icon,

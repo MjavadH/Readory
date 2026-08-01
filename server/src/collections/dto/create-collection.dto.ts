@@ -5,14 +5,14 @@ import {IsBoolean, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength} 
 export class CreateCollectionDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(1)
-  @MaxLength(160)
+  @MinLength(4)
+  @MaxLength(100)
   title!: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(1)
-  @MaxLength(240)
+  @MinLength(4)
+  @MaxLength(100)
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: 'slug must be kebab-case (a-z, 0-9, -)' })
   slug!: string;
 

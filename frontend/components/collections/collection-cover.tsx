@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Library } from "lucide-react";
@@ -14,202 +16,187 @@ type CollectionCoverProps = {
     size?: "compact" | "default" | "hero";
 };
 
+type Piece = {
+    /** Horizontal centre of the cover, in % of the container width. */
+    x: number;
+    /** Vertical centre of the cover, in % of the container height. */
+    y: number;
+    /** Rotation in degrees. */
+    r: number;
+    /** Relative scale multiplier. */
+    s: number;
+    /** Stacking order — higher sits on top. */
+    z: number;
+};
+
+
+const LAYOUTS: Record<number, Piece[]> = {
+    1: [{ x: 50, y: 50, r: -5, s: 1.18, z: 3 }],
+    2: [
+        { x: 38, y: 54, r: -9, s: 1.06, z: 2 },
+        { x: 63, y: 44, r: 8, s: 0.94, z: 3 },
+    ],
+    3: [
+        { x: 27, y: 56, r: -13, s: 0.92, z: 2 },
+        { x: 51, y: 44, r: 4, s: 1.1, z: 4 },
+        { x: 74, y: 58, r: 12, s: 0.86, z: 3 },
+    ],
+    4: [
+        { x: 22, y: 48, r: -15, s: 0.84, z: 2 },
+        { x: 41, y: 58, r: -4, s: 1.02, z: 3 },
+        { x: 60, y: 42, r: 7, s: 1.12, z: 5 },
+        { x: 78, y: 57, r: 16, s: 0.8, z: 4 },
+    ],
+    5: [
+        { x: 18, y: 52, r: -18, s: 0.78, z: 2 },
+        { x: 35, y: 41, r: -7, s: 0.94, z: 3 },
+        { x: 52, y: 57, r: 3, s: 1.1, z: 6 },
+        { x: 69, y: 40, r: 11, s: 0.9, z: 4 },
+        { x: 84, y: 55, r: 19, s: 0.74, z: 3 },
+    ],
+};
+
 export function CollectionCover({
                                     books,
                                     className,
                                     animate = true,
                                     size = "default",
                                 }: CollectionCoverProps) {
-    const covers = books.filter(Boolean).slice(0, 4);
+    const covers = books.filter(Boolean).slice(0, 5);
     const count = covers.length;
     const compact = size === "compact";
     const hero = size === "hero";
 
+    if (count === 0) {
+        return (
+            <div className={cn("group/cover relative", className)}>
+                <EmptyCover compact={compact} />
+            </div>
+        );
+    }
+
+    const layout = LAYOUTS[count] ?? LAYOUTS[5];
+
+    const baseWidth = count === 1 ? 34 : count === 2 ? 34 : count === 3 ? 30 : 27;
+
     return (
         <div
             className={cn(
-                "group/cover relative isolate overflow-hidden rounded-2xl border border-border/60",
-                "bg-linear-to-br from-muted/70 via-background to-muted/40 sm:rounded-3xl",
-                "shadow-sm ring-1 ring-inset ring-foreground/4",
+                "group/cover relative w-full",
+                compact ? "aspect-16/9" : hero ? "aspect-16/10" : "aspect-3/2",
                 className,
             )}
         >
-            {/* Ambient bloom taken from the first cover */}
-            {covers[0]?.coverImage ? (
-                <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-                    <Image
-                        src={getBookCoverThumbnailUrl(covers[0].coverImage)}
-                        alt=""
-                        fill
-                        aria-hidden
-                        sizes="480px"
-                        className="scale-125 object-cover opacity-40 blur-2xl saturate-150 dark:opacity-30"
+            {covers.map((book, index) => {
+                const piece = layout[index]!;
+                return (
+                    <CollagePiece
+                        key={book.id ?? index}
+                        book={book}
+                        index={index}
+                        piece={piece}
+                        widthPct={baseWidth * piece.s}
+                        animate={animate}
                     />
-                    <div className="absolute inset-0 bg-background/50 dark:bg-background/65" />
-                </div>
-            ) : null}
-
-            {count === 0 ? (
-                <EmptyCover compact={compact} />
-            ) : (
-                <div
-                    className={cn(
-                        "flex items-end justify-center",
-                        compact
-                            ? "px-3 pb-3 pt-4"
-                            : hero
-                                ? "px-5 pb-6 pt-8 sm:px-8 sm:pb-8 sm:pt-10"
-                                : "px-3 pb-4 pt-5 sm:px-5 sm:pb-6 sm:pt-7",
-                    )}
-                >
-                    {covers.map((book, index) => (
-                        <CoverTile
-                            key={book.id ?? index}
-                            book={book}
-                            index={index}
-                            count={count}
-                            animate={animate}
-                            compact={compact}
-                            hero={hero}
-                        />
-                    ))}
-                </div>
-            )}
-
-            {/* Base shadow so the fan sits on a surface */}
-            <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-6 bottom-3 h-4 rounded-[50%] bg-foreground/15 blur-md dark:bg-background/70"
-            />
+                );
+            })}
         </div>
     );
 }
 
-/** Tilt + lift per position, mirrored for RTL. */
-const tilts = [
-    "-rotate-6 rtl:rotate-6",
-    "-rotate-2 rtl:rotate-2",
-    "rotate-2 rtl:-rotate-2",
-    "rotate-6 rtl:-rotate-6",
-];
-
-const lifts = ["translate-y-2", "translate-y-0", "translate-y-0", "translate-y-2"];
-
-function CoverTile({
-                       book,
-                       index,
-                       count,
-                       animate,
-                       compact,
-                       hero,
-                   }: {
+function CollagePiece({
+                          book,
+                          index,
+                          piece,
+                          widthPct,
+                          animate,
+                      }: {
     book: BookCardData;
     index: number;
-    count: number;
+    piece: Piece;
+    widthPct: number;
     animate: boolean;
-    compact: boolean;
-    hero: boolean;
 }) {
-    // A single cover stands straight and larger; more covers overlap tighter.
-    const single = count === 1;
-    const overlap = single
-        ? ""
-        : count === 2
-            ? "-ms-5 first:ms-0 sm:-ms-7"
-            : count === 3
-                ? "-ms-7 first:ms-0 sm:-ms-9"
-                : "-ms-8 first:ms-0 sm:-ms-11";
-
-    const widthClass = single
-        ? compact
-            ? "w-24"
-            : hero
-                ? "w-36 sm:w-44"
-                : "w-30 sm:w-36"
-        : count === 2
-            ? compact
-                ? "w-[46%]"
-                : "w-[47%] sm:w-[45%]"
-            : count === 3
-                ? compact
-                    ? "w-[39%]"
-                    : "w-[39%] sm:w-[38%]"
-                : compact
-                    ? "w-[35%]"
-                    : "w-[35%] sm:w-[34%]";
-
-    const tilt = single ? "rotate-0" : tilts[index % tilts.length];
-    const lift = single ? "translate-y-0" : lifts[index % lifts.length];
-
     return (
         <motion.div
-            initial={animate ? { opacity: 0, y: 10 } : false}
-            whileInView={animate ? { opacity: 1, y: 0 } : undefined}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.28, ease: "easeOut", delay: index * 0.05 }}
+            layout
+            initial={
+                animate
+                    ? { opacity: 0, scale: 0.86, rotate: piece.r * 2.2, y: 14 }
+                    : false
+            }
+            animate={{ opacity: 1, scale: 1, rotate: piece.r, y: 0 }}
+            transition={{
+                type: "spring",
+                stiffness: 190,
+                damping: 18,
+                mass: 0.7,
+                delay: animate ? index * 0.07 : 0,
+            }}
+            whileHover={{ rotate: 0, scale: 1.07, zIndex: 20 }}
+            style={{
+                left: `${piece.x}%`,
+                top: `${piece.y}%`,
+                width: `${widthPct}%`,
+                zIndex: piece.z,
+                rotate: piece.r,
+            }}
             className={cn(
-                "relative aspect-2/3 shrink-0 overflow-hidden rounded-md bg-muted sm:rounded-lg",
-                "border border-border/70 shadow-md shadow-foreground/10 dark:shadow-background/60",
-                "ring-1 ring-inset ring-background/30",
-                "transition-transform duration-300 ease-out",
-                "group-hover/cover:-translate-y-1 group-hover/cover:rotate-0",
-                widthClass,
-                overlap,
-                tilt,
-                lift,
+                "absolute -translate-x-1/2 -translate-y-1/2",
+                "aspect-2/3 overflow-hidden rounded-[3px] bg-muted sm:rounded-sm",
+                "ring-1 ring-foreground/10 dark:ring-background/50",
+                "shadow-md shadow-foreground/15 dark:shadow-background/70",
             )}
-            style={{ zIndex: index + 1 }}
         >
             {book?.coverImage ? (
                 <Image
                     src={getBookCoverThumbnailUrl(book.coverImage)}
                     alt={book.title}
                     fill
-                    sizes="(max-width: 640px) 38vw, (max-width: 1024px) 22vw, 200px"
+                    sizes="(max-width: 640px) 28vw, (max-width: 1024px) 18vw, 160px"
                     className="object-cover"
                 />
             ) : (
-                <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary/25 via-muted to-muted">
-          <span className="line-clamp-3 px-1.5 text-center text-[10px] font-medium leading-tight text-muted-foreground">
-            {book?.title}
-          </span>
+                <div className="flex h-full w-full items-center justify-center bg-muted">
+                    <span className="line-clamp-3 px-1 text-center text-[9px] font-medium leading-tight text-muted-foreground sm:text-[10px]">
+                        {book?.title}
+                    </span>
                 </div>
             )}
-
-            {/* Spine highlight + page edge, RTL aware */}
-            <div
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 inset-s-0 w-[6%] bg-linear-to-r from-foreground/25 to-transparent rtl:bg-linear-to-l dark:from-background/60"
-            />
-            <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-linear-to-t from-foreground/25 via-transparent to-background/10"
-            />
         </motion.div>
     );
 }
 
 function EmptyCover({ compact }: { compact: boolean }) {
+    const stubs: Piece[] = [
+        { x: 34, y: 52, r: -12, s: 1, z: 1 },
+        { x: 52, y: 44, r: 5, s: 1, z: 3 },
+        { x: 68, y: 56, r: 14, s: 1, z: 2 },
+    ];
+
     return (
         <div
             className={cn(
-                "relative flex items-center justify-center",
-                compact ? "aspect-[16/9]" : "aspect-3/2",
+                "relative w-full opacity-60",
+                compact ? "aspect-16/9" : "aspect-3/2",
             )}
         >
-            <div className="flex items-end gap-1.5 opacity-60">
-                {[0, 1, 2].map((i) => (
-                    <span
-                        key={i}
-                        className={cn(
-                            "block aspect-2/3 w-9 rounded-sm border border-border bg-background/70 shadow-sm sm:w-11",
-                            i === 0 && "-rotate-6 rtl:rotate-6",
-                            i === 2 && "rotate-6 rtl:-rotate-6",
-                        )}
-                    />
-                ))}
-            </div>
-            <Library aria-hidden className="absolute bottom-3 size-4 text-muted-foreground/70" />
+            {stubs.map((s, i) => (
+                <span
+                    key={i}
+                    style={{
+                        left: `${s.x}%`,
+                        top: `${s.y}%`,
+                        transform: `translate(-50%, -50%) rotate(${s.r}deg)`,
+                        zIndex: s.z,
+                    }}
+                    className="absolute block aspect-2/3 w-[26%] rounded-sm border border-border bg-muted/60"
+                />
+            ))}
+            <Library
+                aria-hidden
+                className="absolute bottom-1 left-1/2 z-10 size-4 -translate-x-1/2 text-muted-foreground/70"
+            />
         </div>
     );
 }

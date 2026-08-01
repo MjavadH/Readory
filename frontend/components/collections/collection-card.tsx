@@ -54,11 +54,17 @@ export function CollectionCard({
                     split && "sm:flex-row sm:items-stretch",
                 )}
             >
-                <div className={cn("p-2 sm:p-3", split && "sm:w-1/2 sm:shrink-0", tall && "flex-1")}>
+                <div
+                    className={cn(
+                        "flex items-center justify-center px-4 pb-3 pt-5 sm:px-5 sm:pt-6",
+                        split && "sm:w-1/2 sm:shrink-0 sm:py-8",
+                        tall && "flex-1",
+                    )}
+                >
                     <CollectionCover
                         books={books}
                         size={variant === "hero" ? "hero" : "default"}
-                        className="h-full transition-shadow duration-300 group-hover:shadow-md"
+                        className="w-full"
                     />
                 </div>
 
