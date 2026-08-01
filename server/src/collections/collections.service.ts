@@ -56,6 +56,22 @@ export class CollectionsService {
     return result;
   }
 
+  async listMine(userId: number, options?: { cursor?: string; limit?: number; bookId?: number }) {
+    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
+    const rows = await this.prisma.collection.findMany({
+      where: { ownerId: userId, type: CollectionType.USER },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
+      take: limit + 1,
+      select: {
+        ...this.collectionSelect(4),
+        ...(options?.bookId ? { items: { where: { bookId: options.bookId }, take: 1, select: { id: true, position: true, note: true, addedAt: true, book: { select: { id: true, title: true, coverImage: true, ratingAvg: true, ratingCount: true, updatedAt: true, type: { select: { id: true, name: true, slug: true, } }, genres: {select: {genre: { select: {name: true, slug: true}}}}, contributors: { select: { role: true, contributor: { select: { name: true } } } } } } } } } : {}),
+      },
+    });
+    const page = rows.slice(0, limit);
+    return { items: page.map((row) => ({ ...this.serializeCollection(row), containsBook: options?.bookId ? row.items.length > 0 : undefined })), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+  }
+
   async listAdmin(options?: { cursor?: string; limit?: number }) {
     const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
     const rows = await this.prisma.collection.findMany({

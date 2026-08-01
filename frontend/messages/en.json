@@ -472,7 +472,8 @@
     "UpdatePassword": "Update Password",
     "ShowingTotalFavorites": "{Total, plural, =0 {Showing your favorite books} other {Showing your favorite books (Total: #)}}",
     "NoBooks": "No books yet",
-    "NoChapters": "No chapters yet"
+    "NoChapters": "No chapters yet",
+    "Collections": "Collections"
   },
   "HomePage": {
     "By": "by",
@@ -793,7 +794,11 @@
     "ContributorRole_CLEANER": "cleaner",
     "ContributorRole_TYPESETTER": "typesetter",
     "ContributorRole_RAW_PROVIDER": "rawProvider",
-    "ContributorRole_SUPERVISOR": "supervisor"
+    "ContributorRole_SUPERVISOR": "supervisor",
+    "AddToCollection": "Add to collection",
+    "SelectCollections": "Select collections",
+    "NoUserCollections": "Create a collection from your dashboard first.",
+    "AddedToCollections": "Book added to selected collections."
   },
   "Contributors": {
     "Title": "Contributors",
@@ -919,7 +924,7 @@
       "Public": "Public",
       "PublicHint": "Visible to everyone",
       "Featured": "Featured",
-    "FeaturedCollections": "Featured collections",
+      "FeaturedCollections": "Featured collections",
       "FeaturedHint": "Highlighted for readers",
       "Private": "Private",
       "PrivateHint": "Hidden collections",
@@ -976,7 +981,8 @@
       "ItemRemoveFailed": "Could not remove this book.",
       "NoteSaved": "Note saved.",
       "ReorderFailed": "Could not save the new order."
-    }
+    },
+    "UserSubtitle": "Create and manage your personal book collections."
   },
   "UserHeader": {
     "Books": "Books",

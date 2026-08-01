@@ -64,6 +64,7 @@ export type BookDetailsProps = {
   isFavorited?: boolean;
   favoriteLoading?: boolean;
   onToggleFavorite?: () => void;
+  onAddToCollection?: () => void;
 
   // Rating
   selectedRating?: number;
@@ -148,6 +149,7 @@ export function BookDetails({
                               isFavorited,
                               favoriteLoading,
                               onToggleFavorite,
+                              onAddToCollection,
                               selectedRating = 0,
                               hoverRating = 0,
                               onHoverRating,
@@ -431,6 +433,20 @@ export function BookDetails({
                           >
                             <BookOpen className="h-5 w-5" />
                             {t("Chapters")}
+                          </Button>
+                        </motion.div>
+                    )}
+
+                    {!hideFavoriteButton && onAddToCollection && (
+                        <motion.div whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.04 }}>
+                          <Button
+                              variant="outline"
+                              size="lg"
+                              onClick={onAddToCollection}
+                              aria-label={t("AddToCollection")}
+                              className="h-12 w-12 shrink-0 gap-2 rounded-2xl border-2 p-0 transition-colors hover:border-primary/40 hover:text-primary"
+                          >
+                            <Plus className="h-5 w-5" />
                           </Button>
                         </motion.div>
                     )}

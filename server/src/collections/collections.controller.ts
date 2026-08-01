@@ -24,6 +24,13 @@ export class CollectionsController {
     return this.collectionsService.listSystem({ cursor, limit: limit ? Number(limit) : undefined });
   }
 
+  @Get('mine')
+  @UseGuards(JwtAuthGuard)
+  async listMine(@Query('cursor') cursor: string | undefined, @Query('limit') limit: string | undefined, @Query('bookId') bookId: string | undefined, @Request() req: any) {
+    const userId = req.user.userId ?? req.user.id;
+    return this.collectionsService.listMine(Number(userId), { cursor, limit: limit ? Number(limit) : undefined, bookId: bookId ? Number(bookId) : undefined });
+  }
+
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)

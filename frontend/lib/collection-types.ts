@@ -27,6 +27,7 @@ export type Collection = {
     createdAt: string
     updatedAt: string
     items: CollectionItem[]
+    containsBook?: boolean
 }
 
 export type CollectionFormState = {

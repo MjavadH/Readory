@@ -472,7 +472,8 @@
     "UpdatePassword": "به‌روزرسانی رمز عبور",
     "ShowingTotalFavorites": "{Total, plural, =0 {نمایش کتاب‌های مور علاقه شما} other {نمایش کتاب‌های مورد علاقه شما(مجموع: #)}}",
     "NoBooks": "هنوز کتابی وجود ندارد",
-    "NoChapters": "هنوز فصلی وجود ندارد"
+    "NoChapters": "هنوز فصلی وجود ندارد",
+    "Collections": "کالکشن‌ها"
   },
   "HomePage": {
     "By": "توسط",
@@ -793,7 +794,11 @@
     "ContributorRole_CLEANER": "کلینر",
     "ContributorRole_TYPESETTER": "تایپستر",
     "ContributorRole_RAW_PROVIDER": "تامین‌کننده",
-    "ContributorRole_SUPERVISOR": "ناظر"
+    "ContributorRole_SUPERVISOR": "ناظر",
+    "AddToCollection": "افزودن به کالکشن",
+    "SelectCollections": "انتخاب کالکشن‌ها",
+    "NoUserCollections": "ابتدا از داشبورد یک کالکشن بسازید.",
+    "AddedToCollections": "کتاب به کالکشن‌های انتخاب‌شده اضافه شد."
   },
   "Contributors": {
     "Title": "همکاران",
@@ -919,7 +924,7 @@
       "Public": "عمومی",
       "PublicHint": "برای همه قابل مشاهده",
       "Featured": "ویژه",
-    "FeaturedCollections": "مجموعه‌های ویژه",
+      "FeaturedCollections": "مجموعه‌های ویژه",
       "FeaturedHint": "برجسته‌شده برای کاربران",
       "Private": "خصوصی",
       "PrivateHint": "کالکشن‌های مخفی",
@@ -976,7 +981,8 @@
       "ItemRemoveFailed": "حذف این کتاب ممکن نشد.",
       "NoteSaved": "یادداشت ذخیره شد.",
       "ReorderFailed": "ذخیره ترتیب جدید ممکن نشد."
-    }
+    },
+    "UserSubtitle": "کالکشن‌های شخصی کتاب‌های خود را بسازید و مدیریت کنید."
   },
   "UserHeader": {
     "Books": "کتاب‌ها",
