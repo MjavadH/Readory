@@ -49,12 +49,6 @@ export function CollectionCover({
                 </div>
             ) : null}
 
-            {/* Fine grid texture */}
-            <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06] bg-[linear-gradient(to_right,currentColor_1px,transparent_1px),linear-gradient(to_bottom,currentColor_1px,transparent_1px)] bg-size-[14px_14px]"
-            />
-
             {count === 0 ? (
                 <EmptyCover compact={compact} />
             ) : (

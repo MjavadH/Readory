@@ -891,6 +891,11 @@
     "DeleteCollectionTitle": "Delete collection?",
     "DeleteCollectionDescription": "This will permanently delete “{title}” and remove all books from this collection. This action cannot be undone.",
     "ConfirmRemoveItem": "Remove “{title}” from this collection?",
+    "NBook": "{count, plural, =0 {No books} one {# book} other {# books}}",
+    "UserSearchPlaceholder": "Search your collections",
+    "Filters": {
+      "All": "All"
+    },
     "Type": {
       "SYSTEM": "System",
       "USER": "User",
@@ -932,14 +937,16 @@
       "Indexable": "Indexed by search engines",
       "NotIndexable": "Hidden from search engines",
       "Updated": "Last updated",
-      "UpdatedHint": "Most recent change"
+      "UpdatedHint": "Most recent change",
+      "Books": "Books"
     },
     "Empty": {
       "Title": "No collections found",
       "Hint": "Create your first collection or adjust your search.",
       "ItemsTitle": "No books yet",
       "ItemsHint": "Books added to this collection will appear here.",
-      "ItemsHintAdmin": "Use “Add book” to start building this collection."
+      "ItemsHintAdmin": "Use “Add book” to start building this collection.",
+      "NoResults": "No collections match your search."
     },
     "Actions": {
       "NewCollection": "Add collection",

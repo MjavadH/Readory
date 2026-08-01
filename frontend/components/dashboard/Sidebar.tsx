@@ -12,7 +12,7 @@ import {
     BookHeart,
     BookOpenText,
     LucideHome,
-    LibraryBig,
+    Grid2X2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -33,7 +33,7 @@ export function Sidebar() {
         { name: t("Library"), href: "/dashboard/library", icon: Library },
         { name: t("ReadingProgress"), href: "/dashboard/reading_progress", icon: BookOpenText },
         { name: t("Favorites"), href: "/dashboard/favorites", icon: BookHeart },
-        { name: t("Collections"), href: "/dashboard/collections", icon: LibraryBig },
+        { name: t("Collections"), href: "/dashboard/collections", icon: Grid2X2 },
         { name: t("History"), href: "/dashboard/history", icon: History },
         { name: t("Settings"), href: "/dashboard/settings", icon: Settings },
     ];

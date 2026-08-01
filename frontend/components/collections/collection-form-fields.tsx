@@ -21,11 +21,11 @@ export type CollectionFormFieldsProps = {
 }
 
 export function CollectionFormFields({
-    value,
-    onChange,
-    isSystem = false,
-    disableSlug = false,
-}: CollectionFormFieldsProps) {
+                                         value,
+                                         onChange,
+                                         isSystem = false,
+                                         disableSlug = false,
+                                     }: CollectionFormFieldsProps) {
     const t = useTranslations("Collections")
 
     const patch = (partial: Partial<CollectionFormState>) => onChange({ ...value, ...partial })
@@ -81,28 +81,28 @@ export function CollectionFormFields({
             </div>
 
             <div className="space-y-2">
-                    <Label className="text-xs font-medium">{t("Form.Visibility")}</Label>
-                    <Select
-                        value={value.visibility}
-                        onValueChange={(v) => patch({ visibility: v as CollectionVisibility })}
-                    >
-                        <SelectTrigger className="w-full text-start">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="PUBLIC">{t("Visibility.PUBLIC")}</SelectItem>
-                            <SelectItem value="UNLISTED">{t("Visibility.UNLISTED")}</SelectItem>
-                            <SelectItem value="PRIVATE">{t("Visibility.PRIVATE")}</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <p className="text-[11px] text-muted-foreground">
-                        {t(`Form.VisibilityHint_${value.visibility}` as never)}
-                    </p>
+                <Label className="text-xs font-medium">{t("Form.Visibility")}</Label>
+                <Select
+                    value={value.visibility}
+                    onValueChange={(v) => patch({ visibility: v as CollectionVisibility })}
+                >
+                    <SelectTrigger className="w-full text-start">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="PUBLIC">{t("Visibility.PUBLIC")}</SelectItem>
+                        <SelectItem value="UNLISTED">{t("Visibility.UNLISTED")}</SelectItem>
+                        <SelectItem value="PRIVATE">{t("Visibility.PRIVATE")}</SelectItem>
+                    </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                    {t(`Form.VisibilityHint_${value.visibility}` as never)}
+                </p>
             </div>
 
-            <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-3">
-                {isSystem ? (
-                    <>
+            {/* Only system collections can be featured or indexed by search engines. */}
+            {isSystem ? (
+                <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-3">
                     <ToggleRow
                         label={t("Form.Featured")}
                         hint={t("Form.FeaturedHint")}
@@ -116,28 +116,19 @@ export function CollectionFormFields({
                         disabled={value.visibility !== "PUBLIC"}
                         onCheckedChange={(allowIndexing) => patch({ allowIndexing })}
                     />
-                    </>
-                ) : (
-                    <ToggleRow
-                        label={t("Form.AllowIndexing")}
-                        hint={t("Form.AllowIndexingHint")}
-                        checked={value.allowIndexing}
-                        disabled={value.visibility !== "PUBLIC"}
-                        onCheckedChange={(allowIndexing) => patch({ allowIndexing })}
-                    />
-                )}
-            </div>
+                </div>
+            ) : null}
         </div>
     )
 }
 
 function ToggleRow({
-    label,
-    hint,
-    checked,
-    disabled,
-    onCheckedChange,
-}: {
+                       label,
+                       hint,
+                       checked,
+                       disabled,
+                       onCheckedChange,
+                   }: {
     label: string
     hint: string
     checked: boolean

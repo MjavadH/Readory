@@ -1354,6 +1354,10 @@ export class BooksService {
                 slug: true,
               },
             },
+            chapterCount: true,
+            genres: {
+              select: { genre: { select: { name: true, slug: true } } },
+            },
           },
         },
       },
@@ -1370,6 +1374,8 @@ export class BooksService {
         ratingCount: book.ratingCount,
         updatedAt: book.updatedAt.toISOString(),
         type: book.type,
+        chapterCount: book.chapterCount,
+        genres: book.genres.map((g) => g.genre),
       };
     });
 

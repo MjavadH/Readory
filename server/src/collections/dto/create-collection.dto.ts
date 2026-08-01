@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer';
 import { CollectionVisibility } from '@prisma/client';
-import { IsBoolean, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {IsBoolean, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength} from 'class-validator';
 
 export class CreateCollectionDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
@@ -13,6 +13,7 @@ export class CreateCollectionDto {
   @IsOptional()
   @IsString()
   @MaxLength(240)
+  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { message: 'slug must be kebab-case (a-z, 0-9, -)' })
   slug?: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

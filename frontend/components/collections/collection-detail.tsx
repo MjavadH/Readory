@@ -7,8 +7,6 @@ import {
     BookOpen,
     CalendarDays,
     ChevronDown,
-    Eye,
-    EyeOff,
     GripVertical,
     ListOrdered,
     Loader2,
@@ -114,20 +112,6 @@ export function CollectionDetail({
             })
             toast.success(t("Toast.Updated"))
             setEditOpen(false)
-            await onChanged()
-        } catch (e) {
-            toast.error(getApiErrorMessage(e, t("Toast.SaveFailed")))
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
-    const toggleVisibility = async () => {
-        const next = collection.visibility === "PUBLIC" ? "PRIVATE" : "PUBLIC"
-        setIsSaving(true)
-        try {
-            await apiClient.patch(`/collections/${collection.id}`, { visibility: next })
-            toast.success(next === "PUBLIC" ? t("Toast.MadePublic") : t("Toast.MadePrivate"))
             await onChanged()
         } catch (e) {
             toast.error(getApiErrorMessage(e, t("Toast.SaveFailed")))
@@ -387,24 +371,6 @@ export function CollectionDetail({
                                         <Pencil className="h-3.5 w-3.5" />
                                         {t("Actions.Edit")}
                                     </Button>
-                                    {!isSystem && !isFavorites && (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="flex-1 gap-1.5"
-                                            onClick={toggleVisibility}
-                                            disabled={isSaving}
-                                        >
-                                            {collection.visibility === "PUBLIC" ? (
-                                                <EyeOff className="h-3.5 w-3.5" />
-                                            ) : (
-                                                <Eye className="h-3.5 w-3.5" />
-                                            )}
-                                            {collection.visibility === "PUBLIC"
-                                                ? t("Actions.MakePrivate")
-                                                : t("Actions.MakePublic")}
-                                        </Button>
-                                    )}
                                 </div>
                                 {!collection.locked && !isFavorites && (
                                     <Button
