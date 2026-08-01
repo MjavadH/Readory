@@ -22,7 +22,7 @@ describe('StorageService', () => {
           provide: ConfigService,
           useValue: {
             get: jest.fn((key: string) => {
-              if (key === 'S3_BUCKET_CHAPTERS') return 'test-bucket';
+              if (key === 'S3_BUCKET_NAME') return 'test-bucket';
               if (key === 'S3_AUTO_CREATE_BUCKET') return 'false';
               return undefined;
             }),
@@ -39,7 +39,7 @@ describe('StorageService', () => {
   });
 
   describe('constructor', () => {
-    it('throws when S3_BUCKET_CHAPTERS is not set', async () => {
+    it('throws when S3_BUCKET_NAME is not set', async () => {
       await expect(
         Test.createTestingModule({
           providers: [
@@ -48,7 +48,7 @@ describe('StorageService', () => {
             { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(undefined) } },
           ],
         }).compile(),
-      ).rejects.toThrow('S3_BUCKET_CHAPTERS is required');
+      ).rejects.toThrow('S3_BUCKET_NAME is required');
     });
   });
 
@@ -73,7 +73,7 @@ describe('StorageService', () => {
             provide: ConfigService,
             useValue: {
               get: jest.fn((key: string) => {
-                if (key === 'S3_BUCKET_CHAPTERS') return 'auto-bucket';
+                if (key === 'S3_BUCKET_NAME') return 'auto-bucket';
                 if (key === 'S3_AUTO_CREATE_BUCKET') return 'true';
                 return undefined;
               }),

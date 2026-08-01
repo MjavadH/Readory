@@ -16,11 +16,15 @@ import {
     Save,
     KeyRound,
     Eye,
-    EyeOff, AlertCircle
+    EyeOff,
+    AlertCircle,
+    Camera,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/providers/toast-provider";
 import {useTranslations} from "next-intl";
+import { useAuth } from "@/providers/auth-provider";
+import { getAvatarUrl } from "@/lib/media";
 
 function initialsFromUsername(username: string) {
     const safe = (username || "").trim()
@@ -31,11 +35,16 @@ function initialsFromUsername(username: string) {
 export default function SettingsPage() {
     const t = useTranslations('UserDashboard');
     const toast = useToast();
+    const auth = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarError, setAvatarError] = useState<string | null>(null);
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     // Form states
     const [username, setUsername] = useState("");
@@ -57,6 +66,61 @@ export default function SettingsPage() {
         }
         void fetchProfile();
     }, []);
+
+    const validateAvatarFile = async (file: File) => {
+        if (!['image/jpeg', 'image/webp'].includes(file.type)) return t("AvatarInvalidType");
+        if (file.size >= 5 * 1024 * 1024) return t("AvatarInvalidSize");
+        const url = URL.createObjectURL(file);
+        try {
+            const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = url;
+            });
+            if (img.naturalWidth > 1024 || img.naturalHeight > 1024) return t("AvatarInvalidDimensions");
+        } catch {
+            return t("AvatarInvalidImage");
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+        return null;
+    };
+
+    const handleAvatarSelected = async (file?: File) => {
+        setAvatarError(null);
+        setAvatarFile(null);
+        if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+        setAvatarPreview(null);
+        if (!file) return;
+        const validationError = await validateAvatarFile(file);
+        if (validationError) {
+            setAvatarError(validationError);
+            return;
+        }
+        setAvatarFile(file);
+        setAvatarPreview(URL.createObjectURL(file));
+    };
+
+    const handleAvatarUpload = async () => {
+        if (!avatarFile || avatarUploading) return;
+        setAvatarUploading(true);
+        try {
+            const form = new FormData();
+            form.append('avatar', avatarFile);
+            const res = await apiClient.post<{ user: UserProfile }>("/users/me/avatar", form);
+            setProfile((current) => current ? { ...current, ...res.user } : res.user);
+            await auth.refresh();
+            setAvatarFile(null);
+            if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+            setAvatarPreview(null);
+            toast.success(t("AvatarUpdated"));
+        } catch (err: any) {
+            toast.error(err.message || t("AvatarUpdateFailed"));
+        } finally {
+            setAvatarUploading(false);
+        }
+    };
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -224,15 +288,38 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-card border border-border rounded-[2rem] p-8 shadow-xl shadow-black/5 sticky top-28 overflow-hidden">
+                    <div className="bg-card border border-border rounded-[2rem] p-8 shadow-xl shadow-black/5 sticky top-0 overflow-hidden">
                         <div className="absolute top-0 right-0 p-6 opacity-5">
                             <Shield className="w-24 h-24" />
                         </div>
                         <div className="relative z-10 flex flex-col items-center text-center space-y-6">
                             <div className="w-32 h-32 rounded-[2rem] bg-linear-to-tr from-primary to-primary-foreground/30 flex items-center justify-center border-4 border-background shadow-2xl overflow-hidden ring-8 ring-primary/5">
-                                <p className="text-3xl font-bold">
-                                    {initialsFromUsername(profile?.username || "")}
-                                </p>
+                                {(avatarPreview || profile?.avatarKey) ? (
+                                    <img src={avatarPreview || getAvatarUrl(profile?.avatarKey)} alt={t("CurrentAvatar")} className="h-full w-full object-cover" />
+                                ) : (
+                                    <p className="text-3xl font-bold">{initialsFromUsername(profile?.username || "")}</p>
+                                )}
+                            </div>
+                            <div className="w-full space-y-3 text-start">
+                                <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">{t("Avatar")}</label>
+                                <input
+                                    type="file"
+                                    accept="image/jpeg,image/webp"
+                                    disabled={avatarUploading}
+                                    onChange={(event) => void handleAvatarSelected(event.target.files?.[0])}
+                                    className="w-full text-sm file:me-4 file:rounded-xl file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground file:font-bold"
+                                />
+                                <p className="text-xs text-muted-foreground font-medium">{t("AvatarRequirements")}</p>
+                                {avatarError ? <p className="text-xs text-destructive font-bold">{avatarError}</p> : null}
+                                <button
+                                    type="button"
+                                    disabled={!avatarFile || avatarUploading}
+                                    onClick={() => void handleAvatarUpload()}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-2xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {avatarUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                                    {t("UploadAvatar")}
+                                </button>
                             </div>
                             <div className="space-y-1">
                                 <h2 className="text-2xl font-bold tracking-tight">{profile?.username}</h2>

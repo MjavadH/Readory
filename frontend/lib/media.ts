@@ -16,3 +16,5 @@ export const getMediaUrl = (key?: string | null) => {
 
 export const getBookCoverThumbnailUrl = (coverCode?: string | null) =>
   coverCode ? getMediaUrl(getBookCoverThumbnailKey(coverCode)) : PLACEHOLDER_IMAGE
+
+export const getAvatarUrl = (avatarKey?: string | null) => avatarKey ? getMediaUrl(avatarKey) : undefined

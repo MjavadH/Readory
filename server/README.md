@@ -104,7 +104,7 @@ For tests, `server/.env.test.example` documents a dedicated test database connec
 The server uses an S3-compatible storage service for chapter and content objects:
 
 - `StorageService` wraps the AWS SDK S3 client.
-- The bucket is configured with `S3_BUCKET_CHAPTERS`.
+- The bucket is configured with `S3_BUCKET_NAME`.
 - The service can verify bucket access on startup and optionally create the bucket when `S3_AUTO_CREATE_BUCKET=true`.
 - Supported operations include object upload, JSON upload, buffer upload, stream/buffer retrieval, object metadata checks, prefix listing, prefix deletion, and key deletion.
 - Media and chapter content services build on this storage layer.
@@ -146,7 +146,7 @@ Create `server/.env` from `server/.env.example`.
 | `S3_REGION` | Yes | S3 region. |
 | `S3_ACCESS_KEY_ID` | Yes | S3 access key id. |
 | `S3_SECRET_ACCESS_KEY` | Yes | S3 secret access key. |
-| `S3_BUCKET_CHAPTERS` | Yes | Bucket used for chapter and content storage. |
+| `S3_BUCKET_NAME` | Yes | Bucket used for chapter and content storage. |
 | `S3_FORCE_PATH_STYLE` | Provider-dependent | Enables path-style S3 URLs for compatible providers. |
 | `S3_PUBLIC_BASE_URL` | Optional/provider-dependent | Public base URL for stored content. |
 | `S3_AUTO_CREATE_BUCKET` | Optional | Allows bucket creation during startup when set to `true`. |

@@ -473,7 +473,17 @@
     "ShowingTotalFavorites": "{Total, plural, =0 {نمایش کتاب‌های مور علاقه شما} other {نمایش کتاب‌های مورد علاقه شما(مجموع: #)}}",
     "NoBooks": "هنوز کتابی وجود ندارد",
     "NoChapters": "هنوز فصلی وجود ندارد",
-    "Collections": "کالکشن‌ها"
+    "Collections": "کالکشن‌ها",
+    "CurrentAvatar": "آواتار فعلی",
+    "Avatar": "آواتار",
+    "AvatarRequirements": "JPG / WebP. حداکثر حجم: کمتر از ۵ مگابایت. حداکثر ابعاد: ۱۰۲۴ × ۱۰۲۴.",
+    "UploadAvatar": "آپلود آواتار",
+    "AvatarUpdated": "آواتار با موفقیت به‌روزرسانی شد",
+    "AvatarUpdateFailed": "به‌روزرسانی آواتار ناموفق بود",
+    "AvatarInvalidType": "فقط تصاویر JPG یا WebP مجاز هستند",
+    "AvatarInvalidSize": "حجم آواتار باید کمتر از ۵ مگابایت باشد",
+    "AvatarInvalidDimensions": "ابعاد آواتار باید ۱۰۲۴ × ۱۰۲۴ یا کمتر باشد",
+    "AvatarInvalidImage": "فایل تصویر نامعتبر است"
   },
   "HomePage": {
     "By": "توسط",

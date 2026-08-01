@@ -14,6 +14,7 @@ export type CurrentUser = {
     email: string
     username: string
     walletBalance: number
+    avatarKey?: string | null
     roleName?: "ADMIN"
     role?: "ADMIN"
     permissions?: Permission[]

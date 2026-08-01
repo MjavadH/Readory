@@ -12,6 +12,8 @@ import {
   Request,
   Post,
   ForbiddenException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
@@ -26,6 +28,9 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import { AuditAction, AuditCategory } from '@readory/shared';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { AvatarService } from './avatar.service';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
 
 @Controller('users')
 export class UsersController {
@@ -33,6 +38,8 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly walletsService: WalletsService,
     private readonly configService: ConfigService,
+    private readonly avatarService: AvatarService,
+    private readonly rateLimitService: RateLimitService,
   ) {}
 
   private getSuperAdminId(): number {
@@ -147,6 +154,27 @@ export class UsersController {
         price: r.chapter?.price ? Number(r.chapter.price) : 0,
       })),
     };
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @Post('me/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+      FileInterceptor('avatar', {
+        limits: { fileSize: 5 * 1024 * 1024 - 1, files: 1 },
+      }),
+  )
+  async updateMyAvatar(
+      @Request() req: any,
+      @UploadedFile() file?: Express.Multer.File,
+  ) {
+    await this.rateLimitService.consume({
+      key: this.rateLimitService.key('avatar', req.user.userId),
+      limit: 5,
+      ttlSeconds: 3600,
+      message: 'Too many avatar changes. Please try again later.',
+    });
+    return this.avatarService.replaceAvatar(req.user.userId, file as Express.Multer.File);
   }
 
   @Throttle({ default: { limit: 6, ttl: 3600000 } })

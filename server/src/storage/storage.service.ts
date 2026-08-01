@@ -30,8 +30,8 @@ export class StorageService implements OnModuleInit {
     private readonly s3: S3Client,
     config: ConfigService,
   ) {
-    const bucket = config.get<string>('S3_BUCKET_CHAPTERS');
-    if (!bucket) throw new Error('S3_BUCKET_CHAPTERS is required');
+    const bucket = config.get<string>('S3_BUCKET_NAME');
+    if (!bucket) throw new Error('S3_BUCKET_NAME is required');
     this.bucket = bucket;
 
     this.autoCreateBucket =
@@ -59,7 +59,7 @@ export class StorageService implements OnModuleInit {
       await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }));
 
       const publicReadPolicy = {
-        Version: '2026-23-06',
+        Version: '2012-10-17',
         Statement: [
           {
             Effect: 'Allow',

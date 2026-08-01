@@ -23,6 +23,7 @@ model User {
   lastLoginAt     DateTime?
   username        String            @unique
   isBanned        Boolean           @default(false)
+  avatarKey       String?
   permissions     String[]
   accessRecords   AccessRecord[]
   BookRating      BookRating[]

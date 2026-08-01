@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import * as argon2 from 'argon2';
 import {MailService} from "../mail/mail.service";
 import { CollectionsService } from "../collections/collections.service";
+import { StorageService } from "../storage/storage.service";
 
 @Injectable()
 export class UsersService {
@@ -13,8 +14,13 @@ export class UsersService {
         private prisma: PrismaService,
         private readonly cacheManager: CacheManager,
         private mailService: MailService,
-        private readonly collectionsService: CollectionsService
+        private readonly collectionsService: CollectionsService,
+        private readonly storage: StorageService
     ) {}
+
+    getAvatarUrl(avatarKey?: string | null) {
+        return avatarKey ? this.storage.getPublicUrl(avatarKey) : null;
+    }
 
     async updateLastLogin(userId: number) {
         await this.prisma.user.update({
@@ -303,12 +309,12 @@ export class UsersService {
         const updated = await this.prisma.user.update({
             where: { id: userId },
             data,
-            select: { id: true, email: true, username: true, updatedAt: true },
+            select: { id: true, email: true, username: true, avatarKey: true, updatedAt: true },
         });
 
         // clear jwt-session cache so new username/permissions are reflected
         await this.cacheManager.del(`session:user:${userId}`);
 
-        return { success: true, user: updated };
+        return { success: true, user: { ...updated, avatarUrl: this.getAvatarUrl(updated.avatarKey) } };
     }
 }

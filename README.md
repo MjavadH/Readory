@@ -138,7 +138,7 @@ Configure the server environment:
 | `S3_REGION` | S3 region. |
 | `S3_ACCESS_KEY_ID` | S3 access key id. |
 | `S3_SECRET_ACCESS_KEY` | S3 secret access key. |
-| `S3_BUCKET_CHAPTERS` | Bucket used for chapter/content objects. |
+| `S3_BUCKET_NAME` | Bucket used for chapter/content objects. |
 | `S3_FORCE_PATH_STYLE` | Enables path-style S3 addressing when required by the provider. |
 | `S3_PUBLIC_BASE_URL` | Public base URL for stored objects when needed. |
 | `S3_AUTO_CREATE_BUCKET` | Allows the server to create the configured bucket on startup. |

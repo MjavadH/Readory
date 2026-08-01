@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import {
@@ -33,6 +33,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher"
 import { useTranslations } from "next-intl"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useCurrentUser } from "@/hooks/use-current-user"
+import { getAvatarUrl } from "@/lib/media"
 
 type BookType = { name: string; slug: string; iconKey: IconKey }
 
@@ -477,6 +478,7 @@ export function UserHeader() {
                             aria-label={t("Account")}
                         >
                           <Avatar className="h-8 w-8">
+                            <AvatarImage src={getAvatarUrl(user.avatarKey)} alt={user.username ?? ""} />
                             <AvatarFallback className="bg-primary/10 text-xs font-bold text-primary">
                               {initialsFromUsername(user.username ?? "")}
                             </AvatarFallback>
@@ -489,6 +491,7 @@ export function UserHeader() {
                         <DropdownMenuLabel className="p-2">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
+                              <AvatarImage src={getAvatarUrl(user.avatarKey)} alt={user.username ?? ""} />
                               <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
                                 {initialsFromUsername(user.username ?? "")}
                               </AvatarFallback>
@@ -628,6 +631,7 @@ export function UserHeader() {
                     {/* Profile Header */}
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12 shrink-0">
+                        <AvatarImage src={getAvatarUrl(user.avatarKey)} alt={user.username ?? ""} />
                         <AvatarFallback className="bg-primary/10 text-base font-bold text-primary">
                           {initialsFromUsername(user.username)}
                         </AvatarFallback>

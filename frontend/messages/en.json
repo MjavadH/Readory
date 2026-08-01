@@ -473,7 +473,17 @@
     "ShowingTotalFavorites": "{Total, plural, =0 {Showing your favorite books} other {Showing your favorite books (Total: #)}}",
     "NoBooks": "No books yet",
     "NoChapters": "No chapters yet",
-    "Collections": "Collections"
+    "Collections": "Collections",
+    "CurrentAvatar": "Current avatar",
+    "Avatar": "Avatar",
+    "AvatarRequirements": "JPG / WebP. Maximum file size: < 5 MB. Maximum dimensions: 1024 × 1024.",
+    "UploadAvatar": "Upload Avatar",
+    "AvatarUpdated": "Avatar updated successfully",
+    "AvatarUpdateFailed": "Failed to update avatar",
+    "AvatarInvalidType": "Only JPG or WebP images are allowed",
+    "AvatarInvalidSize": "Avatar must be smaller than 5 MB",
+    "AvatarInvalidDimensions": "Avatar dimensions must be 1024 × 1024 or smaller",
+    "AvatarInvalidImage": "Invalid image file"
   },
   "HomePage": {
     "By": "by",

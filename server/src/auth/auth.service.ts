@@ -10,6 +10,7 @@ type UserWithRoleAndWallet = {
   permissions: string[];
   role: { name: 'ADMIN' | 'USER' } | null;
   wallet: { balance: unknown } | null;
+  avatarKey?: string | null;
 };
 
 @Injectable()
@@ -28,12 +29,14 @@ export class AuthService {
       walletBalance: number;
       roleName?: 'ADMIN';
       permissions?: string[];
+      avatarKey?: string | null;
     } = {
       id: user.id,
       userId: user.id,
       email: user.email,
       username: user.username,
       walletBalance: Number(user.wallet?.balance ?? 0),
+      avatarKey: user.avatarKey ?? null,
     };
 
     if (user.role?.name === 'ADMIN') {
