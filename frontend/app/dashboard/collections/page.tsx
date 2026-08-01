@@ -43,6 +43,7 @@ import {
     collectionToForm,
     emptyCollectionForm,
     type Collection,
+    COLLECTION_SLUG_REGEX,
     type CollectionFormState,
 } from "@/lib/collection-types";
 import { useCurrentUser } from "@/hooks/use-current-user";
@@ -112,8 +113,17 @@ export default function DashboardCollectionsPage() {
 
     const save = async () => {
         const title = form.title.trim();
+        const slug = form.slug.trim();
         if (!title) {
             toast.error(t("Toast.TitleRequired"));
+            return;
+        }
+        if (!slug) {
+            toast.error(t("Toast.SlugRequired"));
+            return;
+        }
+        if (!COLLECTION_SLUG_REGEX.test(slug)) {
+            toast.error(t("Toast.SlugInvalid"));
             return;
         }
 
@@ -121,7 +131,7 @@ export default function DashboardCollectionsPage() {
         try {
             const body = {
                 title,
-                slug: form.slug.trim() || undefined,
+                slug,
                 description: form.description.trim() || undefined,
                 visibility: form.visibility,
                 allowIndexing: false,

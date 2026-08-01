@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import type { CollectionFormState, CollectionVisibility } from "@/lib/collection-types"
+import { COLLECTION_SLUG_REGEX, type CollectionFormState, type CollectionVisibility } from "@/lib/collection-types"
 
 export type CollectionFormFieldsProps = {
     value: CollectionFormState
@@ -57,6 +57,8 @@ export function CollectionFormFields({
                     value={value.slug}
                     maxLength={240}
                     disabled={disableSlug}
+                    required={!disableSlug}
+                    pattern={COLLECTION_SLUG_REGEX.source}
                     onChange={(e) => patch({ slug: e.target.value })}
                     placeholder={t("Form.SlugPlaceholder")}
                     className="text-start font-mono text-xs"

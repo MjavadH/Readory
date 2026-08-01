@@ -1,6 +1,8 @@
 import type { BookCardData } from "@/lib/types"
 
 export type CollectionVisibility = "PUBLIC" | "UNLISTED" | "PRIVATE"
+export const COLLECTION_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
 export type CollectionType = "SYSTEM" | "USER" | "FAVORITES"
 
 export type CollectionItem = {
