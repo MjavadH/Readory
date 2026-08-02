@@ -231,9 +231,9 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
             const book = await tx.book.update({
                 where: {id},
                 data: {publishStatus: PublicationStatus.PUBLISHED, lastContentUpdate: now},
-                select: {id: true, title: true, publishStatus: true}
+                select: {id: true, title: true, publishStatus: true, type: {select: {slug: true}}}
             });
-            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(book.id), payload: {bookId: book.id, title: book.title, publishedAt: now.toISOString()}});
+            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(book.id), payload: {bookId: book.id, title: book.title, bookType: book.type.slug, publishedAt: now.toISOString()}});
         } else if (type === ScheduledTargetType.Chapter) {
             const before = await tx.chapter.findUnique({where: {id}, select: {publishStatus: true}});
             const chapter = await tx.chapter.update({
@@ -241,8 +241,8 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
                 data: {publishStatus: PublicationStatus.PUBLISHED},
                 select: {id: true, bookId: true, title: true, index: true}
             });
-            const book = await tx.book.update({where: {id: chapter.bookId}, data: {lastContentUpdate: now}, select: {title: true}});
-            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: {bookId: chapter.bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString()}});
+            const book = await tx.book.update({where: {id: chapter.bookId}, data: {lastContentUpdate: now}, select: {title: true, type: {select: {slug: true}}}});
+            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: {bookId: chapter.bookId, bookTitle: book.title, bookType: book.type.slug, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString()}});
         } else throw new BadRequestException('Unsupported scheduled target type');
     }
 

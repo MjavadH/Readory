@@ -154,10 +154,10 @@ export class ChaptersService {
             ...(isPublished && { chapterCount: { increment: 1 } }),
             lastContentUpdate: now
           },
-          select: { id: true, title: true },
+          select: { id: true, title: true, type: { select: { slug: true } } },
         });
         if (isPublished) {
-          await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
+          await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, bookType: book.type.slug, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
         }
         return chapter;
       });
@@ -204,42 +204,44 @@ export class ChaptersService {
 
     try {
       const now = new Date();
-      const chapter = await this.prisma.chapter.update({
-        where: { id: chapterId },
-        data: {
-          title: dto.title,
-          index: dto.index,
-          isFree: dto.isFree,
-          price: nextPrice,
-          contentPath: dto.contentPath,
-          publishStatus: dto.publishStatus
-        },
-        select: {
-          id: true,
-          title: true,
-          index: true,
-          price: true,
-          isFree: true,
-          publishStatus: true,
-        },
-      });
-
-      if (dto.contentPath !== undefined || chapterCountChange !== 0) {
-        const book = await this.prisma.book.update({
-          where: { id: bookId },
+      const chapter = await this.prisma.$transaction(async (tx) => {
+        const updatedChapter = await tx.chapter.update({
+          where: { id: chapterId },
           data: {
-            ...(chapterCountChange > 0 && { chapterCount: { increment: 1 } }),
-            ...(chapterCountChange < 0 && { chapterCount: { decrement: 1 } }),
-            ...(dto.contentPath !== undefined && { lastContentUpdate: now })
+            title: dto.title,
+            index: dto.index,
+            isFree: dto.isFree,
+            price: nextPrice,
+            contentPath: dto.contentPath,
+            publishStatus: dto.publishStatus,
           },
-          select: { title: true },
+          select: {
+            id: true,
+            title: true,
+            index: true,
+            price: true,
+            isFree: true,
+            publishStatus: true,
+          },
         });
-        if (chapterCountChange > 0) {
-          await this.prisma.$transaction(async (tx) => {
-            await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
+
+        if (dto.contentPath !== undefined || chapterCountChange !== 0) {
+          const book = await tx.book.update({
+            where: { id: bookId },
+            data: {
+              ...(chapterCountChange > 0 && { chapterCount: { increment: 1 } }),
+              ...(chapterCountChange < 0 && { chapterCount: { decrement: 1 } }),
+              ...(dto.contentPath !== undefined && { lastContentUpdate: now }),
+            },
+            select: { title: true, type: { select: { slug: true } } },
           });
+          if (chapterCountChange > 0) {
+            await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(updatedChapter.id), payload: { bookId, bookTitle: book.title, bookType: book.type.slug, chapterId: updatedChapter.id, chapterTitle: updatedChapter.title, chapterIndex: updatedChapter.index, publishedAt: now.toISOString() } });
+          }
         }
-      }
+
+        return updatedChapter;
+      });
 
       await this.publicService.clearHomeCache();
       await this.chapterCache.bumpListVersion(bookId);
