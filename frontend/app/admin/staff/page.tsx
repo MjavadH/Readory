@@ -39,7 +39,7 @@ import { apiClient, getApiErrorMessage } from "@/lib/api-client"
 import { motion } from "framer-motion";
 import {useTranslations} from "next-intl";
 
-type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF"
+type Permission = "MANAGE_BOOKS" | "MANAGE_USERS" | "MANAGE_FINANCE" | "MANAGE_STAFF" | "MANAGE_NOTIFICATIONS"
 
 interface StaffMember {
     id: number
@@ -107,6 +107,12 @@ export default function AdminStaff() {
             description: t("ManageStaffDescription"),
             icon: UserCog,
             color: "text-red-600 dark:text-red-500",
+        },
+        MANAGE_NOTIFICATIONS: {
+            label: "Manage notifications",
+            description: "Create broadcasts and review notification delivery status.",
+            icon: UserCog,
+            color: "text-purple-600 dark:text-purple-500",
         },
     }
 

@@ -24,7 +24,8 @@ import {
 } from "./recommendation/recommendation.constants";
 import {CreateBookDto} from "./dto/create-book.dto"
 import {UpdateBookDto} from "./dto/update-book.dto";
-import {PublicationStatus} from "@readory/shared";
+import {DomainEventType, PublicationStatus} from "@readory/shared";
+import { OutboxService } from '../outbox/outbox.service';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -62,6 +63,7 @@ export class BooksService {
     private readonly cacheManager: CacheManager,
     private readonly recommendationService: RecommendationService,
     private readonly collectionsService: CollectionsService,
+    private readonly outbox: OutboxService,
   ) {}
 
   private readonly CACHE_KEY_BROWSE_DEFAULT = 'books:browse:default';
@@ -1054,6 +1056,16 @@ export class BooksService {
         },
       });
 
+      if (book.publishStatus === PublicationStatus.PUBLISHED) {
+        await this.outbox.create(tx, {
+          type: DomainEventType.BOOK_PUBLISHED,
+          version: 1,
+          aggregateType: 'Book',
+          aggregateId: String(book.id),
+          payload: { bookId: book.id, title: book.title, publishedAt: new Date().toISOString() },
+        });
+      }
+
       if (contributors && contributors.length > 0) {
         await tx.contributor.updateMany({
           where: { id: { in: contributors.map((a) => a.contributorId) } },
@@ -1078,7 +1090,7 @@ export class BooksService {
 
     const currentBook = await this.prisma.book.findUnique({
       where: { id },
-      select: { contributors: { select: { contributorId: true } } },
+      select: { title: true, publishStatus: true, contributors: { select: { contributorId: true } } },
     });
 
     if (!currentBook) throw new NotFoundException('book not found');
@@ -1143,7 +1155,7 @@ export class BooksService {
           });
         }
 
-        return tx.book.update({
+        const updatedBook = await tx.book.update({
           where: { id },
           data: updateData,
           include: {
@@ -1155,6 +1167,10 @@ export class BooksService {
             contributors: { select: { role: true, contributor: { select: { id: true, name: true } } } },
           },
         });
+        if (currentBook.publishStatus !== PublicationStatus.PUBLISHED && updatedBook.publishStatus === PublicationStatus.PUBLISHED) {
+          await this.outbox.create(tx, { type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(updatedBook.id), payload: { bookId: updatedBook.id, title: updatedBook.title, publishedAt: new Date().toISOString() } });
+        }
+        return updatedBook;
       });
 
       await this.publicService.clearGenresPageCache();
@@ -1226,7 +1242,7 @@ export class BooksService {
   async deleteById(id: number) {
     const record = await this.prisma.book.findUnique({
       where: { id },
-      select: { contributors: { select: { contributorId: true } } },
+      select: { title: true, publishStatus: true, contributors: { select: { contributorId: true } } },
     });
 
     if (!record) throw new NotFoundException('book not found');

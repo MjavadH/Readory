@@ -12,7 +12,7 @@ import {
   Star,
   User,
 } from "lucide-react";
-import type { ReactNode, RefObject } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { AppIcon } from "@/components/AppIcon";
 import { formatUpdateTime } from "@/lib/time";
 import { ContributorRole, CONTRIBUTOR_ROLE_ICONS, PublicationStatus, type AgeRating, type BookStatus, type IconKey } from "@readory/shared";
 import Link from "next/link";
+import { apiClient } from "@/lib/api-client";
 
 export type BookDetailsData = {
   id: number;
@@ -186,6 +187,31 @@ export function BookDetails({
 
   const alternativeTitles = book.alternativeTitles?.filter(Boolean) ?? [];
   const isDraft = book.publishStatus === PublicationStatus.DRAFT;
+  const [chapterSubscribed, setChapterSubscribed] = useState(false);
+  const [chapterSubscriptionLoading, setChapterSubscriptionLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || isDraft) return;
+    let alive = true;
+    apiClient.get<{ subscribed: boolean }>(`/notifications/books/${book.id}/subscription`, { cache: "no-store" })
+      .then((res) => { if (alive) setChapterSubscribed(res.subscribed) })
+      .catch(() => undefined);
+    return () => { alive = false };
+  }, [book.id, isAuthenticated, isDraft]);
+
+  const toggleChapterSubscription = async () => {
+    setChapterSubscriptionLoading(true);
+    const previous = chapterSubscribed;
+    setChapterSubscribed(!previous);
+    try {
+      if (previous) await apiClient.delete(`/notifications/books/${book.id}/subscription`);
+      else await apiClient.post(`/notifications/books/${book.id}/subscription`, {});
+    } catch {
+      setChapterSubscribed(previous);
+    } finally {
+      setChapterSubscriptionLoading(false);
+    }
+  };
 
   return (
       <section
@@ -447,6 +473,23 @@ export function BookDetails({
                               className="h-12 w-12 shrink-0 gap-2 rounded-2xl border-2 p-0 transition-colors hover:border-primary/40 hover:text-primary"
                           >
                             <Plus className="h-5 w-5" />
+                          </Button>
+                        </motion.div>
+                    )}
+
+
+                    {isAuthenticated && !isDraft && (
+                        <motion.div whileTap={{ scale: 0.92 }} whileHover={{ scale: 1.04 }}>
+                          <Button
+                              variant={chapterSubscribed ? "default" : "outline"}
+                              size="lg"
+                              onClick={toggleChapterSubscription}
+                              disabled={chapterSubscriptionLoading}
+                              aria-pressed={chapterSubscribed}
+                              className="h-12 gap-2 rounded-2xl"
+                          >
+                            <Send className="h-5 w-5" />
+                            {chapterSubscribed ? "Notifications on" : "Notify me"}
                           </Button>
                         </motion.div>
                     )}

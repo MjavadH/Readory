@@ -6,7 +6,8 @@ import {AuditLogService} from '../audit-log/audit-log.service';
 import {CreateScheduleDto} from './dto/create-schedule.dto';
 import {UpdateScheduleDto} from './dto/update-schedule.dto';
 import {Prisma, ScheduledPublication, ScheduledPublicationStatus, ScheduledTargetType} from '@prisma/client';
-import {PublicationStatus} from "@readory/shared";
+import {DomainEventType, PublicationStatus} from "@readory/shared";
+import { OutboxService } from '../outbox/outbox.service';
 
 const QUEUE_NAME = 'scheduled-publications';
 const ACTIVE_STATUSES = [ScheduledPublicationStatus.Pending, ScheduledPublicationStatus.Processing];
@@ -24,6 +25,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
         private cache: CacheManager,
         private publicService: PublicService,
         private auditLog: AuditLogService,
+        private outbox: OutboxService,
     ) {
     }
 
@@ -224,16 +226,23 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
     }
 
     private async publishTarget(tx: Prisma.TransactionClient, type: ScheduledTargetType, id: number, now: Date) {
-        if (type === ScheduledTargetType.BOOK) await tx.book.update({
-            where: {id},
-            data: {publishStatus: PublicationStatus.PUBLISHED, lastContentUpdate: now}
-        }); else if (type === ScheduledTargetType.Chapter) {
+        if (type === ScheduledTargetType.BOOK) {
+            const before = await tx.book.findUnique({where: {id}, select: {publishStatus: true}});
+            const book = await tx.book.update({
+                where: {id},
+                data: {publishStatus: PublicationStatus.PUBLISHED, lastContentUpdate: now},
+                select: {id: true, title: true, publishStatus: true}
+            });
+            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(book.id), payload: {bookId: book.id, title: book.title, publishedAt: now.toISOString()}});
+        } else if (type === ScheduledTargetType.Chapter) {
+            const before = await tx.chapter.findUnique({where: {id}, select: {publishStatus: true}});
             const chapter = await tx.chapter.update({
                 where: {id},
                 data: {publishStatus: PublicationStatus.PUBLISHED},
-                select: {bookId: true}
+                select: {id: true, bookId: true, title: true, index: true}
             });
-            await tx.book.update({where: {id: chapter.bookId}, data: {lastContentUpdate: now}});
+            const book = await tx.book.update({where: {id: chapter.bookId}, data: {lastContentUpdate: now}, select: {title: true}});
+            if (before?.publishStatus !== PublicationStatus.PUBLISHED) await this.outbox.create(tx, {type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: {bookId: chapter.bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString()}});
         } else throw new BadRequestException('Unsupported scheduled target type');
     }
 

@@ -25,6 +25,7 @@ import {
   CalendarClock,
   ChevronRight,
   Grid2x2,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -135,7 +136,8 @@ export function AdminSidebar() {
         { label: t("Genres"), icon: Tag, path: "/admin/genres", show: has("MANAGE_BOOKS") },
         { label: t("BooksType"), icon: SquareLibrary, path: "/admin/books-type", show: has("MANAGE_BOOKS") },
         { label: t("MediaLibrary"), icon: ImageIcon, path: "/admin/media", show: has("MANAGE_BOOKS") },
-        { label: t("Collections"), icon: Grid2x2, path: "/admin/collections", show: has("MANAGE_BOOKS") },
+        { label: t("Collections"), icon: Grid2x2,
+  Bell, path: "/admin/collections", show: has("MANAGE_BOOKS") },
         { label: t("ScheduledPublishing"), icon: CalendarClock, path: "/admin/scheduled-publications", show: has("MANAGE_BOOKS") },
       ],
     },
@@ -159,6 +161,7 @@ export function AdminSidebar() {
       items: [
         { label: t("AdminStaff"), icon: Lock, path: "/admin/staff", show: has("MANAGE_STAFF") },
         { label: t("AuditLog"), icon: ClipboardList, path: "/admin/audit-log", show: has("MANAGE_STAFF") },
+        { label: "Notifications", icon: Bell, path: "/admin/notifications", show: has("MANAGE_NOTIFICATIONS") },
         { label: t("Settings"), icon: Settings, path: "/admin/settings" },
       ],
     },

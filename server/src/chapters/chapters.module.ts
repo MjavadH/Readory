@@ -10,9 +10,10 @@ import { StorageModule } from '../storage/storage.module';
 import { CacheModule } from '../cache/cache.module';
 import { ReaderModule } from '../reader/reader.module';
 import {RecommendationService} from "../books/recommendation/recommendation.service";
+import { OutboxModule } from '../outbox/outbox.module';
 
 @Module({
-  imports: [
+  imports: [OutboxModule,
     PrismaModule,
     WalletsModule,
     PublicModule,

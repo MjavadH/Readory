@@ -34,6 +34,7 @@ import { useTranslations } from "next-intl"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { getAvatarUrl } from "@/lib/media"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 type BookType = { name: string; slug: string; iconKey: IconKey }
 
@@ -463,6 +464,7 @@ export function UserHeader() {
               <div className="hidden items-center gap-1 lg:flex">
                 <LanguageSwitcher />
                 <ThemeSwitcher />
+                {authenticated && <NotificationBell />}
 
                 <div className="mx-1 w-0.5 h-7 rounded-full self-center bg-muted" />
 
@@ -676,6 +678,7 @@ export function UserHeader() {
                     onClick={closeMobile}
                     active={pathname === "/books"}
                 />
+                <MobileNavLink href="/notifications" icon="shield" label="Notifications" onClick={closeMobile} active={pathname === "/notifications"} />
                 <MobileNavLink
                     href="/collections"
                     icon="collections"

@@ -7,6 +7,7 @@ export type Permission =
     | "MANAGE_USERS"
     | "MANAGE_FINANCE"
     | "MANAGE_STAFF"
+    | "MANAGE_NOTIFICATIONS"
 
 export type CurrentUser = {
     id: number

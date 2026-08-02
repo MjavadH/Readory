@@ -24,6 +24,7 @@ import { ScheduledPublishingModule } from './scheduled-publishing/scheduled-publ
 import { PaymentsModule } from './payments/payments.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { CollectionsModule } from './collections/collections.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { CollectionsModule } from './collections/collections.module';
     ScheduledPublishingModule,
     PaymentsModule,
     CollectionsModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
