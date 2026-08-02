@@ -3,7 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import {
+  Notification,
+  NotificationAudienceType as PrismaNotificationAudienceType,
+  NotificationCategory,
+  Prisma,
+} from '@prisma/client';
 import {
   DomainEventType,
   NotificationType,
@@ -157,8 +162,8 @@ export class NotificationsService {
           title,
           body,
           actionUrl,
-          metadata: compactMetadata(dto.metadata) as any,
-          audienceType: dto.audienceType as any,
+          metadata: compactMetadata(dto.metadata) as Prisma.InputJsonValue,
+          audienceType: dto.audienceType as PrismaNotificationAudienceType,
           targetUserIds,
           expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
           createdById: actorId,
@@ -175,8 +180,8 @@ export class NotificationsService {
       return broadcast;
     });
     this.audit.log({
-      action: 'BROADCAST_SENT' as any,
-      category: 'SYSTEM' as any,
+      action: 'BROADCAST_SENT',
+      category: 'SYSTEM',
       targetType: 'NotificationBroadcast',
       targetId: created.id,
       actorId,
@@ -208,11 +213,11 @@ export class NotificationsService {
     recipients: number[],
     input: {
       type: string;
-      category: any;
+      category: NotificationCategory;
       title: string;
       body: string;
       actionUrl?: string | null;
-      metadata?: any;
+      metadata?: Prisma.InputJsonValue | Prisma.JsonValue | null;
       sourceType?: string;
       sourceId?: string;
       dedupeParts: Array<string | number>;
@@ -227,7 +232,7 @@ export class NotificationsService {
       title: input.title,
       body: input.body,
       actionUrl: input.actionUrl,
-      metadata: input.metadata,
+      metadata: input.metadata === null ? Prisma.JsonNull : (input.metadata as Prisma.InputJsonValue | undefined),
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       expiresAt: input.expiresAt,
@@ -240,7 +245,7 @@ export class NotificationsService {
     return result.count;
   }
 
-  private toApi(row: any) {
+  private toApi(row: Notification) {
     return {
       id: row.id,
       type: row.type,

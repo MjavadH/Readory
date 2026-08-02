@@ -15,7 +15,7 @@ export class OutboxService {
         eventVersion: event.version,
         aggregateType: event.aggregateType,
         aggregateId: event.aggregateId,
-        payload: event.payload as any,
+        payload: event.payload as Prisma.InputJsonValue,
         maxAttempts: notificationConfig.maxAttempts,
       },
     });

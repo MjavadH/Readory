@@ -28,7 +28,7 @@ export function compactMetadata(input?: Record<string, unknown> | null) {
       value === null ||
       ['string', 'number', 'boolean'].includes(typeof value)
     )
-      allowed[key] = value as any;
+      allowed[key] = value;
   }
   if (JSON.stringify(allowed).length > 2048)
     throw new BadRequestException('metadata is too large');

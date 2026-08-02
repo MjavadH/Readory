@@ -3,11 +3,13 @@ import { DomainEventType } from '@readory/shared';
 export type BookPublishedEvent = {
   bookId: number;
   title: string;
+  bookType: string;
   publishedAt: string;
 };
 export type ChapterPublishedEvent = {
   bookId: number;
   bookTitle: string;
+  bookType: string;
   chapterId: number;
   chapterTitle: string;
   chapterIndex: number;

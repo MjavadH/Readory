@@ -1062,7 +1062,7 @@ export class BooksService {
           version: 1,
           aggregateType: 'Book',
           aggregateId: String(book.id),
-          payload: { bookId: book.id, title: book.title, publishedAt: new Date().toISOString() },
+          payload: { bookId: book.id, title: book.title, bookType: book.type.slug, publishedAt: new Date().toISOString() },
         });
       }
 
@@ -1168,7 +1168,7 @@ export class BooksService {
           },
         });
         if (currentBook.publishStatus !== PublicationStatus.PUBLISHED && updatedBook.publishStatus === PublicationStatus.PUBLISHED) {
-          await this.outbox.create(tx, { type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(updatedBook.id), payload: { bookId: updatedBook.id, title: updatedBook.title, publishedAt: new Date().toISOString() } });
+          await this.outbox.create(tx, { type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(updatedBook.id), payload: { bookId: updatedBook.id, title: updatedBook.title, bookType: updatedBook.type.slug, publishedAt: new Date().toISOString() } });
         }
         return updatedBook;
       });

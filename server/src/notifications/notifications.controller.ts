@@ -23,17 +23,19 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { NotificationsService } from './notifications.service';
 import { CreateBroadcastDto } from './dto/create-broadcast.dto';
 
+type AuthenticatedRequest = { user: { userId?: number | string; id?: number | string } };
+
 @Controller('notifications')
 export class NotificationsController {
   constructor(private service: NotificationsService) {}
-  private uid(req: any) {
+  private uid(req: AuthenticatedRequest) {
     return Number(req.user.userId ?? req.user.id);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   list(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
@@ -42,32 +44,32 @@ export class NotificationsController {
 
   @Get('unread-count')
   @UseGuards(JwtAuthGuard)
-  unread(@Request() req: any) {
+  unread(@Request() req: AuthenticatedRequest) {
     return this.service.unreadCount(this.uid(req));
   }
 
   @Patch(':id/read')
   @UseGuards(JwtAuthGuard)
-  read(@Request() req: any, @Param('id') id: string) {
+  read(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.service.markRead(this.uid(req), id);
   }
 
   @Patch('read')
   @UseGuards(JwtAuthGuard)
-  readMany(@Request() req: any, @Body('ids') ids?: string[]) {
+  readMany(@Request() req: AuthenticatedRequest, @Body('ids') ids?: string[]) {
     return this.service.markAllRead(this.uid(req), ids);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  dismiss(@Request() req: any, @Param('id') id: string) {
+  dismiss(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.service.dismiss(this.uid(req), id);
   }
 
   @Get('books/:bookId/subscription')
   @UseGuards(JwtAuthGuard)
   subscription(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('bookId', ParseIntPipe) bookId: number,
   ) {
     return this.service.getSubscription(this.uid(req), bookId);
@@ -76,7 +78,7 @@ export class NotificationsController {
   @Post('books/:bookId/subscription')
   @UseGuards(JwtAuthGuard)
   subscribe(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('bookId', ParseIntPipe) bookId: number,
   ) {
     return this.service.subscribe(this.uid(req), bookId);
@@ -85,7 +87,7 @@ export class NotificationsController {
   @Delete('books/:bookId/subscription')
   @UseGuards(JwtAuthGuard)
   unsubscribe(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Param('bookId', ParseIntPipe) bookId: number,
   ) {
     return this.service.unsubscribe(this.uid(req), bookId);
@@ -96,7 +98,7 @@ export class NotificationsController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_NOTIFICATIONS)
-  createBroadcast(@Request() req: any, @Body() dto: CreateBroadcastDto) {
+  createBroadcast(@Request() req: AuthenticatedRequest, @Body() dto: CreateBroadcastDto) {
     return this.service.createBroadcast(dto, this.uid(req));
   }
 
