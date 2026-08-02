@@ -25,10 +25,10 @@ export function compactMetadata(input?: Record<string, unknown> | null) {
   for (const [key, value] of Object.entries(input).slice(0, 20)) {
     if (!/^[a-zA-Z0-9_.-]{1,40}$/.test(key)) continue;
     if (
-      value === null ||
-      ['string', 'number', 'boolean'].includes(typeof value)
+        value === null ||
+        ['string', 'number', 'boolean'].includes(typeof value)
     )
-      allowed[key] = value;
+      allowed[key] = value as string | number | boolean | null;
   }
   if (JSON.stringify(allowed).length > 2048)
     throw new BadRequestException('metadata is too large');

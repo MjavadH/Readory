@@ -138,7 +138,7 @@ export class NotificationOutboxProcessor
     }, notificationConfig.leaseHeartbeatMs);
   }
 
-  private withPayload<TPayload>(version: number, guard: (payload: Prisma.JsonValue) => payload is TPayload, handler: EventHandler<TPayload>): OutboxHandler {
+  private withPayload<TPayload extends Prisma.JsonValue>(version: number, guard: (payload: Prisma.JsonValue) => payload is TPayload, handler: EventHandler<TPayload>): OutboxHandler {
     return async (event) => {
       if (event.eventVersion !== version || !guard(event.payload)) {
         throw new PermanentOutboxError(`Invalid payload for ${event.eventType} v${event.eventVersion}`);
@@ -316,7 +316,7 @@ export class NotificationOutboxProcessor
   }
 
   private isPositiveInt(value: unknown): value is number {
-    return Number.isInteger(value) && value > 0;
+    return typeof value === 'number' && Number.isInteger(value) && value > 0;
   }
 }
 

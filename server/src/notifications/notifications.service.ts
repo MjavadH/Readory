@@ -1,34 +1,26 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import {BadRequestException, Injectable, NotFoundException,} from '@nestjs/common';
 import {
   Notification,
   NotificationAudienceType as PrismaNotificationAudienceType,
   NotificationCategory,
   Prisma,
 } from '@prisma/client';
-import {
-  DomainEventType,
-  NotificationType,
-  NotificationAudienceType,
-} from '@readory/shared';
-import { PrismaService } from '../prisma/prisma.service';
-import { OutboxService } from '../outbox/outbox.service';
-import { notificationConfig } from './notification.config';
+import {AuditAction, AuditCategory, DomainEventType, NotificationAudienceType,} from '@readory/shared';
+import {PrismaService} from '../prisma/prisma.service';
+import {OutboxService} from '../outbox/outbox.service';
+import {notificationConfig} from './notification.config';
 import {
   compactMetadata,
   decodeCursor,
   dedupeKey,
   encodeCursor,
-  sanitizeText,
-  validateActionUrl,
   MAX_BODY_LENGTH,
   MAX_TITLE_LENGTH,
+  sanitizeText,
+  validateActionUrl,
 } from './notification.utils';
-import { CreateBroadcastDto } from './dto/create-broadcast.dto';
-import { AuditLogService } from '../audit-log/audit-log.service';
+import {CreateBroadcastDto} from './dto/create-broadcast.dto';
+import {AuditLogService} from '../audit-log/audit-log.service';
 
 @Injectable()
 export class NotificationsService {
@@ -180,8 +172,8 @@ export class NotificationsService {
       return broadcast;
     });
     this.audit.log({
-      action: 'BROADCAST_SENT',
-      category: 'SYSTEM',
+      action: AuditAction.BROADCAST_SENT,
+      category: AuditCategory.SYSTEM,
       targetType: 'NotificationBroadcast',
       targetId: created.id,
       actorId,
