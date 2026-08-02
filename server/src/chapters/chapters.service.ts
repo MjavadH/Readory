@@ -14,6 +14,8 @@ import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
 import { normalizeQ } from '../common';
 import {RecommendationService} from "../books/recommendation/recommendation.service";
+import { DomainEventType } from '@readory/shared';
+import { OutboxService } from '../outbox/outbox.service';
 
 @Injectable()
 export class ChaptersService {
@@ -24,6 +26,7 @@ export class ChaptersService {
     private readonly cacheManager: CacheManager,
     private readonly chapterCache: ChapterCache,
     private readonly recommendationService: RecommendationService,
+    private readonly outbox: OutboxService,
   ) {}
 
   private readonly CHAPTERS_LIST_CACHE_TTL_SECONDS = 90;
@@ -133,8 +136,8 @@ export class ChaptersService {
     try {
       const now = new Date();
       const isPublished = dto.publishStatus === 'PUBLISHED';
-      const [chapter] = await this.prisma.$transaction([
-        this.prisma.chapter.create({
+      const chapter = await this.prisma.$transaction(async (tx) => {
+        const chapter = await tx.chapter.create({
           data: {
             book: { connect: { id: bookId } },
             title: dto.title,
@@ -144,15 +147,20 @@ export class ChaptersService {
             price,
             contentPath: dto.contentPath,
           },
-        }),
-        this.prisma.book.update({
+        });
+        const book = await tx.book.update({
           where: { id: bookId },
           data: {
             ...(isPublished && { chapterCount: { increment: 1 } }),
             lastContentUpdate: now
           },
-        }),
-      ]);
+          select: { id: true, title: true },
+        });
+        if (isPublished) {
+          await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
+        }
+        return chapter;
+      });
 
       await this.cacheManager.del('stats:chapters:count');
       await this.publicService.clearHomeCache();
@@ -217,14 +225,20 @@ export class ChaptersService {
       });
 
       if (dto.contentPath !== undefined || chapterCountChange !== 0) {
-        await this.prisma.book.update({
+        const book = await this.prisma.book.update({
           where: { id: bookId },
           data: {
             ...(chapterCountChange > 0 && { chapterCount: { increment: 1 } }),
             ...(chapterCountChange < 0 && { chapterCount: { decrement: 1 } }),
             ...(dto.contentPath !== undefined && { lastContentUpdate: now })
           },
+          select: { title: true },
         });
+        if (chapterCountChange > 0) {
+          await this.prisma.$transaction(async (tx) => {
+            await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
+          });
+        }
       }
 
       await this.publicService.clearHomeCache();

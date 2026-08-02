@@ -32,6 +32,9 @@ model User {
   role            Role?             @relation(fields: [roleId], references: [id])
   wallet          Wallet?
   paymentInvoices PaymentInvoice[]
+  notifications Notification[]
+  bookNotificationSubscriptions BookNotificationSubscription[]
+  notificationPreference NotificationPreference?
 }
 
 model Wallet {
@@ -105,6 +108,7 @@ model Book {
   chapters          Chapter[]
   collectionItems   CollectionItem[]
   readingProgress   ReadingProgress[]
+  notificationSubscriptions BookNotificationSubscription[]
 
   @@index([ratingAvg, ratingCount])
   @@index([publishStatus, isFeatured])
@@ -403,4 +407,127 @@ model AuditLog {
   @@index([category])
   @@index([severity])
   @@index([targetType, targetId])
+}
+
+model DomainOutboxEvent {
+  id            String            @id @default(uuid())
+  eventType     String
+  eventVersion  Int               @default(1)
+  aggregateType String
+  aggregateId   String
+  payload       Json
+  status        OutboxEventStatus @default(PENDING)
+  attempts      Int               @default(0)
+  maxAttempts   Int               @default(8)
+  availableAt   DateTime          @default(now())
+  lockedAt      DateTime?
+  lockedBy      String?
+  processedAt   DateTime?
+  failedAt      DateTime?
+  lastError     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([status, availableAt, id])
+  @@index([lockedAt])
+  @@index([eventType, aggregateId])
+}
+
+model Notification {
+  id               String             @id @default(uuid())
+  recipientUserId  Int
+  type             String
+  category         NotificationCategory @default(CONTENT)
+  title            String
+  body             String
+  metadata         Json?
+  actionUrl        String?
+  sourceType       String?
+  sourceId         String?
+  deduplicationKey String
+  readAt           DateTime?
+  dismissedAt      DateTime?
+  expiresAt        DateTime?
+  createdAt        DateTime           @default(now())
+  recipient        User               @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientUserId, deduplicationKey])
+  @@index([recipientUserId, createdAt, id])
+  @@index([recipientUserId, readAt, createdAt])
+  @@index([expiresAt])
+  @@index([sourceType, sourceId])
+}
+
+model BookNotificationSubscription {
+  userId    Int
+  bookId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@id([userId, bookId])
+  @@index([bookId, userId])
+}
+
+model NotificationPreference {
+  userId             Int      @id
+  contentEnabled     Boolean  @default(true)
+  marketingEnabled   Boolean  @default(false)
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationBroadcast {
+  id                 String                      @id @default(uuid())
+  title              String
+  body               String
+  actionUrl          String?
+  metadata           Json?
+  audienceType       NotificationAudienceType
+  targetUserIds      Int[]                       @default([])
+  idempotencyKey     String?
+  status             NotificationBroadcastStatus @default(PENDING)
+  totalRecipients    Int                         @default(0)
+  processedRecipients Int                        @default(0)
+  failedRecipients   Int                         @default(0)
+  cursorUserId       Int?
+  expiresAt          DateTime?
+  createdById        Int?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+  completedAt        DateTime?
+  lastError          String?
+
+  @@unique([idempotencyKey])
+  @@index([status, createdAt])
+  @@index([createdById, createdAt])
+}
+
+enum OutboxEventStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+  DEAD_LETTER
+}
+
+enum NotificationCategory {
+  SYSTEM
+  CONTENT
+  MARKETING
+  ADMIN
+}
+
+enum NotificationAudienceType {
+  USER
+  SELECTED_USERS
+  ALL_USERS
+}
+
+enum NotificationBroadcastStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  PARTIALLY_FAILED
+  FAILED
 }
