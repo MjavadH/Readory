@@ -20,10 +20,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import {
-  AuditAction,
-  AuditCategory,
-} from '@readory/shared';
+import { AuditAction, AuditCategory } from '@readory/shared';
 
 @Controller('genres')
 export class GenresController {
@@ -69,10 +66,7 @@ export class GenresController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateGenreDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateGenreDto) {
     return this.genresService.update(id, dto);
   }
 

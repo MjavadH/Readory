@@ -51,10 +51,7 @@ export class ChapterContentController {
   constructor(private readonly service: ChapterContentService) {}
 
   @Get()
-  get(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Param('index', ParseIntPipe) index: number,
-  ) {
+  get(@Param('bookId', ParseIntPipe) bookId: number, @Param('index', ParseIntPipe) index: number) {
     return this.service.getChapterContent(bookId, index);
   }
 
@@ -71,9 +68,9 @@ export class ChapterContentController {
   @Post('images/append')
   @UseInterceptors(FilesInterceptor('files', IMAGE_UPLOAD_MAX_FILES, IMAGE_UPLOAD_MULTER))
   appendImages(
-      @Param('bookId', ParseIntPipe) bookId: number,
-      @Param('index', ParseIntPipe) index: number,
-      @UploadedFiles() files: Express.Multer.File[],
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('index', ParseIntPipe) index: number,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
     return this.service.appendImages(bookId, index, files);
   }
@@ -98,18 +95,18 @@ export class ChapterContentController {
 
   @Delete('images/:pageNumber')
   deleteImage(
-      @Param('bookId', ParseIntPipe) bookId: number,
-      @Param('index', ParseIntPipe) index: number,
-      @Param('pageNumber', ParseIntPipe) pageNumber: number,
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('index', ParseIntPipe) index: number,
+    @Param('pageNumber', ParseIntPipe) pageNumber: number,
   ) {
     return this.service.deleteImage(bookId, index, pageNumber);
   }
 
   @Delete('images')
   deleteImages(
-      @Param('bookId', ParseIntPipe) bookId: number,
-      @Param('index', ParseIntPipe) index: number,
-      @Body() body: { pageNumbers: number[] },
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('index', ParseIntPipe) index: number,
+    @Body() body: { pageNumbers: number[] },
   ) {
     return this.service.deleteImages(bookId, index, body?.pageNumbers ?? []);
   }

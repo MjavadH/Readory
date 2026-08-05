@@ -54,9 +54,7 @@ export class AuthService {
       return null;
     }
     if (user.isBanned) {
-      throw new UnauthorizedException(
-        'Account is blocked. Please contact support.',
-      );
+      throw new UnauthorizedException('Account is blocked. Please contact support.');
     }
     const isValid = await argon2.verify(user.passwordHash, password);
     if (!isValid) {
@@ -76,9 +74,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
     if (user.isBanned) {
-      throw new UnauthorizedException(
-        'Account is blocked. Please contact support.',
-      );
+      throw new UnauthorizedException('Account is blocked. Please contact support.');
     }
 
     return this.toSafeProfile(user);
@@ -96,9 +92,7 @@ export class AuthService {
       throw new Error('User not found');
     }
     if (fullUser.isBanned) {
-      throw new UnauthorizedException(
-        'Account is blocked. Please contact support.',
-      );
+      throw new UnauthorizedException('Account is blocked. Please contact support.');
     }
 
     this.usersService.updateLastLogin(fullUser.id).catch(() => {});

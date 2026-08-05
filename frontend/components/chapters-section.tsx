@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useRef, type RefObject } from "react";
-import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { useRef, type RefObject } from 'react';
+import Link from 'next/link';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowDown10,
   ArrowUp10,
@@ -16,15 +16,15 @@ import {
   Search,
   Sparkles,
   Trash,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { AppPagination } from "@/components/app-pagination";
-import { formatUpdateTime } from "@/lib/time";
-import { cn } from "@/lib/utils";
-import { PublicationStatus } from "@readory/shared"
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AppPagination } from '@/components/app-pagination';
+import { formatUpdateTime } from '@/lib/time';
+import { cn } from '@/lib/utils';
+import { PublicationStatus } from '@readory/shared';
 
 export type ChaptersSectionChapter = {
   id: number;
@@ -52,13 +52,13 @@ type CommonProps = {
   scrollRef?: RefObject<HTMLDivElement | null>;
 
   /** i18n */
-  t: Translator;   // Books namespace
-  ti: Translator;  // Time namespace
-  g: Translator;  // General namespace
+  t: Translator; // Books namespace
+  ti: Translator; // Time namespace
+  g: Translator; // General namespace
 };
 
 type PublicProps = CommonProps & {
-  mode: "public";
+  mode: 'public';
   purchasedChapterIds: number[];
   onChapterSelect: (chapter: ChaptersSectionChapter) => void;
 
@@ -66,12 +66,12 @@ type PublicProps = CommonProps & {
   searchInput: string;
   onSearchInputChange: (v: string) => void;
   onSearchSubmit: () => void;
-  order: "asc" | "desc";
+  order: 'asc' | 'desc';
   onToggleOrder: () => void;
 };
 
 type AdminProps = CommonProps & {
-  mode: "admin";
+  mode: 'admin';
   onAddChapter: () => void;
   onEditChapter: (chapter: ChaptersSectionChapter) => void;
   onDeleteChapter: (chapterId: number) => void;
@@ -85,10 +85,7 @@ function ChaptersGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div
-          key={i}
-          className="animate-pulse rounded-2xl border border-border/70 bg-card/70 p-4"
-        >
+        <div key={i} className="animate-pulse rounded-2xl border border-border/70 bg-card/70 p-4">
           <div className="mb-3 flex items-start gap-3">
             <div className="h-11 w-11 rounded-xl bg-muted" />
             <div className="flex-1 space-y-2">
@@ -121,21 +118,17 @@ export function ChaptersSection(props: ChaptersSectionProps) {
   const localRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = (scrollRef ?? localRef) as RefObject<HTMLDivElement | null>;
 
-  const isAdmin = props.mode === "admin";
+  const isAdmin = props.mode === 'admin';
   const purchasedIds =
-    props.mode === "public" ? new Set(props.purchasedChapterIds) : new Set<number>();
+    props.mode === 'public' ? new Set(props.purchasedChapterIds) : new Set<number>();
 
   return (
-    <section
-      ref={sectionRef}
-      id="chapters"
-      className="scroll-mt-24"
-    >
+    <section ref={sectionRef} id="chapters" className="scroll-mt-24">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
         className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/60 shadow-sm backdrop-blur-sm"
       >
         {/* Ambient gradient */}
@@ -154,15 +147,15 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                   aria-hidden
                   className="absolute inset-0 rounded-2xl ring-2 ring-primary/30"
                   animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
                 />
               </div>
               <div className="min-w-0">
                 <h2 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
-                  {t("Chapters")}
+                  {t('Chapters')}
                 </h2>
                 <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-                  {isAdmin ? t("ManageAllChapters") : t("BrowseAvailableChapters")}
+                  {isAdmin ? t('ManageAllChapters') : t('BrowseAvailableChapters')}
                 </p>
               </div>
             </div>
@@ -175,7 +168,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                   className="h-9 rounded-xl"
                 >
                   <Plus className="me-2 h-4 w-4" />
-                  <span className="hidden sm:inline">{t("AddChapter")}</span>
+                  <span className="hidden sm:inline">{t('AddChapter')}</span>
                 </Button>
               )}
             </div>
@@ -188,13 +181,9 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                 <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary ltr:left-3 rtl:right-3" />
                 <Input
                   value={(props as PublicProps).searchInput}
-                  onChange={(e) =>
-                    (props as PublicProps).onSearchInputChange(e.target.value)
-                  }
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && (props as PublicProps).onSearchSubmit()
-                  }
-                  placeholder={t("SearchNameOrIndex")}
+                  onChange={(e) => (props as PublicProps).onSearchInputChange(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (props as PublicProps).onSearchSubmit()}
+                  placeholder={t('SearchNameOrIndex')}
                   className="h-11 rounded-xl border-border/70 bg-background/70 ps-9 transition-all focus-visible:ring-2 focus-visible:ring-primary/30"
                 />
               </div>
@@ -205,7 +194,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                   className="h-11 flex-1 rounded-xl sm:flex-none"
                 >
                   <Search className="me-2 h-4 w-4" />
-                  {t("Search")}
+                  {t('Search')}
                 </Button>
                 <motion.button
                   type="button"
@@ -219,10 +208,10 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                     key={(props as PublicProps).order}
                     initial={{ rotate: -90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
                     className="flex items-center justify-center"
                   >
-                    {(props as PublicProps).order === "asc" ? (
+                    {(props as PublicProps).order === 'asc' ? (
                       <ArrowDown10 className="h-5 w-5" />
                     ) : (
                       <ArrowUp10 className="h-5 w-5" />
@@ -256,15 +245,15 @@ export function ChaptersSection(props: ChaptersSectionProps) {
               >
                 <motion.div
                   animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
                 >
                   <BookOpen className="mb-3 h-12 w-12 text-muted-foreground/50" />
                 </motion.div>
                 <p className="text-sm font-medium text-foreground">
-                  {isAdmin ? t("NoChapters") : t("NoChaptersFound")}
+                  {isAdmin ? t('NoChapters') : t('NoChaptersFound')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {isAdmin ? t("NoChaptersDescription") : t("AdjustingSearch")}
+                  {isAdmin ? t('NoChaptersDescription') : t('AdjustingSearch')}
                 </p>
                 {isAdmin && (
                   <Button
@@ -273,7 +262,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                     className="mt-5"
                   >
                     <Plus className="me-2 h-4 w-4" />
-                    {t("AddChapter")}
+                    {t('AddChapter')}
                   </Button>
                 )}
               </motion.div>
@@ -294,24 +283,16 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                       ti={ti}
                       g={props.g}
                       onSelect={
-                        props.mode === "public"
-                          ? () => props.onChapterSelect(chapter)
-                          : undefined
+                        props.mode === 'public' ? () => props.onChapterSelect(chapter) : undefined
                       }
                       onEdit={
-                        props.mode === "admin"
-                          ? () => props.onEditChapter(chapter)
-                          : undefined
+                        props.mode === 'admin' ? () => props.onEditChapter(chapter) : undefined
                       }
                       onDelete={
-                        props.mode === "admin"
-                          ? () => props.onDeleteChapter(chapter.id)
-                          : undefined
+                        props.mode === 'admin' ? () => props.onDeleteChapter(chapter.id) : undefined
                       }
                       viewHref={
-                        props.mode === "admin"
-                          ? props.buildChapterHref(chapter)
-                          : undefined
+                        props.mode === 'admin' ? props.buildChapterHref(chapter) : undefined
                       }
                     />
                   ))}
@@ -329,12 +310,10 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                       totalPages={chaptersTotalPages}
                       totalItems={chaptersTotal}
                       pageSize={pageSize}
-                      itemLabel={t("chapter")}
+                      itemLabel={t('chapter')}
                       onPageChange={onPageChange}
                       canGoPrevious={!chaptersLoading && chaptersPage > 1}
-                      canGoNext={
-                        !chaptersLoading && chaptersPage < chaptersTotalPages
-                      }
+                      canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
                       scrollTarget={sectionRef}
                     />
                   </motion.div>
@@ -378,10 +357,10 @@ function ChapterCard({
   const isFree = chapter.isFree || chapter.price == null;
 
   const priceLabel = isFree
-    ? t("Free")
+    ? t('Free')
     : g
-      ? t("ChapterPrice", {
-          CurrencySymbols: g("CurrencySymbols"),
+      ? t('ChapterPrice', {
+          CurrencySymbols: g('CurrencySymbols'),
           ChapterPrice: Number(chapter.price).toFixed(2),
         })
       : `$${Number(chapter.price).toFixed(2)}`;
@@ -392,37 +371,33 @@ function ChapterCard({
   if (isAdmin) {
     switch (chapter.publishStatus) {
       case PublicationStatus.DRAFT:
-        accent = "from-yellow-500/15 to-yellow-500/0 ring-yellow-500/30";
-        dotColor = "bg-yellow-500";
+        accent = 'from-yellow-500/15 to-yellow-500/0 ring-yellow-500/30';
+        dotColor = 'bg-yellow-500';
         break;
       case PublicationStatus.PUBLISHED:
-        accent = "from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30";
-        dotColor = "bg-emerald-500";
+        accent = 'from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30';
+        dotColor = 'bg-emerald-500';
         break;
       case PublicationStatus.SCHEDULED:
-        accent = "from-blue-500/15 to-blue-500/0 ring-blue-500/30";
-        dotColor = "bg-blue-500";
+        accent = 'from-blue-500/15 to-blue-500/0 ring-blue-500/30';
+        dotColor = 'bg-blue-500';
         break;
       default:
-        accent = "from-muted-foreground/10 to-transparent ring-border";
-        dotColor = "bg-muted-foreground/40";
+        accent = 'from-muted-foreground/10 to-transparent ring-border';
+        dotColor = 'bg-muted-foreground/40';
     }
   } else {
     accent = owned
-        ? "from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30"
-        : isFree
-            ? "from-primary/15 to-primary/0 ring-primary/30"
-            : "from-muted-foreground/10 to-transparent ring-border";
+      ? 'from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30'
+      : isFree
+        ? 'from-primary/15 to-primary/0 ring-primary/30'
+        : 'from-muted-foreground/10 to-transparent ring-border';
 
-    dotColor = owned
-        ? "bg-emerald-500"
-        : isFree
-            ? "bg-primary"
-            : "bg-muted-foreground/40";
+    dotColor = owned ? 'bg-emerald-500' : isFree ? 'bg-primary' : 'bg-muted-foreground/40';
   }
-  
+
   const cardClasses = cn(
-    "group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-4 text-start transition-colors duration-200 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right",
+    'group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-4 text-start transition-colors duration-200 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right',
   );
 
   const inner = (
@@ -431,7 +406,7 @@ function ChapterCard({
       <div
         aria-hidden
         className={cn(
-          "pointer-events-none absolute inset-0 -z-10 bg-linear-to-br opacity-60 transition-opacity duration-300 group-hover:opacity-100",
+          'pointer-events-none absolute inset-0 -z-10 bg-linear-to-br opacity-60 transition-opacity duration-300 group-hover:opacity-100',
           accent,
         )}
       />
@@ -439,33 +414,25 @@ function ChapterCard({
       {/* Status dot */}
       <span
         aria-hidden
-        className={cn(
-          "absolute top-3 h-2 w-2 rounded-full ltr:left-3 rtl:right-3",
-          dotColor,
-        )}
+        className={cn('absolute top-3 h-2 w-2 rounded-full ltr:left-3 rtl:right-3', dotColor)}
       >
-        <span
-          className={cn(
-            "absolute inset-0 animate-ping rounded-full opacity-60",
-            dotColor,
-          )}
-        />
+        <span className={cn('absolute inset-0 animate-ping rounded-full opacity-60', dotColor)} />
       </span>
 
       {/* Price / Owned pill */}
       <div className="absolute top-3 ltr:right-3 rtl:left-3">
         <Badge
-          variant={owned ? "default" : isFree ? "secondary" : "outline"}
+          variant={owned ? 'default' : isFree ? 'secondary' : 'outline'}
           className={cn(
-            "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            'rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
             owned
-              ? "border-transparent bg-emerald-600 text-white hover:bg-emerald-600 dark:bg-emerald-500"
+              ? 'border-transparent bg-emerald-600 text-white hover:bg-emerald-600 dark:bg-emerald-500'
               : isFree
-                ? "border-transparent bg-primary/15 text-primary hover:bg-primary/15"
-                : "border-border bg-background/70",
+                ? 'border-transparent bg-primary/15 text-primary hover:bg-primary/15'
+                : 'border-border bg-background/70',
           )}
         >
-          {owned ? t("Owned") : priceLabel}
+          {owned ? t('Owned') : priceLabel}
         </Badge>
       </div>
 
@@ -493,7 +460,7 @@ function ChapterCard({
                 href={viewHref}
                 onClick={(e) => e.stopPropagation()}
                 className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={g("View")}
+                aria-label={g('View')}
               >
                 <EyeIcon className="h-4 w-4" />
               </Link>
@@ -505,7 +472,7 @@ function ChapterCard({
                 onEdit?.();
               }}
               className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={g("Edit")}
+              aria-label={g('Edit')}
             >
               <Edit className="h-4 w-4" />
             </button>
@@ -516,7 +483,7 @@ function ChapterCard({
                 onDelete?.();
               }}
               className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-              aria-label={g("Delete")}
+              aria-label={g('Delete')}
             >
               <Trash className="h-4 w-4" />
             </button>
@@ -526,19 +493,17 @@ function ChapterCard({
             {owned ? (
               <>
                 <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  {t("Read")}
-                </span>
+                <span className="text-emerald-600 dark:text-emerald-400">{t('Read')}</span>
               </>
             ) : isFree ? (
               <>
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-primary">{t("Access")}</span>
+                <span className="text-primary">{t('Access')}</span>
               </>
             ) : (
               <>
                 <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-muted-foreground">{t("Buy")}</span>
+                <span className="text-muted-foreground">{t('Buy')}</span>
               </>
             )}
           </div>

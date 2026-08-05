@@ -23,10 +23,7 @@ describe('BookTypesService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        BookTypesService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [BookTypesService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<BookTypesService>(BookTypesService);
@@ -49,7 +46,14 @@ describe('BookTypesService', () => {
       expect(result).toEqual(types);
       expect(prisma.bookType.findMany).toHaveBeenCalledWith({
         orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-        select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          iconKey: true,
+          isActive: true,
+          sortOrder: true,
+        },
       });
     });
   });
@@ -82,7 +86,15 @@ describe('BookTypesService', () => {
 
     it('returns books for found book type', async () => {
       prisma.bookType.findUnique.mockResolvedValue({ id: 1 });
-      const books = [{ id: 10, title: 'Test Book', coverImage: 'img.jpg', author: 'Author', type: { id: 1, name: 'Manga', slug: 'manga' } }];
+      const books = [
+        {
+          id: 10,
+          title: 'Test Book',
+          coverImage: 'img.jpg',
+          author: 'Author',
+          type: { id: 1, name: 'Manga', slug: 'manga' },
+        },
+      ];
       prisma.book.findMany.mockResolvedValue(books);
 
       const result = await service.findByType('Manga');
@@ -94,15 +106,35 @@ describe('BookTypesService', () => {
 
   describe('create', () => {
     it('creates a book type with auto-generated slug', async () => {
-      const created = { id: 1, name: 'Light Novel', slug: 'light-novel', iconKey: null, isActive: true, sortOrder: 0 };
+      const created = {
+        id: 1,
+        name: 'Light Novel',
+        slug: 'light-novel',
+        iconKey: null,
+        isActive: true,
+        sortOrder: 0,
+      };
       prisma.bookType.create.mockResolvedValue(created);
 
       const result = await service.create({ name: 'Light Novel' });
 
       expect(result).toEqual(created);
       expect(prisma.bookType.create).toHaveBeenCalledWith({
-        data: { name: 'Light Novel', slug: 'light-novel', iconKey: null, isActive: true, sortOrder: 0 },
-        select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true },
+        data: {
+          name: 'Light Novel',
+          slug: 'light-novel',
+          iconKey: null,
+          isActive: true,
+          sortOrder: 0,
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          iconKey: true,
+          isActive: true,
+          sortOrder: true,
+        },
       });
     });
 
@@ -137,7 +169,14 @@ describe('BookTypesService', () => {
 
     it('updates only provided fields', async () => {
       prisma.bookType.findUnique.mockResolvedValue({ id: 1 });
-      const updated = { id: 1, name: 'Updated', slug: 'manga', iconKey: null, isActive: true, sortOrder: 0 };
+      const updated = {
+        id: 1,
+        name: 'Updated',
+        slug: 'manga',
+        iconKey: null,
+        isActive: true,
+        sortOrder: 0,
+      };
       prisma.bookType.update.mockResolvedValue(updated);
 
       const result = await service.update(1, { name: 'Updated' });
@@ -146,7 +185,14 @@ describe('BookTypesService', () => {
       expect(prisma.bookType.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: { name: 'Updated' },
-        select: { id: true, name: true, slug: true, iconKey: true, isActive: true, sortOrder: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          iconKey: true,
+          isActive: true,
+          sortOrder: true,
+        },
       });
     });
 
@@ -154,7 +200,13 @@ describe('BookTypesService', () => {
       prisma.bookType.findUnique.mockResolvedValue({ id: 1 });
       prisma.bookType.update.mockResolvedValue({ id: 1 });
 
-      await service.update(1, { name: 'A', slug: 'a', iconKey: null, isActive: false, sortOrder: 5 });
+      await service.update(1, {
+        name: 'A',
+        slug: 'a',
+        iconKey: null,
+        isActive: false,
+        sortOrder: 5,
+      });
 
       expect(prisma.bookType.update).toHaveBeenCalledWith(
         expect.objectContaining({

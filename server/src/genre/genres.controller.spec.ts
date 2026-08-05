@@ -1,8 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 
-jest.mock('@readory/shared', () => ({
-  ICON_KEYS: ['book-open'],
-}), { virtual: true });
+jest.mock(
+  '@readory/shared',
+  () => ({
+    ICON_KEYS: ['book-open'],
+  }),
+  { virtual: true },
+);
 
 import { GenresController } from './genres.controller';
 

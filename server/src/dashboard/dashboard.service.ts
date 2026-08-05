@@ -3,12 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from '../auth/auth.service';
 import { WalletsService } from '../wallets/wallets.service';
 import { CacheManager } from '../cache/cache.manager';
-import {
-  clampInt,
-  normalizePagination,
-  calculateGrowth,
-  enrichLibraryGroups,
-} from '../common';
+import { clampInt, normalizePagination, calculateGrowth, enrichLibraryGroups } from '../common';
 
 type OverviewOptions = {
   txLimit: number;
@@ -35,13 +30,12 @@ export class DashboardService {
     const txLimit = clampInt(options.txLimit, 1, 20, 6);
     const libraryLimit = clampInt(options.libraryLimit, 1, 30, 8);
 
-    const [profile, continueReading, walletWithRecentTx, recentLibrary] =
-      await Promise.all([
-        this.authService.getProfile(userId),
-        this.getContinueReading(userId),
-        this.walletsService.getWallet(userId, { take: txLimit }),
-        this.getRecentLibrary(userId, libraryLimit),
-      ]);
+    const [profile, continueReading, walletWithRecentTx, recentLibrary] = await Promise.all([
+      this.authService.getProfile(userId),
+      this.getContinueReading(userId),
+      this.walletsService.getWallet(userId, { take: txLimit }),
+      this.getRecentLibrary(userId, libraryLimit),
+    ]);
 
     return {
       profile,
@@ -97,18 +91,12 @@ export class DashboardService {
     ];
 
     return rows
-      .map((row) =>
-        row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','),
-      )
+      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
       .join('\n');
   }
 
   async getUserLibrary(userId: number, page = 1, limit = 24) {
-    const {
-      page: pageSafe,
-      limit: limitSafe,
-      skip,
-    } = normalizePagination(page, limit, 100);
+    const { page: pageSafe, limit: limitSafe, skip } = normalizePagination(page, limit, 100);
 
     const [totalBooks, groups] = await Promise.all([
       this.countDistinctBooks(userId),
@@ -186,7 +174,8 @@ export class DashboardService {
 
     if (!row) return null;
 
-    const mainContributor = row.book.contributors.find((a) => a.role === 'AUTHOR') || row.book.contributors[0];
+    const mainContributor =
+      row.book.contributors.find((a) => a.role === 'AUTHOR') || row.book.contributors[0];
 
     return {
       book: {
@@ -244,7 +233,8 @@ export class DashboardService {
 
     return {
       data: progressEntries.map((p) => {
-        const mainContributor = p.book.contributors.find((a) => a.role === 'AUTHOR') || p.book.contributors[0];
+        const mainContributor =
+          p.book.contributors.find((a) => a.role === 'AUTHOR') || p.book.contributors[0];
 
         return {
           book: {
@@ -286,60 +276,60 @@ export class DashboardService {
     const canViewFinance = isSuperAdmin || permissions.includes('MANAGE_FINANCE');
 
     return this.cacheManager.getOrSet(
-        'admin:dashboard:overview',
-        { ttlSeconds: 300, earlyRefreshWindowSeconds: 30 },
-        async () => {
-          const { d30, d60 } = this.getRollingDates();
+      'admin:dashboard:overview',
+      { ttlSeconds: 300, earlyRefreshWindowSeconds: 30 },
+      async () => {
+        const { d30, d60 } = this.getRollingDates();
 
-          const [
-            totalUsers,
-            newUsersLast30,
-            newUsersPrev30,
-            totalBooks,
-            totalChapters,
-            financeCurrent,
-            financePrev,
-          ] = await Promise.all([
-            this.prisma.user.count(),
-            this.prisma.user.count({ where: { createdAt: { gte: d30 } } }),
-            this.prisma.user.count({ where: { createdAt: { gte: d60, lt: d30 } } }),
-            this.prisma.book.count(),
-            this.prisma.chapter.count(),
-            canViewFinance
-                ? this.prisma.walletTransaction.aggregate({
-                  where: { type: 'CREDIT', createdAt: { gte: d30 } },
-                  _sum: { amount: true },
-                })
-                : Promise.resolve({ _sum: { amount: 0 } }),
-            canViewFinance
-                ? this.prisma.walletTransaction.aggregate({
-                  where: { type: 'CREDIT', createdAt: { gte: d60, lt: d30 } },
-                  _sum: { amount: true },
-                })
-                : Promise.resolve({ _sum: { amount: 0 } }),
-          ]);
+        const [
+          totalUsers,
+          newUsersLast30,
+          newUsersPrev30,
+          totalBooks,
+          totalChapters,
+          financeCurrent,
+          financePrev,
+        ] = await Promise.all([
+          this.prisma.user.count(),
+          this.prisma.user.count({ where: { createdAt: { gte: d30 } } }),
+          this.prisma.user.count({ where: { createdAt: { gte: d60, lt: d30 } } }),
+          this.prisma.book.count(),
+          this.prisma.chapter.count(),
+          canViewFinance
+            ? this.prisma.walletTransaction.aggregate({
+                where: { type: 'CREDIT', createdAt: { gte: d30 } },
+                _sum: { amount: true },
+              })
+            : Promise.resolve({ _sum: { amount: 0 } }),
+          canViewFinance
+            ? this.prisma.walletTransaction.aggregate({
+                where: { type: 'CREDIT', createdAt: { gte: d60, lt: d30 } },
+                _sum: { amount: true },
+              })
+            : Promise.resolve({ _sum: { amount: 0 } }),
+        ]);
 
-          return {
-            users: {
-              total: totalUsers,
-              new30d: newUsersLast30,
-              growthPercent: calculateGrowth(newUsersLast30, newUsersPrev30),
-            },
-            content: {
-              books: totalBooks,
-              chapters: totalChapters,
-            },
-            finance: canViewFinance
-                ? {
-                  revenue30d: Number(financeCurrent._sum.amount || 0),
-                  growthPercent: calculateGrowth(
-                      Number(financeCurrent._sum.amount || 0),
-                      Number(financePrev._sum.amount || 0),
-                  ),
-                }
-                : null,
-          };
-        },
+        return {
+          users: {
+            total: totalUsers,
+            new30d: newUsersLast30,
+            growthPercent: calculateGrowth(newUsersLast30, newUsersPrev30),
+          },
+          content: {
+            books: totalBooks,
+            chapters: totalChapters,
+          },
+          finance: canViewFinance
+            ? {
+                revenue30d: Number(financeCurrent._sum.amount || 0),
+                growthPercent: calculateGrowth(
+                  Number(financeCurrent._sum.amount || 0),
+                  Number(financePrev._sum.amount || 0),
+                ),
+              }
+            : null,
+        };
+      },
     );
   }
 
@@ -348,77 +338,77 @@ export class DashboardService {
     if (!isSuperAdmin && !permissions.includes('MANAGE_FINANCE')) return null;
 
     return this.cacheManager.getOrSet(
-        'admin:dashboard:finance',
-        { ttlSeconds: 1800, earlyRefreshWindowSeconds: 120 },
-        async () => {
-          const { d30 } = this.getRollingDates();
+      'admin:dashboard:finance',
+      { ttlSeconds: 1800, earlyRefreshWindowSeconds: 120 },
+      async () => {
+        const { d30 } = this.getRollingDates();
 
-          const [recentTxs, topWallets, totalSystemBalances, recentActivity] = await Promise.all([
-            this.prisma.walletTransaction.findMany({
-              where: { type: 'CREDIT', createdAt: { gte: d30 } },
-              select: { amount: true, createdAt: true },
-            }),
-            this.prisma.walletTransaction.groupBy({
-              by: ['walletId'],
-              where: { type: 'CREDIT' },
-              _sum: { amount: true },
-              orderBy: { _sum: { amount: 'desc' } },
-              take: 5,
-            }),
-            this.prisma.wallet.aggregate({
-              _sum: { balance: true },
-            }),
-            this.prisma.walletTransaction.groupBy({
-              by: ['type'],
-              where: { createdAt: { gte: d30 } },
-              _sum: { amount: true },
-            }),
-          ]);
+        const [recentTxs, topWallets, totalSystemBalances, recentActivity] = await Promise.all([
+          this.prisma.walletTransaction.findMany({
+            where: { type: 'CREDIT', createdAt: { gte: d30 } },
+            select: { amount: true, createdAt: true },
+          }),
+          this.prisma.walletTransaction.groupBy({
+            by: ['walletId'],
+            where: { type: 'CREDIT' },
+            _sum: { amount: true },
+            orderBy: { _sum: { amount: 'desc' } },
+            take: 5,
+          }),
+          this.prisma.wallet.aggregate({
+            _sum: { balance: true },
+          }),
+          this.prisma.walletTransaction.groupBy({
+            by: ['type'],
+            where: { createdAt: { gte: d30 } },
+            _sum: { amount: true },
+          }),
+        ]);
 
-          const walletIds = topWallets.map((w) => w.walletId);
-          const walletsMeta = await this.prisma.wallet.findMany({
-            where: { id: { in: walletIds } },
-            select: {
-              id: true,
-              user: { select: { id: true, username: true, email: true } },
-            },
-          });
+        const walletIds = topWallets.map((w) => w.walletId);
+        const walletsMeta = await this.prisma.wallet.findMany({
+          where: { id: { in: walletIds } },
+          select: {
+            id: true,
+            user: { select: { id: true, username: true, email: true } },
+          },
+        });
 
-          const topSpenders = topWallets.map((w) => ({
-            spent: Number(w._sum.amount || 0),
-            user: walletsMeta.find((meta) => meta.id === w.walletId)?.user,
-          }));
+        const topSpenders = topWallets.map((w) => ({
+          spent: Number(w._sum.amount || 0),
+          user: walletsMeta.find((meta) => meta.id === w.walletId)?.user,
+        }));
 
-          const chartMap = new Map<string, number>();
-          for (let i = 0; i < 30; i++) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            chartMap.set(d.toISOString().split('T')[0], 0);
+        const chartMap = new Map<string, number>();
+        for (let i = 0; i < 30; i++) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          chartMap.set(d.toISOString().split('T')[0], 0);
+        }
+
+        recentTxs.forEach((t) => {
+          const day = t.createdAt.toISOString().split('T')[0];
+          if (chartMap.has(day)) {
+            chartMap.set(day, chartMap.get(day)! + Number(t.amount));
           }
+        });
 
-          recentTxs.forEach((t) => {
-            const day = t.createdAt.toISOString().split('T')[0];
-            if (chartMap.has(day)) {
-              chartMap.set(day, chartMap.get(day)! + Number(t.amount));
-            }
-          });
+        const credit30d = Number(recentActivity.find((a) => a.type === 'CREDIT')?._sum.amount || 0);
+        const debit30d = Number(recentActivity.find((a) => a.type === 'DEBIT')?._sum.amount || 0);
 
-          const credit30d = Number(recentActivity.find((a) => a.type === 'CREDIT')?._sum.amount || 0);
-          const debit30d = Number(recentActivity.find((a) => a.type === 'DEBIT')?._sum.amount || 0);
-
-          return {
-            riskManagement: {
-              stagnantCapital: Number(totalSystemBalances._sum.balance || 0),
-              deposit30d: credit30d,
-              spent30d: debit30d,
-              burnRateRatio: credit30d > 0 ? Number((debit30d / credit30d).toFixed(4)) : 0,
-            },
-            topSpenders,
-            dailyRevenue: Array.from(chartMap.entries())
-                .map(([date, amount]) => ({ date, amount }))
-                .sort((a, b) => a.date.localeCompare(b.date)),
-          };
-        },
+        return {
+          riskManagement: {
+            stagnantCapital: Number(totalSystemBalances._sum.balance || 0),
+            deposit30d: credit30d,
+            spent30d: debit30d,
+            burnRateRatio: credit30d > 0 ? Number((debit30d / credit30d).toFixed(4)) : 0,
+          },
+          topSpenders,
+          dailyRevenue: Array.from(chartMap.entries())
+            .map(([date, amount]) => ({ date, amount }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        };
+      },
     );
   }
 
@@ -427,120 +417,124 @@ export class DashboardService {
     if (!isSuperAdmin && !permissions.includes('MANAGE_BOOKS')) return null;
 
     return this.cacheManager.getOrSet(
-        'admin:dashboard:content',
-        { ttlSeconds: 900, earlyRefreshWindowSeconds: 60 },
-        async () => {
-          const [topAccessed, topRated, trending, genreDist, typeDist] = await Promise.all([
-            this.prisma.accessRecord.groupBy({
-              by: ['bookId'],
-              _count: { bookId: true },
-              orderBy: { _count: { bookId: 'desc' } },
-              take: 5,
-            }),
-            this.prisma.book.findMany({
-              where: { ratingCount: { gte: 5 } },
-              orderBy: { ratingAvg: 'desc' },
-              take: 5,
-              select: { id: true, title: true, ratingAvg: true, ratingCount: true },
-            }),
-            this.prisma.book.findMany({
-              orderBy: { popularityScore: 'desc' },
-              take: 10,
-              select: { id: true, title: true, popularityScore: true, coverImage: true },
-            }),
-            this.prisma.genre.findMany({
-              select: { name: true, _count: { select: { books: true } } },
-              orderBy: { books: { _count: 'desc' } },
-              take: 8,
-            }),
-            this.prisma.bookType.findMany({
-              select: { name: true, _count: { select: { books: true } } },
-            }),
-          ]);
+      'admin:dashboard:content',
+      { ttlSeconds: 900, earlyRefreshWindowSeconds: 60 },
+      async () => {
+        const [topAccessed, topRated, trending, genreDist, typeDist] = await Promise.all([
+          this.prisma.accessRecord.groupBy({
+            by: ['bookId'],
+            _count: { bookId: true },
+            orderBy: { _count: { bookId: 'desc' } },
+            take: 5,
+          }),
+          this.prisma.book.findMany({
+            where: { ratingCount: { gte: 5 } },
+            orderBy: { ratingAvg: 'desc' },
+            take: 5,
+            select: { id: true, title: true, ratingAvg: true, ratingCount: true },
+          }),
+          this.prisma.book.findMany({
+            orderBy: { popularityScore: 'desc' },
+            take: 10,
+            select: { id: true, title: true, popularityScore: true, coverImage: true },
+          }),
+          this.prisma.genre.findMany({
+            select: { name: true, _count: { select: { books: true } } },
+            orderBy: { books: { _count: 'desc' } },
+            take: 8,
+          }),
+          this.prisma.bookType.findMany({
+            select: { name: true, _count: { select: { books: true } } },
+          }),
+        ]);
 
-          const bookIds = topAccessed.map((t) => t.bookId);
-          const booksMeta = await this.prisma.book.findMany({
-            where: { id: { in: bookIds } },
-            select: { id: true, title: true, coverImage: true },
-          });
+        const bookIds = topAccessed.map((t) => t.bookId);
+        const booksMeta = await this.prisma.book.findMany({
+          where: { id: { in: bookIds } },
+          select: { id: true, title: true, coverImage: true },
+        });
 
-          return {
-            trendingBooks: trending.map((b) => ({
-              ...b,
-              popularityScore: Number(b.popularityScore),
-            })),
-            topAccessedBooks: topAccessed.map((access) => ({
-              accessCount: access._count.bookId,
-              book: booksMeta.find((b) => b.id === access.bookId),
-            })),
-            highestRatedBooks: topRated.map((b) => ({
-              ...b,
-              ratingAvg: Number(b.ratingAvg),
-            })),
-            genreDistribution: genreDist.map((g) => ({
-              name: g.name,
-              count: g._count.books,
-            })),
-            typeDistribution: typeDist.map((t) => ({
-              name: t.name,
-              count: t._count.books,
-            })),
-          };
-        },
+        return {
+          trendingBooks: trending.map((b) => ({
+            ...b,
+            popularityScore: Number(b.popularityScore),
+          })),
+          topAccessedBooks: topAccessed.map((access) => ({
+            accessCount: access._count.bookId,
+            book: booksMeta.find((b) => b.id === access.bookId),
+          })),
+          highestRatedBooks: topRated.map((b) => ({
+            ...b,
+            ratingAvg: Number(b.ratingAvg),
+          })),
+          genreDistribution: genreDist.map((g) => ({
+            name: g.name,
+            count: g._count.books,
+          })),
+          typeDistribution: typeDist.map((t) => ({
+            name: t.name,
+            count: t._count.books,
+          })),
+        };
+      },
     );
   }
 
   async getAdminUserAnalytics(permissions: string[], userId: number) {
     const isSuperAdmin = userId === 1;
-    if (!isSuperAdmin && !permissions.includes('MANAGE_USERS') && !permissions.includes('MANAGE_STAFF')) {
+    if (
+      !isSuperAdmin &&
+      !permissions.includes('MANAGE_USERS') &&
+      !permissions.includes('MANAGE_STAFF')
+    ) {
       return null;
     }
 
     return this.cacheManager.getOrSet(
-        'admin:dashboard:users',
-        { ttlSeconds: 3600, earlyRefreshWindowSeconds: 300 },
-        async () => {
-          const { m6 } = this.getRollingDates();
+      'admin:dashboard:users',
+      { ttlSeconds: 3600, earlyRefreshWindowSeconds: 300 },
+      async () => {
+        const { m6 } = this.getRollingDates();
 
-          const [recentUsers, bannedCount, roleDist] = await Promise.all([
-            this.prisma.user.findMany({
-              where: { createdAt: { gte: m6 } },
-              select: { createdAt: true },
-            }),
-            this.prisma.user.count({ where: { isBanned: true } }),
-            this.prisma.role.findMany({
-              select: { name: true, _count: { select: { users: true } } },
-            }),
-          ]);
+        const [recentUsers, bannedCount, roleDist] = await Promise.all([
+          this.prisma.user.findMany({
+            where: { createdAt: { gte: m6 } },
+            select: { createdAt: true },
+          }),
+          this.prisma.user.count({ where: { isBanned: true } }),
+          this.prisma.role.findMany({
+            select: { name: true, _count: { select: { users: true } } },
+          }),
+        ]);
 
-          const monthMap = new Map<string, number>();
-          const currentDate = new Date();
+        const monthMap = new Map<string, number>();
+        const currentDate = new Date();
 
-          for (let i = 0; i < 6; i++) {
-            const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-            const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-            monthMap.set(isoFormat, 0);
+        for (let i = 0; i < 6; i++) {
+          const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+          const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+          monthMap.set(isoFormat, 0);
+        }
+
+        recentUsers.forEach((u) => {
+          const d = u.createdAt;
+          const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+          if (monthMap.has(isoFormat)) {
+            monthMap.set(isoFormat, monthMap.get(isoFormat)! + 1);
           }
+        });
 
-          recentUsers.forEach((u) => {
-            const d = u.createdAt;
-            const isoFormat = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-            if (monthMap.has(isoFormat)) {
-              monthMap.set(isoFormat, monthMap.get(isoFormat)! + 1);
-            }
-          });
-
-          return {
-            bannedTotal: bannedCount,
-            roleDistribution: roleDist.map((r) => ({
-              role: r.name,
-              count: r._count.users,
-            })),
-            registrationTimeline: Array.from(monthMap.entries())
-                .map(([date, count]) => ({ date, count }))
-                .sort((a, b) => a.date.localeCompare(b.date)),
-          };
-        },
+        return {
+          bannedTotal: bannedCount,
+          roleDistribution: roleDist.map((r) => ({
+            role: r.name,
+            count: r._count.users,
+          })),
+          registrationTimeline: Array.from(monthMap.entries())
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        };
+      },
     );
   }
 }

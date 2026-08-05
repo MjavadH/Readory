@@ -1,9 +1,6 @@
 import { AuditAction, AuditSeverity } from '@readory/shared';
 
-export function inferAuditSeverity(
-  action: AuditAction,
-  override?: AuditSeverity,
-): AuditSeverity {
+export function inferAuditSeverity(action: AuditAction, override?: AuditSeverity): AuditSeverity {
   if (override) return override;
   if (
     [

@@ -1,9 +1,5 @@
-import {IconKey, PublicationStatus} from '@readory/shared';
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { IconKey, PublicationStatus } from '@readory/shared';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { slugify } from '../common';
 
@@ -110,8 +106,7 @@ export class BookTypesService {
         },
       });
     } catch (e: any) {
-      if (e?.code === 'P2002')
-        throw new BadRequestException('slug already exists');
+      if (e?.code === 'P2002') throw new BadRequestException('slug already exists');
       throw e;
     }
   }
@@ -153,8 +148,7 @@ export class BookTypesService {
         },
       });
     } catch (e: any) {
-      if (e?.code === 'P2002')
-        throw new BadRequestException('slug already exists');
+      if (e?.code === 'P2002') throw new BadRequestException('slug already exists');
       throw e;
     }
   }

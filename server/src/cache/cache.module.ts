@@ -6,8 +6,8 @@ import { UserAccessCache } from './user-access-cache.service';
 
 @Global()
 @Module({
-    imports: [RedisModule],
-    providers: [CacheManager, ChapterCache, UserAccessCache],
-    exports: [CacheManager, ChapterCache, UserAccessCache],
+  imports: [RedisModule],
+  providers: [CacheManager, ChapterCache, UserAccessCache],
+  exports: [CacheManager, ChapterCache, UserAccessCache],
 })
 export class CacheModule {}

@@ -1,6 +1,14 @@
 import { Transform } from 'class-transformer';
 import { CollectionVisibility } from '@prisma/client';
-import {IsBoolean, IsEnum, IsOptional, IsString, Matches, MaxLength, MinLength} from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateCollectionDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

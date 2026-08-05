@@ -1,22 +1,22 @@
-"use client"
+'use client';
 
-import { motion } from "framer-motion"
+import { motion } from 'framer-motion';
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 const shimmer = {
   initial: { opacity: 0.6 },
   animate: { opacity: 1 },
-  transition: { duration: 1.1, repeat: Infinity, repeatType: "reverse" as const },
-}
+  transition: { duration: 1.1, repeat: Infinity, repeatType: 'reverse' as const },
+};
 
 const rise = (i = 0) => ({
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.35, delay: i * 0.05, ease: "easeOut" as const },
-})
+  transition: { duration: 0.35, delay: i * 0.05, ease: 'easeOut' as const },
+});
 
 export function StatCardSkeleton({ index = 0 }: { index?: number }) {
   return (
@@ -35,7 +35,7 @@ export function StatCardSkeleton({ index = 0 }: { index?: number }) {
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 }
 
 export function RiskCardSkeleton({ index = 0 }: { index?: number }) {
@@ -54,30 +54,30 @@ export function RiskCardSkeleton({ index = 0 }: { index?: number }) {
         </CardContent>
       </Card>
     </motion.div>
-  )
+  );
 }
 
 export function ChartCardSkeleton({
   className,
-  height = "h-[220px] sm:h-[260px] lg:h-[280px]",
+  height = 'h-[220px] sm:h-[260px] lg:h-[280px]',
 }: {
-  className?: string
-  height?: string
+  className?: string;
+  height?: string;
 }) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn('overflow-hidden', className)}>
       <CardHeader className="space-y-2">
         <Skeleton className="h-4 sm:h-5 w-32 sm:w-40" />
         <Skeleton className="h-3 w-48 sm:w-56 max-w-full" />
       </CardHeader>
       <CardContent>
-        <div className={cn("relative w-full overflow-hidden rounded-lg bg-muted/40", height)}>
+        <div className={cn('relative w-full overflow-hidden rounded-lg bg-muted/40', height)}>
           {/* mock axis */}
           <div className="absolute inset-x-4 bottom-4 top-4 flex items-end justify-between gap-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={i}
-                initial={{ height: "20%", opacity: 0.5 }}
+                initial={{ height: '20%', opacity: 0.5 }}
                 animate={{
                   height: `${30 + ((i * 17) % 60)}%`,
                   opacity: 1,
@@ -86,7 +86,7 @@ export function ChartCardSkeleton({
                   duration: 1.2,
                   delay: i * 0.06,
                   repeat: Infinity,
-                  repeatType: "reverse",
+                  repeatType: 'reverse',
                 }}
                 className="w-full max-w-[10%] rounded-md bg-primary/15"
               />
@@ -95,7 +95,7 @@ export function ChartCardSkeleton({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function ListCardSkeleton({
@@ -103,12 +103,12 @@ export function ListCardSkeleton({
   className,
   withThumb = true,
 }: {
-  rows?: number
-  className?: string
-  withThumb?: boolean
+  rows?: number;
+  className?: string;
+  withThumb?: boolean;
 }) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn('overflow-hidden', className)}>
       <CardHeader className="space-y-2">
         <Skeleton className="h-4 sm:h-5 w-32 sm:w-40" />
         <Skeleton className="h-3 w-48 sm:w-56 max-w-full" />
@@ -127,7 +127,7 @@ export function ListCardSkeleton({
         ))}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function TrendingCardSkeleton() {
@@ -141,11 +141,7 @@ export function TrendingCardSkeleton() {
         <div className="-mx-1 overflow-x-auto pb-2">
           <div className="flex gap-3 px-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div
-                key={i}
-                {...rise(i)}
-                className="w-35 shrink-0 space-y-2 sm:w-auto"
-              >
+              <motion.div key={i} {...rise(i)} className="w-35 shrink-0 space-y-2 sm:w-auto">
                 <Skeleton className="aspect-2/3 w-full rounded-lg" />
                 <Skeleton className="h-3 w-3/4" />
                 <Skeleton className="h-2.5 w-1/2" />
@@ -155,7 +151,7 @@ export function TrendingCardSkeleton() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function FinanceSectionSkeleton() {
@@ -175,7 +171,7 @@ export function FinanceSectionSkeleton() {
         <ListCardSkeleton withThumb={false} />
       </div>
     </motion.section>
-  )
+  );
 }
 
 export function ContentSectionSkeleton() {
@@ -191,7 +187,7 @@ export function ContentSectionSkeleton() {
         <ChartCardSkeleton className="lg:col-span-2" height="h-[220px] sm:h-[260px]" />
       </div>
     </motion.section>
-  )
+  );
 }
 
 export function UsersSectionSkeleton() {
@@ -218,14 +214,17 @@ export function UsersSectionSkeleton() {
         </Card>
       </div>
     </motion.section>
-  )
+  );
 }
 
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* header */}
-      <motion.div {...rise(0)} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <motion.div
+        {...rise(0)}
+        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <div className="space-y-2">
           <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
           <Skeleton className="h-3 sm:h-4 w-64 sm:w-96 max-w-full" />
@@ -244,5 +243,5 @@ export function DashboardSkeleton() {
       <ContentSectionSkeleton />
       <UsersSectionSkeleton />
     </div>
-  )
+  );
 }

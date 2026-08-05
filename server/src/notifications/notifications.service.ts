@@ -1,14 +1,19 @@
-import {BadRequestException, Injectable, NotFoundException,} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   Notification,
   NotificationAudienceType as PrismaNotificationAudienceType,
   NotificationCategory,
   Prisma,
 } from '@prisma/client';
-import {AuditAction, AuditCategory, DomainEventType, NotificationAudienceType,} from '@readory/shared';
-import {PrismaService} from '../prisma/prisma.service';
-import {OutboxService} from '../outbox/outbox.service';
-import {notificationConfig} from './notification.config';
+import {
+  AuditAction,
+  AuditCategory,
+  DomainEventType,
+  NotificationAudienceType,
+} from '@readory/shared';
+import { PrismaService } from '../prisma/prisma.service';
+import { OutboxService } from '../outbox/outbox.service';
+import { notificationConfig } from './notification.config';
 import {
   compactMetadata,
   decodeCursor,
@@ -19,8 +24,8 @@ import {
   sanitizeText,
   validateActionUrl,
 } from './notification.utils';
-import {CreateBroadcastDto} from './dto/create-broadcast.dto';
-import {AuditLogService} from '../audit-log/audit-log.service';
+import { CreateBroadcastDto } from './dto/create-broadcast.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class NotificationsService {
@@ -58,10 +63,7 @@ export class NotificationsService {
       items: page.map(this.toApi),
       nextCursor:
         rows.length > limit
-          ? encodeCursor(
-              page[page.length - 1].createdAt,
-              page[page.length - 1].id,
-            )
+          ? encodeCursor(page[page.length - 1].createdAt, page[page.length - 1].id)
           : null,
     };
   }
@@ -141,10 +143,7 @@ export class NotificationsService {
     const body = sanitizeText(dto.body, 'body', MAX_BODY_LENGTH);
     const actionUrl = validateActionUrl(dto.actionUrl);
     const targetUserIds = [...new Set(dto.targetUserIds ?? [])];
-    if (
-      dto.audienceType !== NotificationAudienceType.ALL_USERS &&
-      targetUserIds.length === 0
-    )
+    if (dto.audienceType !== NotificationAudienceType.ALL_USERS && targetUserIds.length === 0)
       throw new BadRequestException('targetUserIds required');
     if (targetUserIds.length > notificationConfig.broadcastMaxSelectedUsers)
       throw new BadRequestException('too many target users');
@@ -224,7 +223,10 @@ export class NotificationsService {
       title: input.title,
       body: input.body,
       actionUrl: input.actionUrl,
-      metadata: input.metadata === null ? Prisma.JsonNull : (input.metadata as Prisma.InputJsonValue | undefined),
+      metadata:
+        input.metadata === null
+          ? Prisma.JsonNull
+          : (input.metadata as Prisma.InputJsonValue | undefined),
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       expiresAt: input.expiresAt,

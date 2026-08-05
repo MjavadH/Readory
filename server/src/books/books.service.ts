@@ -1,30 +1,22 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CollectionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
 import { createHash } from 'crypto';
-import {
-  clamp,
-  toNumber,
-  normalizeQ,
-  normalizeSlug,
-  slugify,
-} from '../common';
-import {RecommendationService} from "./recommendation/recommendation.service";
+import { clamp, toNumber, normalizeQ, normalizeSlug, slugify } from '../common';
+import { RecommendationService } from './recommendation/recommendation.service';
 import { CollectionsService } from '../collections/collections.service';
 import {
-  RELATED_EXPONENTIAL_DECAY_LAMBDA, RELATED_FRESHNESS_WEIGHT, RELATED_GENRE_WEIGHT,
+  RELATED_EXPONENTIAL_DECAY_LAMBDA,
+  RELATED_FRESHNESS_WEIGHT,
+  RELATED_GENRE_WEIGHT,
   RELATED_POPULARITY_WEIGHT,
-  RELATED_TYPE_WEIGHT
-} from "./recommendation/recommendation.constants";
-import {CreateBookDto} from "./dto/create-book.dto"
-import {UpdateBookDto} from "./dto/update-book.dto";
-import {DomainEventType, PublicationStatus} from "@readory/shared";
+  RELATED_TYPE_WEIGHT,
+} from './recommendation/recommendation.constants';
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
+import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -81,16 +73,14 @@ export class BooksService {
     cursor?: string;
   }) {
     const isDefaultView =
-        (!args.types || args.types.length === 0) &&
-        (!args.genres || args.genres.length === 0) &&
-        (!args.q || args.q.trim() === '') &&
-        !args.cursor &&
-        (args.sort === 'recently_updated' || !args.sort);
+      (!args.types || args.types.length === 0) &&
+      (!args.genres || args.genres.length === 0) &&
+      (!args.q || args.q.trim() === '') &&
+      !args.cursor &&
+      (args.sort === 'recently_updated' || !args.sort);
 
     if (isDefaultView) {
-      const cached = await this.cacheManager.getString(
-          this.CACHE_KEY_BROWSE_DEFAULT,
-      );
+      const cached = await this.cacheManager.getString(this.CACHE_KEY_BROWSE_DEFAULT);
       if (cached) {
         return JSON.parse(cached);
       }
@@ -115,11 +105,7 @@ export class BooksService {
     }
 
     if (args.genres?.length) {
-      const existingAnd = Array.isArray(where.AND)
-          ? where.AND
-          : where.AND
-              ? [where.AND]
-              : [];
+      const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
 
       where.AND = [
         ...existingAnd,
@@ -132,10 +118,7 @@ export class BooksService {
     const cursor = decodeCursor(args.cursor);
     const take = limit + 1;
 
-    const { orderBy, seekWhere, cursorValue } = this.buildBrowseSort(
-        sort,
-        cursor,
-    );
+    const { orderBy, seekWhere, cursorValue } = this.buildBrowseSort(sort, cursor);
 
     const rows = await this.prisma.book.findMany({
       where: seekWhere ? { AND: [where, seekWhere] } : where,
@@ -194,11 +177,7 @@ export class BooksService {
     const result = { items, nextCursor, hasMore };
 
     if (isDefaultView) {
-      await this.cacheManager.setString(
-          this.CACHE_KEY_BROWSE_DEFAULT,
-          JSON.stringify(result),
-          90,
-      );
+      await this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
     }
 
     return result;
@@ -284,13 +263,10 @@ export class BooksService {
     if (!SAFE_SLUG.test(slug)) throw new NotFoundException('genre not found');
 
     // Validate type filters (slugs) defensively (prevents abuse)
-    const types = (query.types ?? [])
-      .map((t) => normalizeSlug(t))
-      .filter(Boolean);
+    const types = (query.types ?? []).map((t) => normalizeSlug(t)).filter(Boolean);
 
     if (types.length > 10) throw new BadRequestException('too many types');
-    if (types.some((t) => !SAFE_SLUG.test(t)))
-      throw new BadRequestException('invalid type slug');
+    if (types.some((t) => !SAFE_SLUG.test(t))) throw new BadRequestException('invalid type slug');
 
     const q = normalizeQ(query.q);
     const limit = clamp(query.limit ?? 24, 1, 50);
@@ -414,10 +390,7 @@ export class BooksService {
             OR: [
               { createdAt: { lt: new Date(cursor.v) } },
               {
-                AND: [
-                  { createdAt: { equals: new Date(cursor.v) } },
-                  { id: { lt: cursor.id } },
-                ],
+                AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { lt: cursor.id } }],
               },
             ],
           }
@@ -431,19 +404,13 @@ export class BooksService {
     }
 
     if (sort === 'oldest') {
-      const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-        { createdAt: 'asc' },
-        { id: 'asc' },
-      ];
+      const orderBy: Prisma.BookOrderByWithRelationInput[] = [{ createdAt: 'asc' }, { id: 'asc' }];
       const seekWhere = cursor
         ? {
             OR: [
               { createdAt: { gt: new Date(cursor.v) } },
               {
-                AND: [
-                  { createdAt: { equals: new Date(cursor.v) } },
-                  { id: { gt: cursor.id } },
-                ],
+                AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { gt: cursor.id } }],
               },
             ],
           }
@@ -526,11 +493,7 @@ export class BooksService {
       select: { id: true, name: true, slug: true, iconKey: true },
     });
 
-    await this.cacheManager.setString(
-      this.CACHE_KEY_GENRES_ALL,
-      JSON.stringify(allGenres),
-      3600,
-    );
+    await this.cacheManager.setString(this.CACHE_KEY_GENRES_ALL, JSON.stringify(allGenres), 3600);
     return allGenres;
   }
 
@@ -621,12 +584,7 @@ export class BooksService {
   }
 
   // List all books
-  async listAll(args: {
-    page: number;
-    limit: number;
-    q?: string;
-    status: StatusFilter;
-  }) {
+  async listAll(args: { page: number; limit: number; q?: string; status: StatusFilter }) {
     const page = clamp(args.page, 1, 10_000);
     const limit = clamp(args.limit, 1, 50);
     const q = normalizeQ(args.q);
@@ -713,36 +671,34 @@ export class BooksService {
   async getRelatedBooks(bookId: number, limitInput: number) {
     const limit = clamp(limitInput || 12, 1, 24);
 
-    const version = await this.cacheManager.getVersion(
-        this.CACHE_KEY_RECOMMENDATION_VERSION,
-    );
+    const version = await this.cacheManager.getVersion(this.CACHE_KEY_RECOMMENDATION_VERSION);
 
     const cacheKey = this.buildRelatedBooksCacheKey(version, bookId, limit);
 
     return this.cacheManager.getOrSet(
-        cacheKey,
-        {
-          ttlSeconds: 1800,
-          earlyRefreshWindowSeconds: 300,
-        },
-        async () => {
-          const sourceBook = await this.prisma.book.findUnique({
-            where: { id: bookId, publishStatus: PublicationStatus.PUBLISHED },
-            select: {
-              id: true,
-              typeId: true,
-              genres: { select: { genreId: true } },
-            },
-          });
+      cacheKey,
+      {
+        ttlSeconds: 1800,
+        earlyRefreshWindowSeconds: 300,
+      },
+      async () => {
+        const sourceBook = await this.prisma.book.findUnique({
+          where: { id: bookId, publishStatus: PublicationStatus.PUBLISHED },
+          select: {
+            id: true,
+            typeId: true,
+            genres: { select: { genreId: true } },
+          },
+        });
 
-          if (!sourceBook) {
-            throw new NotFoundException('book not found');
-          }
+        if (!sourceBook) {
+          throw new NotFoundException('book not found');
+        }
 
-          const genreIds = sourceBook.genres.map((g) => g.genreId);
-          const safeGenreIds = genreIds.length > 0 ? genreIds : [-1];
+        const genreIds = sourceBook.genres.map((g) => g.genreId);
+        const safeGenreIds = genreIds.length > 0 ? genreIds : [-1];
 
-          const rankedCandidates = await this.prisma.$queryRaw<{ id: number; score: number }[]>`
+        const rankedCandidates = await this.prisma.$queryRaw<{ id: number; score: number }[]>`
             WITH SourceGenres AS (
               SELECT unnest(ARRAY[${Prisma.join(safeGenreIds)}]::integer[]) AS genre_id
             ),
@@ -793,72 +749,71 @@ export class BooksService {
               LIMIT ${limit}::integer;
           `;
 
-          if (!rankedCandidates.length) {
-            return { items: [], generatedAt: new Date().toISOString() };
-          }
+        if (!rankedCandidates.length) {
+          return { items: [], generatedAt: new Date().toISOString() };
+        }
 
-          const candidateIds = rankedCandidates.map((c) => c.id);
-          const scoreMap = new Map(rankedCandidates.map((c) => [c.id, c.score]));
+        const candidateIds = rankedCandidates.map((c) => c.id);
+        const scoreMap = new Map(rankedCandidates.map((c) => [c.id, c.score]));
 
-          const fullBooks = await this.prisma.book.findMany({
-            where: { id: { in: candidateIds } },
-            select: {
-              id: true,
-              title: true,
-              coverImage: true,
-              contributors: {
-                select: {
-                  role: true,
-                  contributor: { select: { name: true } },
-                },
-              },
-              type: { select: { name: true, slug: true } },
-              ratingAvg: true,
-              ratingCount: true,
-              popularityScore: true,
-              isFeatured: true,
-              chapterCount: true,
-              updatedAt: true,
-              lastContentUpdate: true,
-              genres: {
-                select: {
-                  genre: { select: { id: true, name: true, slug: true } },
-                },
+        const fullBooks = await this.prisma.book.findMany({
+          where: { id: { in: candidateIds } },
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
+            contributors: {
+              select: {
+                role: true,
+                contributor: { select: { name: true } },
               },
             },
+            type: { select: { name: true, slug: true } },
+            ratingAvg: true,
+            ratingCount: true,
+            popularityScore: true,
+            isFeatured: true,
+            chapterCount: true,
+            updatedAt: true,
+            lastContentUpdate: true,
+            genres: {
+              select: {
+                genre: { select: { id: true, name: true, slug: true } },
+              },
+            },
+          },
+        });
+
+        const items = fullBooks
+          .map((book) => {
+            const mainContributor =
+              book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
+            return {
+              id: book.id,
+              title: book.title,
+              coverImage: book.coverImage,
+              contributors: mainContributor ? mainContributor.contributor.name : null,
+              type: book.type,
+              ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
+              ratingCount: book.ratingCount,
+              popularityScore: Number(book.popularityScore),
+              genres: book.genres.map((g) => g.genre).sort((a, b) => a.name.localeCompare(b.name)),
+              chapterCount: book.chapterCount,
+              isFeatured: book.isFeatured,
+              updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
+              score: Number(scoreMap.get(book.id)?.toFixed(4) || 0),
+            };
+          })
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return b.popularityScore - a.popularityScore; // Tie-breaker
           });
 
-          const items = fullBooks
-              .map((book) => {
-                const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
-                return {
-                  id: book.id,
-                  title: book.title,
-                  coverImage: book.coverImage,
-                  contributors: mainContributor ? mainContributor.contributor.name : null,
-                  type: book.type,
-                  ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
-                  ratingCount: book.ratingCount,
-                  popularityScore: Number(book.popularityScore),
-                  genres: book.genres
-                      .map((g) => g.genre)
-                      .sort((a, b) => a.name.localeCompare(b.name)),
-                  chapterCount: book.chapterCount,
-                  isFeatured: book.isFeatured,
-                  updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
-                  score: Number(scoreMap.get(book.id)?.toFixed(4) || 0),
-                };
-              })
-              .sort((a, b) => {
-                if (b.score !== a.score) return b.score - a.score;
-                return b.popularityScore - a.popularityScore; // Tie-breaker
-              });
-
-          return {
-            items,
-            generatedAt: new Date().toISOString(),
-          };
-        },
+        return {
+          items,
+          generatedAt: new Date().toISOString(),
+        };
+      },
     );
   }
 
@@ -992,9 +947,7 @@ export class BooksService {
       myRating: myRating?.rating ?? null,
       purchasedChapterIds: purchased
         .map((row) => row.chapterId)
-        .filter(
-          (chapterId): chapterId is number => typeof chapterId === 'number',
-        ),
+        .filter((chapterId): chapterId is number => typeof chapterId === 'number'),
       isFavorited: !!favorite,
     };
   }
@@ -1052,7 +1005,9 @@ export class BooksService {
             select: { genre: { select: { id: true, name: true, slug: true } } },
           },
           type: { select: { id: true, name: true, slug: true } },
-          contributors: { select: { role: true, contributor: { select: { id: true, name: true } } } },
+          contributors: {
+            select: { role: true, contributor: { select: { id: true, name: true } } },
+          },
         },
       });
 
@@ -1062,7 +1017,12 @@ export class BooksService {
           version: 1,
           aggregateType: 'Book',
           aggregateId: String(book.id),
-          payload: { bookId: book.id, title: book.title, bookType: book.type.slug, publishedAt: new Date().toISOString() },
+          payload: {
+            bookId: book.id,
+            title: book.title,
+            bookType: book.type.slug,
+            publishedAt: new Date().toISOString(),
+          },
         });
       }
 
@@ -1082,15 +1042,16 @@ export class BooksService {
   }
 
   // Admin: update a book
-  async update(
-      id: number,
-      data: UpdateBookDto,
-  ) {
+  async update(id: number, data: UpdateBookDto) {
     const { genreIds, typeId, coverImage, contributors, ...rest } = data;
 
     const currentBook = await this.prisma.book.findUnique({
       where: { id },
-      select: { title: true, publishStatus: true, contributors: { select: { contributorId: true } } },
+      select: {
+        title: true,
+        publishStatus: true,
+        contributors: { select: { contributorId: true } },
+      },
     });
 
     if (!currentBook) throw new NotFoundException('book not found');
@@ -1101,15 +1062,13 @@ export class BooksService {
     const updateData: Prisma.BookUpdateInput = {
       ...rest,
       ...(coverImage !== undefined
-          ? {
-            coverMedia: coverImage
-                ? { connect: { code: coverImage } }
-                : { disconnect: true },
+        ? {
+            coverMedia: coverImage ? { connect: { code: coverImage } } : { disconnect: true },
           }
-          : {}),
+        : {}),
       ...typeConnect,
       ...(genreIds
-          ? {
+        ? {
             genres: {
               deleteMany: {},
               create: genreIds.map((genreId) => ({
@@ -1117,7 +1076,7 @@ export class BooksService {
               })),
             },
           }
-          : {}),
+        : {}),
     };
 
     let addedIds: number[] = [];
@@ -1164,11 +1123,27 @@ export class BooksService {
               select: { genre: { select: { id: true, name: true, slug: true } } },
             },
             type: { select: { id: true, name: true, slug: true } },
-            contributors: { select: { role: true, contributor: { select: { id: true, name: true } } } },
+            contributors: {
+              select: { role: true, contributor: { select: { id: true, name: true } } },
+            },
           },
         });
-        if (currentBook.publishStatus !== PublicationStatus.PUBLISHED && updatedBook.publishStatus === PublicationStatus.PUBLISHED) {
-          await this.outbox.create(tx, { type: DomainEventType.BOOK_PUBLISHED, version: 1, aggregateType: 'Book', aggregateId: String(updatedBook.id), payload: { bookId: updatedBook.id, title: updatedBook.title, bookType: updatedBook.type.slug, publishedAt: new Date().toISOString() } });
+        if (
+          currentBook.publishStatus !== PublicationStatus.PUBLISHED &&
+          updatedBook.publishStatus === PublicationStatus.PUBLISHED
+        ) {
+          await this.outbox.create(tx, {
+            type: DomainEventType.BOOK_PUBLISHED,
+            version: 1,
+            aggregateType: 'Book',
+            aggregateId: String(updatedBook.id),
+            payload: {
+              bookId: updatedBook.id,
+              title: updatedBook.title,
+              bookType: updatedBook.type.slug,
+              publishedAt: new Date().toISOString(),
+            },
+          });
         }
         return updatedBook;
       });
@@ -1232,9 +1207,7 @@ export class BooksService {
 
     await this.publicService.clearHomeCache();
 
-    await this.cacheManager.bumpVersion(
-        this.CACHE_KEY_RECOMMENDATION_VERSION,
-    );
+    await this.cacheManager.bumpVersion(this.CACHE_KEY_RECOMMENDATION_VERSION);
 
     return result;
   }
@@ -1242,7 +1215,11 @@ export class BooksService {
   async deleteById(id: number) {
     const record = await this.prisma.book.findUnique({
       where: { id },
-      select: { title: true, publishStatus: true, contributors: { select: { contributorId: true } } },
+      select: {
+        title: true,
+        publishStatus: true,
+        contributors: { select: { contributorId: true } },
+      },
     });
 
     if (!record) throw new NotFoundException('book not found');
@@ -1302,7 +1279,10 @@ export class BooksService {
 
       if (existing) {
         await tx.collectionItem.delete({ where: { id: existing.id } });
-        await tx.collection.update({ where: { id: collection.id }, data: { bookCount: { decrement: 1 } } });
+        await tx.collection.update({
+          where: { id: collection.id },
+          data: { bookCount: { decrement: 1 } },
+        });
         await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { decrement: 1 } } });
         await this.recommendationService.recalculatePopularity(tx, bookId);
 
@@ -1319,7 +1299,10 @@ export class BooksService {
           position,
         },
       });
-      await tx.collection.update({ where: { id: collection.id }, data: { bookCount: { increment: 1 } } });
+      await tx.collection.update({
+        where: { id: collection.id },
+        data: { bookCount: { increment: 1 } },
+      });
       await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
       await this.recommendationService.recalculatePopularity(tx, bookId);
 
@@ -1330,9 +1313,7 @@ export class BooksService {
 
     await this.publicService.clearHomeCache();
 
-    await this.cacheManager.bumpVersion(
-        this.CACHE_KEY_RECOMMENDATION_VERSION,
-    );
+    await this.cacheManager.bumpVersion(this.CACHE_KEY_RECOMMENDATION_VERSION);
 
     return result;
   }
@@ -1380,7 +1361,8 @@ export class BooksService {
     });
 
     const data = favorites.map(({ book }) => {
-      const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
+      const mainContributor =
+        book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
       return {
         id: book.id,
         title: book.title,
@@ -1415,17 +1397,8 @@ export class BooksService {
     return (aggregate._max.position ?? 0) + 1;
   }
 
-  private buildRelatedBooksCacheKey(
-      version: string,
-      bookId: number,
-      limit: number,
-  ) {
-    return this.cacheManager.buildKey(
-        'books:related',
-        version,
-        bookId,
-        limit,
-    );
+  private buildRelatedBooksCacheKey(version: string, bookId: number, limit: number) {
+    return this.cacheManager.buildKey('books:related', version, bookId, limit);
   }
 
   private async invalidateCache() {

@@ -56,11 +56,7 @@ export class PaymentsService {
     await this.assertPaymentAllowed(input);
 
     const callbackUrl = this.buildCallbackUrl(provider);
-    const initialized = await driver.initialize(
-      input.amount,
-      callbackUrl,
-      input.description,
-    );
+    const initialized = await driver.initialize(input.amount, callbackUrl, input.description);
 
     const invoice = await this.prisma.paymentInvoice.create({
       data: {
@@ -79,11 +75,7 @@ export class PaymentsService {
     };
   }
 
-  async verifyPayment(
-    provider: string,
-    authority: string,
-    queryParams: Record<string, unknown>,
-  ) {
+  async verifyPayment(provider: string, authority: string, queryParams: Record<string, unknown>) {
     const normalizedProvider = provider.trim().toUpperCase();
     const invoice = await this.prisma.paymentInvoice.findUnique({
       where: { authority },
@@ -98,11 +90,7 @@ export class PaymentsService {
     }
 
     const driver = this.paymentFactory.resolve(normalizedProvider);
-    const verification = await driver.verify(
-      authority,
-      Number(invoice.amount),
-      queryParams,
-    );
+    const verification = await driver.verify(authority, Number(invoice.amount), queryParams);
 
     if (!verification.success) {
       await this.prisma.paymentInvoice.update({
@@ -127,24 +115,15 @@ export class PaymentsService {
         throw new ConflictException('Payment invoice is already processed');
       }
 
-      await this.walletsService.credit(
-        invoice.userId,
-        Number(invoice.amount),
-        walletReference,
-        tx,
-      );
+      await this.walletsService.credit(invoice.userId, Number(invoice.amount), walletReference, tx);
     });
 
     return { success: true, invoiceId: invoice.id, refId };
   }
 
-  private async assertPaymentAllowed(
-    input: InitializePaymentInput,
-  ): Promise<void> {
+  private async assertPaymentAllowed(input: InitializePaymentInput): Promise<void> {
     const userKey = String(input.userId);
-    const ip = input.request
-      ? this.rateLimitService.ipFromRequest(input.request)
-      : 'unknown';
+    const ip = input.request ? this.rateLimitService.ipFromRequest(input.request) : 'unknown';
     await this.rateLimitService.consume({
       key: this.rateLimitService.key('payment', 'cooldown', 'user', userKey),
       limit: 1,
@@ -199,8 +178,7 @@ export class PaymentsService {
   }
 
   private buildCallbackUrl(provider: string): string {
-    const baseUrl =
-      this.configService.get<string>('APP_URL') ?? 'http://localhost:3000';
+    const baseUrl = this.configService.get<string>('APP_URL') ?? 'http://localhost:3000';
     return `${baseUrl.replace(/\/$/, '')}/wallet/payment/callback/${provider}`;
   }
 }

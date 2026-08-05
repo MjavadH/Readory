@@ -11,9 +11,7 @@ function assertTestDatabase(databaseUrl: string) {
 
   const lower = databaseUrl.toLowerCase();
   if (!lower.includes('test')) {
-    throw new Error(
-      `Refusing to run tests against a non-test database URL: ${databaseUrl}`,
-    );
+    throw new Error(`Refusing to run tests against a non-test database URL: ${databaseUrl}`);
   }
 }
 

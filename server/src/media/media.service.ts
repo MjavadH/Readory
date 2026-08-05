@@ -128,8 +128,7 @@ export class MediaService {
       });
       return this.toPublicMediaItem(updated);
     } catch (err: any) {
-      if (err?.code === 'P2002')
-        throw new ConflictException('Filename already exists');
+      if (err?.code === 'P2002') throw new ConflictException('Filename already exists');
       throw new InternalServerErrorException('Failed to rename media');
     }
   }
@@ -143,9 +142,7 @@ export class MediaService {
     try {
       await this.storage.deleteKeys([record.storageKey]);
     } catch (err: any) {
-      this.logger.error(
-        `Failed to delete media object ${record.storageKey}: ${err.message}`,
-      );
+      this.logger.error(`Failed to delete media object ${record.storageKey}: ${err.message}`);
       throw new InternalServerErrorException('Failed to delete media object');
     }
 

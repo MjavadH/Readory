@@ -1,5 +1,5 @@
-import { apiClient } from "@/lib/api-client"
+import { apiClient } from '@/lib/api-client';
 
 export async function logout() {
-    await apiClient.post("/auth/logout")
+  await apiClient.post('/auth/logout');
 }

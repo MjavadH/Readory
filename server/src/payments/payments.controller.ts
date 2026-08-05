@@ -56,11 +56,7 @@ export class PaymentsController {
     const resultToken = randomUUID();
 
     try {
-      const result = await this.paymentsService.verifyPayment(
-        provider,
-        authority,
-        query,
-      );
+      const result = await this.paymentsService.verifyPayment(provider, authority, query);
 
       // Store result in cache for 5 minutes
       await this.cacheManager.setString(
@@ -81,9 +77,7 @@ export class PaymentsController {
     }
 
     // Redirect to a unified result page
-    return res.redirect(
-      `${frontendUrl.replace(/\/$/, '')}/payment/result?token=${resultToken}`,
-    );
+    return res.redirect(`${frontendUrl.replace(/\/$/, '')}/payment/result?token=${resultToken}`);
   }
 
   @Throttle({ default: { limit: 30, ttl: 60000 } })
@@ -100,8 +94,7 @@ export class PaymentsController {
   }
 
   private extractAuthority(query: Record<string, unknown>): string {
-    const authority =
-      query.trackId ?? query.Authority ?? query.authority ?? query.token;
+    const authority = query.trackId ?? query.Authority ?? query.authority ?? query.token;
     return typeof authority === 'string' ? authority : '';
   }
 }

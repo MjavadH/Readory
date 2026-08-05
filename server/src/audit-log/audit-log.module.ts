@@ -9,10 +9,7 @@ import { AuditLogInterceptor } from './interceptors/audit-log.interceptor';
 @Module({
   imports: [PrismaModule, CacheModule],
   controllers: [AuditLogController],
-  providers: [
-    AuditLogService,
-    { provide: APP_INTERCEPTOR, useClass: AuditLogInterceptor },
-  ],
+  providers: [AuditLogService, { provide: APP_INTERCEPTOR, useClass: AuditLogInterceptor }],
   exports: [AuditLogService],
 })
 export class AuditLogModule {}

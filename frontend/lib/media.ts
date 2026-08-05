@@ -1,20 +1,21 @@
-const S3_MEDIA_BASE_URL = process.env.NEXT_PUBLIC_S3_PUBLIC_BASE_URL?.replace(/\/+$/, '') ?? ''
-const PLACEHOLDER_IMAGE = '/placeholder.svg'
+const S3_MEDIA_BASE_URL = process.env.NEXT_PUBLIC_S3_PUBLIC_BASE_URL?.replace(/\/+$/, '') ?? '';
+const PLACEHOLDER_IMAGE = '/placeholder.svg';
 
 export const getBookCoverThumbnailKey = (code: string) =>
-  `media/book-covers/${code}/thumbnail.webp`
+  `media/book-covers/${code}/thumbnail.webp`;
 
 export const getMediaUrl = (key?: string | null) => {
-  if (!key) return PLACEHOLDER_IMAGE
-  if (/^https?:\/\//i.test(key)) return key
-  if (!S3_MEDIA_BASE_URL) return PLACEHOLDER_IMAGE
+  if (!key) return PLACEHOLDER_IMAGE;
+  if (/^https?:\/\//i.test(key)) return key;
+  if (!S3_MEDIA_BASE_URL) return PLACEHOLDER_IMAGE;
   return `${S3_MEDIA_BASE_URL}/${key
     .split('/')
     .map((part) => encodeURIComponent(part))
-    .join('/')}`
-}
+    .join('/')}`;
+};
 
 export const getBookCoverThumbnailUrl = (coverCode?: string | null) =>
-  coverCode ? getMediaUrl(getBookCoverThumbnailKey(coverCode)) : PLACEHOLDER_IMAGE
+  coverCode ? getMediaUrl(getBookCoverThumbnailKey(coverCode)) : PLACEHOLDER_IMAGE;
 
-export const getAvatarUrl = (avatarKey?: string | null) => avatarKey ? getMediaUrl(avatarKey) : undefined
+export const getAvatarUrl = (avatarKey?: string | null) =>
+  avatarKey ? getMediaUrl(avatarKey) : undefined;

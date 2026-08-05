@@ -7,6 +7,6 @@ import { StorageModule } from '../storage/storage.module';
 @Module({
   imports: [PrismaModule, StorageModule],
   controllers: [MediaController],
-  providers: [MediaService]
+  providers: [MediaService],
 })
 export class MediaModule {}

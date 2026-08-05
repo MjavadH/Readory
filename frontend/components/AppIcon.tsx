@@ -1,15 +1,14 @@
-import { iconRegistry } from "@/lib/iconRegistry";
-import type { IconKey } from "@readory/shared";
+import { iconRegistry } from '@/lib/iconRegistry';
+import type { IconKey } from '@readory/shared';
 
 type Props = {
-    name?: IconKey | null
-    className?: string
-
+  name?: IconKey | null;
+  className?: string;
 };
 
-export function AppIcon({ name, className = "" }: Props) {
-    if (!name) return null
-    const IconComponent = iconRegistry[name];
-    if (!IconComponent) return null;
-    return <IconComponent className={className}/>;
+export function AppIcon({ name, className = '' }: Props) {
+  if (!name) return null;
+  const IconComponent = iconRegistry[name];
+  if (!IconComponent) return null;
+  return <IconComponent className={className} />;
 }

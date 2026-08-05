@@ -22,10 +22,7 @@ import { RoleName } from '@prisma/client';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import {
-  AuditAction,
-  AuditCategory,
-} from '@readory/shared';
+import { AuditAction, AuditCategory } from '@readory/shared';
 
 @Controller('contributor')
 export class ContributorController {
@@ -65,11 +62,7 @@ export class ContributorController {
     const pageNumber = Math.max(1, parseInt(page, 10) || 1);
     const limitNumber = Math.min(50, Math.max(1, parseInt(limit, 10) || 18));
 
-    return this.contributorService.getPublicProfile(
-      slug,
-      pageNumber,
-      limitNumber,
-    );
+    return this.contributorService.getPublicProfile(slug, pageNumber, limitNumber);
   }
 
   @Get(':id')

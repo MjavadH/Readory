@@ -11,12 +11,7 @@ const delegateByTarget: Record<string, string> = {
   BookType: 'bookType',
 };
 export function getTargetIdFromRequest(req: any): string | undefined {
-  return (
-    req.params?.id ??
-    req.params?.chapterId ??
-    req.params?.bookId ??
-    req.body?.id
-  );
+  return req.params?.id ?? req.params?.chapterId ?? req.params?.bookId ?? req.body?.id;
 }
 export async function loadAuditTarget(
   prisma: PrismaService,
@@ -25,15 +20,12 @@ export async function loadAuditTarget(
 ) {
   if (!targetType || targetId == null) return null;
   const delegateName =
-    delegateByTarget[targetType] ??
-    targetType.charAt(0).toLowerCase() + targetType.slice(1);
+    delegateByTarget[targetType] ?? targetType.charAt(0).toLowerCase() + targetType.slice(1);
   const delegate = (prisma as any)[delegateName];
   if (!delegate?.findUnique) return null;
   const numeric = Number(targetId);
   const id =
-    Number.isInteger(numeric) && String(targetId).match(/^\d+$/)
-      ? numeric
-      : String(targetId);
+    Number.isInteger(numeric) && String(targetId).match(/^\d+$/) ? numeric : String(targetId);
   try {
     return await delegate.findUnique({ where: { id } });
   } catch {
@@ -41,12 +33,5 @@ export async function loadAuditTarget(
   }
 }
 export function targetName(value: any) {
-  return (
-    value?.title ??
-    value?.name ??
-    value?.username ??
-    value?.email ??
-    value?.filename ??
-    null
-  );
+  return value?.title ?? value?.name ?? value?.username ?? value?.email ?? value?.filename ?? null;
 }

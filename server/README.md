@@ -25,39 +25,39 @@ Core modules include:
 
 ## Technology Stack
 
-| Area | Technologies |
-| --- | --- |
-| Framework | NestJS 11, TypeScript, RxJS, reflect-metadata |
-| Database | PostgreSQL, Prisma Client, Prisma migrations, `pg`, `@prisma/adapter-pg` |
-| Authentication | Passport local strategy, Passport JWT strategy, `@nestjs/jwt`, argon2, cookie-parser |
-| Authorization | Role decorators/guards and permission decorators/guards |
-| Validation | class-validator, class-transformer, Nest ValidationPipe |
-| Cache | Redis through ioredis and custom cache manager/serializer services |
-| Storage | AWS SDK S3 client, S3 presigner, S3-compatible object storage |
-| Upload/media processing | Multer, file-type, Sharp, UUID |
-| Security middleware | Helmet, CORS credentials configuration, validation whitelisting |
-| Testing | Jest, ts-jest, Supertest, Nest testing utilities |
-| Tooling | Nest CLI, ESLint, Prettier, TypeScript |
+| Area                    | Technologies                                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Framework               | NestJS 11, TypeScript, RxJS, reflect-metadata                                        |
+| Database                | PostgreSQL, Prisma Client, Prisma migrations, `pg`, `@prisma/adapter-pg`             |
+| Authentication          | Passport local strategy, Passport JWT strategy, `@nestjs/jwt`, argon2, cookie-parser |
+| Authorization           | Role decorators/guards and permission decorators/guards                              |
+| Validation              | class-validator, class-transformer, Nest ValidationPipe                              |
+| Cache                   | Redis through ioredis and custom cache manager/serializer services                   |
+| Storage                 | AWS SDK S3 client, S3 presigner, S3-compatible object storage                        |
+| Upload/media processing | Multer, file-type, Sharp, UUID                                                       |
+| Security middleware     | Helmet, CORS credentials configuration, validation whitelisting                      |
+| Testing                 | Jest, ts-jest, Supertest, Nest testing utilities                                     |
+| Tooling                 | Nest CLI, ESLint, Prettier, TypeScript                                               |
 
 ## API Overview
 
 Controllers are organized around domain resources:
 
-| Controller prefix | Responsibility |
-| --- | --- |
-| `/auth` | Register, verify OTP, login, logout, and profile retrieval. |
-| `/users` | User listing, user details, profile updates, roles, bans, balances, permissions, and stats. |
-| `/wallet` | Wallet summary, transactions, and deposits. |
-| `/books` | Book browsing, admin book retrieval, CRUD, ratings, favorites, related books, and viewer state. |
-| `/books/:bookId/chapters` | Chapter list, admin chapter list, chapter CRUD, access checks, and purchases. |
+| Controller prefix                              | Responsibility                                                                                   |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `/auth`                                        | Register, verify OTP, login, logout, and profile retrieval.                                      |
+| `/users`                                       | User listing, user details, profile updates, roles, bans, balances, permissions, and stats.      |
+| `/wallet`                                      | Wallet summary, transactions, and deposits.                                                      |
+| `/books`                                       | Book browsing, admin book retrieval, CRUD, ratings, favorites, related books, and viewer state.  |
+| `/books/:bookId/chapters`                      | Chapter list, admin chapter list, chapter CRUD, access checks, and purchases.                    |
 | `/admin/books/:bookId/chapters/:index/content` | Chapter content retrieval, image uploads, text uploads, append operations, and content deletion. |
-| `/reader` | Reader sessions, admin reader sessions, manifests, pages, text, context, and progress saving. |
-| `/media` | Media listing, upload, metadata update, retrieval, thumbnails, and deletion. |
-| `/genres` | Genre list, featured genres, admin list, CRUD, and genre details. |
-| `/book-types` | Book type CRUD. |
-| `/public` | Public catalog content, genres, genre browsing, book types, and book type browsing. |
-| `/dashboard` | User dashboard, history, history export, library, progress, and admin dashboard data. |
-| `/storage` | Storage-related controller entry point. |
+| `/reader`                                      | Reader sessions, admin reader sessions, manifests, pages, text, context, and progress saving.    |
+| `/media`                                       | Media listing, upload, metadata update, retrieval, thumbnails, and deletion.                     |
+| `/genres`                                      | Genre list, featured genres, admin list, CRUD, and genre details.                                |
+| `/book-types`                                  | Book type CRUD.                                                                                  |
+| `/public`                                      | Public catalog content, genres, genre browsing, book types, and book type browsing.              |
+| `/dashboard`                                   | User dashboard, history, history export, library, progress, and admin dashboard data.            |
+| `/storage`                                     | Storage-related controller entry point.                                                          |
 
 ## Authentication & Authorization
 
@@ -131,26 +131,26 @@ No separate queue worker, scheduler, or background processing service is defined
 
 Create `server/.env` from `server/.env.example`.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Yes | PostgreSQL connection string used by Prisma. |
-| `JWT_SECRET` | Yes | Secret key used to sign and verify JWTs. |
-| `JWT_EXPIRES_IN` | Yes | JWT lifetime in seconds. |
-| `PORT` | Yes | Port for the NestJS server. |
-| `CORS_ORIGIN` | Yes | Comma-separated list of allowed origins. |
-| `SEED_ADMIN_PASSWORD` | Seed only | Initial admin password used by `prisma/seed.ts`. |
-| `REDIS_HOST` | Yes | Redis host. |
-| `REDIS_PORT` | Yes | Redis port. |
-| `SUPER_ADMIN_ID` | Yes | User id used for super-admin behavior. |
-| `S3_ENDPOINT` | Yes | S3-compatible endpoint. |
-| `S3_REGION` | Yes | S3 region. |
-| `S3_ACCESS_KEY_ID` | Yes | S3 access key id. |
-| `S3_SECRET_ACCESS_KEY` | Yes | S3 secret access key. |
-| `S3_BUCKET_NAME` | Yes | Bucket used for chapter and content storage. |
-| `S3_FORCE_PATH_STYLE` | Provider-dependent | Enables path-style S3 URLs for compatible providers. |
-| `S3_PUBLIC_BASE_URL` | Optional/provider-dependent | Public base URL for stored content. |
-| `S3_AUTO_CREATE_BUCKET` | Optional | Allows bucket creation during startup when set to `true`. |
-| `NODE_ENV` | Optional | Runtime environment; documented in the test env example. |
+| Variable                | Required                    | Purpose                                                   |
+| ----------------------- | --------------------------- | --------------------------------------------------------- |
+| `DATABASE_URL`          | Yes                         | PostgreSQL connection string used by Prisma.              |
+| `JWT_SECRET`            | Yes                         | Secret key used to sign and verify JWTs.                  |
+| `JWT_EXPIRES_IN`        | Yes                         | JWT lifetime in seconds.                                  |
+| `PORT`                  | Yes                         | Port for the NestJS server.                               |
+| `CORS_ORIGIN`           | Yes                         | Comma-separated list of allowed origins.                  |
+| `SEED_ADMIN_PASSWORD`   | Seed only                   | Initial admin password used by `prisma/seed.ts`.          |
+| `REDIS_HOST`            | Yes                         | Redis host.                                               |
+| `REDIS_PORT`            | Yes                         | Redis port.                                               |
+| `SUPER_ADMIN_ID`        | Yes                         | User id used for super-admin behavior.                    |
+| `S3_ENDPOINT`           | Yes                         | S3-compatible endpoint.                                   |
+| `S3_REGION`             | Yes                         | S3 region.                                                |
+| `S3_ACCESS_KEY_ID`      | Yes                         | S3 access key id.                                         |
+| `S3_SECRET_ACCESS_KEY`  | Yes                         | S3 secret access key.                                     |
+| `S3_BUCKET_NAME`        | Yes                         | Bucket used for chapter and content storage.              |
+| `S3_FORCE_PATH_STYLE`   | Provider-dependent          | Enables path-style S3 URLs for compatible providers.      |
+| `S3_PUBLIC_BASE_URL`    | Optional/provider-dependent | Public base URL for stored content.                       |
+| `S3_AUTO_CREATE_BUCKET` | Optional                    | Allows bucket creation during startup when set to `true`. |
+| `NODE_ENV`              | Optional                    | Runtime environment; documented in the test env example.  |
 
 Never commit real secrets or production credentials.
 
@@ -215,20 +215,20 @@ Before production startup, ensure that:
 
 ## Development Commands
 
-| Command | Description |
-| --- | --- |
-| `npm run build` | Compiles the NestJS server. |
-| `npm run format` | Formats `src/**/*.ts` and `test/**/*.ts` with Prettier. |
-| `npm run start` | Starts the NestJS server. |
-| `npm run start:dev` | Starts the server in watch mode. |
-| `npm run start:debug` | Starts the server in debug watch mode. |
-| `npm run start:prod` | Runs `node dist/main`. |
-| `npm run lint` | Runs ESLint with automatic fixes. |
-| `npm run test` | Runs unit tests. |
-| `npm run test:watch` | Runs unit tests in watch mode. |
-| `npm run test:cov` | Runs tests with coverage. |
-| `npm run test:debug` | Runs Jest with the Node inspector. |
-| `npm run test:e2e` | Runs e2e tests using `test/jest-e2e.json`. |
+| Command               | Description                                             |
+| --------------------- | ------------------------------------------------------- |
+| `npm run build`       | Compiles the NestJS server.                             |
+| `npm run format`      | Formats `src/**/*.ts` and `test/**/*.ts` with Prettier. |
+| `npm run start`       | Starts the NestJS server.                               |
+| `npm run start:dev`   | Starts the server in watch mode.                        |
+| `npm run start:debug` | Starts the server in debug watch mode.                  |
+| `npm run start:prod`  | Runs `node dist/main`.                                  |
+| `npm run lint`        | Runs ESLint with automatic fixes.                       |
+| `npm run test`        | Runs unit tests.                                        |
+| `npm run test:watch`  | Runs unit tests in watch mode.                          |
+| `npm run test:cov`    | Runs tests with coverage.                               |
+| `npm run test:debug`  | Runs Jest with the Node inspector.                      |
+| `npm run test:e2e`    | Runs e2e tests using `test/jest-e2e.json`.              |
 
 ## Folder Structure
 

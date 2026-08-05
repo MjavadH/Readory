@@ -1,49 +1,47 @@
-import {Controller, Get, Param, Query, Request, UseGuards} from '@nestjs/common';
+import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { PublicService } from './public.service';
-import { BookTypesService } from '../book-types/book-types.service'
+import { BookTypesService } from '../book-types/book-types.service';
 import { BooksService } from '../books/books.service';
 import { BrowseGenreDto } from '../books/dto/browse-genre.dto';
-import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('public')
 export class PublicController {
-    constructor(
-        private readonly publicService: PublicService,
-        private readonly bookTypesService: BookTypesService,
-        private readonly booksService: BooksService,
-    ) {}
+  constructor(
+    private readonly publicService: PublicService,
+    private readonly bookTypesService: BookTypesService,
+    private readonly booksService: BooksService,
+  ) {}
 
-    @Get('content')
-    async getHomeContent() {
-        return this.publicService.getPublicHomeContent();
-    }
+  @Get('content')
+  async getHomeContent() {
+    return this.publicService.getPublicHomeContent();
+  }
 
-    @UseGuards(JwtAuthGuard)
-    @Get('personalized')
-    async getPersonalizedContent(
-        @Request() req:any,
-    ) {
-        const userId = req.user.userId ?? req.user.id;
-        return this.publicService.getUserPersonalizedContent(userId);
-    }
+  @UseGuards(JwtAuthGuard)
+  @Get('personalized')
+  async getPersonalizedContent(@Request() req: any) {
+    const userId = req.user.userId ?? req.user.id;
+    return this.publicService.getUserPersonalizedContent(userId);
+  }
 
-    @Get('genres')
-    async getGenresPage() {
-        return this.publicService.getGenresPage();
-    }
+  @Get('genres')
+  async getGenresPage() {
+    return this.publicService.getGenresPage();
+  }
 
-    @Get('genres/:slug/browse')
-    async browseGenre(@Param('slug') slug: string, @Query() query: BrowseGenreDto) {
-        return this.booksService.browseByGenre(slug, query);
-    }
+  @Get('genres/:slug/browse')
+  async browseGenre(@Param('slug') slug: string, @Query() query: BrowseGenreDto) {
+    return this.booksService.browseByGenre(slug, query);
+  }
 
-    @Get('book-types')
-    async bookTypes() {
-        return this.bookTypesService.listPublic();
-    }
+  @Get('book-types')
+  async bookTypes() {
+    return this.bookTypesService.listPublic();
+  }
 
-    @Get('book-types/:type')
-    async getBooksByType(@Param('type') type: string) {
-        return this.bookTypesService.findByType(type);
-    }
+  @Get('book-types/:type')
+  async getBooksByType(@Param('type') type: string) {
+    return this.bookTypesService.findByType(type);
+  }
 }

@@ -14,9 +14,9 @@ export enum AgeRating {
 }
 
 export enum PublicationStatus {
-  DRAFT = "DRAFT",
-  SCHEDULED = "SCHEDULED",
-  PUBLISHED = "PUBLISHED",
+  DRAFT = 'DRAFT',
+  SCHEDULED = 'SCHEDULED',
+  PUBLISHED = 'PUBLISHED',
 }
 
 export const BOOK_STATUS_VALUES = Object.values(BookStatus);

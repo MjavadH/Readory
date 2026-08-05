@@ -10,13 +10,9 @@ const IGNORED_KEYS = [
   /^version$/i,
   /Version$/,
 ];
-const isIgnored = (key: string) =>
-  IGNORED_KEYS.some((pattern) => pattern.test(key));
+const isIgnored = (key: string) => IGNORED_KEYS.some((pattern) => pattern.test(key));
 const isObject = (value: unknown): value is Record<string, unknown> =>
-  !!value &&
-  typeof value === 'object' &&
-  !Array.isArray(value) &&
-  !(value instanceof Date);
+  !!value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date);
 const label = (key: string) =>
   key
     .split('.')
@@ -39,9 +35,7 @@ const normalize = (value: unknown): unknown => {
 const same = (a: unknown, b: unknown) =>
   JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
 const comparableKey = (item: unknown) =>
-  isObject(item) && item.id != null
-    ? String(item.id)
-    : JSON.stringify(normalize(item));
+  isObject(item) && item.id != null ? String(item.id) : JSON.stringify(normalize(item));
 const arrayKey = (item: unknown, seen: Map<string, number>) => {
   const key = comparableKey(item);
   const count = seen.get(key) ?? 0;
@@ -49,11 +43,7 @@ const arrayKey = (item: unknown, seen: Map<string, number>) => {
   return `${key}:${count}`;
 };
 
-export function generateAuditDiff(
-  before: unknown,
-  after: unknown,
-  path = '',
-): AuditDiffEntry[] {
+export function generateAuditDiff(before: unknown, after: unknown, path = ''): AuditDiffEntry[] {
   if (same(before, after)) return [];
   if (Array.isArray(before) || Array.isArray(after)) {
     const prev = Array.isArray(before) ? before : [];
@@ -61,12 +51,8 @@ export function generateAuditDiff(
     const entries: AuditDiffEntry[] = [];
     const prevSeen = new Map<string, number>();
     const nextSeen = new Map<string, number>();
-    const prevMap = new Map(
-      prev.map((item, index) => [arrayKey(item, prevSeen), { item, index }]),
-    );
-    const nextMap = new Map(
-      next.map((item, index) => [arrayKey(item, nextSeen), { item, index }]),
-    );
+    const prevMap = new Map(prev.map((item, index) => [arrayKey(item, prevSeen), { item, index }]));
+    const nextMap = new Map(next.map((item, index) => [arrayKey(item, nextSeen), { item, index }]));
     for (const [key, value] of prevMap) {
       const nextValue = nextMap.get(key);
       if (!nextValue)
@@ -84,11 +70,7 @@ export function generateAuditDiff(
           type: 'modified',
           before: value.item,
           after: nextValue.item,
-          children: generateAuditDiff(
-            value.item,
-            nextValue.item,
-            `${path}[${value.index}]`,
-          ),
+          children: generateAuditDiff(value.item, nextValue.item, `${path}[${value.index}]`),
         });
     }
     for (const [key, value] of nextMap)
@@ -118,11 +100,7 @@ export function generateAuditDiff(
           Array.isArray(childBefore) ||
           Array.isArray(childAfter)
         ) {
-          const children = generateAuditDiff(
-            childBefore,
-            childAfter,
-            childPath,
-          );
+          const children = generateAuditDiff(childBefore, childAfter, childPath);
           if (isObject(childBefore) || isObject(childAfter)) return children;
           return [
             {
@@ -161,12 +139,7 @@ export function generateAuditDiff(
     {
       path,
       label: label(path || 'Value'),
-      type:
-        before === undefined
-          ? 'added'
-          : after === undefined
-            ? 'removed'
-            : 'modified',
+      type: before === undefined ? 'added' : after === undefined ? 'removed' : 'modified',
       before: before ?? null,
       after: after ?? null,
     },

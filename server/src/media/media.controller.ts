@@ -102,8 +102,10 @@ export class MediaController {
         }
 
         const code = uuidv4();
-        const { storageKey, size } =
-          await this.mediaService.storeBookCoverThumbnail(code, f.buffer);
+        const { storageKey, size } = await this.mediaService.storeBookCoverThumbnail(
+          code,
+          f.buffer,
+        );
 
         const record = await this.mediaService.createRecord({
           code,

@@ -25,12 +25,7 @@ export class AuthSecurityService {
     const ip = this.rateLimit.ipFromRequest(req);
     const emailLimit = RATE_LIMITS.auth.loginEmail;
     const ipLimit = RATE_LIMITS.auth.loginIp;
-    const emailKey = this.rateLimit.key(
-      'auth',
-      'login-fail',
-      'email',
-      emailHash,
-    );
+    const emailKey = this.rateLimit.key('auth', 'login-fail', 'email', emailHash);
     const ipKey = this.rateLimit.key('auth', 'login-fail', 'ip', ip);
     const emailAttempts = await this.rateLimit
       .consume({
@@ -91,12 +86,7 @@ export class AuthSecurityService {
       message: 'Too many registration attempts from this IP.',
     });
     await this.rateLimit.consume({
-      key: this.rateLimit.key(
-        'auth',
-        'register',
-        'email',
-        this.rateLimit.emailKey(email),
-      ),
+      key: this.rateLimit.key('auth', 'register', 'email', this.rateLimit.emailKey(email)),
       ...RATE_LIMITS.auth.registerEmail,
       message: 'Too many registration attempts for this email.',
     });
@@ -110,12 +100,7 @@ export class AuthSecurityService {
       message: 'Too many verification attempts.',
     });
     await this.rateLimit.consume({
-      key: this.rateLimit.key(
-        'auth',
-        'verify',
-        'email',
-        this.rateLimit.emailKey(email),
-      ),
+      key: this.rateLimit.key('auth', 'verify', 'email', this.rateLimit.emailKey(email)),
       ...RATE_LIMITS.auth.verifyEmail,
       message: 'Too many verification attempts.',
     });

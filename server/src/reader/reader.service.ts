@@ -17,7 +17,7 @@ import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { createHash } from 'crypto';
-import {PublicationStatus} from "@readory/shared";
+import { PublicationStatus } from '@readory/shared';
 
 type ReaderTokenPayload = {
   userId: number;
@@ -71,9 +71,7 @@ export class ReaderService {
     return userId;
   }
 
-  private async getManifestByPayload(
-    payload: ReaderTokenPayload,
-  ): Promise<ChapterManifest> {
+  private async getManifestByPayload(payload: ReaderTokenPayload): Promise<ChapterManifest> {
     const chapter = await this.prisma.chapter.findUnique({
       where: { id: payload.chapterId },
       select: { contentPath: true, contentType: true, pageCount: true },
@@ -85,16 +83,12 @@ export class ReaderService {
 
     const key = this.manifestKey(payload.chapterId, payload.contentVersion);
 
-    return this.cacheManager.getOrSet(
-      key,
-      { ttlSeconds: 900, jitterSeconds: 30 },
-      async () => {
-        const buffer = await this.storageService.getObjectBuffer(
-          `${chapter.contentPath}/manifest.json`,
-        );
-        return JSON.parse(buffer.toString('utf8')) as ChapterManifest;
-      },
-    );
+    return this.cacheManager.getOrSet(key, { ttlSeconds: 900, jitterSeconds: 30 }, async () => {
+      const buffer = await this.storageService.getObjectBuffer(
+        `${chapter.contentPath}/manifest.json`,
+      );
+      return JSON.parse(buffer.toString('utf8')) as ChapterManifest;
+    });
   }
 
   private uaHash(req: Request): string {
@@ -114,19 +108,11 @@ export class ReaderService {
       await this.redis.expire(key, windowSeconds);
     }
     if (count > limit) {
-      throw new HttpException(
-        { message: 'Rate limit exceeded', retryAfter: windowSeconds },
-        429,
-      );
+      throw new HttpException({ message: 'Rate limit exceeded', retryAfter: windowSeconds }, 429);
     }
   }
 
-  async createSession(
-    userId: number,
-    bookId: number,
-    chapterIndex: number,
-    req: Request,
-  ) {
+  async createSession(userId: number, bookId: number, chapterIndex: number, req: Request) {
     await this.enforceRateLimit('session', userId, 10, 60);
 
     const chapter = await this.prisma.chapter.findFirst({
@@ -232,8 +218,7 @@ export class ReaderService {
 
   async verifyToken(token: string, req: Request): Promise<ReaderTokenPayload> {
     try {
-      const decoded =
-        await this.jwtService.verifyAsync<ReaderTokenPayload>(token);
+      const decoded = await this.jwtService.verifyAsync<ReaderTokenPayload>(token);
 
       const requestUserId = this.getRequestUserId(req);
       if (decoded.userId !== requestUserId) {
@@ -261,11 +246,7 @@ export class ReaderService {
   }
 
   private manifestKey(chapterId: number, contentVersion: number): string {
-    return this.cacheManager.buildKey(
-      'reader:manifest',
-      chapterId,
-      contentVersion,
-    );
+    return this.cacheManager.buildKey('reader:manifest', chapterId, contentVersion);
   }
 
   async getManifest(token: string, req: Request): Promise<ChapterManifest> {
@@ -298,10 +279,7 @@ export class ReaderService {
       const blockKey = `reader:block:${payload.userId}`;
       const blockedUntil = await this.redis.get(blockKey);
       if (blockedUntil) {
-        throw new HttpException(
-          'Temporarily blocked due to abnormal behavior',
-          429,
-        );
+        throw new HttpException('Temporarily blocked due to abnormal behavior', 429);
       }
 
       const nowSec = Math.floor(Date.now() / 1000);
@@ -318,12 +296,9 @@ export class ReaderService {
       if (recent >= 10) {
         await this.redis.set(blockKey, String(nowSec + 120), 'EX', 120);
         this.logger.warn(
-            `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
+          `Reader anomaly blocked user=${payload.userId} chapter=${payload.chapterId}`,
         );
-        throw new HttpException(
-            'Temporarily blocked due to abnormal behavior',
-            429,
-        );
+        throw new HttpException('Temporarily blocked due to abnormal behavior', 429);
       }
     }
 
@@ -406,9 +381,7 @@ export class ReaderService {
       : [];
 
     const accessibleChapterIds = new Set(
-      accessRows
-        .map((r) => r.chapterId)
-        .filter((id): id is number => typeof id === 'number'),
+      accessRows.map((r) => r.chapterId).filter((id): id is number => typeof id === 'number'),
     );
 
     return {
@@ -466,15 +439,10 @@ export class ReaderService {
       select: { contentVersion: true },
     });
     if (!chapter) return;
-    await this.cacheManager.del(
-      this.manifestKey(chapterId, chapter.contentVersion),
-    );
+    await this.cacheManager.del(this.manifestKey(chapterId, chapter.contentVersion));
   }
 
-  buildManifest(
-    chapterType: ChapterContentType,
-    keys: ManifestPage[],
-  ): ChapterManifest {
+  buildManifest(chapterType: ChapterContentType, keys: ManifestPage[]): ChapterManifest {
     return {
       version: 1,
       format: chapterType,

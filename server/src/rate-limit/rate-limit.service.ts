@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import type { Request } from 'express';
@@ -32,17 +26,12 @@ export class RateLimitService {
   }
 
   emailKey(email: string): string {
-    return createHash('sha256')
-      .update(email.trim().toLowerCase())
-      .digest('hex')
-      .slice(0, 32);
+    return createHash('sha256').update(email.trim().toLowerCase()).digest('hex').slice(0, 32);
   }
 
   ipFromRequest(req: Request): string {
     const forwarded = req.headers['x-forwarded-for'];
-    const first = Array.isArray(forwarded)
-      ? forwarded[0]
-      : forwarded?.split(',')[0];
+    const first = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0];
     return (first || req.ip || req.socket.remoteAddress || 'unknown').trim();
   }
 
@@ -54,17 +43,14 @@ export class RateLimitService {
       if (count > options.limit) {
         const ttl = await this.redis.ttl(safeKey);
         throw new HttpException(
-          options.message ??
-            `Too many requests. Try again in ${Math.max(ttl, 1)} seconds.`,
+          options.message ?? `Too many requests. Try again in ${Math.max(ttl, 1)} seconds.`,
           HttpStatus.TOO_MANY_REQUESTS,
         );
       }
       return count;
     } catch (error) {
       if (error instanceof HttpException) throw error;
-      this.logger.error(
-        `Rate limit failure for ${safeKey}: ${(error as Error).message}`,
-      );
+      this.logger.error(`Rate limit failure for ${safeKey}: ${(error as Error).message}`);
       return 0;
     }
   }
@@ -75,10 +61,7 @@ export class RateLimitService {
   ): Promise<void> {
     const ttl = await this.redis.ttl(this.sanitizeKey(key));
     if (ttl > 0)
-      throw new HttpException(
-        `${message} Retry in ${ttl} seconds.`,
-        HttpStatus.TOO_MANY_REQUESTS,
-      );
+      throw new HttpException(`${message} Retry in ${ttl} seconds.`, HttpStatus.TOO_MANY_REQUESTS);
   }
 
   async lock(key: string, ttlSeconds: number): Promise<void> {

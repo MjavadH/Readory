@@ -1,10 +1,6 @@
-import {
-  AuditAction,
-  AuditCategory,
-  AuditSeverity,
-} from '@readory/shared';
-import {IsEnum, IsNumber, IsOptional, IsString} from "class-validator";
-import {Type} from "class-transformer";
+import { AuditAction, AuditCategory, AuditSeverity } from '@readory/shared';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AuditLogQueryDto {
   @IsOptional()
@@ -59,13 +55,8 @@ export class AuditLogQueryDto {
 
   @IsOptional()
   @IsString()
-  sortBy?:
-      | 'createdAt'
-      | 'action'
-      | 'category'
-      | 'severity'
-      | 'actorName'
-      | 'targetType' = 'createdAt';
+  sortBy?: 'createdAt' | 'action' | 'category' | 'severity' | 'actorName' | 'targetType' =
+    'createdAt';
 
   @IsOptional()
   @IsString()

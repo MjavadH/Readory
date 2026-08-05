@@ -32,10 +32,7 @@ export class ChaptersController {
 
   // Public: list chapters of a book
   @Get()
-  async list(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Query() query: ListChaptersDto,
-  ) {
+  async list(@Param('bookId', ParseIntPipe) bookId: number, @Query() query: ListChaptersDto) {
     return this.chaptersService.listChapters(bookId, query);
   }
 
@@ -44,10 +41,7 @@ export class ChaptersController {
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Get('admin')
-  async fullList(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Query() query: ListChaptersDto,
-  ) {
+  async fullList(@Param('bookId', ParseIntPipe) bookId: number, @Query() query: ListChaptersDto) {
     return this.chaptersService.listChapters(bookId, query, true, true);
   }
 
@@ -61,10 +55,7 @@ export class ChaptersController {
     category: AuditCategory.CONTENT,
     targetType: 'Chapter',
   })
-  async create(
-    @Param('bookId', ParseIntPipe) bookId: number,
-    @Body() dto: CreateChapterDto,
-  ) {
+  async create(@Param('bookId', ParseIntPipe) bookId: number, @Body() dto: CreateChapterDto) {
     return this.chaptersService.createChapter(bookId, dto);
   }
 
@@ -112,21 +103,14 @@ export class ChaptersController {
     @Param('index', ParseIntPipe) index: number,
     @Request() req: any,
   ) {
-    return this.chaptersService.getAccessibleChapterByIndex(
-      bookId,
-      index,
-      req.user.userId,
-    );
+    return this.chaptersService.getAccessibleChapterByIndex(bookId, index, req.user.userId);
   }
 
   // User: purchase a chapter
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post(':chapterId/purchase')
-  async purchase(
-    @Param('chapterId', ParseIntPipe) chapterId: number,
-    @Request() req: any,
-  ) {
+  async purchase(@Param('chapterId', ParseIntPipe) chapterId: number, @Request() req: any) {
     return this.chaptersService.purchaseChapter(req.user.userId, chapterId);
   }
 }

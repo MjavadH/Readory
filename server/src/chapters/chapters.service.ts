@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from '../wallets/wallets.service';
@@ -13,7 +9,7 @@ import { ListChaptersDto } from './dto/list-chapters.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
 import { normalizeQ } from '../common';
-import {RecommendationService} from "../books/recommendation/recommendation.service";
+import { RecommendationService } from '../books/recommendation/recommendation.service';
 import { DomainEventType } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
 
@@ -40,9 +36,7 @@ export class ChaptersService {
   ) {
     const q = normalizeQ(query.q);
     const page = Number.isInteger(query.page) ? Number(query.page) : 1;
-    const limit = Number.isInteger(query.limit)
-      ? Math.min(Number(query.limit), 100)
-      : 50;
+    const limit = Number.isInteger(query.limit) ? Math.min(Number(query.limit), 100) : 50;
     const safePage = Math.max(page, 1);
     const safeLimit = Math.max(limit, 1);
     const skip = (safePage - 1) * safeLimit;
@@ -127,11 +121,7 @@ export class ChaptersService {
   // Admin: create a new chapter
   async createChapter(bookId: number, dto: CreateChapterDto) {
     const isFree = dto.isFree ?? false;
-    const price = isFree
-      ? null
-      : dto.price
-        ? new Prisma.Decimal(dto.price)
-        : null;
+    const price = isFree ? null : dto.price ? new Prisma.Decimal(dto.price) : null;
 
     try {
       const now = new Date();
@@ -152,12 +142,26 @@ export class ChaptersService {
           where: { id: bookId },
           data: {
             ...(isPublished && { chapterCount: { increment: 1 } }),
-            lastContentUpdate: now
+            lastContentUpdate: now,
           },
           select: { id: true, title: true, type: { select: { slug: true } } },
         });
         if (isPublished) {
-          await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(chapter.id), payload: { bookId, bookTitle: book.title, bookType: book.type.slug, chapterId: chapter.id, chapterTitle: chapter.title, chapterIndex: chapter.index, publishedAt: now.toISOString() } });
+          await this.outbox.create(tx, {
+            type: DomainEventType.CHAPTER_PUBLISHED,
+            version: 1,
+            aggregateType: 'Chapter',
+            aggregateId: String(chapter.id),
+            payload: {
+              bookId,
+              bookTitle: book.title,
+              bookType: book.type.slug,
+              chapterId: chapter.id,
+              chapterTitle: chapter.title,
+              chapterIndex: chapter.index,
+              publishedAt: now.toISOString(),
+            },
+          });
         }
         return chapter;
       });
@@ -168,18 +172,12 @@ export class ChaptersService {
       return chapter;
     } catch (err: any) {
       if (err?.code === 'P2002')
-        throw new ConflictException(
-          'Chapter index already exists for this book',
-        );
+        throw new ConflictException('Chapter index already exists for this book');
       throw err;
     }
   }
 
-  async updateChapter(
-    bookId: number,
-    chapterId: number,
-    dto: UpdateChapterDto,
-  ) {
+  async updateChapter(bookId: number, chapterId: number, dto: UpdateChapterDto) {
     const existing = await this.prisma.chapter.findFirst({
       where: { id: chapterId, bookId },
     });
@@ -236,7 +234,21 @@ export class ChaptersService {
             select: { title: true, type: { select: { slug: true } } },
           });
           if (chapterCountChange > 0) {
-            await this.outbox.create(tx, { type: DomainEventType.CHAPTER_PUBLISHED, version: 1, aggregateType: 'Chapter', aggregateId: String(updatedChapter.id), payload: { bookId, bookTitle: book.title, bookType: book.type.slug, chapterId: updatedChapter.id, chapterTitle: updatedChapter.title, chapterIndex: updatedChapter.index, publishedAt: now.toISOString() } });
+            await this.outbox.create(tx, {
+              type: DomainEventType.CHAPTER_PUBLISHED,
+              version: 1,
+              aggregateType: 'Chapter',
+              aggregateId: String(updatedChapter.id),
+              payload: {
+                bookId,
+                bookTitle: book.title,
+                bookType: book.type.slug,
+                chapterId: updatedChapter.id,
+                chapterTitle: updatedChapter.title,
+                chapterIndex: updatedChapter.index,
+                publishedAt: now.toISOString(),
+              },
+            });
           }
         }
 
@@ -248,9 +260,7 @@ export class ChaptersService {
       return chapter;
     } catch (err: any) {
       if (err?.code === 'P2002')
-        throw new ConflictException(
-          'Chapter index already exists for this book',
-        );
+        throw new ConflictException('Chapter index already exists for this book');
       throw err;
     }
   }
@@ -270,7 +280,7 @@ export class ChaptersService {
         where: { id: bookId },
         data: {
           ...(isPublished && { chapterCount: { decrement: 1 } }),
-          lastContentUpdate: now
+          lastContentUpdate: now,
         },
       }),
     ]);
@@ -281,11 +291,7 @@ export class ChaptersService {
     return { id: chapterId, deleted: true };
   }
 
-  async getAccessibleChapterByIndex(
-    bookId: number,
-    index: number,
-    userId: number,
-  ) {
+  async getAccessibleChapterByIndex(bookId: number, index: number, userId: number) {
     const chapter = await this.prisma.chapter.findFirst({
       where: { bookId, index },
       select: {
@@ -322,7 +328,7 @@ export class ChaptersService {
   // User: purchase a chapter
   async purchaseChapter(userId: number, chapterId: number) {
     const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId, publishStatus: "PUBLISHED" },
+      where: { id: chapterId, publishStatus: 'PUBLISHED' },
       select: {
         id: true,
         index: true,
@@ -359,10 +365,10 @@ export class ChaptersService {
     // Debit + access record in tx
     return this.prisma.$transaction(async (tx) => {
       await this.walletsService.debit(
-          userId,
-          chapter.price!.toNumber(),
-          `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
-          tx
+        userId,
+        chapter.price!.toNumber(),
+        `Purchase chapter ${chapter.index} | ${chapter.book.title}`,
+        tx,
       );
 
       const record = await tx.accessRecord.create({

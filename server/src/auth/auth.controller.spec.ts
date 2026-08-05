@@ -1,4 +1,9 @@
-import { INestApplication, UnauthorizedException, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  INestApplication,
+  UnauthorizedException,
+  CanActivate,
+  ExecutionContext,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthController } from './auth.controller';

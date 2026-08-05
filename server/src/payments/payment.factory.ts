@@ -18,9 +18,7 @@ export class PaymentFactory {
     const driver = this.drivers.get(this.normalizeProvider(provider));
 
     if (!driver) {
-      throw new BadRequestException(
-        `Unsupported payment provider: ${provider}`,
-      );
+      throw new BadRequestException(`Unsupported payment provider: ${provider}`);
     }
 
     return driver;

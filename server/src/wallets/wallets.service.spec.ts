@@ -65,7 +65,13 @@ describe('WalletsService', () => {
     });
 
     it('returns recent transactions with take option', async () => {
-      const tx = { id: 1, amount: { toString: () => '10' }, type: 'CREDIT', reference: 'ref', createdAt: new Date() };
+      const tx = {
+        id: 1,
+        amount: { toString: () => '10' },
+        type: 'CREDIT',
+        reference: 'ref',
+        createdAt: new Date(),
+      };
       prisma.walletTransaction.aggregate
         .mockResolvedValueOnce({ _sum: { amount: 100 } })
         .mockResolvedValueOnce({ _sum: { amount: 30 } });
@@ -117,7 +123,14 @@ describe('WalletsService', () => {
 
   describe('getAllTransactions', () => {
     it('returns cached stats when available', async () => {
-      const stats = { total: 5, credits: 3, debits: 2, creditAmount: 100, debitAmount: 50, growth: { totalTransactions: 0, creditAmount: 0, debitAmount: 0 } };
+      const stats = {
+        total: 5,
+        credits: 3,
+        debits: 2,
+        creditAmount: 100,
+        debitAmount: 50,
+        growth: { totalTransactions: 0, creditAmount: 0, debitAmount: 0 },
+      };
       cacheManager.getString.mockResolvedValue(JSON.stringify(stats));
       prisma.walletTransaction.findMany.mockResolvedValue([]);
 
@@ -198,7 +211,11 @@ describe('WalletsService', () => {
     });
 
     it('debits wallet and creates transaction record', async () => {
-      prisma.wallet.findUnique.mockResolvedValue({ id: 1, userId: 10, balance: { toNumber: () => 50 } });
+      prisma.wallet.findUnique.mockResolvedValue({
+        id: 1,
+        userId: 10,
+        balance: { toNumber: () => 50 },
+      });
       prisma.wallet.update.mockResolvedValue({ id: 1, userId: 10, balance: 40 });
 
       const result = await service.debit(10, 10, 'purchase');

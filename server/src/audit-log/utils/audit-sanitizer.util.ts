@@ -14,8 +14,7 @@ const MAX_STRING_LENGTH = 4000;
 const MAX_ARRAY_ITEMS = 100;
 
 export function sanitizeAuditValue(value: unknown, depth = 0): unknown {
-  if (value == null || typeof value === 'number' || typeof value === 'boolean')
-    return value;
+  if (value == null || typeof value === 'number' || typeof value === 'boolean') return value;
   if (value instanceof Date) return value.toISOString();
   if (typeof value === 'bigint') return value.toString();
   if (typeof value === 'string')
@@ -24,14 +23,10 @@ export function sanitizeAuditValue(value: unknown, depth = 0): unknown {
       : value;
   if (depth > 8) return '[Max depth reached]';
   if (Array.isArray(value))
-    return value
-      .slice(0, MAX_ARRAY_ITEMS)
-      .map((item) => sanitizeAuditValue(item, depth + 1));
+    return value.slice(0, MAX_ARRAY_ITEMS).map((item) => sanitizeAuditValue(item, depth + 1));
   if (typeof value === 'object') {
     const output: Record<string, unknown> = {};
-    for (const [key, child] of Object.entries(
-      value as Record<string, unknown>,
-    )) {
+    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
       if (IGNORED_KEYS.has(key)) continue;
       output[key] = SENSITIVE_KEYS.some((pattern) => pattern.test(key))
         ? '[REDACTED]'

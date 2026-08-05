@@ -1,8 +1,4 @@
-import {
-  AuditAction,
-  AuditCategory,
-  AuditSeverity,
-} from '@readory/shared';
+import { AuditAction, AuditCategory, AuditSeverity } from '@readory/shared';
 
 export interface AuditActorSnapshot {
   id?: number | string | null;
@@ -46,10 +42,7 @@ export interface AuditLogDecoratorOptions {
   severity?: AuditSeverity;
   targetType?: string;
   targetIdParam?: string;
-  getTargetId?: (
-    result: unknown,
-    request: any,
-  ) => string | number | null | undefined;
+  getTargetId?: (result: unknown, request: any) => string | number | null | undefined;
   getTargetName?: (result: unknown, request: any) => string | null | undefined;
   adminOnly?: boolean;
 }

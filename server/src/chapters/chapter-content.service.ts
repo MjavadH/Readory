@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { ChapterContentType } from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
@@ -12,7 +7,6 @@ import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReaderService } from '../reader/reader.service';
 import { StorageService } from '../storage/storage.service';
-
 
 export const IMAGE_UPLOAD_MAX_FILES = 120;
 export const IMAGE_UPLOAD_MAX_FILE_BYTES = 12 * 1024 * 1024;
@@ -46,9 +40,9 @@ export class ChapterContentService {
   }
 
   private resolveActivePrefix(
-      chapter: { contentPath: string | null },
-      bookId: number,
-      index: number,
+    chapter: { contentPath: string | null },
+    bookId: number,
+    index: number,
   ): string {
     return chapter.contentPath ?? this.chapterBasePrefix(bookId, index);
   }
@@ -98,13 +92,13 @@ export class ChapterContentService {
   }
 
   private async updateChapterAfterContentChange(
-      bookId: number,
-      chapterId: number,
-      data: {
-        contentPath?: string | null;
-        contentType?: ChapterContentType | null;
-        pageCount: number;
-      },
+    bookId: number,
+    chapterId: number,
+    data: {
+      contentPath?: string | null;
+      contentType?: ChapterContentType | null;
+      pageCount: number;
+    },
   ) {
     await this.prisma.$transaction([
       this.prisma.chapter.update({
@@ -136,9 +130,7 @@ export class ChapterContentService {
 
   async getChapterContent(bookId: number, index: number) {
     const chapter = await this.getChapter(bookId, index);
-    const manifest = chapter.contentPath
-      ? await this.readManifest(chapter.contentPath)
-      : null;
+    const manifest = chapter.contentPath ? await this.readManifest(chapter.contentPath) : null;
 
     let textPreviewHtml: string | null = null;
     if (manifest?.format === 'text') {
@@ -154,11 +146,7 @@ export class ChapterContentService {
     return { chapter, manifest, textPreviewHtml };
   }
 
-  async uploadImages(
-      bookId: number,
-      index: number,
-      files: Express.Multer.File[],
-  ) {
+  async uploadImages(bookId: number, index: number, files: Express.Multer.File[]) {
     this.validateImageUploadBatch(files);
     this.assertChapterPageLimit(0, files.length);
 
@@ -168,7 +156,7 @@ export class ChapterContentService {
 
     const pages: Array<{ key: string; w: number; h: number }> = [];
     const sorted = [...files].sort((a, b) =>
-        a.originalname.localeCompare(b.originalname, undefined, { numeric: true }),
+      a.originalname.localeCompare(b.originalname, undefined, { numeric: true }),
     );
 
     for (const file of sorted) {
@@ -201,9 +189,10 @@ export class ChapterContentService {
     const chapter = await this.getChapter(bookId, index);
     const prefix = chapter.contentPath ?? this.chapterVersionPrefix(bookId, index);
 
-    const manifest =
-        (await this.readManifest(prefix)) ??
-        ({ format: 'images', pages: [] as ImagePage[] });
+    const manifest = (await this.readManifest(prefix)) ?? {
+      format: 'images',
+      pages: [] as ImagePage[],
+    };
 
     if (manifest.format && manifest.format !== 'images') {
       throw new BadRequestException('Chapter content is not image-based');
@@ -213,7 +202,7 @@ export class ChapterContentService {
     this.assertChapterPageLimit(existingPages.length, files.length);
 
     const sorted = [...files].sort((a, b) =>
-        a.originalname.localeCompare(b.originalname, undefined, { numeric: true }),
+      a.originalname.localeCompare(b.originalname, undefined, { numeric: true }),
     );
 
     const newPages: ImagePage[] = [];
@@ -236,8 +225,8 @@ export class ChapterContentService {
   }
 
   private async processAndUploadSingleImage(
-      prefix: string,
-      file: Express.Multer.File,
+    prefix: string,
+    file: Express.Multer.File,
   ): Promise<{ key: string; w: number; h: number }> {
     const sig = await fileTypeFromBuffer(file.buffer);
     if (!sig || !['image/jpeg', 'image/png', 'image/webp'].includes(sig.mime)) {
@@ -249,20 +238,20 @@ export class ChapterContentService {
     const height = meta.height ?? 0;
 
     if (
-        width <= 0 ||
-        height <= 0 ||
-        width > MAX_IMAGE_DIM ||
-        height > MAX_IMAGE_DIM ||
-        width * height > MAX_PIXELS
+      width <= 0 ||
+      height <= 0 ||
+      width > MAX_IMAGE_DIM ||
+      height > MAX_IMAGE_DIM ||
+      width * height > MAX_PIXELS
     ) {
       throw new BadRequestException(`Image dimensions invalid: ${file.originalname}`);
     }
 
     const { data, info } = await sharp(file.buffer, { limitInputPixels: MAX_PIXELS })
-        .rotate()
-        .resize({ width: MAX_WIDTH, withoutEnlargement: true })
-        .webp({ quality: 82 })
-        .toBuffer({ resolveWithObject: true });
+      .rotate()
+      .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+      .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
 
     const key = this.buildImagePageKey(prefix);
     await this.storage.putBuffer(key, data, 'image/webp');
@@ -312,11 +301,7 @@ export class ChapterContentService {
     const html = `<article><p>${this.toSafeHtml(file.buffer.toString('utf8'))}</p></article>`;
     const key = `${prefix}/text/content.html`;
 
-    await this.storage.putBuffer(
-        key,
-        Buffer.from(html, 'utf8'),
-        'text/html; charset=utf-8',
-    );
+    await this.storage.putBuffer(key, Buffer.from(html, 'utf8'), 'text/html; charset=utf-8');
 
     const manifest = this.readerService.buildManifest('text', [{ key }]);
     await this.storage.putJson(`${prefix}/manifest.json`, manifest);
@@ -370,8 +355,8 @@ export class ChapterContentService {
     }
 
     const unique = [...new Set(pageNumbers)]
-        .filter((n) => Number.isInteger(n) && n >= 1 && n <= manifest.pages!.length)
-        .sort((a, b) => a - b);
+      .filter((n) => Number.isInteger(n) && n >= 1 && n <= manifest.pages!.length)
+      .sort((a, b) => a - b);
 
     if (unique.length === 0) {
       throw new BadRequestException('No valid page numbers');
@@ -379,10 +364,10 @@ export class ChapterContentService {
 
     const removeSet = new Set(unique.map((n) => n - 1)); // 0-based index
     const removedKeys = manifest.pages
-        .map((p, idx) => ({ p, idx }))
-        .filter(({ idx }) => removeSet.has(idx))
-        .map(({ p }) => p.key)
-        .filter(Boolean);
+      .map((p, idx) => ({ p, idx }))
+      .filter(({ idx }) => removeSet.has(idx))
+      .map(({ p }) => p.key)
+      .filter(Boolean);
 
     const keptPages = manifest.pages.filter((_, idx) => !removeSet.has(idx));
 
@@ -411,5 +396,4 @@ export class ChapterContentService {
 
     return { ok: true, removed: unique.length, pageCount: keptPages.length };
   }
-
 }

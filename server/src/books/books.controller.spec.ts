@@ -48,7 +48,11 @@ describe('BooksController (http)', () => {
   });
 
   it('GET /books/browse returns response shape', async () => {
-    booksServiceMock.browse.mockResolvedValue({ items: [{ id: 1 }], nextCursor: null, hasMore: false });
+    booksServiceMock.browse.mockResolvedValue({
+      items: [{ id: 1 }],
+      nextCursor: null,
+      hasMore: false,
+    });
 
     const res = await request(app.getHttpServer()).get('/books/browse').expect(200);
 

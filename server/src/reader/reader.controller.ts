@@ -33,28 +33,17 @@ export class ReaderController {
 
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('session')
-  async createSession(
-    @Body() body: CreateReaderSessionDto,
-    @Req() req: AuthRequest,
-  ) {
+  async createSession(@Body() body: CreateReaderSessionDto, @Req() req: AuthRequest) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
-    return this.readerService.createSession(
-      userId,
-      body.bookId,
-      body.chapterIndex,
-      req,
-    );
+    return this.readerService.createSession(userId, body.bookId, body.chapterIndex, req);
   }
 
   @Post('admin/session')
   @UseGuards(RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async createAdminPreviewSession(
-    @Body() body: CreateReaderSessionDto,
-    @Req() req: AuthRequest,
-  ) {
+  async createAdminPreviewSession(@Body() body: CreateReaderSessionDto, @Req() req: AuthRequest) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
 
@@ -93,10 +82,7 @@ export class ReaderController {
   }
 
   @Get('context')
-  async getContext(
-    @Query('bookId', ParseIntPipe) bookId: number,
-    @Req() req: AuthRequest,
-  ) {
+  async getContext(@Query('bookId', ParseIntPipe) bookId: number, @Req() req: AuthRequest) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
 
@@ -108,10 +94,6 @@ export class ReaderController {
   async saveProgress(@Body() body: SaveProgressDto, @Req() req: AuthRequest) {
     const userId = req.user?.userId;
     if (!userId) throw new UnauthorizedException();
-    return this.readerService.saveProgress(
-      userId,
-      body.chapterId,
-      body.lastPage,
-    );
+    return this.readerService.saveProgress(userId, body.chapterId, body.lastPage);
   }
 }

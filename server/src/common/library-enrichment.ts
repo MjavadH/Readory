@@ -30,9 +30,7 @@ export async function enrichLibraryGroups(
   prisma: PrismaService,
   groups: LibraryGroup[],
 ): Promise<EnrichedLibraryItem[]> {
-  const bookIds = groups
-    .map((g) => g.bookId)
-    .filter((id): id is number => typeof id === 'number');
+  const bookIds = groups.map((g) => g.bookId).filter((id): id is number => typeof id === 'number');
 
   if (bookIds.length === 0) return [];
 
@@ -66,11 +64,10 @@ export async function enrichLibraryGroups(
     const purchasedChapters = g._count._all;
     const totalChapters = book.chapterCount;
     const purchasedPercent =
-        totalChapters <= 0
-            ? 0
-            : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
+      totalChapters <= 0 ? 0 : Math.min(100, Math.round((purchasedChapters / totalChapters) * 100));
 
-    const mainContributor = book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
+    const mainContributor =
+      book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
 
     items.push({
       book: {

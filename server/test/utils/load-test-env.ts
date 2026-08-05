@@ -11,7 +11,10 @@ function parseEnv(raw: string): Record<string, string> {
       if (eqIndex < 0) return acc;
 
       const key = line.slice(0, eqIndex).trim();
-      const value = line.slice(eqIndex + 1).trim().replace(/^['"]|['"]$/g, '');
+      const value = line
+        .slice(eqIndex + 1)
+        .trim()
+        .replace(/^['"]|['"]$/g, '');
       acc[key] = value;
       return acc;
     }, {});

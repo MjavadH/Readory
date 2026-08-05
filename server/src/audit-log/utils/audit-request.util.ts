@@ -1,12 +1,9 @@
 import { randomUUID } from 'crypto';
 
 export function ensureAuditRequestMetadata(req: any) {
-  const requestId = String(
-    req.headers?.['x-request-id'] ?? req.id ?? randomUUID(),
-  );
+  const requestId = String(req.headers?.['x-request-id'] ?? req.id ?? randomUUID());
   req.id = requestId;
-  if (req.headers && !req.headers['x-request-id'])
-    req.headers['x-request-id'] = requestId;
+  if (req.headers && !req.headers['x-request-id']) req.headers['x-request-id'] = requestId;
   const forwarded = req.headers?.['x-forwarded-for'];
   const ipAddress = Array.isArray(forwarded)
     ? forwarded[0]

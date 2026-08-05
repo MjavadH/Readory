@@ -6,9 +6,7 @@ import { PaymentDriver } from '../payment-driver.interface';
 export class MockPaymentDriver implements PaymentDriver {
   getRedirectUrl(authority: string): string {
     const baseUrl = process.env.APP_URL ?? 'http://localhost:3000';
-    const redirectUrl = new URL(
-      `${baseUrl.replace(/\/$/, '')}/wallet/payment/callback/MOCK`,
-    );
+    const redirectUrl = new URL(`${baseUrl.replace(/\/$/, '')}/wallet/payment/callback/MOCK`);
     redirectUrl.searchParams.set('Authority', authority);
     redirectUrl.searchParams.set('Status', 'OK');
     return redirectUrl.toString();

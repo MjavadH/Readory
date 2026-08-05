@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, TransactionType } from '@prisma/client';
 import { CacheManager } from '../cache/cache.manager';
@@ -166,16 +162,8 @@ export class WalletsService {
       stats = JSON.parse(cachedStats);
     } else {
       const now = new Date();
-      const startOfCurrentMonth = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1,
-      );
-      const startOfLastMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() - 1,
-        1,
-      );
+      const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
 
       const getStatsForPeriod = async (start: Date, end: Date) => {
         const where: any = { createdAt: { gte: start, lt: end } };
@@ -206,20 +194,10 @@ export class WalletsService {
         _sum: { amount: true },
         _count: { _all: true },
       });
-      const totalCredits = statsGrouped.find(
-        (s) => s.type === TransactionType.CREDIT,
-      );
-      const totalDebits = statsGrouped.find(
-        (s) => s.type === TransactionType.DEBIT,
-      );
-      const currentStats = await getStatsForPeriod(
-        startOfCurrentMonth,
-        new Date(),
-      );
-      const lastMonthStats = await getStatsForPeriod(
-        startOfLastMonth,
-        startOfCurrentMonth,
-      );
+      const totalCredits = statsGrouped.find((s) => s.type === TransactionType.CREDIT);
+      const totalDebits = statsGrouped.find((s) => s.type === TransactionType.DEBIT);
+      const currentStats = await getStatsForPeriod(startOfCurrentMonth, new Date());
+      const lastMonthStats = await getStatsForPeriod(startOfLastMonth, startOfCurrentMonth);
 
       stats = {
         total: totalRecords,
@@ -228,18 +206,9 @@ export class WalletsService {
         creditAmount: Number(totalCredits?._sum.amount) || 0,
         debitAmount: Number(totalDebits?._sum.amount) || 0,
         growth: {
-          totalTransactions: calculateGrowth(
-            currentStats.count,
-            lastMonthStats.count,
-          ),
-          creditAmount: calculateGrowth(
-            currentStats.credit,
-            lastMonthStats.credit,
-          ),
-          debitAmount: calculateGrowth(
-            currentStats.debit,
-            lastMonthStats.debit,
-          ),
+          totalTransactions: calculateGrowth(currentStats.count, lastMonthStats.count),
+          creditAmount: calculateGrowth(currentStats.credit, lastMonthStats.credit),
+          debitAmount: calculateGrowth(currentStats.debit, lastMonthStats.debit),
         },
       };
       await this.cacheManager.setString(CACHE_KEY, JSON.stringify(stats), 3600);
@@ -266,12 +235,7 @@ export class WalletsService {
   }
 
   // Credit the wallet with a certain amount
-  async credit(
-    userId: number,
-    amount: number,
-    reference?: string,
-    tx?: Prisma.TransactionClient,
-  ) {
+  async credit(userId: number, amount: number, reference?: string, tx?: Prisma.TransactionClient) {
     if (amount <= 0) {
       throw new ForbiddenException('Amount must be positive');
     }
@@ -339,8 +303,8 @@ export class WalletsService {
     };
 
     const result = providedTx
-        ? await executeDebit(providedTx)
-        : await this.prisma.$transaction(executeDebit);
+      ? await executeDebit(providedTx)
+      : await this.prisma.$transaction(executeDebit);
 
     await this.cacheManager.del('stats:transactions');
 

@@ -77,10 +77,7 @@ export class BooksController {
 
   @Get(':id/viewer-state')
   @UseGuards(JwtAuthGuard)
-  async getViewerState(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ) {
+  async getViewerState(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.getViewerState(id, Number(userId));
   }
@@ -100,10 +97,7 @@ export class BooksController {
   }
 
   @Get('type/:type/browse')
-  async browseByType(
-    @Param('type') type: string,
-    @Query() query: BrowseTypeBooksDto,
-  ) {
+  async browseByType(@Param('type') type: string, @Query() query: BrowseTypeBooksDto) {
     return this.booksService.browseByType(type, query);
   }
 
@@ -131,10 +125,7 @@ export class BooksController {
     category: AuditCategory.CONTENT,
     targetType: 'Book',
   })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBookDto,
-  ) {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBookDto) {
     return this.booksService.update(id, dto);
   }
 
@@ -153,10 +144,7 @@ export class BooksController {
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/favorite')
   @UseGuards(JwtAuthGuard)
-  async toggleFavorite(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: any,
-  ) {
+  async toggleFavorite(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.toggleFavorite(Number(userId), id);
   }

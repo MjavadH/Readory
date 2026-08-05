@@ -162,14 +162,11 @@ export class UsersController {
   @Post('me/avatar')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
-      FileInterceptor('avatar', {
-        limits: { fileSize: 5 * 1024 * 1024 - 1, files: 1 },
-      }),
+    FileInterceptor('avatar', {
+      limits: { fileSize: 5 * 1024 * 1024 - 1, files: 1 },
+    }),
   )
-  async updateMyAvatar(
-      @Request() req: any,
-      @UploadedFile() file?: Express.Multer.File,
-  ) {
+  async updateMyAvatar(@Request() req: any, @UploadedFile() file?: Express.Multer.File) {
     await this.rateLimitService.consume({
       key: this.rateLimitService.key('avatar', req.user.userId),
       limit: 5,
@@ -211,14 +208,10 @@ export class UsersController {
       throw new NotFoundException('User not found');
     }
 
-    const targetHasStaffPerm = targetUser.permissions.includes(
-      AdminPermissions.MANAGE_STAFF,
-    );
+    const targetHasStaffPerm = targetUser.permissions.includes(AdminPermissions.MANAGE_STAFF);
     const isRequesterSuperAdmin = req.user.userId === superAdminId;
     if (targetHasStaffPerm && !isRequesterSuperAdmin) {
-      throw new ForbiddenException(
-        'Only Super Admin can remove a Staff Manager.',
-      );
+      throw new ForbiddenException('Only Super Admin can remove a Staff Manager.');
     }
 
     await this.usersService.updateRole(id, role);
@@ -255,10 +248,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_FINANCE)
-  async creditBalance(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() body: { amount: number },
-  ) {
+  async creditBalance(@Param('id', ParseIntPipe) userId: number, @Body() body: { amount: number }) {
     const amount = Number(body.amount);
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
@@ -274,10 +264,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_FINANCE)
-  async debitBalance(
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() body: { amount: number },
-  ) {
+  async debitBalance(@Param('id', ParseIntPipe) userId: number, @Body() body: { amount: number }) {
     const amount = Number(body.amount);
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
@@ -302,13 +289,8 @@ export class UsersController {
 
     const superAdminId = this.getSuperAdminId();
     const isRequesterSuperAdmin = req.user.userId === superAdminId;
-    if (
-      permissions.includes(AdminPermissions.MANAGE_STAFF) &&
-      !isRequesterSuperAdmin
-    ) {
-      throw new ForbiddenException(
-        'Only Super Admin can grant MANAGE_STAFF permission.',
-      );
+    if (permissions.includes(AdminPermissions.MANAGE_STAFF) && !isRequesterSuperAdmin) {
+      throw new ForbiddenException('Only Super Admin can grant MANAGE_STAFF permission.');
     }
     await this.usersService.updatePermissions(id, permissions);
     return { success: true };

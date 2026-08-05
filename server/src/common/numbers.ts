@@ -8,12 +8,7 @@ export function clamp(n: number, min: number, max: number): number {
 /**
  * Clamps an integer value with a fallback for non-finite inputs.
  */
-export function clampInt(
-  value: number,
-  min: number,
-  max: number,
-  fallback: number,
-): number {
+export function clampInt(value: number, min: number, max: number, fallback: number): number {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(n)));

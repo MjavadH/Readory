@@ -1,38 +1,38 @@
-import React from "react"
-import { useTranslations } from "next-intl"
-import { motion, AnimatePresence } from "framer-motion"
-import { Pencil, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import {Separator} from "@/components/ui/separator";
-import {ContributorGender} from "@shared/contributor-metadata";
+import React from 'react';
+import { useTranslations } from 'next-intl';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Pencil, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
+import { ContributorGender } from '@shared/contributor-metadata';
 
 export type ContributorRow = {
-  id: string
-  name: string
-  originalName?: string | null
-  slug: string
-  biography?: string | null
-  gender?: ContributorGender
-}
+  id: string;
+  name: string;
+  originalName?: string | null;
+  slug: string;
+  biography?: string | null;
+  gender?: ContributorGender;
+};
 
 type Props = {
-  contributors: ContributorRow[]
-  onEdit: (contributors: ContributorRow) => void
-  onDelete: (contributors: ContributorRow) => void
-}
+  contributors: ContributorRow[];
+  onEdit: (contributors: ContributorRow) => void;
+  onDelete: (contributors: ContributorRow) => void;
+};
 
 const cardVariants = {
   hidden: { opacity: 0, y: 12, scale: 0.97 },
   visible: { opacity: 1, y: 0, scale: 1 },
   exit: { opacity: 0, y: -8, scale: 0.97 },
-}
+};
 
 export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
-  const t = useTranslations("Contributors")
-  const g = useTranslations("General")
+  const t = useTranslations('Contributors');
+  const g = useTranslations('General');
 
   return (
     <motion.div
@@ -48,7 +48,7 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
             initial="hidden"
             animate="visible"
             exit="exit"
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             whileHover={{ y: -2 }}
           >
             <Card className="h-full overflow-hidden transition-shadow hover:shadow-md">
@@ -59,10 +59,7 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
                       {contributors.name}
                     </h3>
                     {contributors.originalName ? (
-                      <p
-                        className="truncate text-sm text-muted-foreground"
-                        dir="auto"
-                      >
+                      <p className="truncate text-sm text-muted-foreground" dir="auto">
                         {contributors.originalName}
                       </p>
                     ) : null}
@@ -84,13 +81,11 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
                 </div>
 
                 {contributors.biography ? (
-                  <p className={cn("text-sm text-muted-foreground line-clamp-3")}>
+                  <p className={cn('text-sm text-muted-foreground line-clamp-3')}>
                     {contributors.biography}
                   </p>
                 ) : (
-                  <p className="text-sm italic text-muted-foreground/70">
-                    {t("NoBiography")}
-                  </p>
+                  <p className="text-sm italic text-muted-foreground/70">{t('NoBiography')}</p>
                 )}
 
                 <div className="mt-auto flex gap-2 pt-2">
@@ -100,17 +95,17 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
                     size="sm"
                     className="flex-1"
                     onClick={() => onEdit(contributors)}
-                    aria-label={t("EditContributor")}
+                    aria-label={t('EditContributor')}
                   >
                     <Pencil className="me-2 h-3.5 w-3.5" />
-                    {g("Edit")}
+                    {g('Edit')}
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => onDelete(contributors)}
-                    aria-label={t("DeleteContributor")}
+                    aria-label={t('DeleteContributor')}
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -122,7 +117,7 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
         ))}
       </AnimatePresence>
     </motion.div>
-  )
+  );
 }
 
 export function ContributorsGridSkeleton({ count = 8 }: { count?: number }) {
@@ -152,5 +147,5 @@ export function ContributorsGridSkeleton({ count = 8 }: { count?: number }) {
         </Card>
       ))}
     </div>
-  )
+  );
 }

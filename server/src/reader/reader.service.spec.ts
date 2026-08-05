@@ -17,9 +17,8 @@ describe('ReaderService', () => {
   const storageMock = { getObjectBuffer: jest.fn() };
   const cacheMock = {
     buildKey: jest.fn().mockReturnValue('manifest:key'),
-    getOrSet: jest.fn(
-      async (_k: string, _opt: unknown, loader: () => Promise<unknown>) =>
-        loader(),
+    getOrSet: jest.fn(async (_k: string, _opt: unknown, loader: () => Promise<unknown>) =>
+      loader(),
     ),
     del: jest.fn(),
   };

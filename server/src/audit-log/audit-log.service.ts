@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CacheManager } from '../cache/cache.manager';
-import {
-  AUDIT_LOG_CACHE,
-  AUDIT_LOG_CACHE_VERSION_KEY,
-} from './constants/audit-log.constants';
+import { AUDIT_LOG_CACHE, AUDIT_LOG_CACHE_VERSION_KEY } from './constants/audit-log.constants';
 import { AuditLogInput } from './interfaces/audit-log.interface';
 import { sanitizeAuditValue } from './utils/audit-sanitizer.util';
 import { generateAuditDiff } from './utils/audit-diff.util';
@@ -16,8 +13,8 @@ import { Prisma } from '@prisma/client';
 export class AuditLogService {
   private readonly logger = new Logger(AuditLogService.name);
   constructor(
-      private readonly prisma: PrismaService,
-      private readonly cache: CacheManager,
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheManager,
   ) {}
 
   log(input: AuditLogInput): void {
@@ -47,10 +44,7 @@ export class AuditLogService {
     return this.normalizeJson(value) as Prisma.InputJsonValue;
   }
 
-  private normalizeJson(
-      value: unknown,
-      seen = new WeakSet<object>(),
-  ): Prisma.JsonValue {
+  private normalizeJson(value: unknown, seen = new WeakSet<object>()): Prisma.JsonValue {
     if (value === null) return null;
 
     switch (typeof value) {
@@ -104,10 +98,10 @@ export class AuditLogService {
 
         for (const [key, item] of Object.entries(value)) {
           if (
-              key === 'constructor' ||
-              typeof item === 'function' ||
-              typeof item === 'undefined' ||
-              typeof item === 'symbol'
+            key === 'constructor' ||
+            typeof item === 'function' ||
+            typeof item === 'undefined' ||
+            typeof item === 'symbol'
           ) {
             continue;
           }
@@ -127,20 +121,15 @@ export class AuditLogService {
   private enqueueLogWrite(data: Prisma.AuditLogCreateInput): void {
     setImmediate(() => {
       void this.prisma.auditLog
-          .create({ data })
-          .then(() => this.cache.bumpVersion(AUDIT_LOG_CACHE_VERSION_KEY))
-          .catch((error: unknown) => {
-            const message =
-                error instanceof Error ? error.message : String(error);
+        .create({ data })
+        .then(() => this.cache.bumpVersion(AUDIT_LOG_CACHE_VERSION_KEY))
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
 
-            const stack =
-                error instanceof Error ? error.stack : undefined;
+          const stack = error instanceof Error ? error.stack : undefined;
 
-            this.logger.error(
-                `Audit log write failed: ${message}`,
-                stack,
-            );
-          });
+          this.logger.error(`Audit log write failed: ${message}`, stack);
+        });
     });
   }
 
@@ -173,11 +162,9 @@ export class AuditLogService {
         if (query.targetId) where.targetId = String(query.targetId);
         if (query.severity) where.severity = query.severity;
         if (query.search)
-          where.OR = ['actorName', 'targetName', 'targetId', 'requestId'].map(
-              (field) => ({
-                [field]: { contains: query.search, mode: 'insensitive' },
-              }),
-          );
+          where.OR = ['actorName', 'targetName', 'targetId', 'requestId'].map((field) => ({
+            [field]: { contains: query.search, mode: 'insensitive' },
+          }));
         const sortable = new Set([
           'createdAt',
           'action',
@@ -186,9 +173,7 @@ export class AuditLogService {
           'actorName',
           'targetType',
         ]);
-        const sortBy = sortable.has(String(query.sortBy))
-            ? query.sortBy
-            : 'createdAt';
+        const sortBy = sortable.has(String(query.sortBy)) ? query.sortBy : 'createdAt';
         const orderBy = {
           [sortBy || 'createdAt']: query.sortOrder === 'asc' ? 'asc' : 'desc',
         };
@@ -202,17 +187,13 @@ export class AuditLogService {
           await this.prisma.auditLog.count({ where }),
         ]);
         return { data, total, page, limit, lastPage: Math.ceil(total / limit) };
-      }
+      },
     );
   }
 
   async findById(id: string) {
     const version = await this.cache.getVersion(AUDIT_LOG_CACHE_VERSION_KEY);
-    const key = this.cache.buildKey(
-      AUDIT_LOG_CACHE.ITEM_NAMESPACE,
-      version,
-      id,
-    );
+    const key = this.cache.buildKey(AUDIT_LOG_CACHE.ITEM_NAMESPACE, version, id);
     return this.cache.getOrSet(
       key,
       {
@@ -221,15 +202,11 @@ export class AuditLogService {
       },
       async () => {
         return this.prisma.auditLog.findUnique({ where: { id } });
-      }
+      },
     );
   }
 
-  async findEntityHistory(
-    targetType: string,
-    targetId: string,
-    query: AuditLogQueryDto,
-  ) {
+  async findEntityHistory(targetType: string, targetId: string, query: AuditLogQueryDto) {
     const version = await this.cache.getVersion(AUDIT_LOG_CACHE_VERSION_KEY);
     const key = this.cache.buildHashedKey(AUDIT_LOG_CACHE.HISTORY_NAMESPACE, {
       version,

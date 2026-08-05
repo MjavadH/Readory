@@ -1,5 +1,5 @@
 import { generateAuditDiff } from './audit-diff.util';
-import {PublicationStatus} from "@readory/shared";
+import { PublicationStatus } from '@readory/shared';
 
 describe('generateAuditDiff', () => {
   it('handles nested objects, arrays, nullable values, booleans, enums, and dates while ignoring timestamps', () => {

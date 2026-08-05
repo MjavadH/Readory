@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { MailerModule } from "@nestjs-modules/mailer";
+import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { EjsAdapter } from "@nestjs-modules/mailer/adapters/ejs.adapter";
+import { EjsAdapter } from '@nestjs-modules/mailer/adapters/ejs.adapter';
 import { MailService } from './mail.service';
 import { join } from 'path';
 import * as fs from 'fs';
@@ -16,8 +16,8 @@ import * as fs from 'fs';
         const templateDirWithoutSrc = join(process.cwd(), 'dist', 'mail', 'templates');
 
         const finalTemplateDir = fs.existsSync(templateDirWithSrc)
-            ? templateDirWithSrc
-            : templateDirWithoutSrc;
+          ? templateDirWithSrc
+          : templateDirWithoutSrc;
 
         return {
           transport: {

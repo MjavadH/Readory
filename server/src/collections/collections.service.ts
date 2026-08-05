@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CollectionType, CollectionVisibility, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
@@ -21,7 +26,9 @@ export class CollectionsService {
 
   async ensureFavoritesCollection(userId: number) {
     const slug = 'favorites';
-    const existing = await this.prisma.collection.findFirst({ where: { ownerId: userId, type: CollectionType.FAVORITES } });
+    const existing = await this.prisma.collection.findFirst({
+      where: { ownerId: userId, type: CollectionType.FAVORITES },
+    });
     if (existing) return existing;
     return this.prisma.collection.create({
       data: {
@@ -39,7 +46,12 @@ export class CollectionsService {
     const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
     const cursor = options?.cursor ? Number(options.cursor) : undefined;
     const version = await this.cacheManager.getVersion(this.CACHE_KEY_SYSTEM_COLLECTIONS_VERSION);
-    const cacheKey = this.cacheManager.buildKey(this.CACHE_KEY_SYSTEM_COLLECTIONS, version, cursor ?? 'first', limit);
+    const cacheKey = this.cacheManager.buildKey(
+      this.CACHE_KEY_SYSTEM_COLLECTIONS,
+      version,
+      cursor ?? 'first',
+      limit,
+    );
     const cached = await this.cacheManager.getString(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -51,7 +63,11 @@ export class CollectionsService {
       select: this.collectionSelect(4),
     });
     const page = rows.slice(0, limit);
-    const result = { items: page.map((row) => this.serializeCollection(row)), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+    const result = {
+      items: page.map((row) => this.serializeCollection(row)),
+      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
+      hasMore: rows.length > limit,
+    };
     await this.cacheManager.setString(cacheKey, JSON.stringify(result), 120);
     return result;
   }
@@ -65,11 +81,46 @@ export class CollectionsService {
       take: limit + 1,
       select: {
         ...this.collectionSelect(4),
-        ...(options?.bookId ? { items: { where: { bookId: options.bookId }, take: 1, select: { id: true, position: true, note: true, addedAt: true, book: { select: { id: true, title: true, coverImage: true, ratingAvg: true, ratingCount: true, updatedAt: true, type: { select: { id: true, name: true, slug: true, } }, genres: {select: {genre: { select: {name: true, slug: true}}}}, contributors: { select: { role: true, contributor: { select: { name: true } } } } } } } } } : {}),
+        ...(options?.bookId
+          ? {
+              items: {
+                where: { bookId: options.bookId },
+                take: 1,
+                select: {
+                  id: true,
+                  position: true,
+                  note: true,
+                  addedAt: true,
+                  book: {
+                    select: {
+                      id: true,
+                      title: true,
+                      coverImage: true,
+                      ratingAvg: true,
+                      ratingCount: true,
+                      updatedAt: true,
+                      type: { select: { id: true, name: true, slug: true } },
+                      genres: { select: { genre: { select: { name: true, slug: true } } } },
+                      contributors: {
+                        select: { role: true, contributor: { select: { name: true } } },
+                      },
+                    },
+                  },
+                },
+              },
+            }
+          : {}),
       },
     });
     const page = rows.slice(0, limit);
-    return { items: page.map((row) => ({ ...this.serializeCollection(row), containsBook: options?.bookId ? row.items.length > 0 : undefined })), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+    return {
+      items: page.map((row) => ({
+        ...this.serializeCollection(row),
+        containsBook: options?.bookId ? row.items.length > 0 : undefined,
+      })),
+      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
+      hasMore: rows.length > limit,
+    };
   }
 
   async listAdmin(options?: { cursor?: string; limit?: number }) {
@@ -82,7 +133,11 @@ export class CollectionsService {
       select: this.collectionSelect(4),
     });
     const page = rows.slice(0, limit);
-    return { items: page.map((row) => this.serializeCollection(row)), nextCursor: rows.length > limit ? String(rows[limit].id) : undefined, hasMore: rows.length > limit };
+    return {
+      items: page.map((row) => this.serializeCollection(row)),
+      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
+      hasMore: rows.length > limit,
+    };
   }
 
   async getAdminById(id: number, options?: { cursor?: string; limit?: number }) {
@@ -102,10 +157,22 @@ export class CollectionsService {
     return result;
   }
 
-  async getBySlug(slug: string, viewerId?: number, isAdmin = false, options?: { cursor?: string; limit?: number }) {
+  async getBySlug(
+    slug: string,
+    viewerId?: number,
+    isAdmin = false,
+    options?: { cursor?: string; limit?: number },
+  ) {
     const itemLimit = this.normalizeItemLimit(options?.limit);
     const itemCursor = options?.cursor ? Number(options.cursor) : undefined;
-    const cacheKey = await this.detailCacheKey('slug', normalizeSlug(slug) || slug, viewerId ?? 'anonymous', isAdmin, itemCursor ?? 'first', itemLimit);
+    const cacheKey = await this.detailCacheKey(
+      'slug',
+      normalizeSlug(slug) || slug,
+      viewerId ?? 'anonymous',
+      isAdmin,
+      itemCursor ?? 'first',
+      itemLimit,
+    );
     const cached = await this.cacheManager.getString(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -120,10 +187,22 @@ export class CollectionsService {
     return result;
   }
 
-  async getUserCollection(username: string, slug: string, viewerId?: number, options?: { cursor?: string; limit?: number }) {
+  async getUserCollection(
+    username: string,
+    slug: string,
+    viewerId?: number,
+    options?: { cursor?: string; limit?: number },
+  ) {
     const itemLimit = this.normalizeItemLimit(options?.limit);
     const itemCursor = options?.cursor ? Number(options.cursor) : undefined;
-    const cacheKey = await this.detailCacheKey('user', username.toLowerCase(), normalizeSlug(slug) || slug, viewerId ?? 'anonymous', itemCursor ?? 'first', itemLimit);
+    const cacheKey = await this.detailCacheKey(
+      'user',
+      username.toLowerCase(),
+      normalizeSlug(slug) || slug,
+      viewerId ?? 'anonymous',
+      itemCursor ?? 'first',
+      itemLimit,
+    );
     const cached = await this.cacheManager.getString(cacheKey);
     if (cached) return JSON.parse(cached);
 
@@ -134,7 +213,11 @@ export class CollectionsService {
     if (!user) throw new NotFoundException('collection not found');
 
     const collection = await this.prisma.collection.findFirst({
-      where: { ownerId: user.id, slug: normalizeSlug(slug) || slug, type: { in: [CollectionType.USER, CollectionType.FAVORITES] } },
+      where: {
+        ownerId: user.id,
+        slug: normalizeSlug(slug) || slug,
+        type: { in: [CollectionType.USER, CollectionType.FAVORITES] },
+      },
       select: this.collectionSelect(itemLimit + 1, itemCursor),
     });
     if (!collection) throw new NotFoundException('collection not found');
@@ -145,8 +228,11 @@ export class CollectionsService {
   }
 
   async createUserCollection(userId: number, dto: CreateCollectionDto) {
-    const count = await this.prisma.collection.count({ where: { ownerId: userId, type: CollectionType.USER } });
-    if (count >= this.userCollectionLimit) throw new BadRequestException('collection limit reached');
+    const count = await this.prisma.collection.count({
+      where: { ownerId: userId, type: CollectionType.USER },
+    });
+    if (count >= this.userCollectionLimit)
+      throw new BadRequestException('collection limit reached');
     return this.createCollection(CollectionType.USER, userId, dto);
   }
 
@@ -164,10 +250,16 @@ export class CollectionsService {
     if (dto.description !== undefined) data.description = dto.description;
     if (dto.visibility !== undefined) data.visibility = dto.visibility;
     if (dto.allowIndexing !== undefined) data.allowIndexing = dto.allowIndexing;
-    if (dto.featured !== undefined && existing.type === CollectionType.SYSTEM) data.featured = dto.featured;
-    if (dto.slug !== undefined && existing.type !== CollectionType.FAVORITES) data.slug = await this.uniqueSlug(dto.slug, existing.ownerId ?? undefined, id);
+    if (dto.featured !== undefined && existing.type === CollectionType.SYSTEM)
+      data.featured = dto.featured;
+    if (dto.slug !== undefined && existing.type !== CollectionType.FAVORITES)
+      data.slug = await this.uniqueSlug(dto.slug, existing.ownerId ?? undefined, id);
 
-    const updated = await this.prisma.collection.update({ where: { id }, data, select: this.collectionSelect(4) });
+    const updated = await this.prisma.collection.update({
+      where: { id },
+      data,
+      select: this.collectionSelect(4),
+    });
     await Promise.all([this.invalidateSystemCache(existing.type), this.invalidateDetailCache()]);
     return this.serializeCollection(updated);
   }
@@ -176,7 +268,8 @@ export class CollectionsService {
     const existing = await this.prisma.collection.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('collection not found');
     this.assertCanManage(existing, userId, isAdmin);
-    if (existing.locked || existing.type === CollectionType.FAVORITES) throw new BadRequestException('collection is locked');
+    if (existing.locked || existing.type === CollectionType.FAVORITES)
+      throw new BadRequestException('collection is locked');
     await this.prisma.collection.delete({ where: { id } });
     await Promise.all([this.invalidateSystemCache(existing.type), this.invalidateDetailCache()]);
     return { id, deleted: true };
@@ -189,14 +282,23 @@ export class CollectionsService {
       this.assertCanManage(collection, userId, isAdmin);
       const book = await tx.book.findUnique({ where: { id: bookId }, select: { id: true } });
       if (!book) throw new NotFoundException('book not found');
-      if (collection.type === CollectionType.USER && collection.bookCount >= this.userCollectionBookLimit) throw new BadRequestException('book limit reached');
+      if (
+        collection.type === CollectionType.USER &&
+        collection.bookCount >= this.userCollectionBookLimit
+      )
+        throw new BadRequestException('book limit reached');
       await this.lockCollection(tx, id);
-      const existing = await tx.collectionItem.findUnique({ where: { collectionId_bookId: { collectionId: id, bookId } } });
+      const existing = await tx.collectionItem.findUnique({
+        where: { collectionId_bookId: { collectionId: id, bookId } },
+      });
       if (existing) throw new BadRequestException('book already exists in collection');
       const position = await this.nextItemPosition(tx, id);
-      const item = await tx.collectionItem.create({ data: { collectionId: id, bookId, note, position } });
+      const item = await tx.collectionItem.create({
+        data: { collectionId: id, bookId, note, position },
+      });
       await tx.collection.update({ where: { id }, data: { bookCount: { increment: 1 } } });
-      if (collection.type === CollectionType.FAVORITES) await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
+      if (collection.type === CollectionType.FAVORITES)
+        await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
       return item;
     });
     await this.invalidateAfterItemChange(id);
@@ -204,7 +306,10 @@ export class CollectionsService {
   }
 
   async updateItem(id: number, itemId: number, userId: number, isAdmin: boolean, note?: string) {
-    const item = await this.prisma.collectionItem.findUnique({ where: { id: itemId }, include: { collection: true } });
+    const item = await this.prisma.collectionItem.findUnique({
+      where: { id: itemId },
+      include: { collection: true },
+    });
     if (!item || item.collectionId !== id) throw new NotFoundException('collection item not found');
     this.assertCanManage(item.collection, userId, isAdmin);
     const updated = await this.prisma.collectionItem.update({
@@ -217,12 +322,20 @@ export class CollectionsService {
 
   async removeBook(id: number, itemId: number, userId: number, isAdmin: boolean) {
     await this.prisma.$transaction(async (tx) => {
-      const item = await tx.collectionItem.findUnique({ where: { id: itemId }, include: { collection: true } });
-      if (!item || item.collectionId !== id) throw new NotFoundException('collection item not found');
+      const item = await tx.collectionItem.findUnique({
+        where: { id: itemId },
+        include: { collection: true },
+      });
+      if (!item || item.collectionId !== id)
+        throw new NotFoundException('collection item not found');
       this.assertCanManage(item.collection, userId, isAdmin);
       await tx.collectionItem.delete({ where: { id: itemId } });
       await tx.collection.update({ where: { id }, data: { bookCount: { decrement: 1 } } });
-      if (item.collection.type === CollectionType.FAVORITES) await tx.book.update({ where: { id: item.bookId }, data: { favoriteCount: { decrement: 1 } } });
+      if (item.collection.type === CollectionType.FAVORITES)
+        await tx.book.update({
+          where: { id: item.bookId },
+          data: { favoriteCount: { decrement: 1 } },
+        });
     });
     await this.invalidateAfterItemChange(id);
     return { id: itemId, deleted: true };
@@ -273,7 +386,11 @@ export class CollectionsService {
     return { reordered: true };
   }
 
-  private async createCollection(type: CollectionType, ownerId: number | null, dto: CreateCollectionDto) {
+  private async createCollection(
+    type: CollectionType,
+    ownerId: number | null,
+    dto: CreateCollectionDto,
+  ) {
     const slug = await this.uniqueSlug(dto.slug, ownerId ?? undefined);
     const collection = await this.prisma.collection.create({
       data: {
@@ -283,8 +400,8 @@ export class CollectionsService {
         slug,
         description: dto.description,
         visibility: dto.visibility ?? CollectionVisibility.PRIVATE,
-        allowIndexing: type === CollectionType.SYSTEM ? true : dto.allowIndexing ?? false,
-        featured: type === CollectionType.SYSTEM ? dto.featured ?? false : false,
+        allowIndexing: type === CollectionType.SYSTEM ? true : (dto.allowIndexing ?? false),
+        featured: type === CollectionType.SYSTEM ? (dto.featured ?? false) : false,
       },
       select: this.collectionSelect(4),
     });
@@ -301,14 +418,26 @@ export class CollectionsService {
         where: { ownerId: ownerId ?? null, slug, NOT: currentId ? { id: currentId } : undefined },
         select: { id: true },
       })
-    ) slug = `${base}-${index++}`;
+    )
+      slug = `${base}-${index++}`;
     return slug;
   }
 
   private collectionSelect(itemTake: number, itemCursor?: number) {
     const itemPagination = itemCursor ? { cursor: { id: itemCursor }, skip: 1 } : {};
     return {
-      id: true, ownerId: true, type: true, title: true, slug: true, description: true, visibility: true, allowIndexing: true, featured: true, locked: true, bookCount: true, updatedAt: true,
+      id: true,
+      ownerId: true,
+      type: true,
+      title: true,
+      slug: true,
+      description: true,
+      visibility: true,
+      allowIndexing: true,
+      featured: true,
+      locked: true,
+      bookCount: true,
+      updatedAt: true,
       items: {
         orderBy: { position: 'asc' },
         ...itemPagination,
@@ -326,32 +455,40 @@ export class CollectionsService {
               ratingAvg: true,
               ratingCount: true,
               updatedAt: true,
-              type: { select: { id: true, name: true, slug: true, } },
-              genres: {select: {genre: { select: {name: true, slug: true}}}},
-              contributors: { select: { role: true, contributor: { select: { name: true } } } }
-            }
-          }
-        }
+              type: { select: { id: true, name: true, slug: true } },
+              genres: { select: { genre: { select: { name: true, slug: true } } } },
+              contributors: { select: { role: true, contributor: { select: { name: true } } } },
+            },
+          },
+        },
       },
     } satisfies Prisma.CollectionSelect;
   }
 
   private serializeCollection(collection: any, itemLimit?: number) {
     const items = itemLimit ? collection.items.slice(0, itemLimit) : collection.items;
-    return { ...collection, indexable: collection.type === CollectionType.SYSTEM || (collection.visibility === CollectionVisibility.PUBLIC && collection.allowIndexing), items: items.map((item: any) => ({ ...item, book: this.serializeBook(item.book) })), nextItemCursor: itemLimit && collection.items.length > itemLimit ? String(collection.items[itemLimit].id) : undefined, hasMoreItems: itemLimit ? collection.items.length > itemLimit : undefined };
+    return {
+      ...collection,
+      indexable:
+        collection.type === CollectionType.SYSTEM ||
+        (collection.visibility === CollectionVisibility.PUBLIC && collection.allowIndexing),
+      items: items.map((item: any) => ({ ...item, book: this.serializeBook(item.book) })),
+      nextItemCursor:
+        itemLimit && collection.items.length > itemLimit
+          ? String(collection.items[itemLimit].id)
+          : undefined,
+      hasMoreItems: itemLimit ? collection.items.length > itemLimit : undefined,
+    };
   }
 
   private serializeBook(book: any) {
     const mainContributor =
-        book.contributors.find((a: any) => a.role === 'AUTHOR') ??
-        book.contributors[0];
+      book.contributors.find((a: any) => a.role === 'AUTHOR') ?? book.contributors[0];
 
     return {
       id: book.id,
       title: book.title,
-      contributors: mainContributor
-          ? mainContributor.contributor.name
-          : null,
+      contributors: mainContributor ? mainContributor.contributor.name : null,
       genres: book.genres.map((g: any) => g.genre),
       coverImage: book.coverImage,
       ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
@@ -363,7 +500,11 @@ export class CollectionsService {
 
   private assertCanView(collection: any, viewerId?: number, isAdmin = false) {
     if (isAdmin) return;
-    if (collection.visibility === CollectionVisibility.PUBLIC || collection.visibility === CollectionVisibility.UNLISTED) return;
+    if (
+      collection.visibility === CollectionVisibility.PUBLIC ||
+      collection.visibility === CollectionVisibility.UNLISTED
+    )
+      return;
     if (viewerId && collection.ownerId === viewerId) return;
     throw new NotFoundException('collection not found');
   }
@@ -387,7 +528,10 @@ export class CollectionsService {
   }
 
   private normalizeItemLimit(limit?: number) {
-    return Math.min(Math.max(limit || this.userCollectionBookLimit, 1), this.userCollectionBookLimit);
+    return Math.min(
+      Math.max(limit || this.userCollectionBookLimit, 1),
+      this.userCollectionBookLimit,
+    );
   }
 
   private async detailCacheKey(...segments: Array<string | number | boolean>) {
@@ -396,7 +540,10 @@ export class CollectionsService {
   }
 
   private async invalidateAfterItemChange(id: number) {
-    const collection = await this.prisma.collection.findUnique({ where: { id }, select: { type: true } });
+    const collection = await this.prisma.collection.findUnique({
+      where: { id },
+      select: { type: true },
+    });
     await Promise.all([this.invalidateSystemCache(collection?.type), this.invalidateDetailCache()]);
   }
 
@@ -405,6 +552,7 @@ export class CollectionsService {
   }
 
   private async invalidateSystemCache(type?: CollectionType) {
-    if (type === CollectionType.SYSTEM) await this.cacheManager.bumpVersion(this.CACHE_KEY_SYSTEM_COLLECTIONS_VERSION);
+    if (type === CollectionType.SYSTEM)
+      await this.cacheManager.bumpVersion(this.CACHE_KEY_SYSTEM_COLLECTIONS_VERSION);
   }
 }

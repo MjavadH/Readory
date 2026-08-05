@@ -18,20 +18,20 @@ export enum NotificationAudienceType {
 }
 
 export type NotificationApiItem = {
-  id: string
-  type: NotificationType | string
-  title: string
-  body: string
-  metadata?: Record<string, string | number | boolean | null>
-  actionUrl?: string | null
-  readAt?: string | null
-  createdAt: string
-  expiresAt?: string | null
-}
+  id: string;
+  type: NotificationType | string;
+  title: string;
+  body: string;
+  metadata?: Record<string, string | number | boolean | null>;
+  actionUrl?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  expiresAt?: string | null;
+};
 
 export type NotificationListResponse = {
-  items: NotificationApiItem[]
-  nextCursor: string | null
-}
+  items: NotificationApiItem[];
+  nextCursor: string | null;
+};
 
-export type UnreadCountResponse = { unreadCount: number }
+export type UnreadCountResponse = { unreadCount: number };

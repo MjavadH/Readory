@@ -1,13 +1,7 @@
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { tap } from 'rxjs/operators';
-import { AuditAction } from '@readory/shared'
+import { AuditAction } from '@readory/shared';
 import { AUDIT_LOG_METADATA_KEY } from '../constants/audit-log.constants';
 import { AuditLogService } from '../audit-log.service';
 import { AuditLogDecoratorOptions } from '../interfaces/audit-log.interface';
@@ -35,7 +29,8 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
     if (!meta) return next.handle();
     const req = context.switchToHttp().getRequest();
-    if (meta.adminOnly && req.user?.roleName !== 'ADMIN' && req.user?.role !== 'ADMIN') return next.handle();
+    if (meta.adminOnly && req.user?.roleName !== 'ADMIN' && req.user?.role !== 'ADMIN')
+      return next.handle();
     const requestMeta = ensureAuditRequestMetadata(req);
     const idFromReq = meta.targetIdParam
       ? req.params?.[meta.targetIdParam]
@@ -46,17 +41,13 @@ export class AuditLogInterceptor implements NestInterceptor {
       if (req.method !== 'POST')
         before = await loadAuditTarget(this.prisma, meta.targetType, targetId);
     } catch (error) {
-      this.logger.warn(
-        `Unable to load audit before snapshot: ${(error as Error).message}`,
-      );
+      this.logger.warn(`Unable to load audit before snapshot: ${(error as Error).message}`);
     }
     return next.handle().pipe(
       tap((result) => {
-        const resolvedTargetId =
-          meta.getTargetId?.(result, req) ?? (result as any)?.id ?? targetId;
+        const resolvedTargetId = meta.getTargetId?.(result, req) ?? (result as any)?.id ?? targetId;
         const action =
-          meta.action === AuditAction.USER_BANNED &&
-          req.body?.isBanned === false
+          meta.action === AuditAction.USER_BANNED && req.body?.isBanned === false
             ? AuditAction.USER_UNBANNED
             : meta.action;
         this.auditLog.log({
@@ -69,10 +60,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           ...requestMeta,
           targetType: meta.targetType,
           targetId: resolvedTargetId,
-          targetName:
-            meta.getTargetName?.(result, req) ??
-            targetName(result) ??
-            targetName(before),
+          targetName: meta.getTargetName?.(result, req) ?? targetName(result) ?? targetName(before),
           metadata: {
             method: req.method,
             path: req.originalUrl ?? req.url,

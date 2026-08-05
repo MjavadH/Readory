@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-  Request,
-  Get,
-  Res,
-} from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -28,15 +20,8 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
   async register(@Body() registerDto: RegisterDto, @Request() req: any) {
-    await this.authSecurityService.assertRegistrationAllowed(
-      registerDto.email,
-      req,
-    );
-    return this.authService.register(
-      registerDto.email,
-      registerDto.username,
-      registerDto.password,
-    );
+    await this.authSecurityService.assertRegistrationAllowed(registerDto.email, req);
+    return this.authService.register(registerDto.email, registerDto.username, registerDto.password);
   }
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
@@ -47,10 +32,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authSecurityService.assertVerificationAllowed(body.email, req);
-    const { access_token, user } = await this.authService.verifyEmail(
-      body.email,
-      body.otp,
-    );
+    const { access_token, user } = await this.authService.verifyEmail(body.email, body.otp);
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

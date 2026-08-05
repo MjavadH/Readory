@@ -27,18 +27,18 @@ The frontend uses App Router route groups and feature-oriented component directo
 
 ## Tech Stack
 
-| Area | Technologies |
-| --- | --- |
-| Framework | Next.js 16, React 19, App Router |
-| Language | TypeScript |
-| Localization | next-intl with `messages/en.json` and `messages/fa.json` |
-| Styling | Tailwind CSS 4, CSS custom properties, tw-animate-css, tailwind-merge |
-| UI primitives | Radix UI, shadcn-style components, lucide-react icons |
-| Forms and validation | React Hook Form, Zod, `@hookform/resolvers`, input-otp |
-| Data fetching | Native `fetch` through `lib/api-client.ts`, SWR where hooks/components use it |
-| Charts and interaction | Recharts, dnd-kit, Framer Motion from the workspace root |
-| Theming | next-themes and a custom theme provider |
-| Tooling | ESLint, TypeScript, PostCSS |
+| Area                   | Technologies                                                                  |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Framework              | Next.js 16, React 19, App Router                                              |
+| Language               | TypeScript                                                                    |
+| Localization           | next-intl with `messages/en.json` and `messages/fa.json`                      |
+| Styling                | Tailwind CSS 4, CSS custom properties, tw-animate-css, tailwind-merge         |
+| UI primitives          | Radix UI, shadcn-style components, lucide-react icons                         |
+| Forms and validation   | React Hook Form, Zod, `@hookform/resolvers`, input-otp                        |
+| Data fetching          | Native `fetch` through `lib/api-client.ts`, SWR where hooks/components use it |
+| Charts and interaction | Recharts, dnd-kit, Framer Motion from the workspace root                      |
+| Theming                | next-themes and a custom theme provider                                       |
+| Tooling                | ESLint, TypeScript, PostCSS                                                   |
 
 ## Features
 
@@ -57,33 +57,33 @@ The frontend uses App Router route groups and feature-oriented component directo
 
 The app uses file-based App Router routes. Important routes include:
 
-| Route | Source | Purpose |
-| --- | --- | --- |
-| `/` | `app/(public)/page.tsx` | Public landing page. |
-| `/login` | `app/(auth)/login/page.tsx` | Authentication page. |
-| `/books` | `app/(public)/books/page.tsx` | Public books browser. |
-| `/genres` | `app/(public)/genres/page.tsx` | Public genre listing. |
-| `/genres/[slug]` | `app/(public)/genres/[slug]/page.tsx` | Books within a genre. |
-| `/[type]` | `app/(public)/[type]/page.tsx` | Dynamic book type browser. |
-| `/[type]/[id]` | `app/(public)/[type]/[id]/page.tsx` | Book details. |
-| `/[type]/[id]/c/[index]` | `app/(public)/[type]/[id]/c/[index]/page.tsx` | Reader route for a chapter. |
-| `/dashboard` | `app/dashboard/page.tsx` | User dashboard home. |
-| `/dashboard/library` | `app/dashboard/library/page.tsx` | User library. |
-| `/dashboard/history` | `app/dashboard/history/page.tsx` | Reading or transaction history view. |
-| `/dashboard/reading_progress` | `app/dashboard/reading_progress/page.tsx` | Reading progress. |
-| `/dashboard/favorites` | `app/dashboard/favorites/page.tsx` | Favorite books. |
-| `/dashboard/settings` | `app/dashboard/settings/page.tsx` | User settings. |
-| `/admin` | `app/admin/page.tsx` | Admin dashboard. |
-| `/admin/books` | `app/admin/books/page.tsx` | Book management. |
-| `/admin/books/[id]` | `app/admin/books/[id]/page.tsx` | Book editing. |
-| `/admin/books/[id]/c/[index]` | `app/admin/books/[id]/c/[index]/page.tsx` | Admin chapter content editor/reader. |
-| `/admin/books-type` | `app/admin/books-type/page.tsx` | Book type management. |
-| `/admin/genres` | `app/admin/genres/page.tsx` | Genre management. |
-| `/admin/media` | `app/admin/media/page.tsx` | Media management. |
-| `/admin/users` | `app/admin/users/page.tsx` | User management. |
-| `/admin/staff` | `app/admin/staff/page.tsx` | Staff management. |
-| `/admin/transactions` | `app/admin/transactions/page.tsx` | Transaction management. |
-| `/admin/settings` | `app/admin/settings/page.tsx` | Admin settings. |
+| Route                         | Source                                        | Purpose                              |
+| ----------------------------- | --------------------------------------------- | ------------------------------------ |
+| `/`                           | `app/(public)/page.tsx`                       | Public landing page.                 |
+| `/login`                      | `app/(auth)/login/page.tsx`                   | Authentication page.                 |
+| `/books`                      | `app/(public)/books/page.tsx`                 | Public books browser.                |
+| `/genres`                     | `app/(public)/genres/page.tsx`                | Public genre listing.                |
+| `/genres/[slug]`              | `app/(public)/genres/[slug]/page.tsx`         | Books within a genre.                |
+| `/[type]`                     | `app/(public)/[type]/page.tsx`                | Dynamic book type browser.           |
+| `/[type]/[id]`                | `app/(public)/[type]/[id]/page.tsx`           | Book details.                        |
+| `/[type]/[id]/c/[index]`      | `app/(public)/[type]/[id]/c/[index]/page.tsx` | Reader route for a chapter.          |
+| `/dashboard`                  | `app/dashboard/page.tsx`                      | User dashboard home.                 |
+| `/dashboard/library`          | `app/dashboard/library/page.tsx`              | User library.                        |
+| `/dashboard/history`          | `app/dashboard/history/page.tsx`              | Reading or transaction history view. |
+| `/dashboard/reading_progress` | `app/dashboard/reading_progress/page.tsx`     | Reading progress.                    |
+| `/dashboard/favorites`        | `app/dashboard/favorites/page.tsx`            | Favorite books.                      |
+| `/dashboard/settings`         | `app/dashboard/settings/page.tsx`             | User settings.                       |
+| `/admin`                      | `app/admin/page.tsx`                          | Admin dashboard.                     |
+| `/admin/books`                | `app/admin/books/page.tsx`                    | Book management.                     |
+| `/admin/books/[id]`           | `app/admin/books/[id]/page.tsx`               | Book editing.                        |
+| `/admin/books/[id]/c/[index]` | `app/admin/books/[id]/c/[index]/page.tsx`     | Admin chapter content editor/reader. |
+| `/admin/books-type`           | `app/admin/books-type/page.tsx`               | Book type management.                |
+| `/admin/genres`               | `app/admin/genres/page.tsx`                   | Genre management.                    |
+| `/admin/media`                | `app/admin/media/page.tsx`                    | Media management.                    |
+| `/admin/users`                | `app/admin/users/page.tsx`                    | User management.                     |
+| `/admin/staff`                | `app/admin/staff/page.tsx`                    | Staff management.                    |
+| `/admin/transactions`         | `app/admin/transactions/page.tsx`             | Transaction management.              |
+| `/admin/settings`             | `app/admin/settings/page.tsx`                 | Admin settings.                      |
 
 ## Internationalization
 
@@ -154,19 +154,19 @@ Repository-visible optimizations include:
 
 Create `frontend/.env.local` from `frontend/.env.local.example`.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_BASE` | Yes | Base URL of the NestJS API server. |
-| `NEXT_PUBLIC_S3_PUBLIC_BASE_URL` | Yes | Public CDN/S3 base URL used to render optimized book-cover thumbnails. |
+| Variable                         | Required | Purpose                                                                |
+| -------------------------------- | -------- | ---------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_BASE`           | Yes      | Base URL of the NestJS API server.                                     |
+| `NEXT_PUBLIC_S3_PUBLIC_BASE_URL` | Yes      | Public CDN/S3 base URL used to render optimized book-cover thumbnails. |
 
 ## Development Commands
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Starts the Next.js development server. |
-| `npm run build` | Creates a production build. |
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `npm run dev`   | Starts the Next.js development server.               |
+| `npm run build` | Creates a production build.                          |
 | `npm run start` | Starts the production Next.js server after building. |
-| `npm run lint` | Runs ESLint. |
+| `npm run lint`  | Runs ESLint.                                         |
 
 From the monorepo root, use workspace commands:
 

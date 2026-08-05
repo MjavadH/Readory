@@ -233,7 +233,10 @@ describe('StorageService', () => {
 
     it('deletes all keys under prefix', async () => {
       s3Send
-        .mockResolvedValueOnce({ IsTruncated: false, Contents: [{ Key: 'prefix/a' }, { Key: 'prefix/b' }] })
+        .mockResolvedValueOnce({
+          IsTruncated: false,
+          Contents: [{ Key: 'prefix/a' }, { Key: 'prefix/b' }],
+        })
         .mockResolvedValueOnce({ Deleted: [{ Key: 'prefix/a' }, { Key: 'prefix/b' }] });
 
       const count = await service.deletePrefix('prefix');

@@ -82,11 +82,7 @@ describe('UsersService', () => {
       const result = await service.getUsersStats();
 
       expect(result).toEqual({ totalUsers: 100, newUsers: 5, activeUsers: 50 });
-      expect(cacheManager.setString).toHaveBeenCalledWith(
-        'stats:users',
-        expect.any(String),
-        3600,
-      );
+      expect(cacheManager.setString).toHaveBeenCalledWith('stats:users', expect.any(String), 3600);
     });
   });
 
@@ -179,19 +175,25 @@ describe('UsersService', () => {
   describe('registerTemporaryUser', () => {
     it('throws ConflictException when email exists', async () => {
       prisma.user.findFirst.mockResolvedValue({ email: 'a@b.com', username: 'other' });
-      await expect(service.registerTemporaryUser('a@b.com', 'user', 'hash')).rejects.toThrow(ConflictException);
+      await expect(service.registerTemporaryUser('a@b.com', 'user', 'hash')).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('throws ConflictException when username exists (case-insensitive)', async () => {
       prisma.user.findFirst.mockResolvedValue({ email: 'other@b.com', username: 'user' });
-      await expect(service.registerTemporaryUser('new@b.com', 'User', 'hash')).rejects.toThrow(ConflictException);
+      await expect(service.registerTemporaryUser('new@b.com', 'User', 'hash')).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('throws BadRequestException when code already sent', async () => {
       prisma.user.findFirst.mockResolvedValue(null);
       cacheManager.getString.mockResolvedValue('existing');
 
-      await expect(service.registerTemporaryUser('a@b.com', 'user', 'hash')).rejects.toThrow(BadRequestException);
+      await expect(service.registerTemporaryUser('a@b.com', 'user', 'hash')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('stores temp data in cache and returns message', async () => {
@@ -208,24 +210,35 @@ describe('UsersService', () => {
   describe('verifyAndCreateUser', () => {
     it('throws BadRequestException when no data in cache', async () => {
       cacheManager.getString.mockResolvedValue(null);
-      await expect(service.verifyAndCreateUser('a@b.com', '123456')).rejects.toThrow(BadRequestException);
+      await expect(service.verifyAndCreateUser('a@b.com', '123456')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws BadRequestException on wrong code', async () => {
       cacheManager.getString.mockResolvedValue(JSON.stringify({ verificationCode: '999999' }));
       cacheManager.incr.mockResolvedValue(1);
-      await expect(service.verifyAndCreateUser('a@b.com', '000000')).rejects.toThrow(BadRequestException);
+      await expect(service.verifyAndCreateUser('a@b.com', '000000')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws and clears cache after 5 wrong attempts', async () => {
       cacheManager.getString.mockResolvedValue(JSON.stringify({ verificationCode: '999999' }));
       cacheManager.incr.mockResolvedValue(5);
-      await expect(service.verifyAndCreateUser('a@b.com', '000000')).rejects.toThrow('Too many invalid attempts');
+      await expect(service.verifyAndCreateUser('a@b.com', '000000')).rejects.toThrow(
+        'Too many invalid attempts',
+      );
       expect(cacheManager.del).toHaveBeenCalledWith('temp_reg:a@b.com');
     });
 
     it('creates user on correct code', async () => {
-      const tempData = { email: 'a@b.com', username: 'user', passwordHash: 'hash', verificationCode: '123456' };
+      const tempData = {
+        email: 'a@b.com',
+        username: 'user',
+        passwordHash: 'hash',
+        verificationCode: '123456',
+      };
       cacheManager.getString.mockResolvedValue(JSON.stringify(tempData));
       prisma.role.upsert.mockResolvedValue({ id: 1, name: 'USER' });
       prisma.user.create.mockResolvedValue({ id: 1, email: 'a@b.com', username: 'user' });
@@ -285,12 +298,16 @@ describe('UsersService', () => {
 
     it('validates username length', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 1, passwordHash: 'hash' });
-      await expect(service.updateUser(1, { username: 'ab' })).rejects.toThrow('Username must be 3-32 characters');
+      await expect(service.updateUser(1, { username: 'ab' })).rejects.toThrow(
+        'Username must be 3-32 characters',
+      );
     });
 
     it('validates username characters', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 1, passwordHash: 'hash' });
-      await expect(service.updateUser(1, { username: 'invalid user!' })).rejects.toThrow('Username contains invalid characters');
+      await expect(service.updateUser(1, { username: 'invalid user!' })).rejects.toThrow(
+        'Username contains invalid characters',
+      );
     });
 
     it('throws ConflictException when username taken', async () => {
@@ -302,7 +319,12 @@ describe('UsersService', () => {
     it('updates username successfully', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 1, passwordHash: 'hash' });
       prisma.user.findFirst.mockResolvedValue(null);
-      prisma.user.update.mockResolvedValue({ id: 1, email: 'a@b.com', username: 'newname', updatedAt: new Date() });
+      prisma.user.update.mockResolvedValue({
+        id: 1,
+        email: 'a@b.com',
+        username: 'newname',
+        updatedAt: new Date(),
+      });
 
       const result = await service.updateUser(1, { username: 'NewName' });
 
@@ -336,9 +358,17 @@ describe('UsersService', () => {
     it('updates password successfully', async () => {
       const hash = await argon2.hash('correct');
       prisma.user.findUnique.mockResolvedValue({ id: 1, passwordHash: hash });
-      prisma.user.update.mockResolvedValue({ id: 1, email: 'a@b.com', username: 'user', updatedAt: new Date() });
+      prisma.user.update.mockResolvedValue({
+        id: 1,
+        email: 'a@b.com',
+        username: 'user',
+        updatedAt: new Date(),
+      });
 
-      const result = await service.updateUser(1, { currentPassword: 'correct', newPassword: 'newpass1234' });
+      const result = await service.updateUser(1, {
+        currentPassword: 'correct',
+        newPassword: 'newpass1234',
+      });
 
       expect(result.success).toBe(true);
     });

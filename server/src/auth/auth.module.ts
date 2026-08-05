@@ -29,9 +29,7 @@ import { AuthSecurityService } from './security/auth-security.service';
         return {
           secret,
           signOptions: {
-            expiresIn: Number(
-              configService.get<string>('JWT_EXPIRES_IN') || 3600,
-            ),
+            expiresIn: Number(configService.get<string>('JWT_EXPIRES_IN') || 3600),
           },
         };
       },

@@ -1,24 +1,24 @@
-import * as React from "react";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import * as React from 'react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
+} from '@/components/ui/drawer';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { useIsMobile } from "@/hooks/use-mobile";
+} from '@/components/ui/select';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export type DateTimePickerProps = {
   value?: Date;
@@ -39,49 +39,49 @@ const MS_DAY = 86_400_000;
 
 function getLocale(locale?: string) {
   if (locale) return locale;
-  if (typeof navigator !== "undefined" && navigator.language) return navigator.language;
-  return "en-US";
+  if (typeof navigator !== 'undefined' && navigator.language) return navigator.language;
+  return 'en-US';
 }
 
 function getCalendar(locale: string) {
   try {
-    return new Intl.DateTimeFormat(locale).resolvedOptions().calendar ?? "gregory";
+    return new Intl.DateTimeFormat(locale).resolvedOptions().calendar ?? 'gregory';
   } catch {
-    return "gregory";
+    return 'gregory';
   }
 }
 
 /** Extract localized calendar parts (year/month index/day) for a given Date. */
 function getParts(date: Date, locale: string, calendar: string): Parts {
   const fmt = new Intl.DateTimeFormat(`${locale}-u-ca-${calendar}`, {
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    numberingSystem: "latn",
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    numberingSystem: 'latn',
   });
   const parts = fmt.formatToParts(date);
   const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0);
-  return { year: get("year"), month: get("month"), day: get("day") };
+  return { year: get('year'), month: get('month'), day: get('day') };
 }
 
 /** Format day number for display in the target calendar's native numerals. */
 function formatDayLabel(date: Date, locale: string, calendar: string) {
-  return new Intl.DateTimeFormat(`${locale}-u-ca-${calendar}`, { day: "numeric" }).format(date);
+  return new Intl.DateTimeFormat(`${locale}-u-ca-${calendar}`, { day: 'numeric' }).format(date);
 }
 
 function formatMonthYear(date: Date, locale: string, calendar: string) {
   return new Intl.DateTimeFormat(`${locale}-u-ca-${calendar}`, {
-    month: "long",
-    year: "numeric",
+    month: 'long',
+    year: 'numeric',
   }).format(date);
 }
 
 function formatTrigger(date: Date, locale: string, calendar: string, showTime: boolean) {
   return new Intl.DateTimeFormat(`${locale}-u-ca-${calendar}`, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    ...(showTime ? { hour: "numeric", minute: "2-digit", hour12: true } : {}),
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    ...(showTime ? { hour: 'numeric', minute: '2-digit', hour12: true } : {}),
   }).format(date);
 }
 
@@ -123,7 +123,7 @@ function buildMonthGrid(cursor: Date, locale: string, calendar: string) {
 }
 
 function getWeekdays(locale: string) {
-  const fmt = new Intl.DateTimeFormat(locale, { weekday: "short" });
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
   // 2024-01-07 is a Sunday.
   const base = new Date(2024, 0, 7);
   return Array.from({ length: 7 }, (_, i) => {
@@ -134,21 +134,21 @@ function getWeekdays(locale: string) {
 }
 
 function to12h(hour24: number) {
-  const ampm: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+  const ampm: 'AM' | 'PM' = hour24 >= 12 ? 'PM' : 'AM';
   const h = hour24 % 12 === 0 ? 12 : hour24 % 12;
   return { hour12: h, ampm };
 }
 
-function from12h(hour12: number, ampm: "AM" | "PM") {
+function from12h(hour12: number, ampm: 'AM' | 'PM') {
   const h = hour12 % 12;
-  return ampm === "PM" ? h + 12 : h;
+  return ampm === 'PM' ? h + 12 : h;
 }
 
 type Draft = {
   date: Date; // day precision
   hour12: number;
   minute: number;
-  ampm: "AM" | "PM";
+  ampm: 'AM' | 'PM';
 };
 
 function makeDraft(source: Date): Draft {
@@ -182,7 +182,7 @@ export function DateTimePicker({
   min,
   max,
   showTime = true,
-  placeholder = "Select date",
+  placeholder = 'Select date',
   disabled,
   className,
   locale: localeProp,
@@ -252,9 +252,7 @@ export function DateTimePicker({
 
   const handleCancel = () => setOpen(false);
 
-  const triggerLabel = current
-    ? formatTrigger(current, locale, calendar, showTime)
-    : placeholder;
+  const triggerLabel = current ? formatTrigger(current, locale, calendar, showTime) : placeholder;
 
   const trigger = (
     <Button
@@ -262,8 +260,8 @@ export function DateTimePicker({
       variant="outline"
       disabled={disabled}
       className={cn(
-        "w-full justify-start gap-2 font-normal",
-        !current && "text-muted-foreground",
+        'w-full justify-start gap-2 font-normal',
+        !current && 'text-muted-foreground',
         className,
       )}
     >
@@ -332,13 +330,13 @@ export function DateTimePicker({
                 if (!inMonth) setCursor(date);
               }}
               className={cn(
-                "flex aspect-square items-center justify-center rounded-md text-sm transition-colors",
-                "hover:bg-accent hover:text-accent-foreground",
-                !inMonth && "text-muted-foreground/50",
-                isToday && !isSelected && "ring-1 ring-ring/40",
+                'flex aspect-square items-center justify-center rounded-md text-sm transition-colors',
+                'hover:bg-accent hover:text-accent-foreground',
+                !inMonth && 'text-muted-foreground/50',
+                isToday && !isSelected && 'ring-1 ring-ring/40',
                 isSelected &&
-                  "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                dDisabled && "pointer-events-none opacity-40",
+                  'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground',
+                dDisabled && 'pointer-events-none opacity-40',
               )}
             >
               {formatDayLabel(date, locale, calendar)}
@@ -360,7 +358,7 @@ export function DateTimePicker({
             <SelectContent className="max-h-60">
               {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
                 <SelectItem key={h} value={String(h)}>
-                  {String(h).padStart(2, "0")}
+                  {String(h).padStart(2, '0')}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -375,22 +373,22 @@ export function DateTimePicker({
             <SelectContent className="max-h-60">
               {Array.from({ length: 60 }, (_, i) => i).map((m) => (
                 <SelectItem key={m} value={String(m)}>
-                  {String(m).padStart(2, "0")}
+                  {String(m).padStart(2, '0')}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="inline-flex overflow-hidden rounded-md border">
-            {(["AM", "PM"] as const).map((p) => (
+            {(['AM', 'PM'] as const).map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setDraft((d) => ({ ...d, ampm: p }))}
                 className={cn(
-                  "px-3 py-1.5 text-xs font-medium transition-colors",
+                  'px-3 py-1.5 text-xs font-medium transition-colors',
                   draft.ampm === p
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-transparent text-muted-foreground hover:bg-accent",
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-transparent text-muted-foreground hover:bg-accent',
                 )}
               >
                 {p}
@@ -419,12 +417,10 @@ export function DateTimePicker({
         <DrawerContent className="pointer-events-auto">
           <DrawerHeader className="pb-0">
             <DrawerTitle className="text-base">
-              {showTime ? "Select date & time" : "Select date"}
+              {showTime ? 'Select date & time' : 'Select date'}
             </DrawerTitle>
           </DrawerHeader>
-          <div className="mx-auto w-full max-w-sm pb-[env(safe-area-inset-bottom)]">
-            {body}
-          </div>
+          <div className="mx-auto w-full max-w-sm pb-[env(safe-area-inset-bottom)]">{body}</div>
         </DrawerContent>
       </Drawer>
     );

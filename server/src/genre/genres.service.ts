@@ -1,9 +1,5 @@
 import type { IconKey } from '@readory/shared';
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
@@ -31,11 +27,7 @@ export class GenresService {
       orderBy: { name: 'asc' },
       select: { id: true, name: true, slug: true, iconKey: true },
     });
-    await this.cacheManager.setString(
-      this.CACHE_KEY_ALL,
-      JSON.stringify(genres),
-      7200,
-    );
+    await this.cacheManager.setString(this.CACHE_KEY_ALL, JSON.stringify(genres), 7200);
     return genres;
   }
 
@@ -52,11 +44,7 @@ export class GenresService {
         },
       },
     });
-    await this.cacheManager.setString(
-      this.CACHE_KEY_ALL_ADMIN,
-      JSON.stringify(genres),
-      7200,
-    );
+    await this.cacheManager.setString(this.CACHE_KEY_ALL_ADMIN, JSON.stringify(genres), 7200);
     return genres;
   }
 
@@ -73,8 +61,7 @@ export class GenresService {
       }
       count++;
       slug = `${base}-${count}`;
-      if (count > 100)
-        throw new ConflictException('Unable to generate unique slug');
+      if (count > 100) throw new ConflictException('Unable to generate unique slug');
     }
   }
 
@@ -88,11 +75,7 @@ export class GenresService {
       orderBy: [{ featuredOrder: 'asc' }, { name: 'asc' }],
       select: { name: true, slug: true, iconKey: true },
     });
-    await this.cacheManager.setString(
-      this.CACHE_KEY_FEATURED,
-      JSON.stringify(genres),
-      7200,
-    );
+    await this.cacheManager.setString(this.CACHE_KEY_FEATURED, JSON.stringify(genres), 7200);
 
     return genres;
   }
@@ -141,8 +124,7 @@ export class GenresService {
       await this.invalidateCache();
       return genre;
     } catch (err: any) {
-      if (err?.code === 'P2002')
-        throw new ConflictException('Genre already exists');
+      if (err?.code === 'P2002') throw new ConflictException('Genre already exists');
       throw err;
     }
   }
@@ -173,8 +155,7 @@ export class GenresService {
       await this.invalidateCache();
       return updatedGenre;
     } catch (err: any) {
-      if (err?.code === 'P2002')
-        throw new ConflictException('Genre name or slug already exists');
+      if (err?.code === 'P2002') throw new ConflictException('Genre name or slug already exists');
       throw err;
     }
   }

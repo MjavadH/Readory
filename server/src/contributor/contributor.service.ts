@@ -1,14 +1,10 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateContributorDto } from './dto/create-contributor.dto';
 import { UpdateContributorDto } from './dto/update-contributor.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { normalizeQ, normalizePagination, paginationMeta, normalizeSlug } from '../common';
-import {PublicationStatus} from "@readory/shared";
+import { PublicationStatus } from '@readory/shared';
 
 @Injectable()
 export class ContributorService {
@@ -16,8 +12,8 @@ export class ContributorService {
   private readonly LIST_VERSION_KEY = 'contributor:list:version';
 
   constructor(
-      private readonly prisma: PrismaService,
-      private readonly cacheManager: CacheManager,
+    private readonly prisma: PrismaService,
+    private readonly cacheManager: CacheManager,
   ) {}
 
   async create(createContributorDto: CreateContributorDto) {
@@ -53,42 +49,42 @@ export class ContributorService {
     const listVersion = await this.cacheManager.getVersion(this.LIST_VERSION_KEY);
 
     const cacheKey = this.cacheManager.buildKey(
-        this.CACHE_NAMESPACE,
-        'list',
-        listVersion,
-        pagination.page,
-        pagination.limit,
-        normalizedQ || 'all',
+      this.CACHE_NAMESPACE,
+      'list',
+      listVersion,
+      pagination.page,
+      pagination.limit,
+      normalizedQ || 'all',
     );
 
     return this.cacheManager.getOrSet(
-        cacheKey,
-        { ttlSeconds: 1800, earlyRefreshWindowSeconds: 300 },
-        async () => {
-          const whereCond = normalizedQ
-              ? {
-                OR: [
-                  { name: { contains: normalizedQ, mode: 'insensitive' as const } },
-                  { originalName: { contains: normalizedQ, mode: 'insensitive' as const } },
-                ],
-              }
-              : {};
+      cacheKey,
+      { ttlSeconds: 1800, earlyRefreshWindowSeconds: 300 },
+      async () => {
+        const whereCond = normalizedQ
+          ? {
+              OR: [
+                { name: { contains: normalizedQ, mode: 'insensitive' as const } },
+                { originalName: { contains: normalizedQ, mode: 'insensitive' as const } },
+              ],
+            }
+          : {};
 
-          const [data, total] = await Promise.all([
-            this.prisma.contributor.findMany({
-              where: whereCond,
-              skip: pagination.skip,
-              take: pagination.limit,
-              orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.contributor.count({ where: whereCond }),
-          ]);
+        const [data, total] = await Promise.all([
+          this.prisma.contributor.findMany({
+            where: whereCond,
+            skip: pagination.skip,
+            take: pagination.limit,
+            orderBy: { createdAt: 'desc' },
+          }),
+          this.prisma.contributor.count({ where: whereCond }),
+        ]);
 
-          return {
-            data,
-            meta: paginationMeta(total, pagination.page, pagination.limit),
-          };
-        },
+        return {
+          data,
+          meta: paginationMeta(total, pagination.page, pagination.limit),
+        };
+      },
     );
   }
 
@@ -96,19 +92,19 @@ export class ContributorService {
     const cacheKey = this.cacheManager.buildKey(this.CACHE_NAMESPACE, 'detail', id);
 
     return this.cacheManager.getOrSet(
-        cacheKey,
-        { ttlSeconds: 86400, earlyRefreshWindowSeconds: 3600 },
-        async () => {
-          const contributor = await this.prisma.contributor.findUnique({
-            where: { id },
-          });
+      cacheKey,
+      { ttlSeconds: 86400, earlyRefreshWindowSeconds: 3600 },
+      async () => {
+        const contributor = await this.prisma.contributor.findUnique({
+          where: { id },
+        });
 
-          if (!contributor) {
-            throw new NotFoundException(`No contributor with ID ${id} was found.`);
-          }
+        if (!contributor) {
+          throw new NotFoundException(`No contributor with ID ${id} was found.`);
+        }
 
-          return contributor;
-        },
+        return contributor;
+      },
     );
   }
 
@@ -119,75 +115,75 @@ export class ContributorService {
     const cacheKey = `contributor:public_profile:${version}:${slug}:p${page}:l${limit}`;
 
     return this.cacheManager.getOrSet(
-        cacheKey,
-        { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
-        async () => {
-          const contributors = await this.prisma.contributor.findUnique({
-            where: { slug },
+      cacheKey,
+      { ttlSeconds: 900, jitterSeconds: 90, earlyRefreshWindowSeconds: 60 },
+      async () => {
+        const contributors = await this.prisma.contributor.findUnique({
+          where: { slug },
+          select: {
+            id: true,
+            name: true,
+            originalName: true,
+            slug: true,
+            biography: true,
+            gender: true,
+            bookCount: true,
+            updatedAt: true,
+          },
+        });
+
+        if (!contributors) {
+          throw new NotFoundException('The specified contributor was not found.');
+        }
+
+        const [totalBooks, books] = await this.prisma.$transaction([
+          this.prisma.book.count({
+            where: {
+              publishStatus: PublicationStatus.PUBLISHED,
+              contributors: { some: { contributorId: contributors.id } },
+            },
+          }),
+          this.prisma.book.findMany({
+            where: {
+              publishStatus: PublicationStatus.PUBLISHED,
+              contributors: { some: { contributorId: contributors.id } },
+            },
+            orderBy: { updatedAt: 'desc' },
+            skip,
+            take: limit,
             select: {
               id: true,
-              name: true,
-              originalName: true,
-              slug: true,
-              biography: true,
-              gender: true,
-              bookCount: true,
+              title: true,
+              coverImage: true,
+              ratingAvg: true,
+              ratingCount: true,
+              type: { select: { name: true, slug: true } },
+              genres: {
+                include: {
+                  genre: { select: { id: true, name: true, slug: true } },
+                },
+                take: 2,
+              },
+              chapterCount: true,
               updatedAt: true,
             },
-          });
+          }),
+        ]);
 
-          if (!contributors) {
-            throw new NotFoundException('The specified contributor was not found.');
-          }
-
-          const [totalBooks, books] = await this.prisma.$transaction([
-            this.prisma.book.count({
-              where: {
-                publishStatus: PublicationStatus.PUBLISHED,
-                contributors: { some: { contributorId: contributors.id } },
-              },
-            }),
-            this.prisma.book.findMany({
-              where: {
-                publishStatus: PublicationStatus.PUBLISHED,
-                contributors: { some: { contributorId: contributors.id } },
-              },
-              orderBy: { updatedAt: 'desc' },
-              skip,
-              take: limit,
-              select: {
-                id: true,
-                title: true,
-                coverImage: true,
-                ratingAvg: true,
-                ratingCount: true,
-                type: {select: {name: true, slug: true,},},
-                genres: {
-                  include: {
-                    genre: { select: { id: true, name: true, slug: true } },
-                  },
-                  take: 2,
-                },
-                chapterCount: true,
-                updatedAt: true,
-              },
-            }),
-          ]);
-
-          return {
-            contributors,
-            books: books.map((book) => ({
-              ...book,
-              genres: book.genres.map((g) => g.genre),
-            })),
-            pagination: {
-              total: totalBooks,
-              page,
-              limit,
-              totalPages: Math.max(1, Math.ceil(totalBooks / limit)),
-            },
-          };
-        },
+        return {
+          contributors,
+          books: books.map((book) => ({
+            ...book,
+            genres: book.genres.map((g) => g.genre),
+          })),
+          pagination: {
+            total: totalBooks,
+            page,
+            limit,
+            totalPages: Math.max(1, Math.ceil(totalBooks / limit)),
+          },
+        };
+      },
     );
   }
 

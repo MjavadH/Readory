@@ -6,7 +6,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { JwtService } from '@nestjs/jwt';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import {PublicationStatus} from "@readory/shared";
+import { PublicationStatus } from '@readory/shared';
 
 describe('AppModule (e2e)', () => {
   let app: INestApplication;

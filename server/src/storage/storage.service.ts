@@ -6,7 +6,8 @@ import {
   GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
-  ListObjectsV2Command, PutBucketPolicyCommand,
+  ListObjectsV2Command,
+  PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -34,8 +35,7 @@ export class StorageService implements OnModuleInit {
     if (!bucket) throw new Error('S3_BUCKET_NAME is required');
     this.bucket = bucket;
 
-    this.autoCreateBucket =
-      (config.get<string>('S3_AUTO_CREATE_BUCKET') ?? 'false') === 'true';
+    this.autoCreateBucket = (config.get<string>('S3_AUTO_CREATE_BUCKET') ?? 'false') === 'true';
     const publicBaseUrl = config.get<string>('S3_PUBLIC_BASE_URL')?.trim();
     this.publicBaseUrl = publicBaseUrl ? publicBaseUrl.replace(/\/+$/, '') : undefined;
   }
@@ -50,9 +50,7 @@ export class StorageService implements OnModuleInit {
       this.logger.log(`S3 bucket OK: ${this.bucket}`);
     } catch (e) {
       if (!this.autoCreateBucket) {
-        this.logger.error(
-          `S3 bucket missing or not accessible: ${this.bucket}`,
-        );
+        this.logger.error(`S3 bucket missing or not accessible: ${this.bucket}`);
         throw e;
       }
       this.logger.warn(`Creating S3 bucket: ${this.bucket}`);
@@ -71,10 +69,10 @@ export class StorageService implements OnModuleInit {
         ],
       };
       await this.s3.send(
-          new PutBucketPolicyCommand({
-            Bucket: this.bucket,
-            Policy: JSON.stringify(publicReadPolicy),
-          })
+        new PutBucketPolicyCommand({
+          Bucket: this.bucket,
+          Policy: JSON.stringify(publicReadPolicy),
+        }),
       );
 
       this.logger.log(`S3 bucket created: ${this.bucket}`);
@@ -103,11 +101,7 @@ export class StorageService implements OnModuleInit {
     });
   }
 
-  async putBuffer(
-    key: string,
-    buffer: Buffer,
-    contentType: string,
-  ): Promise<void> {
+  async putBuffer(key: string, buffer: Buffer, contentType: string): Promise<void> {
     await this.putObject({
       key,
       body: buffer,
@@ -117,9 +111,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async getObjectBuffer(key: string): Promise<Buffer> {
-    const out = await this.s3.send(
-      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-    );
+    const out = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
     const body = out.Body;
     if (!body || !(body instanceof Readable)) {
       throw new Error('Failed to read object body');
@@ -132,9 +124,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async getObjectStream(key: string): Promise<Readable> {
-    const out = await this.s3.send(
-      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
-    );
+    const out = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
     const body = out.Body;
     if (!body || !(body instanceof Readable)) {
       throw new Error('Failed to read object stream');
@@ -143,9 +133,7 @@ export class StorageService implements OnModuleInit {
   }
 
   async headObject(key: string) {
-    return this.s3.send(
-      new HeadObjectCommand({ Bucket: this.bucket, Key: key }),
-    );
+    return this.s3.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
   async listPrefix(prefix: string): Promise<string[]> {
@@ -182,17 +170,17 @@ export class StorageService implements OnModuleInit {
       const batch = keys.slice(idx, idx + 1000);
 
       const out = await this.s3.send(
-          new DeleteObjectsCommand({
-            Bucket: this.bucket,
-            Delete: { Objects: batch.map((k) => ({ Key: k })) },
-          }),
+        new DeleteObjectsCommand({
+          Bucket: this.bucket,
+          Delete: { Objects: batch.map((k) => ({ Key: k })) },
+        }),
       );
 
       if (out.Errors && out.Errors.length > 0) {
         this.logger.error(
-            `Partial delete failure in deletePrefix(${normalizedPrefix}): ${out.Errors
-                .map((e) => `${e.Key}:${e.Code}`)
-                .join(', ')}`,
+          `Partial delete failure in deletePrefix(${normalizedPrefix}): ${out.Errors.map(
+            (e) => `${e.Key}:${e.Code}`,
+          ).join(', ')}`,
         );
         throw new Error('S3 partial delete failure');
       }
@@ -212,17 +200,17 @@ export class StorageService implements OnModuleInit {
       const batch = valid.slice(i, i + 1000);
 
       const out = await this.s3.send(
-          new DeleteObjectsCommand({
-            Bucket: this.bucket,
-            Delete: { Objects: batch.map((Key) => ({ Key })) },
-          }),
+        new DeleteObjectsCommand({
+          Bucket: this.bucket,
+          Delete: { Objects: batch.map((Key) => ({ Key })) },
+        }),
       );
 
       if (out.Errors && out.Errors.length > 0) {
         this.logger.error(
-            `Partial delete failure in deleteKeys(): ${out.Errors
-                .map((e) => `${e.Key}:${e.Code}`)
-                .join(', ')}`,
+          `Partial delete failure in deleteKeys(): ${out.Errors.map(
+            (e) => `${e.Key}:${e.Code}`,
+          ).join(', ')}`,
         );
         throw new Error('S3 partial delete failure');
       }
