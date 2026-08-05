@@ -11,7 +11,6 @@ import {
   FolderPlus,
   Grid2X2,
   Loader2,
-  LucideBookHeart,
   Pencil,
   Trash2,
 } from 'lucide-react';
@@ -19,13 +18,6 @@ import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,

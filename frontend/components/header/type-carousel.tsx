@@ -46,16 +46,6 @@ export function TypeCarousel({ types, isLoading, activePath, onItemClick }: Type
     };
   }, []);
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = 200;
-      scrollContainerRef.current.scrollBy({
-        left: direction === 'left' ? -scrollAmount : scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex gap-2 overflow-hidden px-1">
@@ -77,7 +67,7 @@ export function TypeCarousel({ types, isLoading, activePath, onItemClick }: Type
     <div className="relative">
       <div
         ref={scrollContainerRef}
-        className="flex gap-2 overflow-x-auto scroll-smooth px-1 pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-2 overflow-x-auto scroll-smooth px-1 pb-1 scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {types.map((type) => {
           const isActive = activePath === `/${type.slug}`;

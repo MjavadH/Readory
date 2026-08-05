@@ -15,7 +15,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('🌱 Starting seeding...');
 
-  const userRole = await prisma.role.upsert({
+  await prisma.role.upsert({
     where: { name: 'USER' },
     update: {},
     create: { name: 'USER' },
