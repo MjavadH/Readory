@@ -23,31 +23,125 @@ export class AuditLogService {
   log(input: AuditLogInput): void {
     const safeBefore = sanitizeAuditValue(input.before);
     const safeAfter = sanitizeAuditValue(input.after);
+
     const payload: Prisma.AuditLogCreateInput = {
       ...input,
       severity: inferAuditSeverity(input.action, input.severity),
       actorId: input.actorId == null ? null : String(input.actorId),
       targetId: input.targetId == null ? null : String(input.targetId),
-      metadata: sanitizeAuditValue(input.metadata) as any,
-      before: safeBefore as any,
-      after: safeAfter as any,
-      diff: generateAuditDiff(safeBefore, safeAfter) as any,
+
+      metadata: this.toPrismaJson(sanitizeAuditValue(input.metadata)),
+      before: this.toPrismaJson(safeBefore),
+      after: this.toPrismaJson(safeAfter),
+      diff: this.toPrismaJson(generateAuditDiff(safeBefore, safeAfter)),
     };
+
     this.enqueueLogWrite(payload);
   }
 
+  private toPrismaJson(value: unknown): Prisma.InputJsonValue | typeof Prisma.JsonNull {
+    if (value === null || value === undefined) {
+      return Prisma.JsonNull;
+    }
+
+    return this.normalizeJson(value) as Prisma.InputJsonValue;
+  }
+
+  private normalizeJson(
+      value: unknown,
+      seen = new WeakSet<object>(),
+  ): Prisma.JsonValue {
+    if (value === null) return null;
+
+    switch (typeof value) {
+      case 'string':
+      case 'boolean':
+        return value;
+
+      case 'number':
+        return Number.isFinite(value) ? value : String(value);
+
+      case 'bigint':
+        return value.toString();
+
+      case 'undefined':
+      case 'function':
+      case 'symbol':
+        return null;
+    }
+
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (value instanceof Prisma.Decimal) {
+      return value.toString();
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeJson(item, seen));
+    }
+
+    if (typeof value === 'object') {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+
+      seen.add(value);
+
+      try {
+        const toJSON = Reflect.get(value, 'toJSON');
+
+        if (typeof toJSON === 'function') {
+          const serialized = toJSON.call(value);
+
+          if (serialized !== value) {
+            return this.normalizeJson(serialized, seen);
+          }
+        }
+
+        const result: Prisma.JsonObject = {};
+
+        for (const [key, item] of Object.entries(value)) {
+          if (
+              key === 'constructor' ||
+              typeof item === 'function' ||
+              typeof item === 'undefined' ||
+              typeof item === 'symbol'
+          ) {
+            continue;
+          }
+
+          result[key] = this.normalizeJson(item, seen);
+        }
+
+        return result;
+      } finally {
+        seen.delete(value);
+      }
+    }
+
+    return String(value);
+  }
+
   private enqueueLogWrite(data: Prisma.AuditLogCreateInput): void {
-    setImmediate(
-      () =>
-          this.prisma.auditLog.create({ data })
+    setImmediate(() => {
+      void this.prisma.auditLog
+          .create({ data })
           .then(() => this.cache.bumpVersion(AUDIT_LOG_CACHE_VERSION_KEY))
-          .catch((error: Error) =>
+          .catch((error: unknown) => {
+            const message =
+                error instanceof Error ? error.message : String(error);
+
+            const stack =
+                error instanceof Error ? error.stack : undefined;
+
             this.logger.error(
-              `Audit log write failed: ${error.message}`,
-              error.stack,
-            ),
-          ),
-    );
+                `Audit log write failed: ${message}`,
+                stack,
+            );
+          });
+    });
   }
 
   async findMany(query: AuditLogQueryDto) {

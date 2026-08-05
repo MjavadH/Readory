@@ -1,14 +1,22 @@
 {
   "name": "readory-monorepo",
   "private": true,
-  "workspaces": ["server", "frontend", "shared"],
+  "workspaces": [
+    "server",
+    "frontend",
+    "shared"
+  ],
   "devDependencies": {
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
     "typescript": "^5.7.0"
   },
   "scripts": {
     "build": "npm -ws run build",
     "dev:shared": "npm --workspace @readory/shared run dev",
-    "build:shared": "npm --workspace @readory/shared run build"
+    "build:shared": "npm --workspace @readory/shared run build",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check"
   },
   "dependencies": {
     "framer-motion": "^12.34.3"

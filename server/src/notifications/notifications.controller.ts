@@ -75,6 +75,7 @@ export class NotificationsController {
     return this.service.getSubscription(this.uid(req), bookId);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('books/:bookId/subscription')
   @UseGuards(JwtAuthGuard)
   subscribe(
@@ -84,6 +85,7 @@ export class NotificationsController {
     return this.service.subscribe(this.uid(req), bookId);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Delete('books/:bookId/subscription')
   @UseGuards(JwtAuthGuard)
   unsubscribe(

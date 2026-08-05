@@ -807,7 +807,9 @@
     "AddToCollection": "افزودن به کالکشن",
     "SelectCollections": "انتخاب کالکشن‌ها",
     "NoUserCollections": "ابتدا از داشبورد یک کالکشن بسازید.",
-    "AddedToCollections": "کتاب به کالکشن‌های انتخاب‌شده اضافه شد."
+    "AddedToCollections": "کتاب به کالکشن‌های انتخاب‌شده اضافه شد.",
+    "NewChapterNotification": "اعلان فصل جدید",
+    "Unsubscribe": "لغو اشتراک"
   },
   "Contributors": {
     "Title": "همکاران",
@@ -1030,6 +1032,17 @@
     "AddFunds": "افزودن موجودی",
     "Language": "زبان"
   },
+  "Notifications": {
+    "title": "اعلان‌ها",
+    "markAllRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
+    "noNotifications": "همه اعلان‌ها را دیدید!",
+    "noNotificationsDesc": "در حال حاضر اعلان جدیدی ندارید.",
+    "viewAll": "مشاهده همه",
+    "unread": "خوانده‌نشده",
+    "newLabel": "جدید",
+    "loading": "در حال بارگذاری اعلان‌ها…"
+  },
+
   "Time": {
     "JustNow": "همین الان",
     "MinutesAgo": "{count, plural, one {# دقیقه پیش} other {# دقیقه پیش}}",

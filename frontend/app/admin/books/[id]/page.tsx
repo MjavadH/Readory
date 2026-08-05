@@ -399,7 +399,7 @@ export default function AdminBookDetail() {
                     ratingValue={Number(book.ratingAvg ?? 0)}
                     chaptersTotal={chaptersTotal}
                     hideRatingPanel={true}
-                    hideFavoriteButton={true}
+                    hideActionButton={true}
                     hideUpdatedAt={false}
                     hideCreatedAt={false}
                     primaryActionSlot={false}

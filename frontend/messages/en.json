@@ -807,7 +807,9 @@
     "AddToCollection": "Add to collection",
     "SelectCollections": "Select collections",
     "NoUserCollections": "Create a collection from your dashboard first.",
-    "AddedToCollections": "Book added to selected collections."
+    "AddedToCollections": "Book added to selected collections.",
+    "NewChapterNotification": "New chapter notification",
+    "Unsubscribe": "Unsubscribe"
   },
   "Contributors": {
     "Title": "Contributors",
@@ -1029,6 +1031,16 @@
     "WalletBalance": "Wallet Balance",
     "AddFunds": "Add Funds",
     "Language": "Language"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "noNotifications": "You're all caught up!",
+    "noNotificationsDesc": "No new notifications right now.",
+    "viewAll": "View all",
+    "unread": "unread",
+    "newLabel": "New",
+    "loading": "Loading notifications…"
   },
   "Time": {
     "JustNow": "just now",

@@ -33,19 +33,24 @@ export class NotificationOutboxProcessor
   private readonly logger = new Logger(NotificationOutboxProcessor.name);
   private readonly handlers: Record<string, OutboxHandler> = {
     [DomainEventType.CHAPTER_PUBLISHED]: this.withPayload(
-      1,
-      this.isChapterPublishedPayload,
-      this.handleChapter.bind(this),
+        1,
+        (payload): payload is ChapterPublishedEvent =>
+            this.isChapterPublishedPayload(payload),
+        this.handleChapter.bind(this),
     ),
+
     [DomainEventType.BOOK_PUBLISHED]: this.withPayload(
-      1,
-      this.isBookPublishedPayload,
-      this.handleBook.bind(this),
+        1,
+        (payload): payload is BookPublishedEvent =>
+            this.isBookPublishedPayload(payload),
+        this.handleBook.bind(this),
     ),
+
     [DomainEventType.ADMIN_BROADCAST_REQUESTED]: this.withPayload(
-      1,
-      this.isAdminBroadcastPayload,
-      this.handleBroadcast.bind(this),
+        1,
+        (payload): payload is AdminBroadcastRequestedEvent =>
+            this.isAdminBroadcastPayload(payload),
+        this.handleBroadcast.bind(this),
     ),
   };
   private timer?: NodeJS.Timeout;
