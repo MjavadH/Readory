@@ -19,7 +19,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
+  if (!user || user.roleName !== 'ADMIN') {
     return notFound();
   }
 
