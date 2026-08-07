@@ -202,6 +202,7 @@ export class NotificationOutboxProcessor implements OnModuleInit, OnModuleDestro
           actionUrl: `/${bookType}/${payload.bookId}`,
           metadata: {
             bookId: payload.bookId,
+            coverImage: payload.coverImage ?? null,
             chapterId: payload.chapterId,
             chapterIndex: payload.chapterIndex,
           },
@@ -242,7 +243,7 @@ export class NotificationOutboxProcessor implements OnModuleInit, OnModuleDestro
           title: 'New book published',
           body: `${payload.title} is now available.`,
           actionUrl: `/${bookType}/${payload.bookId}`,
-          metadata: { bookId: payload.bookId },
+          metadata: { bookId: payload.bookId, coverImage: payload.coverImage ?? null },
           sourceType: 'Book',
           sourceId: String(payload.bookId),
           dedupeParts: [event.id, NotificationType.NEW_BOOK_PUBLISHED],
@@ -388,7 +389,10 @@ export class NotificationOutboxProcessor implements OnModuleInit, OnModuleDestro
       this.isPositiveInt(payload.bookId) &&
       typeof payload.title === 'string' &&
       typeof payload.publishedAt === 'string' &&
-      (payload.bookType === undefined || typeof payload.bookType === 'string')
+      (payload.bookType === undefined || typeof payload.bookType === 'string') &&
+      (payload.coverImage === undefined ||
+        payload.coverImage === null ||
+        typeof payload.coverImage === 'string')
     );
   }
 
@@ -401,7 +405,10 @@ export class NotificationOutboxProcessor implements OnModuleInit, OnModuleDestro
       typeof payload.chapterTitle === 'string' &&
       this.isPositiveInt(payload.chapterIndex) &&
       typeof payload.publishedAt === 'string' &&
-      (payload.bookType === undefined || typeof payload.bookType === 'string')
+      (payload.bookType === undefined || typeof payload.bookType === 'string') &&
+      (payload.coverImage === undefined ||
+        payload.coverImage === null ||
+        typeof payload.coverImage === 'string')
     );
   }
 

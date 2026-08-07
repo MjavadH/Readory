@@ -1021,6 +1021,7 @@ export class BooksService {
             bookId: book.id,
             title: book.title,
             bookType: book.type.slug,
+            coverImage: book.coverImage,
             publishedAt: new Date().toISOString(),
           },
         });
@@ -1141,6 +1142,7 @@ export class BooksService {
               bookId: updatedBook.id,
               title: updatedBook.title,
               bookType: updatedBook.type.slug,
+              coverImage: updatedBook.coverImage,
               publishedAt: new Date().toISOString(),
             },
           });

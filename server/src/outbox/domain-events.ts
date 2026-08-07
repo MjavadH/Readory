@@ -4,12 +4,14 @@ export type BookPublishedEvent = {
   bookId: number;
   title: string;
   bookType: string;
+  coverImage?: string | null;
   publishedAt: string;
 };
 export type ChapterPublishedEvent = {
   bookId: number;
   bookTitle: string;
   bookType: string;
+  coverImage?: string | null;
   chapterId: number;
   chapterTitle: string;
   chapterIndex: number;

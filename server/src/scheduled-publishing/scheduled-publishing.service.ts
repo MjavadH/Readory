@@ -292,7 +292,13 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
       const book = await tx.book.update({
         where: { id },
         data: { publishStatus: PublicationStatus.PUBLISHED, lastContentUpdate: now },
-        select: { id: true, title: true, publishStatus: true, type: { select: { slug: true } } },
+        select: {
+          id: true,
+          title: true,
+          coverImage: true,
+          publishStatus: true,
+          type: { select: { slug: true } },
+        },
       });
       if (before?.publishStatus !== PublicationStatus.PUBLISHED)
         await this.outbox.create(tx, {
@@ -304,6 +310,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
             bookId: book.id,
             title: book.title,
             bookType: book.type.slug,
+            coverImage: book.coverImage,
             publishedAt: now.toISOString(),
           },
         });
@@ -320,7 +327,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
       const book = await tx.book.update({
         where: { id: chapter.bookId },
         data: { lastContentUpdate: now },
-        select: { title: true, type: { select: { slug: true } } },
+        select: { title: true, coverImage: true, type: { select: { slug: true } } },
       });
       if (before?.publishStatus !== PublicationStatus.PUBLISHED)
         await this.outbox.create(tx, {
@@ -332,6 +339,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
             bookId: chapter.bookId,
             bookTitle: book.title,
             bookType: book.type.slug,
+            coverImage: book.coverImage,
             chapterId: chapter.id,
             chapterTitle: chapter.title,
             chapterIndex: chapter.index,

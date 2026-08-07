@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Bell, CheckCheck, Inbox, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -11,18 +13,34 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api-client';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
+import { NotificationType } from '@readory/shared';
 
 type NotificationItem = {
   id: string;
   type: string;
   title: string;
   body: string;
-  metadata?: unknown;
+  metadata?: Record<string, unknown>;
   actionUrl?: string | null;
   readAt?: string | null;
   createdAt: string;
 };
+
+function isBookContentNotification(item: NotificationItem) {
+  return (
+    item.type === NotificationType.NEW_BOOK_PUBLISHED ||
+    item.type === NotificationType.NEW_CHAPTER_PUBLISHED
+  );
+}
+
+function getCoverImage(item: NotificationItem) {
+  const coverImage = item.metadata?.coverImage;
+  return isBookContentNotification(item) && typeof coverImage === 'string' && coverImage.length > 0
+    ? coverImage
+    : null;
+}
 
 function useRelativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -47,6 +65,7 @@ function NotificationRow({
   const time = useRelativeTime(item.createdAt);
   const isUnread = !item.readAt;
   const href = item.actionUrl || '/notifications';
+  const coverImage = getCoverImage(item);
 
   return (
     <motion.a
@@ -70,6 +89,18 @@ function NotificationRow({
           )}
         />
       </div>
+
+      {coverImage && (
+        <span className="relative h-12 w-9 shrink-0 overflow-hidden rounded-lg border bg-muted shadow-sm">
+          <Image
+            src={getBookCoverThumbnailUrl(coverImage)}
+            alt={item.title}
+            fill
+            sizes="36px"
+            className="object-cover"
+          />
+        </span>
+      )}
 
       {/* Content */}
       <div className="min-w-0 flex-1">
@@ -152,14 +183,18 @@ export function NotificationBell() {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    const id = window.setTimeout(() => void refresh(), 0);
+    return () => window.clearTimeout(id);
   }, [refresh]);
 
   useEffect(() => {
-    if (count > 0) {
-      setRinging(true);
-      setTimeout(() => setRinging(false), 700);
-    }
+    if (count <= 0) return;
+    const startId = window.setTimeout(() => setRinging(true), 0);
+    const stopId = window.setTimeout(() => setRinging(false), 700);
+    return () => {
+      window.clearTimeout(startId);
+      window.clearTimeout(stopId);
+    };
   }, [count]);
 
   const markAllRead = useCallback(async () => {
@@ -291,7 +326,7 @@ export function NotificationBell() {
           <>
             <Separator />
             <div className="px-2 pb-2">
-              <a
+              <Link
                 href="/notifications"
                 className={cn(
                   'flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-2.5',
@@ -302,7 +337,7 @@ export function NotificationBell() {
               >
                 {t('viewAll')}
                 <ArrowRight className="size-3.5 rtl:rotate-180" />
-              </a>
+              </Link>
             </div>
           </>
         )}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import {
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { apiClient } from '@/lib/api-client';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { formatUpdateTime } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,6 +29,16 @@ const listVariants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.04 } },
 };
+
+function getNotificationCoverImage(item: NotificationApiItem) {
+  const coverImage = item.metadata?.coverImage;
+  const hasBookCover =
+    item.type === NotificationType.NEW_BOOK_PUBLISHED ||
+    item.type === NotificationType.NEW_CHAPTER_PUBLISHED;
+  return hasBookCover && typeof coverImage === 'string' && coverImage.length > 0
+    ? coverImage
+    : null;
+}
 
 function iconFor(type: NotificationApiItem['type']) {
   switch (type) {
@@ -66,7 +78,8 @@ export default function NotificationsPage() {
   }, []);
 
   const load = useCallback(async (next?: string | null) => {
-    next ? setLoadingMore(true) : setLoading(true);
+    if (next) setLoadingMore(true);
+    else setLoading(true);
     setError(false);
     try {
       const res = await apiClient.get<{
@@ -87,8 +100,11 @@ export default function NotificationsPage() {
   }, []);
 
   useEffect(() => {
-    void load();
-    void loadUnread();
+    const id = window.setTimeout(() => {
+      void load();
+      void loadUnread();
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [load, loadUnread]);
 
   const visible = useMemo(
@@ -246,6 +262,7 @@ export default function NotificationsPage() {
               {visible.map((n) => {
                 const Icon = iconFor(n.type);
                 const unread = !n.readAt;
+                const coverImage = getNotificationCoverImage(n);
                 return (
                   <motion.li
                     key={n.id}
@@ -274,14 +291,28 @@ export default function NotificationsPage() {
                       onClick={() => void markOne(n)}
                       className="flex items-start gap-3 p-4 ps-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <span
-                        className={cn(
-                          'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
-                          unread ? 'bg-primary/12 text-primary' : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        <Icon className="h-5 w-5" />
-                      </span>
+                      {coverImage ? (
+                        <span className="relative h-14 w-10 shrink-0 overflow-hidden rounded-xl border bg-muted shadow-sm">
+                          <Image
+                            src={getBookCoverThumbnailUrl(coverImage)}
+                            alt={n.title}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                          />
+                        </span>
+                      ) : (
+                        <span
+                          className={cn(
+                            'grid h-10 w-10 shrink-0 place-items-center rounded-xl',
+                            unread
+                              ? 'bg-primary/12 text-primary'
+                              : 'bg-muted text-muted-foreground',
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                      )}
 
                       <div className="min-w-0 flex-1 text-start">
                         <div className="flex items-start gap-2">

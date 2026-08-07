@@ -137,6 +137,7 @@ export class PublicService {
       ratingAvg: true,
       ratingCount: true,
       updatedAt: true,
+      chapterCount: true,
       type: {
         select: {
           id: true,

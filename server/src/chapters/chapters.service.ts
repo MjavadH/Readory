@@ -144,7 +144,7 @@ export class ChaptersService {
             ...(isPublished && { chapterCount: { increment: 1 } }),
             lastContentUpdate: now,
           },
-          select: { id: true, title: true, type: { select: { slug: true } } },
+          select: { id: true, title: true, coverImage: true, type: { select: { slug: true } } },
         });
         if (isPublished) {
           await this.outbox.create(tx, {
@@ -156,6 +156,7 @@ export class ChaptersService {
               bookId,
               bookTitle: book.title,
               bookType: book.type.slug,
+              coverImage: book.coverImage,
               chapterId: chapter.id,
               chapterTitle: chapter.title,
               chapterIndex: chapter.index,
@@ -231,7 +232,7 @@ export class ChaptersService {
               ...(chapterCountChange < 0 && { chapterCount: { decrement: 1 } }),
               ...(dto.contentPath !== undefined && { lastContentUpdate: now }),
             },
-            select: { title: true, type: { select: { slug: true } } },
+            select: { title: true, coverImage: true, type: { select: { slug: true } } },
           });
           if (chapterCountChange > 0) {
             await this.outbox.create(tx, {
@@ -243,6 +244,7 @@ export class ChaptersService {
                 bookId,
                 bookTitle: book.title,
                 bookType: book.type.slug,
+                coverImage: book.coverImage,
                 chapterId: updatedChapter.id,
                 chapterTitle: updatedChapter.title,
                 chapterIndex: updatedChapter.index,
