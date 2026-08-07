@@ -64,16 +64,14 @@ export default function UserProfilePage() {
         memberSince={user.memberSince ?? null}
       />
 
-      <ProfileSection
-        title={t('Collections')}
-        emptyLabel={t('NoCollections')}
-        isEmpty={collections.length === 0}
-      >
-        <CollectionsGrid
-          collections={collections.map((collection) => toCollectionSummary(collection, user.id))}
-          hrefPrefix={`/u/${user.username}/collections`}
-        />
-      </ProfileSection>
+      {collections.length > 0 ? (
+        <ProfileSection title={t('Collections')}>
+          <CollectionsGrid
+            collections={collections.map((collection) => toCollectionSummary(collection, user.id))}
+            hrefPrefix={`/u/${user.username}/collections`}
+          />
+        </ProfileSection>
+      ) : null}
 
       {favorites ? (
         <ProfileSection
