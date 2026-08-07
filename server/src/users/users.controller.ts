@@ -31,6 +31,7 @@ import { AuditAction, AuditCategory } from '@readory/shared';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AvatarService } from './avatar.service';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -179,12 +180,8 @@ export class UsersController {
   @Throttle({ default: { limit: 6, ttl: 3600000 } })
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  async updateProfile(
-    @Request() req: any,
-    @Body()
-    body: { username?: string; currentPassword?: string; newPassword?: string },
-  ) {
-    return this.usersService.updateUser(req.user.userId, body);
+  async updateProfile(@Request() req: any, @Body() dto: UpdateUserDto) {
+    return this.usersService.updateUser(req.user.userId, dto);
   }
 
   @Patch(':id/role')

@@ -482,7 +482,17 @@
     "AvatarInvalidType": "فقط تصاویر JPG یا WebP مجاز هستند",
     "AvatarInvalidSize": "حجم آواتار باید کمتر از ۵ مگابایت باشد",
     "AvatarInvalidDimensions": "ابعاد آواتار باید ۱۰۲۴ × ۱۰۲۴ یا کمتر باشد",
-    "AvatarInvalidImage": "فایل تصویر نامعتبر است"
+    "AvatarInvalidImage": "فایل تصویر نامعتبر است",
+    "PublicProfileVisibility": "نمایش نمایه عمومی",
+    "SaveVisibility": "ذخیره نمایش",
+    "ProfileVisibilityUpdated": "تنظیمات نمایش نمایه به‌روزرسانی شد.",
+    "FailedUpdateProfileVisibility": "به‌روزرسانی تنظیمات نمایش نمایه ممکن نشد.",
+    "ProfileVisibility": {
+      "showMemberSince": "نمایش تاریخ عضویت",
+      "showFavorites": "نمایش کتاب‌های موردعلاقه",
+      "showRecentRatings": "نمایش امتیازهای اخیر",
+      "showRecentlyReading": "نمایش مطالعه‌های اخیر"
+    }
   },
   "HomePage": {
     "By": "توسط",
@@ -1093,6 +1103,24 @@
     },
     "copyright": "© {year} Readory. تمامی حقوق محفوظ است.",
     "version": "نسخه ۱.۰.۰"
+  },
+  "PublicProfile": {
+    "MemberSince": "عضو از {date}",
+    "Collections": "مجموعه‌ها",
+    "Favorites": "کتاب‌های مورد علاقه",
+    "RecentRatings": "امتیازهای اخیر",
+    "RecentlyReading": "در حال خواندن",
+    "Progress": "٪{percent}",
+    "RatingValue": "امتیاز {rating} از ۵",
+    "NoCollections": "هنوز مجموعهٔ عمومی‌ای وجود ندارد.",
+    "NoFavorites": "هنوز کتاب مورد علاقه‌ای اضافه نشده است.",
+    "NoRatings": "هنوز امتیازی ثبت نشده است.",
+    "NoReading": "در حال حاضر کتابی خوانده نمی‌شود.",
+    "NotFoundTitle": "پروفایل پیدا نشد",
+    "NotFound": "این کاربر وجود ندارد یا پروفایلش خصوصی است.",
+    "LoadFailedTitle": "بارگذاری پروفایل ناموفق بود",
+    "LoadFailed": "هنگام بارگذاری پروفایل خطایی رخ داد. لطفاً دوباره تلاش کنید.",
+    "Retry": "تلاش دوباره"
   },
   "General": {
     "Readory": "Readory",

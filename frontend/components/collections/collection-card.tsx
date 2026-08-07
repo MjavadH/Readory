@@ -18,6 +18,7 @@ type CollectionCardProps = {
   variant?: CollectionCardVariant;
   index?: number;
   className?: string;
+  hrefPrefix?: string;
 };
 
 export function CollectionCard({
@@ -25,6 +26,7 @@ export function CollectionCard({
   variant = 'default',
   index = 0,
   className,
+  hrefPrefix = '/collections',
 }: CollectionCardProps) {
   const t = useTranslations('Collections');
   const split = variant === 'hero' || variant === 'wide';
@@ -33,7 +35,7 @@ export function CollectionCard({
   const { user } = useCurrentUser();
   const singleBook = collection.bookCount === 1 ? collection.items?.[0]?.book : null;
   const isOwner = Boolean(user && collection.ownerId && user.id === collection.ownerId);
-  const href = singleBook && !isOwner ? getBookUrl(singleBook) : `/collections/${collection.slug}`;
+  const href = singleBook && !isOwner ? getBookUrl(singleBook) : `${hrefPrefix}/${collection.slug}`;
 
   return (
     <motion.article

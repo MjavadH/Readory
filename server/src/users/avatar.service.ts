@@ -113,7 +113,10 @@ export class AvatarService {
         throw new ConflictException('Avatar changed concurrently. Please retry.');
       }
 
-      await this.cacheManager.del(`session:user:${userId}`);
+      await Promise.all([
+        this.cacheManager.del(`session:user:${userId}`),
+        this.cacheManager.bumpVersion(`public_profile:version:${userId}`),
+      ]);
       if (user.avatarKey) {
         await this.storage.deleteKeys([user.avatarKey]).catch((err) => {
           this.logger.error(

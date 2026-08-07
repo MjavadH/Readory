@@ -4,6 +4,8 @@ import { BookTypesService } from '../book-types/book-types.service';
 import { BooksService } from '../books/books.service';
 import { BrowseGenreDto } from '../books/dto/browse-genre.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('public')
 export class PublicController {
@@ -43,5 +45,13 @@ export class PublicController {
   @Get('book-types/:type')
   async getBooksByType(@Param('type') type: string) {
     return this.bookTypesService.findByType(type);
+  }
+
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Get('profiles/:username')
+  @UseGuards(OptionalJwtAuthGuard)
+  async getUserProfile(@Param('username') username: string, @Request() req: any) {
+    const userId = req.user?.userId ?? req.user?.id;
+    return this.publicService.getPublicUserProfile(username, userId ? Number(userId) : undefined);
   }
 }

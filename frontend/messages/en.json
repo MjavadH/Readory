@@ -482,7 +482,17 @@
     "AvatarInvalidType": "Only JPG or WebP images are allowed",
     "AvatarInvalidSize": "Avatar must be smaller than 5 MB",
     "AvatarInvalidDimensions": "Avatar dimensions must be 1024 × 1024 or smaller",
-    "AvatarInvalidImage": "Invalid image file"
+    "AvatarInvalidImage": "Invalid image file",
+    "PublicProfileVisibility": "Public profile visibility",
+    "SaveVisibility": "Save visibility",
+    "ProfileVisibilityUpdated": "Profile visibility updated.",
+    "FailedUpdateProfileVisibility": "Could not update profile visibility.",
+    "ProfileVisibility": {
+      "showMemberSince": "Show member since date",
+      "showFavorites": "Show favorite books",
+      "showRecentRatings": "Show recent ratings",
+      "showRecentlyReading": "Show recently reading"
+    }
   },
   "HomePage": {
     "By": "by",
@@ -1164,6 +1174,24 @@
     },
     "copyright": "© {year} Readory. All rights reserved.",
     "version": "Version 1.0.0"
+  },
+  "PublicProfile": {
+    "MemberSince": "Member since {date}",
+    "Collections": "Collections",
+    "Favorites": "Favorite Books",
+    "RecentRatings": "Recent Ratings",
+    "RecentlyReading": "Recently Reading",
+    "Progress": "{percent}%",
+    "RatingValue": "Rated {rating} out of 5",
+    "NoCollections": "No public collections yet.",
+    "NoFavorites": "No favorite books yet.",
+    "NoRatings": "No ratings yet.",
+    "NoReading": "Nothing being read right now.",
+    "NotFoundTitle": "Profile not found",
+    "NotFound": "This user doesn't exist, or their profile is private.",
+    "LoadFailedTitle": "Couldn't load this profile",
+    "LoadFailed": "Something went wrong while loading the profile. Please try again.",
+    "Retry": "Try again"
   },
   "General": {
     "Readory": "Readory",

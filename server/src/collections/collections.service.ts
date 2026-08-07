@@ -260,7 +260,11 @@ export class CollectionsService {
       data,
       select: this.collectionSelect(4),
     });
-    await Promise.all([this.invalidateSystemCache(existing.type), this.invalidateDetailCache()]);
+    await Promise.all([
+      this.invalidateSystemCache(existing.type),
+      this.invalidateDetailCache(),
+      this.invalidatePublicProfileCache(existing),
+    ]);
     return this.serializeCollection(updated);
   }
 
@@ -271,7 +275,11 @@ export class CollectionsService {
     if (existing.locked || existing.type === CollectionType.FAVORITES)
       throw new BadRequestException('collection is locked');
     await this.prisma.collection.delete({ where: { id } });
-    await Promise.all([this.invalidateSystemCache(existing.type), this.invalidateDetailCache()]);
+    await Promise.all([
+      this.invalidateSystemCache(existing.type),
+      this.invalidateDetailCache(),
+      this.invalidatePublicProfileCache(existing),
+    ]);
     return { id, deleted: true };
   }
 
@@ -405,7 +413,11 @@ export class CollectionsService {
       },
       select: this.collectionSelect(4),
     });
-    await Promise.all([this.invalidateSystemCache(type), this.invalidateDetailCache()]);
+    await Promise.all([
+      this.invalidateSystemCache(type),
+      this.invalidateDetailCache(),
+      this.invalidatePublicProfileCache(collection),
+    ]);
     return this.serializeCollection(collection);
   }
 
@@ -542,13 +554,25 @@ export class CollectionsService {
   private async invalidateAfterItemChange(id: number) {
     const collection = await this.prisma.collection.findUnique({
       where: { id },
-      select: { type: true },
+      select: { type: true, ownerId: true, visibility: true },
     });
-    await Promise.all([this.invalidateSystemCache(collection?.type), this.invalidateDetailCache()]);
+    await Promise.all([
+      this.invalidateSystemCache(collection?.type),
+      this.invalidateDetailCache(),
+      collection ? this.invalidatePublicProfileCache(collection) : Promise.resolve(),
+    ]);
   }
 
   private async invalidateDetailCache() {
     await this.cacheManager.bumpVersion(this.CACHE_KEY_COLLECTION_DETAIL_VERSION);
+  }
+
+  private async invalidatePublicProfileCache(collection: {
+    type?: CollectionType | null;
+    ownerId?: number | null;
+  }) {
+    if (collection.type !== CollectionType.USER || !collection.ownerId) return;
+    await this.cacheManager.bumpVersion(`public_profile:version:${collection.ownerId}`);
   }
 
   private async invalidateSystemCache(type?: CollectionType) {

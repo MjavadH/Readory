@@ -14,27 +14,31 @@ model Role {
 }
 
 model User {
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
-  passwordHash    String
-  roleId          Int?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  lastLoginAt     DateTime?
-  username        String            @unique
-  isBanned        Boolean           @default(false)
-  avatarKey       String?
-  permissions     String[]
-  accessRecords   AccessRecord[]
-  BookRating      BookRating[]
-  collections     Collection[]
-  readingProgress ReadingProgress[]
-  role            Role?             @relation(fields: [roleId], references: [id])
-  wallet          Wallet?
-  paymentInvoices PaymentInvoice[]
-  notifications Notification[]
+  id                            Int                            @id @default(autoincrement())
+  email                         String                         @unique
+  passwordHash                  String
+  roleId                        Int?
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime                       @updatedAt
+  lastLoginAt                   DateTime?
+  username                      String                         @unique
+  isBanned                      Boolean                        @default(false)
+  avatarKey                     String?
+  showMemberSince               Boolean                        @default(true)
+  showFavorites                 Boolean                        @default(false)
+  showRecentRatings             Boolean                        @default(false)
+  showRecentlyReading           Boolean                        @default(false)
+  permissions                   String[]
+  accessRecords                 AccessRecord[]
+  BookRating                    BookRating[]
+  collections                   Collection[]
+  readingProgress               ReadingProgress[]
+  role                          Role?                          @relation(fields: [roleId], references: [id])
+  wallet                        Wallet?
+  paymentInvoices               PaymentInvoice[]
+  notifications                 Notification[]
   bookNotificationSubscriptions BookNotificationSubscription[]
-  notificationPreference NotificationPreference?
+  notificationPreference        NotificationPreference?
 }
 
 model Wallet {
@@ -79,35 +83,35 @@ enum PaymentStatus {
 }
 
 model Book {
-  id                Int               @id @default(autoincrement())
-  title             String
-  description       String?
-  coverImage        String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  isFeatured        Boolean           @default(false)
-  ratingAvg         Decimal           @default(0) @db.Decimal(3, 2)
-  ratingCount       Int               @default(0)
-  typeId            Int
-  originalTitle     String?
-  alternativeTitles String[]          @default([])
-  status            String            @default("UPCOMING")
-  publishStatus     PublicationStatus @default(DRAFT)
-  ageRating         String?
-  publicationYear   Int?
-  lastContentUpdate DateTime?
-  chapterCount      Int               @default(0)
-  favoriteCount     Int               @default(0)
-  popularityScore   Decimal           @default(0) @db.Decimal(8, 4)
-  AccessRecord      AccessRecord[]
-  coverMedia        Media?            @relation(fields: [coverImage], references: [code])
-  type              BookType          @relation(fields: [typeId], references: [id])
-  genres            BookGenre[]
-  contributors      BookContributor[]
-  ratings           BookRating[]
-  chapters          Chapter[]
-  collectionItems   CollectionItem[]
-  readingProgress   ReadingProgress[]
+  id                        Int                            @id @default(autoincrement())
+  title                     String
+  description               String?
+  coverImage                String?
+  createdAt                 DateTime                       @default(now())
+  updatedAt                 DateTime                       @updatedAt
+  isFeatured                Boolean                        @default(false)
+  ratingAvg                 Decimal                        @default(0) @db.Decimal(3, 2)
+  ratingCount               Int                            @default(0)
+  typeId                    Int
+  originalTitle             String?
+  alternativeTitles         String[]                       @default([])
+  status                    String                         @default("UPCOMING")
+  publishStatus             PublicationStatus              @default(DRAFT)
+  ageRating                 String?
+  publicationYear           Int?
+  lastContentUpdate         DateTime?
+  chapterCount              Int                            @default(0)
+  favoriteCount             Int                            @default(0)
+  popularityScore           Decimal                        @default(0) @db.Decimal(8, 4)
+  AccessRecord              AccessRecord[]
+  coverMedia                Media?                         @relation(fields: [coverImage], references: [code])
+  type                      BookType                       @relation(fields: [typeId], references: [id])
+  genres                    BookGenre[]
+  contributors              BookContributor[]
+  ratings                   BookRating[]
+  chapters                  Chapter[]
+  collectionItems           CollectionItem[]
+  readingProgress           ReadingProgress[]
   notificationSubscriptions BookNotificationSubscription[]
 
   @@index([ratingAvg, ratingCount])
@@ -434,7 +438,7 @@ model DomainOutboxEvent {
 }
 
 model Notification {
-  id               String             @id @default(uuid())
+  id               String               @id @default(uuid())
   recipientUserId  Int
   type             String
   category         NotificationCategory @default(CONTENT)
@@ -448,8 +452,8 @@ model Notification {
   readAt           DateTime?
   dismissedAt      DateTime?
   expiresAt        DateTime?
-  createdAt        DateTime           @default(now())
-  recipient        User               @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime             @default(now())
+  recipient        User                 @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
 
   @@unique([recipientUserId, deduplicationKey])
   @@index([recipientUserId, createdAt, id])
@@ -470,33 +474,33 @@ model BookNotificationSubscription {
 }
 
 model NotificationPreference {
-  userId             Int      @id
-  contentEnabled     Boolean  @default(true)
-  marketingEnabled   Boolean  @default(false)
-  updatedAt          DateTime @updatedAt
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           Int      @id
+  contentEnabled   Boolean  @default(true)
+  marketingEnabled Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model NotificationBroadcast {
-  id                 String                      @id @default(uuid())
-  title              String
-  body               String
-  actionUrl          String?
-  metadata           Json?
-  audienceType       NotificationAudienceType
-  targetUserIds      Int[]                       @default([])
-  idempotencyKey     String?
-  status             NotificationBroadcastStatus @default(PENDING)
-  totalRecipients    Int                         @default(0)
-  processedRecipients Int                        @default(0)
-  failedRecipients   Int                         @default(0)
-  cursorUserId       Int?
-  expiresAt          DateTime?
-  createdById        Int?
-  createdAt          DateTime                    @default(now())
-  updatedAt          DateTime                    @updatedAt
-  completedAt        DateTime?
-  lastError          String?
+  id                  String                      @id @default(uuid())
+  title               String
+  body                String
+  actionUrl           String?
+  metadata            Json?
+  audienceType        NotificationAudienceType
+  targetUserIds       Int[]                       @default([])
+  idempotencyKey      String?
+  status              NotificationBroadcastStatus @default(PENDING)
+  totalRecipients     Int                         @default(0)
+  processedRecipients Int                         @default(0)
+  failedRecipients    Int                         @default(0)
+  cursorUserId        Int?
+  expiresAt           DateTime?
+  createdById         Int?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  completedAt         DateTime?
+  lastError           String?
 
   @@unique([idempotencyKey])
   @@index([status, createdAt])

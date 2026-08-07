@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { UserProfile } from '@/lib/types';
 import {
   Settings,
@@ -23,6 +23,21 @@ import { useToast } from '@/providers/toast-provider';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import ProfileCard from '@/components/dashboard/ProfileCard';
+import { Switch } from '@/components/ui/switch';
+
+type ProfileVisibilitySettings = {
+  showMemberSince: boolean;
+  showFavorites: boolean;
+  showRecentRatings: boolean;
+  showRecentlyReading: boolean;
+};
+
+const defaultVisibilitySettings: ProfileVisibilitySettings = {
+  showMemberSince: true,
+  showFavorites: false,
+  showRecentRatings: false,
+  showRecentlyReading: false,
+};
 
 export default function SettingsPage() {
   const t = useTranslations('UserDashboard');
@@ -37,6 +52,10 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [visibilitySettings, setVisibilitySettings] =
+    useState<ProfileVisibilitySettings>(defaultVisibilitySettings);
+  const [initialVisibilitySettings, setInitialVisibilitySettings] =
+    useState<ProfileVisibilitySettings>(defaultVisibilitySettings);
 
   // Form states
   const [username, setUsername] = useState('');
@@ -50,7 +69,14 @@ export default function SettingsPage() {
         const res = await apiClient.get<UserProfile>('/auth/profile');
         setProfile(res);
         setUsername(res.username);
-      } catch (err: any) {
+        const publicProfile = await apiClient.get<{
+          viewer: { settings?: ProfileVisibilitySettings };
+        }>(`/public/profiles/${encodeURIComponent(res.username)}`);
+
+        const loadedSettings = publicProfile.viewer.settings ?? defaultVisibilitySettings;
+        setVisibilitySettings(loadedSettings);
+        setInitialVisibilitySettings(loadedSettings);
+      } catch {
         setError(t('FailedLoadProfile'));
       } finally {
         setLoading(false);
@@ -107,8 +133,8 @@ export default function SettingsPage() {
       if (avatarPreview) URL.revokeObjectURL(avatarPreview);
       setAvatarPreview(null);
       toast.success(t('AvatarUpdated'));
-    } catch (err: any) {
-      toast.error(err.message || t('AvatarUpdateFailed'));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t('AvatarUpdateFailed')));
     } finally {
       setAvatarUploading(false);
     }
@@ -120,8 +146,33 @@ export default function SettingsPage() {
     try {
       await apiClient.patch('/users/profile', { username });
       toast.success(t('ProfileUpdated'));
-    } catch (err: any) {
-      toast.error(err.message || t('FailedUpdateProfile'));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t('FailedUpdateProfile')));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUpdateVisibility = async () => {
+    const changedSettings = Object.entries(visibilitySettings).reduce((acc, [key, value]) => {
+      if (value !== initialVisibilitySettings[key as keyof ProfileVisibilitySettings]) {
+        acc[key as keyof ProfileVisibilitySettings] = value;
+      }
+      return acc;
+    }, {} as Partial<ProfileVisibilitySettings>);
+
+    if (Object.keys(changedSettings).length === 0) {
+      toast.success(t('ProfileVisibilityUpdated'));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await apiClient.patch('/users/profile', changedSettings);
+      setInitialVisibilitySettings(visibilitySettings);
+      toast.success(t('ProfileVisibilityUpdated'));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t('FailedUpdateProfileVisibility')));
     } finally {
       setSaving(false);
     }
@@ -144,8 +195,8 @@ export default function SettingsPage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (err: any) {
-      toast.error(err.message || t('FailedChangePassword'));
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, t('FailedChangePassword')));
     } finally {
       setSaving(false);
     }
@@ -350,6 +401,59 @@ export default function SettingsPage() {
                 </button>
               </div>
             </form>
+          </motion.section>
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5"
+          >
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-2.5 bg-primary/10 rounded-2xl">
+                <Eye className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="text-2xl font-bold tracking-tight">{t('PublicProfileVisibility')}</h2>
+            </div>
+
+            <div className="space-y-5">
+              {(
+                [
+                  'showMemberSince',
+                  'showFavorites',
+                  'showRecentRatings',
+                  'showRecentlyReading',
+                ] as const
+              ).map((key) => (
+                <label
+                  key={key}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-muted/30 p-4"
+                >
+                  <span className="font-bold text-foreground">{t(`ProfileVisibility.${key}`)}</span>
+                  <Switch
+                    checked={visibilitySettings[key]}
+                    onCheckedChange={(checked) =>
+                      setVisibilitySettings((current) => ({ ...current, [key]: checked }))
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-8">
+              <button
+                type="button"
+                disabled={saving}
+                onClick={handleUpdateVisibility}
+                className="flex items-center gap-2 px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed transition-all text-lg group"
+              >
+                {saving ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
+                )}
+                {t('SaveVisibility')}
+              </button>
+            </div>
           </motion.section>
 
           {/* Password Form */}

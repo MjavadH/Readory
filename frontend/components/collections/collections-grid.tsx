@@ -7,6 +7,7 @@ import type { CollectionSummary } from '@/lib/types';
 type CollectionsGridProps = {
   collections: CollectionSummary[];
   className?: string;
+  hrefPrefix?: string;
 };
 
 const pattern: { variant: CollectionCardVariant; className: string }[] = [
@@ -18,7 +19,7 @@ const pattern: { variant: CollectionCardVariant; className: string }[] = [
   { variant: 'wide', className: 'lg:col-span-4' },
 ];
 
-export function CollectionsGrid({ collections, className }: CollectionsGridProps) {
+export function CollectionsGrid({ collections, className, hrefPrefix }: CollectionsGridProps) {
   const featuredIndex = collections.findIndex((c) => c.featured);
 
   return (
@@ -41,6 +42,7 @@ export function CollectionsGrid({ collections, className }: CollectionsGridProps
             index={index}
             variant={variant}
             className={span}
+            hrefPrefix={hrefPrefix}
           />
         );
       })}

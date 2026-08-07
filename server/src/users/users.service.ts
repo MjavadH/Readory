@@ -12,6 +12,7 @@ import * as argon2 from 'argon2';
 import { MailService } from '../mail/mail.service';
 import { CollectionsService } from '../collections/collections.service';
 import { StorageService } from '../storage/storage.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -214,7 +215,18 @@ export class UsersService {
 
     await this.cacheManager.del(redisKey);
     await this.cacheManager.del(attemptKey);
-    await this.cacheManager.del('stats:users');
+
+    const statsCache = await this.cacheManager.getString('stats:users');
+    if (statsCache) {
+      try {
+        const stats = JSON.parse(statsCache);
+        stats.totalUsers += 1;
+        stats.newUsers += 1;
+        await this.cacheManager.setString('stats:users', JSON.stringify(stats), 3600);
+      } catch {
+        await this.cacheManager.del('stats:users');
+      }
+    }
 
     return newUser;
   }
@@ -253,10 +265,7 @@ export class UsersService {
     });
   }
 
-  async updateUser(
-    userId: number,
-    body: { username?: string; currentPassword?: string; newPassword?: string },
-  ) {
+  async updateUser(userId: number, dto: UpdateUserDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, username: true, passwordHash: true },
@@ -266,16 +275,18 @@ export class UsersService {
     const data: any = {};
 
     // username update
-    if (body.username != null) {
-      const nextUsername = String(body.username).trim().toLowerCase();
+    if (dto.username != null) {
+      const nextUsername = String(dto.username).trim().toLowerCase();
 
-      if (nextUsername.length < 3 || nextUsername.length > 32) {
-        throw new BadRequestException('Username must be 3-32 characters');
+      if (nextUsername.length < 3 || nextUsername.length > 20) {
+        throw new BadRequestException('Username must be 3-20 characters');
       }
 
       // simple safe charset (adjust to your needs)
-      if (!/^[a-zA-Z0-9._-]+$/.test(nextUsername)) {
-        throw new BadRequestException('Username contains invalid characters');
+      if (!/^[a-zA-Z0-9_]+$/.test(nextUsername)) {
+        throw new BadRequestException(
+          'Username can only contain letters, numbers, and underscores',
+        );
       }
 
       const exists = await this.prisma.user.findFirst({
@@ -288,9 +299,9 @@ export class UsersService {
     }
 
     // password update
-    if (body.newPassword != null) {
-      const currentPassword = body.currentPassword;
-      const newPassword = String(body.newPassword);
+    if (dto.newPassword != null) {
+      const currentPassword = dto.currentPassword;
+      const newPassword = String(dto.newPassword);
 
       if (!currentPassword) {
         throw new BadRequestException('currentPassword is required to change password');
@@ -305,6 +316,11 @@ export class UsersService {
       data.passwordHash = await argon2.hash(newPassword);
     }
 
+    if (dto.showMemberSince !== undefined) data.showMemberSince = dto.showMemberSince;
+    if (dto.showFavorites !== undefined) data.showFavorites = dto.showFavorites;
+    if (dto.showRecentRatings !== undefined) data.showRecentRatings = dto.showRecentRatings;
+    if (dto.showRecentlyReading !== undefined) data.showRecentlyReading = dto.showRecentlyReading;
+
     if (Object.keys(data).length === 0) {
       throw new BadRequestException('Nothing to update');
     }
@@ -312,11 +328,24 @@ export class UsersService {
     const updated = await this.prisma.user.update({
       where: { id: userId },
       data,
-      select: { id: true, email: true, username: true, avatarKey: true, updatedAt: true },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        avatarKey: true,
+        showMemberSince: true,
+        showFavorites: true,
+        showRecentRatings: true,
+        showRecentlyReading: true,
+        updatedAt: true,
+      },
     });
 
     // clear jwt-session cache so new username/permissions are reflected
-    await this.cacheManager.del(`session:user:${userId}`);
+    await Promise.all([
+      this.cacheManager.del(`session:user:${userId}`),
+      this.cacheManager.bumpVersion(`public_profile:version:${userId}`),
+    ]);
 
     return { success: true, user: { ...updated, avatarUrl: this.getAvatarUrl(updated.avatarKey) } };
   }

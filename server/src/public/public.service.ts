@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { PublicationStatus } from '@readory/shared';
+import { CollectionType, CollectionVisibility } from '@prisma/client';
 
 @Injectable()
 export class PublicService {
@@ -15,6 +16,202 @@ export class PublicService {
   private readonly CACHE_KEY_HOME_PUBLIC_CONTENT = 'home_public_content_data';
   private readonly CACHE_KEY_HOME_PERSONALIZED_CONTENT = 'home_personalized_content';
   private readonly CACHE_KEY_GENRES_PAGE = 'genres_page_data';
+  private readonly CACHE_KEY_PUBLIC_PROFILE_VERSION = 'public_profile:version';
+
+  async getPublicUserProfile(username: string, viewerId?: number) {
+    const normalizedUsername = username.trim().toLowerCase();
+    const user = await this.prisma.user.findFirst({
+      where: { username: normalizedUsername, isBanned: false },
+      select: {
+        id: true,
+        username: true,
+        showMemberSince: true,
+        showFavorites: true,
+        showRecentRatings: true,
+        showRecentlyReading: true,
+      },
+    });
+    if (!user) throw new NotFoundException('profile not found');
+
+    const isOwner = Boolean(viewerId && viewerId === user.id);
+    const version = await this.cacheManager.getVersion(
+      this.cacheManager.buildKey(this.CACHE_KEY_PUBLIC_PROFILE_VERSION, user.id),
+    );
+    const cacheKey = this.cacheManager.buildKey('public_profile', user.id, version);
+
+    const publicProfile = await this.cacheManager.getOrSet(
+      cacheKey,
+      { ttlSeconds: 300, jitterSeconds: 30, earlyRefreshWindowSeconds: 60 },
+      async () => {
+        const profile = await this.prisma.user.findUnique({
+          where: { id: user.id },
+          select: {
+            id: true,
+            username: true,
+            createdAt: true,
+            avatarKey: true,
+            showMemberSince: true,
+            showFavorites: true,
+            showRecentRatings: true,
+            showRecentlyReading: true,
+          },
+        });
+        if (!profile) throw new NotFoundException('profile not found');
+
+        const shouldLoadFavorites = profile.showFavorites;
+        const shouldLoadRatings = profile.showRecentRatings;
+        const shouldLoadReading = profile.showRecentlyReading;
+
+        const [collections, favoriteBooks, recentRatings, recentlyReading] = await Promise.all([
+          this.prisma.collection.findMany({
+            where: {
+              ownerId: profile.id,
+              type: CollectionType.USER,
+              visibility: CollectionVisibility.PUBLIC,
+            },
+            orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+            take: 8,
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              description: true,
+              bookCount: true,
+              updatedAt: true,
+              items: {
+                where: { book: { publishStatus: PublicationStatus.PUBLISHED } },
+                orderBy: { position: 'asc' },
+                take: 4,
+                select: { book: { select: this.publicBookSelect() } },
+              },
+            },
+          }),
+          shouldLoadFavorites ? this.getFavoriteBooks(profile.id) : Promise.resolve([]),
+          shouldLoadRatings ? this.getRecentRatings(profile.id) : Promise.resolve([]),
+          shouldLoadReading ? this.getRecentlyReading(profile.id) : Promise.resolve([]),
+        ]);
+
+        return {
+          user: {
+            id: profile.id,
+            username: profile.username,
+            avatarKey: profile.avatarKey,
+            memberSince: profile.showMemberSince ? profile.createdAt.toISOString() : null,
+          },
+          sections: {
+            collections: collections.map((collection) => ({
+              ...collection,
+              updatedAt: collection.updatedAt.toISOString(),
+              previewBooks: collection.items.map((item) => this.serializePublicBook(item.book)),
+              items: undefined,
+            })),
+            favoriteBooks: shouldLoadFavorites ? favoriteBooks : undefined,
+            recentRatings: shouldLoadRatings ? recentRatings : undefined,
+            recentlyReading: shouldLoadReading ? recentlyReading : undefined,
+          },
+        };
+      },
+    );
+
+    return {
+      ...publicProfile,
+      viewer: {
+        isOwner,
+        settings: isOwner
+          ? {
+              showMemberSince: user.showMemberSince,
+              showFavorites: user.showFavorites,
+              showRecentRatings: user.showRecentRatings,
+              showRecentlyReading: user.showRecentlyReading,
+            }
+          : undefined,
+      },
+    };
+  }
+
+  private publicBookSelect() {
+    return {
+      id: true,
+      title: true,
+      coverImage: true,
+      ratingAvg: true,
+      ratingCount: true,
+      updatedAt: true,
+      type: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          iconKey: true,
+          isActive: true,
+          sortOrder: true,
+        },
+      },
+      genres: { take: 3, select: { genre: { select: { name: true, slug: true, iconKey: true } } } },
+      contributors: { select: { role: true, contributor: { select: { name: true } } } },
+    } as const;
+  }
+
+  private async getFavoriteBooks(userId: number) {
+    const favorite = await this.prisma.collection.findFirst({
+      where: { ownerId: userId, type: CollectionType.FAVORITES },
+      select: {
+        items: {
+          where: { book: { publishStatus: PublicationStatus.PUBLISHED } },
+          orderBy: { addedAt: 'desc' },
+          take: 6,
+          select: { book: { select: this.publicBookSelect() } },
+        },
+      },
+    });
+    return favorite?.items.map((item) => this.serializePublicBook(item.book)) ?? [];
+  }
+
+  private async getRecentRatings(userId: number) {
+    const ratings = await this.prisma.bookRating.findMany({
+      where: { userId, book: { publishStatus: PublicationStatus.PUBLISHED } },
+      orderBy: { updatedAt: 'desc' },
+      take: 6,
+      select: { rating: true, updatedAt: true, book: { select: this.publicBookSelect() } },
+    });
+    return ratings.map((rating) => ({
+      rating: rating.rating,
+      ratedAt: rating.updatedAt.toISOString(),
+      book: this.serializePublicBook(rating.book),
+    }));
+  }
+
+  private async getRecentlyReading(userId: number) {
+    const rows = await this.prisma.readingProgress.findMany({
+      where: { userId, book: { publishStatus: PublicationStatus.PUBLISHED } },
+      orderBy: { updatedAt: 'desc' },
+      take: 6,
+      distinct: ['bookId'],
+      select: { percent: true, updatedAt: true, book: { select: this.publicBookSelect() } },
+    });
+
+    return rows.map((row) => ({
+      percent: row.percent,
+      lastReadAt: row.updatedAt.toISOString(),
+      book: this.serializePublicBook(row.book),
+    }));
+  }
+
+  private serializePublicBook(book: any) {
+    const mainContributor =
+      book.contributors.find((a: any) => a.role === 'AUTHOR') ?? book.contributors[0];
+    return {
+      id: book.id,
+      title: book.title,
+      contributors: mainContributor ? mainContributor.contributor.name : null,
+      genres: book.genres.map((g: any) => g.genre),
+      coverImage: book.coverImage,
+      ratingAvg: Number(book.ratingAvg),
+      ratingCount: book.ratingCount,
+      updatedAt: book.updatedAt.toISOString(),
+      type: book.type,
+    };
+  }
 
   async getPublicHomeContent() {
     return this.cacheManager.getOrSet(
