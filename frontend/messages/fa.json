@@ -1044,15 +1044,86 @@
   },
   "Notifications": {
     "title": "اعلان‌ها",
-    "markAllRead": "علامت‌گذاری به‌عنوان خوانده‌شده",
     "noNotifications": "همه اعلان‌ها را دیدید!",
     "noNotificationsDesc": "در حال حاضر اعلان جدیدی ندارید.",
     "viewAll": "مشاهده همه",
     "unread": "خوانده‌نشده",
     "newLabel": "جدید",
-    "loading": "در حال بارگذاری اعلان‌ها…"
+    "loading": "در حال بارگذاری اعلان‌ها…",
+    "unreadSummary": "{count, plural, one {# اعلان خوانده‌نشده} other {# اعلان خوانده‌نشده}}",
+    "allRead": "همه اعلان‌ها را مشاهده کرده‌اید",
+    "markAllRead": "علامت‌گذاری همه به‌عنوان خوانده‌شده",
+    "dismiss": "نادیده گرفتن اعلان",
+    "loadMore": "بارگذاری بیشتر",
+    "filters": {
+      "all": "همه",
+      "unread": "خوانده‌نشده"
+    },
+    "empty": {
+      "title": "هنوز اعلانی وجود ندارد",
+      "unreadTitle": "اعلان خوانده‌نشده‌ای وجود ندارد",
+      "description": "کتاب‌های جدید، فصل‌ها و اطلاعیه‌ها در اینجا نمایش داده خواهند شد."
+    },
+    "error": {
+      "title": "بارگذاری اعلان‌ها امکان‌پذیر نیست",
+      "description": "مشکلی پیش آمده است. لطفاً دوباره تلاش کنید.",
+      "retry": "تلاش دوباره"
+    },
+    "AdminPage": {
+      "Title": "اطلاعیه‌ها",
+      "Description": "پیام‌های همگانی ایجاد کنید و روند ارسال آن‌ها را دنبال کنید.",
+      "Form": {
+        "CreateTitle": "اطلاعیه جدید",
+        "TitleLabel": "عنوان",
+        "TitlePlaceholder": "یک عنوان کوتاه و واضح",
+        "BodyLabel": "پیام",
+        "BodyPlaceholder": "چه چیزی می‌خواهید به کاربران خود بگویید؟",
+        "ActionUrl": "لینک اقدام (اختیاری)",
+        "AudienceLabel": "مخاطبان",
+        "ExpiresAt": "تاریخ انقضا (اختیاری)",
+        "ExpiresAtPlaceholder": "تاریخ و زمان را انتخاب کنید",
+        "TargetUserIds": "شناسه کاربران",
+        "SelectedCount": "{count} کاربر انتخاب شده",
+        "Submit": "ارسال اطلاعیه",
+        "Clear": "پاک کردن",
+        "Audience": {
+          "ALL_USERS": "تمام کاربران واجد شرایط",
+          "SELECTED_USERS": "کاربران انتخاب‌شده",
+          "USER": "یک کاربر"
+        }
+      },
+      "List": {
+        "Title": "تاریخچه اطلاعیه‌ها",
+        "Loading": "در حال بارگذاری اطلاعیه‌ها…",
+        "Empty": "هنوز اطلاعیه‌ای وجود ندارد",
+        "Content": "محتوا",
+        "Audience": "مخاطبان",
+        "Status": "وضعیت",
+        "Progress": "پیشرفت",
+        "CreatedAt": "ایجاد شده",
+        "ExpiresAt": "منقضی می‌شود",
+        "NoExpiry": "بدون انقضا",
+        "Previous": "قبلی",
+        "Next": "بعدی",
+        "PageOf": "صفحه {page} از {lastPage}"
+      },
+      "Status": {
+        "PENDING": "در انتظار",
+        "QUEUED": "در صف",
+        "PROCESSING": "در حال پردازش",
+        "SENT": "ارسال شده",
+        "COMPLETED": "تکمیل شده",
+        "FAILED": "ناموفق",
+        "CANCELLED": "لغو شده"
+      },
+      "Toast": {
+        "LoadFailed": "بارگذاری اطلاعیه‌ها امکان‌پذیر نبود",
+        "SaveFailed": "ایجاد اطلاعیه امکان‌پذیر نبود",
+        "Created": "اطلاعیه ایجاد شد",
+        "InvalidForm": "لطفاً فیلدهای الزامی را تکمیل کنید"
+      }
+    }
   },
-
   "Time": {
     "JustNow": "همین الان",
     "MinutesAgo": "{count, plural, one {# دقیقه پیش} other {# دقیقه پیش}}",
