@@ -27,7 +27,7 @@ export default async function RootLayout({
   const localeInfo = getLocaleConfig(locale);
   return (
     <html lang={localeInfo.locale} dir={getDirection(localeInfo.code)} suppressHydrationWarning>
-      <body className={`${vazirmatn.className} font-sans antialiased`}>
+      <body className={`${vazirmatn.variable} font-sans antialiased`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider
             attribute="class"

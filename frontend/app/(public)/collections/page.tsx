@@ -27,7 +27,7 @@ export default async function CollectionsPage() {
       {/* Ambient backdrop */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-gradient-to-b from-primary/10 via-primary/[0.04] to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-linear-to-b from-primary/10 via-primary/4 to-transparent"
       />
 
       <div className="container mx-auto px-4 py-8 sm:py-12">

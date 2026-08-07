@@ -26,7 +26,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang={localeInfo.locale} dir={getDirection(localeInfo.code)} suppressHydrationWarning>
-      <body className={`${vazirmatn.className} font-sans`}>
+      <body className={`${vazirmatn.variable} font-sans`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider
             attribute="class"
