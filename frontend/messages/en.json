@@ -1034,13 +1034,85 @@
   },
   "Notifications": {
     "title": "Notifications",
-    "markAllRead": "Mark all read",
     "noNotifications": "You're all caught up!",
     "noNotificationsDesc": "No new notifications right now.",
     "viewAll": "View all",
     "unread": "unread",
     "newLabel": "New",
-    "loading": "Loading notifications…"
+    "loading": "Loading notifications...",
+    "unreadSummary": "{count, plural, one {# unread notification} other {# unread notifications}}",
+    "allRead": "You're all caught up",
+    "markAllRead": "Mark all as read",
+    "dismiss": "Dismiss notification",
+    "loadMore": "Load more",
+    "filters": {
+      "all": "All",
+      "unread": "Unread"
+    },
+    "empty": {
+      "title": "No notifications yet",
+      "unreadTitle": "No unread notifications",
+      "description": "New books, chapters and announcements will show up here."
+    },
+    "error": {
+      "title": "Couldn't load notifications",
+      "description": "Something went wrong. Please try again.",
+      "retry": "Try again"
+    },
+    "AdminPage": {
+      "Title": "Announcements",
+      "Description": "Create broadcasts and follow their delivery progress.",
+      "Form": {
+        "CreateTitle": "New broadcast",
+        "TitleLabel": "Title",
+        "TitlePlaceholder": "Short, clear headline",
+        "BodyLabel": "Message",
+        "BodyPlaceholder": "What do you want to tell your users?",
+        "ActionUrl": "Action link (optional)",
+        "AudienceLabel": "Audience",
+        "ExpiresAt": "Expires at (optional)",
+        "ExpiresAtPlaceholder": "Pick a date and time",
+        "TargetUserIds": "User IDs",
+        "SelectedCount": "{count} users selected",
+        "Submit": "Send broadcast",
+        "Clear": "Clear",
+        "Audience": {
+          "ALL_USERS": "All eligible users",
+          "SELECTED_USERS": "Selected users",
+          "USER": "One user"
+        }
+      },
+      "List": {
+        "Title": "Broadcast history",
+        "Loading": "Loading broadcasts…",
+        "Empty": "No broadcasts yet",
+        "Content": "Content",
+        "Audience": "Audience",
+        "Status": "Status",
+        "Progress": "Progress",
+        "CreatedAt": "Created",
+        "ExpiresAt": "Expires",
+        "NoExpiry": "No expiry",
+        "Previous": "Previous",
+        "Next": "Next",
+        "PageOf": "Page {page} of {lastPage}"
+      },
+      "Status": {
+        "PENDING": "Pending",
+        "QUEUED": "Queued",
+        "PROCESSING": "Processing",
+        "SENT": "Sent",
+        "COMPLETED": "Completed",
+        "FAILED": "Failed",
+        "CANCELLED": "Cancelled"
+      },
+      "Toast": {
+        "LoadFailed": "Could not load broadcasts",
+        "SaveFailed": "Could not create broadcast",
+        "Created": "Broadcast created",
+        "InvalidForm": "Please fill in the required fields"
+      }
+    }
   },
   "Time": {
     "JustNow": "just now",
