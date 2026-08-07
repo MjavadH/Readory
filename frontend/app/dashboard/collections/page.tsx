@@ -175,7 +175,7 @@ export default function DashboardCollectionsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-1 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-44 rounded-3xl" />
           ))}
@@ -198,7 +198,7 @@ export default function DashboardCollectionsPage() {
           }}
         />
       ) : (
-        <motion.div layout className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <motion.div layout className="grid gap-4 sm:grid-cols-1 xl:grid-cols-3">
           <AnimatePresence initial={false}>
             {collections.map((collection, index) => (
               <CollectionRow

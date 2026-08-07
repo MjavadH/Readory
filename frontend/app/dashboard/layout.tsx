@@ -7,6 +7,7 @@ import '@/styles/globals.css';
 import { getLocale, getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
+import { AuthProvider } from '@/providers/auth-provider';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],
@@ -27,9 +28,11 @@ export default async function Layout({ children }: { children: ReactNode }) {
             enableSystem
             disableTransitionOnChange
           >
-            <ToastProvider>
-              <DashboardLayout>{children}</DashboardLayout>
-            </ToastProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <DashboardLayout>{children}</DashboardLayout>
+              </ToastProvider>
+            </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>
