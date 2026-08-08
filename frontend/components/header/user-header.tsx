@@ -35,6 +35,7 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { getAvatarUrl } from '@/lib/media';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { useLocaleInfo } from '@/hooks/use-locale-info';
 
 type BookType = { name: string; slug: string; iconKey: IconKey };
 
@@ -187,6 +188,7 @@ export function UserHeader() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const { isRTL } = useLocaleInfo();
 
   /* current user */
   const {
@@ -520,7 +522,7 @@ export function UserHeader() {
                     </motion.button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    align="end"
+                    align={isRTL ? 'start' : 'end'}
                     sideOffset={10}
                     className="w-64 rounded-2xl p-1.5"
                   >
