@@ -285,7 +285,7 @@ export class ReaderService {
       const nowSec = Math.floor(Date.now() / 1000);
       const speedKey = `reader:speed:${payload.userId}:${payload.chapterId}`;
       const pipeline = this.redis.pipeline();
-      pipeline.zadd(speedKey, nowSec, `${page}:${Math.random()}`); // افزودن یک مقدار یونیک برای ثبت دقیق همه درخواست‌های همزمان
+      pipeline.zadd(speedKey, nowSec, `${page}:${Math.random()}`);
       pipeline.expire(speedKey, 10);
       pipeline.zremrangebyscore(speedKey, 0, nowSec - 2);
       pipeline.zcard(speedKey);
@@ -321,17 +321,24 @@ export class ReaderService {
 
     const trace = createHash('sha256').update(token).digest('hex').slice(0, 8);
     const dynamicRotation = -25 + (parseInt(trace[0]!, 16) % 6) - 3;
-    const dynamicOpacity = 0.3 + (parseInt(trace[1]!, 16) % 10) / 100;
+    const dynamicOpacity = 0.35 + (parseInt(trace[1]!, 16) % 15) / 100;
 
     const watermarkText = `Readory #u${payload.userId}c${payload.chapterId}#${trace}`;
-    const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg"><text x="10" y="130"
-        fill="white" fill-opacity="${dynamicOpacity}"
-        transform="rotate(${dynamicRotation} 180 120)"
-        font-size="24"
-        font-family="Arial, sans-serif"
-        font-weight="800">
+    const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg">
+<text 
+    x="10"
+    y="130"
+    fill="white"
+    fill-opacity="${dynamicOpacity}"
+    stroke="white"
+    stroke-opacity="0.3"
+    stroke-width="1"
+    transform="rotate(${dynamicRotation} 180 120)"
+    font-size="24"
+    font-family="Arial Black, Arial, sans-serif"
+    font-weight="900">
     ${escapeXml(watermarkText)}
-  </text>
+</text>
 </svg>`;
 
     return sharp(source)

@@ -124,6 +124,7 @@ export default function ChapterPage() {
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const sessionRef = useRef<SessionResponse | null>(null);
   const refreshingSessionRef = useRef<Promise<SessionResponse> | null>(null);
+  const [readerFilter, setReaderFilter] = useState<string>('');
 
   useEffect(() => {
     sessionRef.current = session;
@@ -143,12 +144,7 @@ export default function ChapterPage() {
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Disable default browser menu
-
-    // Ensure menu stays within screen bounds
-    const x = Math.min(e.clientX, window.innerWidth - 180);
-    const y = Math.min(e.clientY, window.innerHeight - 200);
-
-    setMenuPos({ x, y });
+    setMenuPos({ x: e.clientX, y: e.clientY });
   }, []);
 
   const refreshReaderSession = useCallback(async (): Promise<SessionResponse> => {
@@ -193,17 +189,23 @@ export default function ChapterPage() {
     }
   }, [bookId, chapterIndex]);
 
+  useEffect(() => {
+    if (!session) return;
+    const interval = setInterval(() => {
+      refreshReaderSession().catch(() => undefined);
+    }, 90000);
+    return () => clearInterval(interval);
+  }, [session, refreshReaderSession]);
+
   const resetChapterRenderState = useCallback(() => {
     pageBlobCacheRef.current.clear();
     inFlightPagesRef.current.clear();
     loadedPagesRef.current = new Set();
     setLoadedPages(new Set());
-    setPageCanvasEl(null);
-    scrollCanvasRefs.current = [];
   }, []);
 
   const fetchPageBlob = useCallback(
-    async (page: number): Promise<Blob> => {
+    async (page: number, signal?: AbortSignal): Promise<Blob> => {
       const activeSession = sessionRef.current;
       if (!activeSession) throw new Error('No reader session');
 
@@ -224,6 +226,7 @@ export default function ChapterPage() {
           {
             credentials: 'include',
             cache: 'no-store',
+            signal,
           },
         );
 
@@ -278,39 +281,54 @@ export default function ChapterPage() {
   }, []);
 
   const drawPageToCanvas = useCallback(
-    async (page: number, canvas: HTMLCanvasElement | null) => {
+    async (page: number, canvas: HTMLCanvasElement | null, signal?: AbortSignal) => {
       if (!canvas || !session) return;
 
       const maxPage = manifest?.pageCount ?? session.pageCount ?? 1;
       if (page < 1 || page > maxPage) return;
       if (canvas.dataset.renderedPage === String(page)) return;
 
+      if (signal?.aborted) return;
+
       let blob = pageBlobCacheRef.current.get(page);
 
-      // Logic to retrieve the blob (from cache, in-flight, or new fetch)
       if (!blob) {
         const existingTask = inFlightPagesRef.current.get(page);
         if (existingTask) {
-          await existingTask;
+          try {
+            await existingTask;
+          } catch {
+            // Ignore previous task failure
+          }
+          if (signal?.aborted) return;
           blob = pageBlobCacheRef.current.get(page);
-        } else {
+        }
+
+        if (!blob) {
           const newTask = (async () => {
-            const b = await fetchPageBlob(page);
+            const b = await fetchPageBlob(page, signal);
             pageBlobCacheRef.current.set(page, b);
           })();
           inFlightPagesRef.current.set(page, newTask);
+
           try {
             await newTask;
-            blob = pageBlobCacheRef.current.get(page);
+          } catch (err) {
+            throw err;
           } finally {
             inFlightPagesRef.current.delete(page);
           }
+
+          if (signal?.aborted) return;
+          blob = pageBlobCacheRef.current.get(page);
         }
       }
 
-      // Final render and state update logic
       if (blob) {
+        if (signal?.aborted) return;
         await drawBlobToCanvas(blob, canvas);
+        if (signal?.aborted) return;
+
         canvas.dataset.renderedPage = String(page);
 
         if (!loadedPagesRef.current.has(page)) {
@@ -427,29 +445,25 @@ export default function ChapterPage() {
     maxReachedPageRef.current = Math.max(maxReachedPageRef.current, currentPage);
   }, [currentPage]);
 
-  // Clear render cache when session token changes
-  useEffect(() => {
-    resetChapterRenderState();
-  }, [session?.sessionToken, resetChapterRenderState]);
-
   // Page mode: draw current page to single canvas
   useEffect(() => {
     if (!session || !manifest || manifest.format !== 'images') return;
     if (readMode !== 'page') return;
     if (!pageCanvasEl) return;
 
-    let cancelled = false;
+    const abortController = new AbortController();
+    const signal = abortController.signal;
     const reqId = ++pageDrawRequestIdRef.current;
 
     setPageTransitionLoading(true);
 
     const run = async () => {
       try {
-        await drawPageToCanvas(currentPage, pageCanvasEl);
+        await drawPageToCanvas(currentPage, pageCanvasEl, signal);
       } catch {
         // ignore page-level error
       } finally {
-        if (!cancelled && reqId === pageDrawRequestIdRef.current) {
+        if (!signal.aborted && reqId === pageDrawRequestIdRef.current) {
           setPageTransitionLoading(false);
         }
       }
@@ -458,7 +472,7 @@ export default function ChapterPage() {
     void run();
 
     return () => {
-      cancelled = true;
+      abortController.abort();
     };
   }, [session, manifest, readMode, currentPage, pageCanvasEl, drawPageToCanvas]);
 
@@ -467,15 +481,26 @@ export default function ChapterPage() {
     if (!session || !manifest || manifest.format !== 'images') return;
     if (readMode !== 'scroll') return;
 
-    // Use IntersectionObserver for optimal mobile performance
+    const abortControllers = new Map<number, AbortController>();
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
+          const canvas = entry.target as HTMLCanvasElement;
+          const pageStr = canvas.dataset.page;
+          if (!pageStr) return;
+
+          const pageNum = Number(pageStr);
+
           if (entry.isIntersecting) {
-            const canvas = entry.target as HTMLCanvasElement;
-            const pageStr = canvas.dataset.page;
-            if (pageStr) {
-              void drawPageToCanvas(Number(pageStr), canvas);
+            const controller = new AbortController();
+            abortControllers.set(pageNum, controller);
+            void drawPageToCanvas(pageNum, canvas, controller.signal);
+          } else {
+            const controller = abortControllers.get(pageNum);
+            if (controller) {
+              controller.abort();
+              abortControllers.delete(pageNum);
             }
           }
         });
@@ -491,7 +516,11 @@ export default function ChapterPage() {
       if (canvas) observer.observe(canvas);
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      abortControllers.forEach((c) => c.abort());
+      abortControllers.clear();
+    };
   }, [session, manifest, readMode, drawPageToCanvas]);
 
   // Track currentPage in scroll mode by viewport center
@@ -594,23 +623,20 @@ export default function ChapterPage() {
     };
   }, [session, currentPage]);
 
-  // Keyboard navigation (page mode)
-  useEffect(() => {
-    if (readMode !== 'page') return;
+  const toggleFullscreen = useCallback(() => {
+    const element = readerRootRef.current;
+    if (!element) return;
 
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        handlePageChange(currentPage - 1);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        handlePageChange(currentPage + 1);
+    if (!document.fullscreenElement) {
+      element.requestFullscreen().catch(() => {
+        toast.error(t('FullscreenBlocked'));
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
       }
-    };
-
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [readMode, currentPage]);
+    }
+  }, [t, toast]);
 
   const handleChapterChange = useCallback(
     (chapter: ReaderChapterItem) => {
@@ -618,10 +644,6 @@ export default function ChapterPage() {
     },
     [router, typeSlug, bookId],
   );
-
-  const handlePurchase = useCallback(() => {
-    router.push(backUrl);
-  }, [router, backUrl]);
 
   const handlePageChange = useCallback(
     (nextPage: number) => {
@@ -641,27 +663,13 @@ export default function ChapterPage() {
         if (!container) return;
 
         if (document.fullscreenElement === container) {
-          container.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-          });
+          container.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
-          window.scrollTo({
-            top: 0,
-            behavior: 'smooth',
-          });
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         }
       }
     },
-    [
-      manifest,
-      session,
-      chapters,
-      currentChapter.index,
-      handleChapterChange,
-      handlePurchase,
-      readMode,
-    ],
+    [manifest?.pageCount, session?.pageCount, readMode],
   );
 
   // Re-run the full reader load (used after a successful in-page purchase / retry).
@@ -673,6 +681,25 @@ export default function ChapterPage() {
     // Access has been granted: re-open the session so the chapter renders inline.
     reloadReader();
   }, [reloadReader]);
+
+  // Keyboard navigation (page mode) & Fullscreen
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (readMode === 'page') handlePageChange(currentPage - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (readMode === 'page') handlePageChange(currentPage + 1);
+      } else if (e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [readMode, currentPage, handlePageChange, toggleFullscreen]);
 
   if (loading) {
     return (
@@ -928,8 +955,10 @@ export default function ChapterPage() {
       <div ref={readerRootRef} className="min-h-screen bg-reader-bg overflow-y-auto">
         <main
           onContextMenu={handleContextMenu}
-          className="pt-20 pb-10"
-          style={{ filter: t('BrightnessN', { Brightness: brightness }) }}
+          className="pt-20 pb-10 transition-[filter] duration-300"
+          style={{
+            filter: `${t('BrightnessN', { Brightness: brightness })} ${readerFilter}`.trim(),
+          }}
         >
           <ReaderZoomViewport zoom={zoom}>
             <div className="mx-auto w-full px-4 lg:max-w-3/4">
@@ -968,8 +997,8 @@ export default function ChapterPage() {
       {/* Main content */}
       <main
         onContextMenu={handleContextMenu}
-        className="pt-16 pb-24"
-        style={{ filter: t('BrightnessN', { Brightness: brightness }) }}
+        className="pt-16 pb-24 transition-[filter] duration-300"
+        style={{ filter: `${t('BrightnessN', { Brightness: brightness })} ${readerFilter}`.trim() }}
       >
         <ReaderZoomViewport zoom={zoom}>
           {readMode === 'page' ? (
@@ -1050,34 +1079,33 @@ export default function ChapterPage() {
           y={menuPos.y}
           onClose={() => setMenuPos(null)}
           canResetZoom={zoom.isZoomed}
+          activeFilter={readerFilter}
           onAction={(action) => {
-            setMenuPos(null);
+            if (!action.startsWith('filter-')) setMenuPos(null);
 
             switch (action) {
               case 'reset-zoom':
                 zoom.resetZoom();
                 break;
-
               case 'reload':
                 window.location.reload();
                 break;
-
               case 'fullscreen':
-                const element = readerRootRef.current;
-                if (!element) return;
-
-                if (!document.fullscreenElement) {
-                  // Enter fullscreen for the specific reader container
-                  element.requestFullscreen().catch(() => {
-                    toast.error(t('FullscreenBlocked'));
-                  });
-                } else {
-                  if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                  }
-                }
+                toggleFullscreen();
                 break;
-
+              // Contrast Filters
+              case 'filter-none':
+                setReaderFilter('');
+                break;
+              case 'filter-sepia':
+                setReaderFilter('sepia(100%)');
+                break;
+              case 'filter-paper':
+                setReaderFilter('sepia(20%) brightness(0.9) contrast(1.1)');
+                break;
+              case 'filter-e-ink':
+                setReaderFilter('grayscale(100%) contrast(150%)');
+                break;
               default:
                 console.warn(`Action ${action} not implemented.`);
             }

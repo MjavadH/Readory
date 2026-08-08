@@ -822,7 +822,11 @@
     "Unsubscribe": "لغو اشتراک",
     "ZoomOut": "کوچک‌نمایی",
     "ZoomIn": "بزرگ‌نمایی",
-    "ResetZoom": "بازنشانی بزرگ‌نمایی"
+    "ResetZoom": "بازنشانی بزرگ‌نمایی",
+    "FilterNormal": "عادی",
+    "FilterSepia": "سپیا",
+    "FilterPaper": "کاغذ",
+    "FilterEInk": "جوهر الکترونیکی"
   },
   "Contributors": {
     "Title": "همکاران",

@@ -26,12 +26,12 @@ export type ReaderZoomApi = {
   zoomOut: () => void;
   resetZoom: () => void;
   /** internal: used by <ReaderZoomViewport /> */
-  setScale: (scale: number) => void;
+  setTransformState: (scale: number, x: number, y: number) => void;
 };
 
 export function useReaderZoom(): ReaderZoomApi {
   const ref = useRef<ReactZoomPanPinchRef | null>(null);
-  const [scale, setScale] = useState(1);
+  const [transform, setTransform] = useState({ scale: 1, x: 0, y: 0 });
 
   const zoomIn = useCallback(() => {
     ref.current?.zoomIn(READER_ZOOM_STEP, 180);
@@ -45,13 +45,17 @@ export function useReaderZoom(): ReaderZoomApi {
     ref.current?.resetTransform(180);
   }, []);
 
+  // Detect scale or positional translations
+  const isZoomed =
+    transform.scale > 1.001 || Math.abs(transform.x) > 0.5 || Math.abs(transform.y) > 0.5;
+
   return {
     ref,
-    scale,
-    setScale,
-    isZoomed: scale > 1.001,
-    canZoomIn: scale < READER_MAX_ZOOM - 0.001,
-    canZoomOut: scale > READER_MIN_ZOOM + 0.001,
+    scale: transform.scale,
+    setTransformState: (scale, x, y) => setTransform({ scale, x, y }),
+    isZoomed,
+    canZoomIn: transform.scale < READER_MAX_ZOOM - 0.001,
+    canZoomOut: transform.scale > READER_MIN_ZOOM + 0.001,
     zoomIn,
     zoomOut,
     resetZoom,
@@ -65,7 +69,7 @@ interface ReaderZoomViewportProps {
 }
 
 export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoomViewportProps) {
-  const { setScale, isZoomed, resetZoom } = zoom;
+  const { setTransformState, isZoomed, resetZoom } = zoom;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,7 +128,9 @@ export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoo
         wheel={{ disabled: true }}
         pinch={{ step: 5 }}
         panning={{ disabled: !isZoomed, velocityDisabled: true }}
-        onTransform={(_ref, state) => setScale(state.scale)}
+        onTransform={(_ref, state) =>
+          setTransformState(state.scale, state.positionX, state.positionY)
+        }
       >
         <TransformComponent
           wrapperClass="!w-full !max-w-full !overflow-hidden"

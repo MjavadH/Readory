@@ -166,6 +166,9 @@ export function ReaderToolbar({
             exit={{ y: 90, opacity: 0 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
             className="fixed z-50 inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] flex justify-center px-3"
+            onContextMenu={(e) => {
+              e.preventDefault();
+            }}
           >
             <div className="toolbar-glass pointer-events-auto flex w-full max-w-lg items-center justify-between gap-1 rounded-2xl px-2 py-1.5 shadow-2xl ring-1 ring-border/60 sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2">
               {/* Read mode toggle */}

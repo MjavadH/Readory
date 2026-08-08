@@ -822,7 +822,11 @@
     "Unsubscribe": "Unsubscribe",
     "ZoomOut": "Zoom Out",
     "ZoomIn": "Zoom In",
-    "ResetZoom": "Reset Zoom"
+    "ResetZoom": "Reset Zoom",
+    "FilterNormal": "Normal",
+    "FilterSepia": "Sepia",
+    "FilterPaper": "Paper",
+    "FilterEInk": "E-Ink"
   },
   "Contributors": {
     "Title": "Contributors",
