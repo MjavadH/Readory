@@ -14,6 +14,8 @@ import {
   Maximize,
   Minimize,
   Check,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -22,6 +24,7 @@ import {
   type PurchaseDialogChapter,
 } from '@/components/chapter-purchase-dialog';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import type { ReaderZoomApi } from '@/components/reader/reader-zoom';
 
 export type ReaderChapterItem = {
   id: number;
@@ -48,6 +51,8 @@ interface ReaderToolbarProps {
   onPurchased?: (chapterId: number) => void;
   showReadModeToggle?: boolean;
   fullscreenTarget?: HTMLElement | null;
+  /** Zoom api from useReaderZoom(); when omitted the zoom controls are hidden. */
+  zoom?: ReaderZoomApi;
 }
 
 export function ReaderToolbar({
@@ -66,6 +71,7 @@ export function ReaderToolbar({
   onPurchased,
   showReadModeToggle = true,
   fullscreenTarget = null,
+  zoom,
 }: ReaderToolbarProps) {
   const t = useTranslations('Books');
   const g = useTranslations('General');
@@ -145,7 +151,9 @@ export function ReaderToolbar({
       {brightness < 100 && (
         <div
           className="pointer-events-none fixed inset-0 z-100"
-          style={{ backgroundColor: `rgba(0,0,0,${((100 - brightness) / 100) * 0.7})` }}
+          style={{
+            backgroundColor: `rgba(0,0,0,${((100 - brightness) / 100) * 0.7})`,
+          }}
         />
       )}
 
@@ -157,9 +165,9 @@ export function ReaderToolbar({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 90, opacity: 0 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="fixed inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] flex justify-center px-3"
+            className="fixed z-50 inset-x-0 bottom-[max(1rem,env(safe-area-inset-bottom))] flex justify-center px-3"
           >
-            <div className="toolbar-glass pointer-events-auto flex w-full max-w-md items-center justify-between gap-1 rounded-2xl px-2 py-1.5 shadow-2xl ring-1 ring-border/60 sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2">
+            <div className="toolbar-glass pointer-events-auto flex w-full max-w-lg items-center justify-between gap-1 rounded-2xl px-2 py-1.5 shadow-2xl ring-1 ring-border/60 sm:w-auto sm:gap-1.5 sm:px-3 sm:py-2">
               {/* Read mode toggle */}
               {showReadModeToggle && (
                 <>
@@ -220,6 +228,28 @@ export function ReaderToolbar({
               />
 
               <Divider />
+
+              {/* Zoom (desktop only) */}
+              {zoom && (
+                <div className="hidden items-center gap-1 lg:flex">
+                  <ToolbarButton
+                    icon={<ZoomOut className="h-5 w-5" />}
+                    label={t('ZoomOut')}
+                    onClick={zoom.zoomOut}
+                    disabled={!zoom.canZoomOut}
+                  />
+                  <span className="min-w-10 text-center text-xs font-semibold tabular-nums text-foreground/80">
+                    {Math.round(zoom.scale * 100)}%
+                  </span>
+                  <ToolbarButton
+                    icon={<ZoomIn className="h-5 w-5" />}
+                    label={t('ZoomIn')}
+                    onClick={zoom.zoomIn}
+                    disabled={!zoom.canZoomIn}
+                  />
+                  <Divider />
+                </div>
+              )}
 
               {/* Brightness */}
               <div className="relative">

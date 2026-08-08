@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 import { ReaderContextMenu } from '@/components/reader/reader-context-menu';
+import { ReaderZoomViewport, useReaderZoom } from '@/components/reader/reader-zoom';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -119,6 +120,7 @@ export default function ChapterPage() {
   const maxReachedPageRef = useRef(1);
   const progressCompletedRef = useRef(false);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
+  const zoom = useReaderZoom();
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const sessionRef = useRef<SessionResponse | null>(null);
   const refreshingSessionRef = useRef<Promise<SessionResponse> | null>(null);
@@ -731,7 +733,12 @@ export default function ChapterPage() {
     // Per-variant presentation.
     const presentation: Record<
       ReaderErrorVariant,
-      { icon: typeof Lock; iconWrap: string; title: string; description: string }
+      {
+        icon: typeof Lock;
+        iconWrap: string;
+        title: string;
+        description: string;
+      }
     > = {
       auth: {
         icon: LogIn,
@@ -924,12 +931,14 @@ export default function ChapterPage() {
           className="pt-20 pb-10"
           style={{ filter: t('BrightnessN', { Brightness: brightness }) }}
         >
-          <div className="mx-auto w-full px-4 lg:max-w-3/4">
-            <article
-              className="prose max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
-              dangerouslySetInnerHTML={{ __html: textHtml }}
-            />
-          </div>
+          <ReaderZoomViewport zoom={zoom}>
+            <div className="mx-auto w-full px-4 lg:max-w-3/4">
+              <article
+                className="prose max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
+                dangerouslySetInnerHTML={{ __html: textHtml }}
+              />
+            </div>
+          </ReaderZoomViewport>
         </main>
 
         <ReaderToolbar
@@ -948,6 +957,7 @@ export default function ChapterPage() {
           onPurchased={handlePurchased}
           showReadModeToggle={false}
           fullscreenTarget={readerRootRef.current}
+          zoom={zoom}
         />
       </div>
     );
@@ -961,56 +971,58 @@ export default function ChapterPage() {
         className="pt-16 pb-24"
         style={{ filter: t('BrightnessN', { Brightness: brightness }) }}
       >
-        {readMode === 'page' ? (
-          <div className="mx-auto flex min-h-[calc(100dvh-10rem)] max-w-2xl items-center justify-center px-4 pt-8">
-            <div className="w-full">
-              <div className="relative">
-                {pageTransitionLoading && (
-                  <div className="absolute flex h-full w-full items-center justify-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary sm:h-20 sm:w-20" />
-                  </div>
-                )}
-
-                <canvas
-                  ref={setPageCanvasEl}
-                  className="h-full w-full select-none rounded-lg bg-muted shadow-xl"
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mx-auto max-w-2xl px-4 pt-8 space-y-4">
-            {Array.from({ length: manifest?.pageCount ?? 0 }).map((_, idx) => {
-              const pageNo = idx + 1;
-              const meta = manifest?.pages?.[idx];
-              const ratio = meta?.w && meta?.h ? `${meta.w} / ${meta.h}` : undefined;
-              return (
-                <motion.div
-                  key={pageNo}
-                  initial={{ opacity: 0, y: 24 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-40px' }}
-                  transition={{ duration: 0.25 }}
-                  className="relative"
-                  style={ratio ? { aspectRatio: ratio } : undefined}
-                >
-                  {!loadedPages.has(pageNo) && (
+        <ReaderZoomViewport zoom={zoom}>
+          {readMode === 'page' ? (
+            <div className="mx-auto flex min-h-[calc(100dvh-10rem)] max-w-2xl items-center justify-center px-4 pt-8">
+              <div className="w-full">
+                <div className="relative">
+                  {pageTransitionLoading && (
                     <div className="absolute flex h-full w-full items-center justify-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
                       <Loader2 className="h-16 w-16 animate-spin text-primary sm:h-20 sm:w-20" />
                     </div>
                   )}
+
                   <canvas
-                    data-page={pageNo}
-                    ref={(el) => {
-                      scrollCanvasRefs.current[idx] = el;
-                    }}
+                    ref={setPageCanvasEl}
                     className="h-full w-full select-none rounded-lg bg-muted shadow-xl"
                   />
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mx-auto max-w-2xl px-4 pt-8 space-y-4">
+              {Array.from({ length: manifest?.pageCount ?? 0 }).map((_, idx) => {
+                const pageNo = idx + 1;
+                const meta = manifest?.pages?.[idx];
+                const ratio = meta?.w && meta?.h ? `${meta.w} / ${meta.h}` : undefined;
+                return (
+                  <motion.div
+                    key={pageNo}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ duration: 0.25 }}
+                    className="relative"
+                    style={ratio ? { aspectRatio: ratio } : undefined}
+                  >
+                    {!loadedPages.has(pageNo) && (
+                      <div className="absolute flex h-full w-full items-center justify-center rounded-lg bg-muted/60 px-2 py-1 backdrop-blur">
+                        <Loader2 className="h-16 w-16 animate-spin text-primary sm:h-20 sm:w-20" />
+                      </div>
+                    )}
+                    <canvas
+                      data-page={pageNo}
+                      ref={(el) => {
+                        scrollCanvasRefs.current[idx] = el;
+                      }}
+                      className="h-full w-full select-none rounded-lg bg-muted shadow-xl"
+                    />
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </ReaderZoomViewport>
       </main>
 
       {/* Toolbar */}
@@ -1029,6 +1041,7 @@ export default function ChapterPage() {
         typeSlug={typeSlug}
         onPurchased={handlePurchased}
         fullscreenTarget={readerRootRef.current}
+        zoom={zoom}
       />
 
       {menuPos && (
@@ -1036,10 +1049,15 @@ export default function ChapterPage() {
           x={menuPos.x}
           y={menuPos.y}
           onClose={() => setMenuPos(null)}
+          canResetZoom={zoom.isZoomed}
           onAction={(action) => {
             setMenuPos(null);
 
             switch (action) {
+              case 'reset-zoom':
+                zoom.resetZoom();
+                break;
+
               case 'reload':
                 window.location.reload();
                 break;

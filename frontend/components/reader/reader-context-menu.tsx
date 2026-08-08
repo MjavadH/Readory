@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Contrast, Maximize, RefreshCcw } from 'lucide-react';
+import { Contrast, Maximize, RefreshCcw, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 interface ContextMenuProps {
@@ -10,11 +10,19 @@ interface ContextMenuProps {
   y: number;
   onClose: () => void;
   onAction: (action: string) => void;
+  /** Hide the reset-zoom entry when the reader is not zoomed in. */
+  canResetZoom?: boolean;
 }
 
 const MENU_MARGIN = 8;
 
-export function ReaderContextMenu({ x, y, onClose, onAction }: ContextMenuProps) {
+export function ReaderContextMenu({
+  x,
+  y,
+  onClose,
+  onAction,
+  canResetZoom = false,
+}: ContextMenuProps) {
   const t = useTranslations('Books');
   const menuRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ left: x, top: y });
@@ -70,6 +78,13 @@ export function ReaderContextMenu({ x, y, onClose, onAction }: ContextMenuProps)
           label={t('ReloadPage')}
           onClick={() => onAction('reload')}
         />
+        {canResetZoom && (
+          <ContextItem
+            icon={<RotateCcw className="h-4 w-4" />}
+            label={t('ResetZoom')}
+            onClick={() => onAction('reset-zoom')}
+          />
+        )}
         <div className="my-1 h-px bg-border/60" />
         <ContextItem
           icon={<Contrast className="h-4 w-4" />}

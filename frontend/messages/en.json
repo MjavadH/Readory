@@ -819,7 +819,10 @@
     "NoUserCollections": "Create a collection from your dashboard first.",
     "AddedToCollections": "Book added to selected collections.",
     "NewChapterNotification": "New chapter notification",
-    "Unsubscribe": "Unsubscribe"
+    "Unsubscribe": "Unsubscribe",
+    "ZoomOut": "Zoom Out",
+    "ZoomIn": "Zoom In",
+    "ResetZoom": "Reset Zoom"
   },
   "Contributors": {
     "Title": "Contributors",
