@@ -65,10 +65,12 @@ export function AppPagination({
   scrollTarget,
   scrollBehavior = 'smooth',
 }: AdminPaginationProps) {
+  const t = useTranslations('General');
+
   if (totalPages <= 1) {
     return null;
   }
-  const t = useTranslations('General');
+
   const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
   const rangeStart = (safeCurrentPage - 1) * pageSize + 1;
   const rangeEnd = Math.min(safeCurrentPage * pageSize, totalItems);

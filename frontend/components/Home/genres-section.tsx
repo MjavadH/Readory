@@ -86,8 +86,9 @@ export function GenresSectionSkeleton({ count = 8 }: { count?: number }) {
 }
 
 export function GenresSection({ genres }: { genres: BookGenre[] }) {
-  if (genres.length === 0) return null;
   const t = useTranslations('HomePage');
+
+  if (genres.length === 0) return null;
 
   return (
     <section className="relative">

@@ -74,10 +74,12 @@ export function LatestSectionSkeleton({ count = 6 }: { count?: number }) {
 }
 
 export function LatestSection({ books }: { books: LatestBook[] }) {
-  if (books.length === 0) return null;
   const router = useRouter();
   const t = useTranslations('HomePage');
   const ti = useTranslations('Time');
+
+  if (books.length === 0) return null;
+
   const filtered = books.filter((b) => b.chapters.length > 0);
 
   return (

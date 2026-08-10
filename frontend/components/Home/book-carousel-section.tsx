@@ -61,9 +61,9 @@ export function BookCarouselSection({
   title,
   ariaLabel,
 }: BookCarouselSectionProps) {
-  if (books.length === 0) return null;
-
   const prefersReducedMotion = useReducedMotion();
+
+  if (books.length === 0) return null;
 
   return (
     <section aria-label={ariaLabel ?? title} className="relative">

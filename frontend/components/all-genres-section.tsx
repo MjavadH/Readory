@@ -10,8 +10,9 @@ interface AllGenresSectionProps {
 }
 
 export function AllGenresSection({ genres }: AllGenresSectionProps) {
-  if (genres.length === 0) return null;
   const t = useTranslations('Genres');
+
+  if (genres.length === 0) return null;
 
   return (
     <section className="relative overflow-hidden bg-card">
