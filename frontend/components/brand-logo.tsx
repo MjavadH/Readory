@@ -8,14 +8,9 @@ type BrandLogoProps = {
   withLink?: boolean;
 };
 
-export function BrandLogo({
-  height = 32,
-  priority = false,
-  className,
-  withLink = false,
-}: BrandLogoProps) {
+export function BrandLogo({ height = 32, className, withLink = false }: BrandLogoProps) {
   const logo = (
-    <img
+    <Image
       src="/Logo.svg"
       alt="Readory"
       width={Math.round(height * 4)}

@@ -41,16 +41,16 @@ export default function AdminDashboardPage() {
   const canBooks = isSuperAdmin || has('MANAGE_BOOKS');
   const canUsers = isSuperAdmin || has(['MANAGE_USERS', 'MANAGE_STAFF']);
 
-  const [overview, setOverview] = useState<SectionState<AdminOverview>>({ status: 'idle' });
-  const [finance, setFinance] = useState<SectionState<FinanceData | null>>({ status: 'idle' });
-  const [content, setContent] = useState<SectionState<ContentData | null>>({ status: 'idle' });
-  const [users, setUsers] = useState<SectionState<UsersData | null>>({ status: 'idle' });
+  const [overview, setOverview] = useState<SectionState<AdminOverview>>({ status: 'loading' });
+  const [finance, setFinance] = useState<SectionState<FinanceData | null>>({ status: 'loading' });
+  const [content, setContent] = useState<SectionState<ContentData | null>>({ status: 'loading' });
+  const [users, setUsers] = useState<SectionState<UsersData | null>>({ status: 'loading' });
   const [refreshing, setRefreshing] = useState(false);
 
   const numberFmt = new Intl.NumberFormat(locale);
 
   const loadOverview = useCallback(async () => {
-    setOverview({ status: 'loading' });
+    setOverview((prev) => (prev.status === 'loading' ? prev : { status: 'loading' }));
     try {
       const data = await apiClient.get<AdminOverview>('/dashboard/admin/overview');
       setOverview({ status: 'success', data });
@@ -60,8 +60,11 @@ export default function AdminDashboardPage() {
   }, []);
 
   const loadFinance = useCallback(async () => {
-    if (!canFinance) return;
-    setFinance({ status: 'loading' });
+    if (!canFinance) {
+      setFinance({ status: 'idle' });
+      return;
+    }
+    setFinance((prev) => (prev.status === 'loading' ? prev : { status: 'loading' }));
     try {
       const data = await apiClient.get<FinanceData | null>('/dashboard/admin/finance');
       setFinance({ status: 'success', data });
@@ -71,8 +74,11 @@ export default function AdminDashboardPage() {
   }, [canFinance]);
 
   const loadContent = useCallback(async () => {
-    if (!canBooks) return;
-    setContent({ status: 'loading' });
+    if (!canBooks) {
+      setContent({ status: 'idle' });
+      return;
+    }
+    setContent((prev) => (prev.status === 'loading' ? prev : { status: 'loading' }));
     try {
       const data = await apiClient.get<ContentData | null>('/dashboard/admin/content');
       setContent({ status: 'success', data });
@@ -82,8 +88,11 @@ export default function AdminDashboardPage() {
   }, [canBooks]);
 
   const loadUsers = useCallback(async () => {
-    if (!canUsers) return;
-    setUsers({ status: 'loading' });
+    if (!canUsers) {
+      setUsers({ status: 'idle' });
+      return;
+    }
+    setUsers((prev) => (prev.status === 'loading' ? prev : { status: 'loading' }));
     try {
       const data = await apiClient.get<UsersData | null>('/dashboard/admin/users');
       setUsers({ status: 'success', data });
@@ -94,10 +103,13 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     if (permissionLoading) return;
-    loadOverview();
-    loadFinance();
-    loadContent();
-    loadUsers();
+
+    queueMicrotask(() => {
+      void loadOverview();
+      void loadFinance();
+      void loadContent();
+      void loadUsers();
+    });
   }, [permissionLoading, loadOverview, loadFinance, loadContent, loadUsers]);
 
   const refreshAll = async () => {

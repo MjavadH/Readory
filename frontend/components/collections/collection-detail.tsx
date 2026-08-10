@@ -47,6 +47,7 @@ import {
   type CollectionFormState,
   type CollectionItem,
 } from '@/lib/collection-types';
+import Image from 'next/image';
 
 const DESCRIPTION_COLLAPSED_CHARS = 320;
 const PICKER_LIMIT = 18;
@@ -279,7 +280,7 @@ export function CollectionDetail({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [pickerOpen, pickerPage, pickerSearch]);
+  }, [pickerOpen, pickerPage, pickerSearch, t, toast]);
 
   const addBook = async (book: BookCardData | null) => {
     if (!book) return;
@@ -700,11 +701,13 @@ function ManageRow({
       </span>
 
       <div className="h-14 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-        <img
+        <Image
           src={getBookCoverThumbnailUrl(item.book.coverImage)}
           alt={item.book.title}
-          loading="lazy"
+          width={55}
+          height={55}
           className="h-full w-full object-cover"
+          loading="lazy"
         />
       </div>
 

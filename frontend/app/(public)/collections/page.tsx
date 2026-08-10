@@ -2,9 +2,11 @@ import { getTranslations } from 'next-intl/server';
 import { CollectionsClient } from './CollectionsClient';
 import { apiClient } from '@/lib/api-client';
 import type { CollectionSummary } from '@/lib/types';
+import { Metadata } from 'next';
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('Collections');
+
   return {
     title: t('pageTitle'),
     description: t('pageSubtitle'),

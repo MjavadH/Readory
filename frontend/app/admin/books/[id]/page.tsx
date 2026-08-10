@@ -140,7 +140,7 @@ export default function AdminBookDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookId]);
+  }, [bookId, t, toast]);
 
   const loadChapters = useCallback(async () => {
     if (!bookId) return;
@@ -158,7 +158,7 @@ export default function AdminBookDetail() {
     } finally {
       setChaptersLoading(false);
     }
-  }, [bookId, chaptersPage]);
+  }, [bookId, chaptersPage, t, toast]);
 
   useEffect(() => {
     void loadBook();

@@ -34,14 +34,14 @@ export default function OverviewPage() {
       try {
         const res = await apiClient.get<DashboardOverview>('/dashboard');
         setData(res);
-      } catch (err: any) {
+      } catch {
         setError(t('FailedLoadDashboard'));
       } finally {
         setLoading(false);
       }
     }
     void fetchData();
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (

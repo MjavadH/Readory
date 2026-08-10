@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { BookCard, BookCardSkeleton } from '@/components/book-card';
 import { AppPagination } from '@/components/app-pagination';
 import type { BookCardData } from '@/lib/types';
+import { formatUpdateTime } from '@/lib/time';
 import { ContributorGender } from '@readory/shared';
 
 type ContributorPublic = {
@@ -47,8 +48,10 @@ export default function ContributorPublicPage() {
   const slug = params?.slug ?? '';
 
   const t = useTranslations('Contributors');
+  const ti = useTranslations('Time');
 
   const [page, setPage] = useState(1);
+  const [prevSlug, setPrevSlug] = useState(slug);
   const [data, setData] = useState<ContributorPublicResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,42 +59,49 @@ export default function ContributorPublicPage() {
 
   const booksSectionRef = useRef<HTMLDivElement | null>(null);
 
+  if (slug !== prevSlug) {
+    setPrevSlug(slug);
+    setPage(1);
+  }
+
   useEffect(() => {
     if (!slug) return;
     let cancelled = false;
     const controller = new AbortController();
 
-    setIsLoading(true);
-    setError(null);
+    const fetchContributorData = async () => {
+      setIsLoading(true);
+      setError(null);
 
-    apiClient
-      .get<ContributorPublicResponse>(`contributor/public/${slug}`, {
-        query: { page, limit: PAGE_SIZE },
-        signal: controller.signal,
-      })
-      .then((res) => {
-        if (cancelled) return;
-        setData(res);
-      })
-      .catch((err) => {
-        if (cancelled || controller.signal.aborted) return;
-        setError(getApiErrorMessage(err, t('LoadError')));
-      })
-      .finally(() => {
+      try {
+        const res = await apiClient.get<ContributorPublicResponse>(`contributor/public/${slug}`, {
+          query: { page, limit: PAGE_SIZE },
+          signal: controller.signal,
+        });
+        if (!cancelled) setData(res);
+      } catch (err) {
+        if (!cancelled && !controller.signal.aborted) {
+          setError(getApiErrorMessage(err, 'Failed to load contributor'));
+        }
+      } finally {
         if (!cancelled) setIsLoading(false);
-      });
+      }
+    };
+
+    void fetchContributorData();
 
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [slug, page, t]);
+  }, [slug, page]);
 
   const contributors = data?.contributors;
   const pagination = data?.pagination;
 
   const books: BookCardData[] = useMemo(() => {
     if (!data?.books) return [];
+    const contributorName = data.contributors?.name;
     return data.books.map((b) => ({
       id: b.id,
       title: b.title,
@@ -102,9 +112,18 @@ export default function ContributorPublicPage() {
       genres: b.genres,
       chapterCount: b.chapterCount ?? undefined,
       updatedAt: b.updatedAt,
-      contributors: contributors?.name,
-    })) as BookCardData[];
-  }, [data?.books, contributors?.name]);
+      contributors: contributorName,
+    }));
+  }, [data]);
+
+  const formattedDate = useMemo(() => {
+    if (!contributors?.updatedAt) return '';
+    return formatUpdateTime(contributors.updatedAt, ti);
+  }, [contributors, ti]);
+
+  if (isLoading && !data) {
+    return <ContributorPageSkeleton />;
+  }
 
   if (isLoading && !data) {
     return <ContributorPageSkeleton />;
@@ -215,10 +234,8 @@ export default function ContributorPublicPage() {
                 />
                 <StatCard
                   icon={<Calendar className="h-4 w-4" />}
-                  value={new Date(contributors.updatedAt).toLocaleDateString()}
-                  label={t('UpdatedOn', {
-                    date: new Date(contributors.updatedAt).toLocaleDateString(),
-                  })}
+                  value={formattedDate}
+                  label={t('UpdatedOn', { date: formattedDate })}
                   compact
                 />
               </div>

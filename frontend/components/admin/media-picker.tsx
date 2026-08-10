@@ -17,6 +17,7 @@ import { Search, Loader2, Check, X } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 import { useTranslations } from 'next-intl';
 import { AppPagination } from '@/components/app-pagination';
+import Image from 'next/image';
 
 export type MediaItem = {
   code: string;
@@ -125,9 +126,11 @@ export function MediaPicker({
         setTotal(normalized.total);
         setTotalPages(Math.max(1, normalized.totalPages));
         setHasLoadedOnce(true);
-      } catch (e: any) {
-        if (e?.name !== 'AbortError') {
-          toast.error(getApiErrorMessage(e));
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err?.name !== 'AbortError') {
+            toast.error(getApiErrorMessage(err));
+          }
         }
       } finally {
         setIsLoading(false);
@@ -202,9 +205,11 @@ export function MediaPicker({
                     ].join(' ')}
                   >
                     <div className="aspect-2/3 bg-muted relative">
-                      <img
+                      <Image
                         src={`${getBookCoverThumbnailUrl(m.code)}`}
                         alt={m.filename || 'image'}
+                        fill
+                        sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />

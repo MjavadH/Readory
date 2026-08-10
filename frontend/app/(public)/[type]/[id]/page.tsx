@@ -134,7 +134,7 @@ export default function BookDetailsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [bookId, typeSlug]);
+  }, [bookId, typeSlug, t, toast]);
 
   const loadChapters = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0) return;
@@ -152,7 +152,7 @@ export default function BookDetailsPage() {
     } finally {
       setChaptersLoading(false);
     }
-  }, [bookId, chapterSearch, chaptersPage, chaptersOrder]);
+  }, [bookId, chapterSearch, chaptersPage, chaptersOrder, t, toast]);
 
   useEffect(() => {
     void loadBase();

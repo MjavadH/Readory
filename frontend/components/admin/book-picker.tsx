@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { BookCardData } from '@/lib/types';
 import { AppPagination } from '@/components/app-pagination';
+import Image from 'next/image';
 
 export type BookPickerProps = {
   open: boolean;
@@ -117,13 +118,15 @@ export function BookPicker({
                     ].join(' ')}
                   >
                     <div className="aspect-2/3 w-full bg-muted relative overflow-hidden">
-                      <img
+                      <Image
                         src={
                           book.coverImage
                             ? getBookCoverThumbnailUrl(book.coverImage)
                             : '/placeholder.svg'
                         }
                         alt={book.title}
+                        fill
+                        sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />

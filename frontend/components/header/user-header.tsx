@@ -236,10 +236,10 @@ export function UserHeader() {
       setGenresLoading(true);
       try {
         const data = await apiClient
-          .get<any[]>('/genres/featured', { signal: ac.signal })
+          .get<BookGenre[]>('/genres/featured', { signal: ac.signal })
           .catch(() => []);
         setGenres(
-          (Array.isArray(data) ? data : []).map((g: any) => ({
+          (Array.isArray(data) ? data : []).map((g) => ({
             name: String(g.name),
             slug: String(g.slug),
             iconKey: g.iconKey,
@@ -262,10 +262,10 @@ export function UserHeader() {
       setBookTypeLoading(true);
       try {
         const data = await apiClient
-          .get<any[]>('/public/book-types', { signal: ac.signal })
+          .get<BookType[]>('/public/book-types', { signal: ac.signal })
           .catch(() => []);
         setBookType(
-          (Array.isArray(data) ? data : []).map((b: any) => ({
+          (Array.isArray(data) ? data : []).map((b) => ({
             name: String(b.name),
             slug: String(b.slug),
             iconKey: isIconKey(b.iconKey) ? b.iconKey : 'bookOpen',
@@ -443,7 +443,9 @@ export function UserHeader() {
                 value={searchQuery}
                 onChange={onSearchChange}
                 onFocus={() => {
-                  searchQuery.trim() && setShowSearchResults(true);
+                  if (searchQuery.trim()) {
+                    setShowSearchResults(true);
+                  }
                 }}
                 onBlur={() => {
                   setTimeout(() => setShowSearchResults(false), 150);

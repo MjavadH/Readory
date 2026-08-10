@@ -46,6 +46,7 @@ import {
   COLLECTION_SLUG_REGEX,
   type CollectionFormState,
 } from '@/lib/collection-types';
+import Image from 'next/image';
 
 export default function AdminCollectionsPage() {
   const t = useTranslations('Collections');
@@ -534,10 +535,12 @@ function MiniCovers({ collection }: { collection: Collection }) {
           className="h-18 w-12 overflow-hidden rounded-lg bg-muted ring-2 ring-card"
           style={{ zIndex: covers.length - index }}
         >
-          <img
+          <Image
             src={getBookCoverThumbnailUrl(cover)}
             alt=""
             loading="lazy"
+            width={55}
+            height={75}
             className="h-full w-full object-cover"
           />
         </div>

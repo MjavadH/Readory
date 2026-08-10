@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import { BookType } from '@/lib/types';
+import { BookBrowserApi, BookType } from '@/lib/types';
 import { useBookBrowser } from '@/hooks/use-book-browser';
 import { BookBrowseLayout } from '@/components/book-browse-layout';
 import { AllGenresSection } from '@/components/all-genres-section';
@@ -23,7 +23,7 @@ export default function GenrePage() {
       .finally(() => setIsLoadingTypes(false));
   }, []);
 
-  const browser = useBookBrowser<any>({
+  const browser = useBookBrowser<BookBrowserApi>({
     baseUrl: `/genres/${slug}`,
     fetcher: (params, signal) =>
       apiClient.get(`/public/genres/${slug}/browse?${params}`, { signal }),

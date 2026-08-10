@@ -5,13 +5,15 @@ import { BookBrowseLayout } from '@/components/book-browse-layout';
 import { apiClient } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
 import React from 'react';
+import { BookBrowserApi, BooksPageData } from '@/lib/types';
 
-export default function BooksClient({ initialData }: any) {
+export default function BooksClient({ initialData }: { initialData: BooksPageData }) {
   const t = useTranslations('Books');
 
   const browser = useBookBrowser({
     baseUrl: '/books',
-    fetcher: (params, signal) => apiClient.get(`/books/browse?${params}`, { signal }),
+    fetcher: (params, signal) =>
+      apiClient.get<BookBrowserApi>(`/books/browse?${params}`, { signal }),
     initialData: initialData.books,
   });
 

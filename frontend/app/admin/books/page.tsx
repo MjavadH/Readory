@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { AppPagination } from '@/components/app-pagination';
 import { BookEditor } from '@/components/admin/book-editor';
@@ -18,7 +18,7 @@ import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { MediaPicker } from '@/components/admin/media-picker';
 import { StatCard } from '@/components/admin/stat-card';
 import { BookCard } from '@/components/book-card';
-import type { BookCardData } from '@/lib/types';
+import type { BookCardData, BookGenre, BookType } from '@/lib/types';
 import { BookStatus, PublicationStatus, type AgeRating } from '@readory/shared';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
@@ -33,16 +33,31 @@ type Genre = {
   slug: string;
 };
 
-type BookType = {
-  id: number;
-  name: string;
-  slug: string;
-};
-
 interface BookStats {
   total: number;
   Published: number;
   Drafts: number;
+}
+
+interface AdminApiBook {
+  id: number;
+  title: string;
+  originalTitle?: string | null;
+  alternativeTitles?: string[];
+  contributors: string | null;
+  coverImage: string;
+  publishStatus?: PublicationStatus;
+  isFeatured?: boolean;
+  status?: BookStatus;
+  ageRating?: AgeRating | null;
+  publicationYear?: number | null;
+  chapterCount?: number;
+  lastContentUpdate?: string | null;
+  ratingAvg?: number;
+  ratingCount?: number;
+  updatedAt?: string;
+  genres?: Array<{ genre: BookGenre }>;
+  type?: { name: string };
 }
 
 const ITEMS_PER_PAGE = 24;
@@ -105,29 +120,50 @@ export default function AdminBooks() {
     publicationYear: null as number | null,
   });
 
-  useEffect(() => {
-    void bootstrap();
-  }, []);
-
-  const bootstrap = async () => {
-    setLoading(true);
+  const fetchGenres = useCallback(async () => {
     try {
-      await Promise.all([fetchBooks(), fetchGenres(), fetchTypes()]);
-    } finally {
-      setLoading(false);
+      const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
+      setGenres(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error(t('ErrorFetchingGenres'));
+      setGenres([]);
     }
-  };
+  }, [toast, t]);
+
+  const fetchTypes = useCallback(async () => {
+    try {
+      const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
+      const list = Array.isArray(data) ? data : [];
+      setBookTypes(list);
+      if (list.length > 0) {
+        setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }));
+      }
+    } catch {
+      toast.error(t('ErrorFetchingTypes'));
+      setBookTypes([]);
+    } finally {
+      setIsLoadingTypes(false);
+    }
+  }, [toast, t]);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(searchQuery.trim()), 300);
-    return () => clearTimeout(t);
+    const init = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([fetchGenres(), fetchTypes()]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    void init();
+  }, [fetchGenres, fetchTypes]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQ(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  useEffect(() => {
-    void fetchBooks();
-  }, [page, statusFilter, debouncedQ]);
-
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     try {
       const qs = new URLSearchParams({
         page: String(page),
@@ -136,63 +172,46 @@ export default function AdminBooks() {
       });
       if (debouncedQ) qs.set('q', debouncedQ);
 
-      const data = await apiClient.get<{ books: any[]; stats?: BookStats }>(
+      const data = await apiClient.get<{ books: AdminApiBook[]; stats?: BookStats }>(
         `/books/allBooks?${qs.toString()}`,
       );
 
       const transformedBooks: BookCardData[] = (data.books || []).map((book) => ({
         id: book.id,
         title: book.title,
+        originalTitle: book.originalTitle,
+        alternativeTitles: book.alternativeTitles,
         coverImage: book.coverImage || '',
-        type: book.type,
-        contributors: book.contributors,
-        description: book.description,
+        type: book.type as BookType,
+        contributors: book.contributors ?? undefined,
         ratingAvg: book.ratingAvg,
         ratingCount: book.ratingCount,
-        genres: (book.genres || []).map((g: any) => g.genre),
+        genres: book.genres?.map((g) => g.genre) || [],
         isFeatured: book.isFeatured,
         publishStatus: book.publishStatus,
+        status: book.status,
+        ageRating: book.ageRating,
+        publicationYear: book.publicationYear,
         chapterCount: book.chapterCount || 0,
-        updatedAt: book.lastContentUpdate || book.updatedAt,
+        lastContentUpdate: book.lastContentUpdate,
+        updatedAt: book.updatedAt,
       }));
 
       setBooks(transformedBooks);
       if (data.stats) setStats(data.stats);
-    } catch (err: any) {
+    } catch {
       toast.error(t('ErrorFetchingBooks'));
       setBooks([]);
     }
-  };
+  }, [page, statusFilter, debouncedQ, toast, t]);
+
+  useEffect(() => {
+    void fetchBooks();
+  }, [fetchBooks]);
 
   useEffect(() => {
     setPage(1);
   }, [statusFilter, debouncedQ]);
-
-  const fetchGenres = async () => {
-    try {
-      const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
-      setGenres(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      toast.error(t('ErrorFetchingGenres'));
-      setGenres([]);
-    }
-  };
-
-  const fetchTypes = async () => {
-    try {
-      const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
-      const list = Array.isArray(data) ? data : [];
-      setBookTypes(list);
-      if (list.length > 0) {
-        setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }));
-      }
-    } catch (err: any) {
-      toast.error(t('ErrorFetchingTypes'));
-      setBookTypes([]);
-    } finally {
-      setIsLoadingTypes(false);
-    }
-  };
 
   const handleAddBook = async () => {
     if (!newBook.title.trim()) {
@@ -235,8 +254,10 @@ export default function AdminBooks() {
       });
       setNewCoverLabel('');
       toast.success(t('BookCreatedSuccessfully'));
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
     }

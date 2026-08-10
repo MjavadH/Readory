@@ -69,7 +69,7 @@ interface ReaderZoomViewportProps {
 }
 
 export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoomViewportProps) {
-  const { setTransformState, isZoomed, resetZoom } = zoom;
+  const { setTransformState, isZoomed, resetZoom, ref: zoomRef } = zoom;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoo
       e.preventDefault();
       e.stopPropagation();
 
-      const instance = zoom.ref.current;
+      const instance = zoomRef.current;
       if (!instance) return;
 
       const { scale, positionX, positionY } = instance.state;
@@ -108,7 +108,7 @@ export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoo
 
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
-  }, [zoom.ref]);
+  }, [zoomRef]);
 
   return (
     <div
@@ -117,7 +117,7 @@ export function ReaderZoomViewport({ zoom, children, className = '' }: ReaderZoo
       style={{ touchAction: isZoomed ? 'none' : 'pan-y' }}
     >
       <TransformWrapper
-        ref={zoom.ref}
+        ref={zoomRef}
         initialScale={1}
         minScale={READER_MIN_ZOOM}
         maxScale={READER_MAX_ZOOM}

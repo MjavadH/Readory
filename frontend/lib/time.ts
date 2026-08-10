@@ -3,7 +3,7 @@
  */
 export function formatUpdateTime(
   input: Date | string | number,
-  t: (key: string, values?: any) => string,
+  t: (key: string, values?: Record<string, string | number>) => string,
 ): string {
   const date = new Date(input);
   const now = new Date();

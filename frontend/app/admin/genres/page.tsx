@@ -82,7 +82,7 @@ function SortableGenreItem({
   isFeaturedList: boolean;
   onDelete: (g: Genre) => void;
   onEdit: (g: Genre) => void;
-  onUpdateIcon: (id: number, iconKey: IconKey) => void;
+  onUpdateIcon: (id: number, iconKey: IconKey | null) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: genre.id.toString(),
@@ -145,7 +145,7 @@ function SortableGenreItem({
 
       <IconPicker
         value={genre.iconKey as IconKey}
-        onChange={(key: any) => onUpdateIcon(genre.id, key)}
+        onChange={(key) => onUpdateIcon(genre.id, key)}
       />
 
       <Button
@@ -216,7 +216,7 @@ export default function AdminGenres() {
     const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
     if (Array.isArray(data)) {
       setGenres(
-        data.map((g: any) => ({
+        data.map((g: Genre) => ({
           ...g,
           isFeatured: Boolean(g.isFeatured),
           featuredOrder: Number(g.featuredOrder) || 0,
@@ -237,15 +237,19 @@ export default function AdminGenres() {
       await apiClient.post('/genres', { name: v });
       setName('');
       await load();
-    } catch (error: any) {
-      alert(error?.message || 'Failed to create');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(error?.message || 'Failed to create');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const updateGenreIcon = async (id: number, iconKey: IconKey) => {
-    setGenres((prev) => prev.map((g) => (g.id === id ? { ...g, iconKey } : g)));
+  const updateGenreIcon = async (id: number, iconKey: IconKey | null) => {
+    setGenres((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, iconKey: iconKey ?? undefined } : g)),
+    );
 
     try {
       await apiClient.patch(`/genres/${id}`, { iconKey });
@@ -280,8 +284,10 @@ export default function AdminGenres() {
       );
       setEditOpen(false);
       setEditTarget(null);
-    } catch (error: any) {
-      alert(error?.message || 'Failed to update');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(error?.message || 'Failed to update');
+      }
     } finally {
       setSavingEdit(false);
     }
@@ -297,8 +303,10 @@ export default function AdminGenres() {
     try {
       await apiClient.delete(`/genres/${genreToDelete.id}`);
       setGenres((prev) => prev.filter((g) => g.id !== genreToDelete.id));
-    } catch (error: any) {
-      alert(error?.message || 'Failed to delete');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(error?.message || 'Failed to delete');
+      }
     } finally {
       setDeleteDialogOpen(false);
       setGenreToDelete(null);

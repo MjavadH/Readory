@@ -22,6 +22,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
+import Image from 'next/image';
 
 export interface ContentData {
   trendingBooks?: Array<{
@@ -89,9 +90,11 @@ export function ContentSection({ data }: { data: ContentData }) {
                     <div key={b.id} className="group flex w-40 shrink-0 flex-col gap-2 sm:w-auto">
                       <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-muted">
                         {b.coverImage ? (
-                          <img
+                          <Image
                             src={getBookCoverThumbnailUrl(b.coverImage)}
                             alt={b.title}
+                            fill
+                            sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                             className="h-full w-full object-cover transition-transform group-hover:scale-105"
                           />
                         ) : (
@@ -145,9 +148,11 @@ export function ContentSection({ data }: { data: ContentData }) {
                     {i + 1}
                   </div>
                   {row.book!.coverImage ? (
-                    <img
+                    <Image
                       src={getBookCoverThumbnailUrl(row.book!.coverImage)}
                       alt={row.book!.title}
+                      width={36}
+                      height={48}
                       className="h-12 w-9 shrink-0 rounded object-cover"
                     />
                   ) : (

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { UserProfile } from '@/lib/types';
 import { getAvatarUrl } from '@/lib/media';
+import Image from 'next/image';
 
 const ACCEPTED = ['image/jpeg', 'image/webp'];
 
@@ -85,15 +86,18 @@ export default function ProfileCard({
             }`}
           >
             <span
-              className={`flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border-4 border-background bg-gradient-to-tr from-primary/80 to-primary/30 ring-4 transition-colors ${
+              className={`flex h-full w-full items-center justify-center overflow-hidden rounded-3xl border-4 border-background bg-linear-to-tr from-primary/80 to-primary/30 ring-4 transition-colors ${
                 dragging ? 'ring-primary/50' : 'ring-primary/10'
               }`}
             >
               {avatarSrc ? (
-                <img
+                <Image
                   src={avatarSrc}
                   alt={t('CurrentAvatar')}
+                  width={150}
+                  height={150}
                   className="h-full w-full object-cover"
+                  loading="lazy"
                 />
               ) : (
                 <span className="text-2xl font-bold text-primary-foreground sm:text-3xl">

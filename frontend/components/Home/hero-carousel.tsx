@@ -10,6 +10,7 @@ import type { BookCardData } from '@/lib/types';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
 
 export function HeroSkeleton() {
   return (
@@ -98,7 +99,11 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
         const dx = e.changedTouches[0].clientX - touchStartX.current;
         if (Math.abs(dx) > 40) {
           const forward = isRTL ? dx > 0 : dx < 0;
-          forward ? next() : prev();
+          if (forward) {
+            next();
+          } else {
+            prev();
+          }
         }
         touchStartX.current = null;
       }}
@@ -116,11 +121,13 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
           transition={{ duration: 0.7, ease: 'easeOut' }}
           className="absolute inset-0"
         >
-          <img
+          <Image
             src={coverSrc}
             alt=""
             aria-hidden
             className="absolute inset-0 w-full h-full object-cover blur-md"
+            fill
+            sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
           />
           <div className="absolute inset-0 bg-linear-to-r from-secondary/95 via-secondary/85 to-secondary/50 rtl:bg-linear-to-l" />
           <div className="absolute inset-0 bg-linear-to-t from-secondary/80 via-transparent to-secondary/30" />
@@ -220,11 +227,13 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
                   transition={{ type: 'spring', stiffness: 220, damping: 18 }}
                   className="relative w-36 sm:w-44 md:w-52 lg:w-60 aspect-2/3 rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10"
                 >
-                  <img
+                  <Image
                     src={coverSrc}
                     alt={book.title}
                     className="w-full h-full object-cover"
                     loading="eager"
+                    fill
+                    sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                   />
                   <div className="absolute inset-0 bg-linear-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
                 </motion.div>

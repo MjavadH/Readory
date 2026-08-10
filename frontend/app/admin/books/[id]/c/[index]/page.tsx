@@ -254,7 +254,7 @@ export default function ChapterContentManager() {
     } finally {
       setLoading(false);
     }
-  }, [bookId, chapterIndex, canLoad, toast]);
+  }, [bookId, chapterIndex, canLoad, toast, t]);
 
   useEffect(() => {
     void loadContent();
@@ -369,7 +369,7 @@ export default function ChapterContentManager() {
   };
 
   const currentPagedPageNumbers = useMemo(
-    () => pagedImages.map((_, idx) => absolutePageNumber(idx)),
+    () => pagedImages.map((_, idx) => (imagePage - 1) * pageSize + idx + 1),
     [pagedImages, imagePage],
   );
 
@@ -463,7 +463,7 @@ export default function ChapterContentManager() {
         ),
       },
     ];
-  }, [data, bookId, chapterIndex]);
+  }, [data, bookId, chapterIndex, t]);
 
   const isBusy = loading || uploading || deleting || deletingImages;
 
@@ -846,6 +846,7 @@ export default function ChapterContentManager() {
                       {/* Thumbnail */}
                       <div className="relative aspect-3/4 bg-muted/40 overflow-hidden">
                         {adminPreviewToken ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={buildAdminPreviewImageUrl(pageNumber)}
                             alt={`Page ${pageNumber}`}

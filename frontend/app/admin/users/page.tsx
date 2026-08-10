@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -53,6 +53,7 @@ import { motion } from 'framer-motion';
 import { usePermission } from '@/hooks/use-permission';
 import { useTranslations } from 'next-intl';
 import { getAvatarUrl } from '@/lib/media';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface Transaction {
   id: number;
@@ -125,10 +126,11 @@ export default function AdminUsers() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [adjustAmount, setAdjustAmount] = useState('');
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const { user: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id ?? null;
   const ITEMS_PER_PAGE = 20;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [usersData, statsData] = await Promise.all([
@@ -146,20 +148,24 @@ export default function AdminUsers() {
       if (statsData) {
         setStats(statsData);
       }
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err), t('ErrorFetchingData'));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err), t('ErrorFetchingData'));
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, t, toast]);
 
   const fetchUserDetails = async (userId: number) => {
     setIsLoadingDetails(true);
     try {
       const data = await apiClient.get<UserDetails>(`/users/${userId}`);
       setSelectedUser(data);
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err), t('ErrorFetchingUserDetails'));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err), t('ErrorFetchingUserDetails'));
+      }
     } finally {
       setIsLoadingDetails(false);
     }
@@ -172,8 +178,10 @@ export default function AdminUsers() {
       if (selectedUser) {
         fetchUserDetails(userId);
       }
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err), t('ErrorUpdatingRole'));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err), t('ErrorUpdatingRole'));
+      }
     }
   };
 
@@ -200,15 +208,11 @@ export default function AdminUsers() {
   };
 
   useEffect(() => {
-    apiClient.get<{ id: number }>('/auth/profile').then((data) => {
-      setCurrentUserId(data.id);
-    });
-
     const timer = setTimeout(() => {
       fetchData();
     }, 300);
     return () => clearTimeout(timer);
-  }, [currentPage, searchQuery]);
+  }, [fetchData]);
 
   const handleRowClick = (user: User) => {
     setIsDetailsOpen(true);
@@ -221,8 +225,10 @@ export default function AdminUsers() {
       await apiClient.patch(`/users/${userId}/ban`, { isBanned });
       fetchData();
       if (selectedUser?.id === userId) fetchUserDetails(userId);
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     }
   };
 

@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { BookBrowserApi, BookGenre, PublicBookType } from '@/lib/types';
 
 export async function getInitialBooksData(
   searchParams: Record<string, string | string[] | undefined>,
@@ -14,9 +15,9 @@ export async function getInitialBooksData(
   ).toString();
 
   const [books, genres, types] = await Promise.all([
-    apiClient.get(`/books/browse?${query}`),
-    apiClient.get('/genres/listAll'),
-    apiClient.get('/public/book-types'),
+    apiClient.get<BookBrowserApi>(`/books/browse?${query}`),
+    apiClient.get<BookGenre[]>('/genres/listAll'),
+    apiClient.get<PublicBookType[]>('/public/book-types'),
   ]);
 
   return { books, genres, types };

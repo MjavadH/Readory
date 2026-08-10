@@ -86,7 +86,7 @@ export function ContributorsEditor({
     if (suggested && suggested !== value.slug) {
       onChange({ slug: suggested });
     }
-  }, [value.name, slugManuallyEdited]);
+  }, [value.name, slugManuallyEdited, onChange, value.slug]);
 
   const clientErrors: ContributorFieldErrors = {};
   if (!value.name.trim()) clientErrors.name = t('Validation_NameRequired');

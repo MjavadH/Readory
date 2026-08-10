@@ -34,7 +34,14 @@ import {
 } from '@/components/ui/drawer';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
-import { bookTypeLabel, SORT_OPTIONS, BookGenre, BookType, SortOption } from '@/lib/types';
+import {
+  bookTypeLabel,
+  SORT_OPTIONS,
+  BookGenre,
+  SortOption,
+  BookCardData,
+  PublicBookType,
+} from '@/lib/types';
 import { useTranslations } from 'next-intl';
 import { AppIcon } from '@/components/AppIcon';
 import { cn } from '@/lib/utils';
@@ -42,7 +49,7 @@ import { cn } from '@/lib/utils';
 interface BookBrowseLayoutProps {
   title: React.ReactNode;
   description: React.ReactNode;
-  books: any[];
+  books: BookCardData[];
   isLoading: boolean;
   isLoadingMore: boolean;
   hasMore: boolean;
@@ -62,7 +69,7 @@ interface BookBrowseLayoutProps {
   };
   enableTypeFilter?: boolean;
   enableGenreFilter?: boolean;
-  availableTypes: BookType[];
+  availableTypes: PublicBookType[];
   availableGenres: BookGenre[];
   isLoadingTypes?: boolean;
   isLoadingGenres?: boolean;
@@ -203,7 +210,7 @@ function FilterContent({
   filters: BookBrowseLayoutProps['filters'];
   enableTypeFilter: boolean;
   enableGenreFilter: boolean;
-  availableTypes: BookType[];
+  availableTypes: PublicBookType[];
   availableGenres: BookGenre[];
   isLoadingTypes: boolean;
   isLoadingGenres: boolean;

@@ -38,14 +38,14 @@ export default function HistoryPage() {
           query: { page, limit: ITEMS_PER_PAGE },
         });
         setData(res);
-      } catch (err: any) {
+      } catch {
         setError(t('FailedLoadHistory'));
       } finally {
         setLoading(false);
       }
     }
     void fetchData();
-  }, [page]);
+  }, [t, page]);
 
   const handleExport = async () => {
     if (isExporting) return;

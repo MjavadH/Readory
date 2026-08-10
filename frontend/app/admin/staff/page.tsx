@@ -178,8 +178,10 @@ export default function AdminStaff() {
       setSearchQuery('');
       setSearchResults([]);
       void fetchStaff();
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -198,8 +200,10 @@ export default function AdminStaff() {
       setSelectedStaff(null);
       setSelectedPermissions([]);
       void fetchStaff();
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -216,8 +220,10 @@ export default function AdminStaff() {
       setIsRemoveDialogOpen(false);
       setStaffToRemove(null);
       void fetchStaff();
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setIsSubmitting(false);
     }

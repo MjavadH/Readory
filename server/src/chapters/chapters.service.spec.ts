@@ -45,7 +45,9 @@ describe('ChaptersService', () => {
     publicService = { clearHomeCache: jest.fn() };
     cacheManager = {
       del: jest.fn(),
-      getOrSet: jest.fn(async (_k: string, _opt: unknown, loader: () => Promise<unknown>) => loader()),
+      getOrSet: jest.fn(async (_k: string, _opt: unknown, loader: () => Promise<unknown>) =>
+        loader(),
+      ),
     };
     chapterCache = {
       getListVersion: jest.fn().mockResolvedValue(1),
@@ -73,7 +75,16 @@ describe('ChaptersService', () => {
 
   describe('listChapters', () => {
     it('returns paginated chapters with default params', async () => {
-      const items = [{ id: 1, title: 'Ch 1', index: 1, price: { toNumber: () => 2.5 }, isFree: false, updatedAt: new Date() }];
+      const items = [
+        {
+          id: 1,
+          title: 'Ch 1',
+          index: 1,
+          price: { toNumber: () => 2.5 },
+          isFree: false,
+          updatedAt: new Date(),
+        },
+      ];
       prisma.$transaction.mockResolvedValue([items, 1]);
 
       const result = await service.listChapters(1, {});
@@ -83,7 +94,9 @@ describe('ChaptersService', () => {
     });
 
     it('returns items with null price when price is null', async () => {
-      const items = [{ id: 1, title: 'Ch 1', index: 1, price: null, isFree: true, updatedAt: new Date() }];
+      const items = [
+        { id: 1, title: 'Ch 1', index: 1, price: null, isFree: true, updatedAt: new Date() },
+      ];
       prisma.$transaction.mockResolvedValue([items, 1]);
 
       const result = await service.listChapters(1, {});
@@ -92,7 +105,9 @@ describe('ChaptersService', () => {
     });
 
     it('skips cache for pages > 20', async () => {
-      const items = [{ id: 1, title: 'Ch', index: 1, price: null, isFree: true, updatedAt: new Date() }];
+      const items = [
+        { id: 1, title: 'Ch', index: 1, price: null, isFree: true, updatedAt: new Date() },
+      ];
       prisma.$transaction.mockResolvedValue([items, 500]);
 
       await service.listChapters(1, { page: 21, limit: 10 });
@@ -101,7 +116,9 @@ describe('ChaptersService', () => {
     });
 
     it('uses cache for pages <= 20', async () => {
-      const items = [{ id: 1, title: 'Ch', index: 1, price: null, isFree: true, updatedAt: new Date() }];
+      const items = [
+        { id: 1, title: 'Ch', index: 1, price: null, isFree: true, updatedAt: new Date() },
+      ];
       prisma.$transaction.mockResolvedValue([items, 50]);
 
       await service.listChapters(1, { page: 1, limit: 10 });
@@ -163,7 +180,9 @@ describe('ChaptersService', () => {
 
     it('throws ConflictException on duplicate index', async () => {
       prisma.chapter.create.mockRejectedValue({ code: 'P2002' });
-      await expect(service.createChapter(1, { title: 'Ch', index: 1 })).rejects.toThrow(ConflictException);
+      await expect(service.createChapter(1, { title: 'Ch', index: 1 })).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('rethrows unexpected errors', async () => {
@@ -175,12 +194,25 @@ describe('ChaptersService', () => {
   describe('updateChapter', () => {
     it('throws NotFoundException when chapter not found', async () => {
       prisma.chapter.findFirst.mockResolvedValue(null);
-      await expect(service.updateChapter(1, 99, { title: 'New' })).rejects.toThrow(NotFoundException);
+      await expect(service.updateChapter(1, 99, { title: 'New' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('updates chapter and invalidates caches', async () => {
-      prisma.chapter.findFirst.mockResolvedValue({ id: 1, bookId: 1, isFree: false, price: new Prisma.Decimal(5) });
-      const updated = { id: 1, title: 'Updated', index: 1, price: new Prisma.Decimal(5), isFree: false };
+      prisma.chapter.findFirst.mockResolvedValue({
+        id: 1,
+        bookId: 1,
+        isFree: false,
+        price: new Prisma.Decimal(5),
+      });
+      const updated = {
+        id: 1,
+        title: 'Updated',
+        index: 1,
+        price: new Prisma.Decimal(5),
+        isFree: false,
+      };
       prisma.chapter.update.mockResolvedValue(updated);
       prisma.book.update.mockResolvedValue({});
 
@@ -192,7 +224,12 @@ describe('ChaptersService', () => {
     });
 
     it('sets price to null when chapter becomes free', async () => {
-      prisma.chapter.findFirst.mockResolvedValue({ id: 1, bookId: 1, isFree: false, price: new Prisma.Decimal(5) });
+      prisma.chapter.findFirst.mockResolvedValue({
+        id: 1,
+        bookId: 1,
+        isFree: false,
+        price: new Prisma.Decimal(5),
+      });
       prisma.chapter.update.mockResolvedValue({ id: 1 });
       prisma.book.update.mockResolvedValue({});
 
@@ -245,7 +282,16 @@ describe('ChaptersService', () => {
     });
 
     it('returns chapter when user has access via free chapter', async () => {
-      const chapter = { id: 1, bookId: 1, title: 'Ch 1', index: 1, contentPath: '/path', isFree: true, price: null, updatedAt: new Date() };
+      const chapter = {
+        id: 1,
+        bookId: 1,
+        title: 'Ch 1',
+        index: 1,
+        contentPath: '/path',
+        isFree: true,
+        price: null,
+        updatedAt: new Date(),
+      };
       prisma.chapter.findFirst.mockResolvedValue(chapter);
 
       const result = await service.getAccessibleChapterByIndex(1, 1, 10);
@@ -255,7 +301,16 @@ describe('ChaptersService', () => {
     });
 
     it('returns chapter with numeric price', async () => {
-      const chapter = { id: 1, bookId: 1, title: 'Ch 1', index: 1, contentPath: '/path', isFree: false, price: { toNumber: () => 3.5 }, updatedAt: new Date() };
+      const chapter = {
+        id: 1,
+        bookId: 1,
+        title: 'Ch 1',
+        index: 1,
+        contentPath: '/path',
+        isFree: false,
+        price: { toNumber: () => 3.5 },
+        updatedAt: new Date(),
+      };
       prisma.chapter.findFirst.mockResolvedValue(chapter);
       prisma.accessRecord.findFirst.mockResolvedValue({ id: 1 });
 
@@ -272,7 +327,13 @@ describe('ChaptersService', () => {
     });
 
     it('grants access for free chapter', async () => {
-      const chapter = { id: 1, index: 1, isFree: true, price: null, book: { id: 1, title: 'Book' } };
+      const chapter = {
+        id: 1,
+        index: 1,
+        isFree: true,
+        price: null,
+        book: { id: 1, title: 'Book' },
+      };
       prisma.chapter.findUnique.mockResolvedValue(chapter);
       prisma.accessRecord.findFirst.mockResolvedValue(null);
       const record = { id: 1, userId: 10, chapterId: 1, bookId: 1 };
@@ -285,7 +346,13 @@ describe('ChaptersService', () => {
     });
 
     it('returns existing access record for free chapter', async () => {
-      const chapter = { id: 1, index: 1, isFree: true, price: null, book: { id: 1, title: 'Book' } };
+      const chapter = {
+        id: 1,
+        index: 1,
+        isFree: true,
+        price: null,
+        book: { id: 1, title: 'Book' },
+      };
       prisma.chapter.findUnique.mockResolvedValue(chapter);
       const existing = { id: 5, userId: 10, chapterId: 1, bookId: 1 };
       prisma.accessRecord.findFirst.mockResolvedValue(existing);
@@ -296,7 +363,13 @@ describe('ChaptersService', () => {
     });
 
     it('returns existing access record for paid chapter already purchased', async () => {
-      const chapter = { id: 1, index: 1, isFree: false, price: { toNumber: () => 5 }, book: { id: 1, title: 'Book' } };
+      const chapter = {
+        id: 1,
+        index: 1,
+        isFree: false,
+        price: { toNumber: () => 5 },
+        book: { id: 1, title: 'Book' },
+      };
       prisma.chapter.findUnique.mockResolvedValue(chapter);
       const existing = { id: 5 };
       prisma.accessRecord.findFirst.mockResolvedValue(existing);
@@ -308,7 +381,13 @@ describe('ChaptersService', () => {
     });
 
     it('debits wallet and creates access for paid chapter', async () => {
-      const chapter = { id: 1, index: 1, isFree: false, price: { toNumber: () => 5 }, book: { id: 1, title: 'Book' } };
+      const chapter = {
+        id: 1,
+        index: 1,
+        isFree: false,
+        price: { toNumber: () => 5 },
+        book: { id: 1, title: 'Book' },
+      };
       prisma.chapter.findUnique.mockResolvedValue(chapter);
       prisma.accessRecord.findFirst.mockResolvedValue(null);
       const record = { id: 99 };

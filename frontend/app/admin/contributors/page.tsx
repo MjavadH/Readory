@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, ApiError } from '@/lib/api-client';
 import {
   ContributorsEditor,
   type ContributorEditorValue,
@@ -129,9 +129,11 @@ export default function AdminContributorsPage() {
       });
       setRows(res.data);
       setMeta(res.meta);
-    } catch (err: any) {
-      if (err?.name === 'AbortError') return;
-      setListError(err?.message || t('LoadFailed'));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err?.name === 'AbortError') return;
+        setListError(err?.message || t('LoadFailed'));
+      }
     } finally {
       if (!ctrl.signal.aborted) setLoading(false);
     }
@@ -161,10 +163,10 @@ export default function AdminContributorsPage() {
   };
 
   const handlePatch = (patch: Partial<ContributorEditorValue>) => {
-    setEditorValue((v: any) => ({ ...v, ...patch }));
+    setEditorValue((v) => ({ ...v, ...patch }));
     const keys = Object.keys(patch) as (keyof ContributorEditorValue)[];
     if (keys.some((k) => serverErrors[k])) {
-      setServerErrors((s: any) => {
+      setServerErrors((s) => {
         const next = { ...s };
         for (const k of keys) delete next[k];
         return next;
@@ -172,31 +174,38 @@ export default function AdminContributorsPage() {
     }
   };
 
-  const parseApiError = (err: any): { field: ContributorFieldErrors; message: string } => {
-    const status: number | undefined = err?.status;
-    const body = err?.body ?? err?.data;
+  const parseApiError = (err: unknown): { field: ContributorFieldErrors; message: string } => {
     const fieldErrors: ContributorFieldErrors = {};
-    let message = err?.message || t('SaveFailed');
 
-    if (status === 401 || status === 403) {
-      message = t('Unauthorized');
-    } else if (status === 400 || status === 422) {
-      if (body?.errors && typeof body.errors === 'object') {
-        for (const [k, v] of Object.entries(body.errors)) {
-          if (k in emptyValue) {
-            fieldErrors[k as keyof ContributorEditorValue] = Array.isArray(v)
-              ? String(v[0])
-              : String(v);
+    if (err instanceof ApiError) {
+      const status = err.status;
+      let message = err.message || t('SaveFailed');
+      const data = err.data as { errors?: Record<string, unknown>; message?: string } | undefined;
+
+      if (status === 401 || status === 403) {
+        message = t('Unauthorized');
+      } else if (status === 400 || status === 422) {
+        if (data?.errors && typeof data.errors === 'object') {
+          for (const [k, v] of Object.entries(data.errors)) {
+            if (k in emptyValue) {
+              fieldErrors[k as keyof ContributorEditorValue] = Array.isArray(v)
+                ? String(v[0])
+                : String(v);
+            }
           }
         }
+        if (data?.message) message = String(data.message);
+      } else if (status === 409) {
+        fieldErrors.slug = t('SlugConflict');
+        message = t('SlugConflict');
       }
-      if (body?.message) message = String(body.message);
-    } else if (status === 409) {
-      // slug conflict most likely
-      fieldErrors.slug = t('SlugConflict');
-      message = t('SlugConflict');
+      return { field: fieldErrors, message };
     }
-    return { field: fieldErrors, message };
+
+    return {
+      field: fieldErrors,
+      message: err instanceof Error ? err.message : t('SaveFailed'),
+    };
   };
 
   const handleSubmit = async () => {
@@ -222,7 +231,7 @@ export default function AdminContributorsPage() {
         setEditorOpen(false);
         setRows((r) => r.map((a) => (a.id === updated.id ? updated : a)));
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const { field, message } = parseApiError(err);
       setServerErrors(field);
       setFormError(message);
@@ -241,13 +250,15 @@ export default function AdminContributorsPage() {
       setRows((r) => r.filter((a) => a.id !== deleteTarget.id));
       setMeta((m) => (m ? { ...m, total: Math.max(0, m.total - 1) } : m));
       setDeleteTarget(null);
-    } catch (err: any) {
-      const status = err?.status;
-      let msg = err?.message || t('DeleteFailed');
-      if (status === 409) msg = t('DeleteBlockedHasBooks');
-      else if (status === 404) msg = t('NotFoundTitle');
-      else if (status === 401 || status === 403) msg = t('Unauthorized');
-      toast.error(msg);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        const status = err?.status;
+        let msg = err?.message || t('DeleteFailed');
+        if (status === 409) msg = t('DeleteBlockedHasBooks');
+        else if (status === 404) msg = t('NotFoundTitle');
+        else if (status === 401 || status === 403) msg = t('Unauthorized');
+        toast.error(msg);
+      }
     } finally {
       setDeleting(false);
     }

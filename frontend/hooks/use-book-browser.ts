@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { SortOption } from '@/lib/types';
+import { BookBrowserApi, SortOption } from '@/lib/types';
 
 // Helper to compare arrays
 const arraysEqual = (a: string[], b: string[]) =>
@@ -23,7 +23,7 @@ interface UseBookBrowserOptions<T> {
   initialData?: T;
 }
 
-export function useBookBrowser<T extends { items: any[]; nextCursor?: string; hasMore?: boolean }>({
+export function useBookBrowser<T extends BookBrowserApi>({
   fetcher,
   baseUrl,
   defaultSort = 'recently_updated',
@@ -39,7 +39,6 @@ export function useBookBrowser<T extends { items: any[]; nextCursor?: string; ha
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | undefined>(initialData?.nextCursor);
   const [hasMore, setHasMore] = useState(initialData?.hasMore ?? !!initialData?.nextCursor);
-  const [error, setError] = useState(false);
   const [isNotFound, setIsNotFound] = useState(false);
 
   // Refs
@@ -113,7 +112,6 @@ export function useBookBrowser<T extends { items: any[]; nextCursor?: string; ha
       const isInitialLoad = !cursor;
       if (isInitialLoad) {
         setIsLoading(true);
-        setError(false);
         setIsNotFound(false);
       } else {
         setIsLoadingMore(true);
@@ -136,19 +134,23 @@ export function useBookBrowser<T extends { items: any[]; nextCursor?: string; ha
         setItems((prev) => (isInitialLoad ? newItems : [...prev, ...newItems]));
         setNextCursor(responseData.nextCursor);
         setHasMore(responseData.hasMore ?? !!responseData.nextCursor);
-      } catch (err: any) {
-        if (err?.name === 'AbortError') return;
-        if (err?.status === 404 || err?.response?.status === 404) {
+      } catch (err: unknown) {
+        const error = err as { name?: string; status?: number; response?: { status?: number } };
+        if (error?.name === 'AbortError') return;
+        if (error?.status === 404 || error?.response?.status === 404) {
           if (isInitialLoad) setIsNotFound(true);
         }
         console.error('Failed to fetch items:', err);
         if (isInitialLoad) {
           setItems([]);
-          setError(true);
         }
         setHasMore(false);
       } finally {
-        isInitialLoad ? setIsLoading(false) : setIsLoadingMore(false);
+        if (isInitialLoad) {
+          setIsLoading(false);
+        } else {
+          setIsLoadingMore(false);
+        }
       }
     },
     [buildQueryParams],

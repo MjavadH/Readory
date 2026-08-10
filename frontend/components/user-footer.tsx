@@ -6,6 +6,7 @@ import { motion, type Variants } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { BrandLogo } from '@/components/brand-logo';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import Image from 'next/image';
 
 type FooterCertificate = {
   href: string;
@@ -168,10 +169,12 @@ export function UserFooter() {
                     transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                     className="flex h-20 w-20 items-center justify-center rounded-xl border bg-muted/20 p-2 transition-colors hover:border-foreground"
                   >
-                    <img
+                    <Image
                       src={cert.image}
                       alt={cert.alt}
                       className="max-h-full max-w-full object-contain"
+                      loading="lazy"
+                      fill
                     />
                   </motion.a>
                 ))

@@ -9,7 +9,15 @@ export interface BookType {
   sortOrder: number;
 }
 
+export interface PublicBookType {
+  id: number;
+  name: string;
+  slug: string;
+  iconKey?: IconKey | null;
+}
+
 export interface BookGenre {
+  id?: number;
   name: string;
   slug: string;
   iconKey?: IconKey;
@@ -36,6 +44,20 @@ export interface BookCardData {
   chapterCount?: number;
   lastContentUpdate?: string | null;
   updatedAt?: string;
+}
+
+export interface BooksPageData {
+  books: BookBrowserApi;
+  types: PublicBookType[];
+  genres: BookGenre[];
+}
+
+export interface BookBrowserApi {
+  allGenres?: BookGenre[];
+  genre?: BookGenre;
+  items: BookCardData[];
+  nextCursor?: string;
+  hasMore?: boolean;
 }
 
 export interface UserProfile {

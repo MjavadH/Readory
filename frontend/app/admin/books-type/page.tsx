@@ -190,7 +190,7 @@ export default function AdminBookTypesPage() {
     const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
     if (Array.isArray(data)) {
       setTypes(
-        data.map((t: any) => ({
+        data.map((t) => ({
           ...t,
           isActive: Boolean(t.isActive),
           sortOrder: Number(t.sortOrder) || 0,
@@ -233,8 +233,10 @@ export default function AdminBookTypesPage() {
       await apiClient.post('/book-types', { name: v });
       setName('');
       await load();
-    } catch (e: any) {
-      alert(e?.message || 'Failed to create');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err?.message || 'Failed to create');
+      }
     } finally {
       setLoadingCreate(false);
     }
@@ -277,8 +279,10 @@ export default function AdminBookTypesPage() {
       );
       setEditOpen(false);
       setEditTarget(null);
-    } catch (e: any) {
-      alert(e?.message || 'Failed to update');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err?.message || 'Failed to update');
+      }
     } finally {
       setSavingEdit(false);
     }
@@ -305,8 +309,10 @@ export default function AdminBookTypesPage() {
         // fallback: reload
         await load();
       }
-    } catch (e: any) {
-      alert(e?.message || 'Failed to delete');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err?.message || 'Failed to delete');
+      }
     } finally {
       setDeleteDialogOpen(false);
       setTypeToDelete(null);

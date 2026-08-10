@@ -103,7 +103,13 @@ describe('DashboardService', () => {
         updatedAt: now,
         chapterId: 1,
         bookId: 1,
-        book: { id: 1, type: { slug: 'manga', iconKey: null }, title: 'Test', author: 'Auth', coverImage: 'img.jpg' },
+        book: {
+          id: 1,
+          type: { slug: 'manga', iconKey: null },
+          title: 'Test',
+          author: 'Auth',
+          coverImage: 'img.jpg',
+        },
         chapter: { title: 'Ch 1', index: 1, pageCount: 10 },
       });
 
@@ -130,7 +136,13 @@ describe('DashboardService', () => {
 
     it('sanitizes CSV injection characters in reference', async () => {
       prisma.walletTransaction.findMany.mockResolvedValue([
-        { id: 1, createdAt: new Date('2025-01-01'), type: 'CREDIT', amount: 10, reference: '=FORMULA()' },
+        {
+          id: 1,
+          createdAt: new Date('2025-01-01'),
+          type: 'CREDIT',
+          amount: 10,
+          reference: '=FORMULA()',
+        },
       ]);
 
       const csv = await service.exportTransactionsCsv(1);
@@ -166,20 +178,27 @@ describe('DashboardService', () => {
         { bookId: 1, _count: { _all: 3 }, _max: { purchasedAt: new Date() } },
       ]);
       prisma.book.findMany.mockResolvedValue([
-        { id: 1, title: 'Book', author: 'Auth', coverImage: 'img', updatedAt: new Date(), type: { slug: 'manga' } },
+        {
+          id: 1,
+          title: 'Book',
+          author: 'Auth',
+          coverImage: 'img',
+          updatedAt: new Date(),
+          type: { slug: 'manga' },
+        },
       ]);
-      prisma.chapter.groupBy.mockResolvedValue([
-        { bookId: 1, _count: { _all: 10 } },
-      ]);
+      prisma.chapter.groupBy.mockResolvedValue([{ bookId: 1, _count: { _all: 10 } }]);
 
       const result = await service.getUserLibrary(1);
 
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]).toEqual(expect.objectContaining({
-        purchasedChapters: 3,
-        totalChapters: 10,
-        purchasedPercent: 30,
-      }));
+      expect(result.data[0]).toEqual(
+        expect.objectContaining({
+          purchasedChapters: 3,
+          totalChapters: 10,
+          purchasedPercent: 30,
+        }),
+      );
     });
 
     it('handles books not found in DB', async () => {
@@ -197,11 +216,16 @@ describe('DashboardService', () => {
         { bookId: 1, _count: { _all: 15 }, _max: { purchasedAt: new Date() } },
       ]);
       prisma.book.findMany.mockResolvedValue([
-        { id: 1, title: 'Book', author: 'A', coverImage: '', updatedAt: new Date(), type: { slug: 'x' } },
+        {
+          id: 1,
+          title: 'Book',
+          author: 'A',
+          coverImage: '',
+          updatedAt: new Date(),
+          type: { slug: 'x' },
+        },
       ]);
-      prisma.chapter.groupBy.mockResolvedValue([
-        { bookId: 1, _count: { _all: 10 } },
-      ]);
+      prisma.chapter.groupBy.mockResolvedValue([{ bookId: 1, _count: { _all: 10 } }]);
 
       const result = await service.getUserLibrary(1);
 
@@ -217,7 +241,13 @@ describe('DashboardService', () => {
           lastPage: 3,
           percent: 30,
           updatedAt: new Date(),
-          book: { id: 1, title: 'Book', author: 'A', coverImage: '', type: { slug: 'manga', iconKey: null } },
+          book: {
+            id: 1,
+            title: 'Book',
+            author: 'A',
+            coverImage: '',
+            type: { slug: 'manga', iconKey: null },
+          },
           chapter: { title: 'Ch 1', index: 1, pageCount: 10 },
         },
       ]);
@@ -225,9 +255,11 @@ describe('DashboardService', () => {
       const result = await service.getReadingProgress(1, 1, 24);
 
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]).toEqual(expect.objectContaining({
-        progress: { lastPage: 3, percent: 30 },
-      }));
+      expect(result.data[0]).toEqual(
+        expect.objectContaining({
+          progress: { lastPage: 3, percent: 30 },
+        }),
+      );
       expect(result.total).toBe(2);
     });
   });
@@ -244,10 +276,12 @@ describe('DashboardService', () => {
 
       expect(result.summary.users).not.toBeNull();
       expect(result.summary.finance).not.toBeNull();
-      expect(result.summary.content).toEqual(expect.objectContaining({
-        books: 5,
-        chapters: 50,
-      }));
+      expect(result.summary.content).toEqual(
+        expect.objectContaining({
+          books: 5,
+          chapters: 50,
+        }),
+      );
     });
 
     it('returns null finance stats when user lacks MANAGE_FINANCE', async () => {

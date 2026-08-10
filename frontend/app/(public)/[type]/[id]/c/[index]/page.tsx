@@ -274,8 +274,14 @@ export default function ChapterPage() {
 
       ctx.drawImage(bitmap, 0, 0);
     } finally {
-      if (typeof (bitmap as any).close === 'function') {
-        (bitmap as any).close();
+      type ClosableImageBitmap = ImageBitmap & {
+        close?: () => void;
+      };
+
+      const closableBitmap = bitmap as ClosableImageBitmap;
+
+      if (typeof closableBitmap.close === 'function') {
+        closableBitmap.close();
       }
     }
   }, []);

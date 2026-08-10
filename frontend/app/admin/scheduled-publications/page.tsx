@@ -133,7 +133,11 @@ export default function ScheduledPublicationsPage() {
     const fetchChapters = async () => {
       setIsFetchingChapters(true);
       try {
-        const res: any = await apiClient.get(
+        const res = await apiClient.get<{
+          data?: { items: ChapterItemData[]; pagination: { total: number; totalPages: number } };
+          items?: ChapterItemData[];
+          pagination?: { total: number; totalPages: number };
+        }>(
           `/books/${selectedBookForChapterId}/chapters/admin?publishStatus=DRAFT&page=${chapterPage}&limit=50&q=${chapterSearch}`,
         );
         const data = res.data || res;
@@ -150,7 +154,7 @@ export default function ScheduledPublicationsPage() {
 
     const timer = setTimeout(fetchChapters, 300);
     return () => clearTimeout(timer);
-  }, [isChapterPickerOpen, chapterPage, chapterSearch, selectedBookForChapterId]);
+  }, [isChapterPickerOpen, chapterPage, chapterSearch, selectedBookForChapterId, t, toast]);
 
   useEffect(() => {
     if (!isPickerOpen) return;
@@ -176,9 +180,9 @@ export default function ScheduledPublicationsPage() {
 
     const timer = setTimeout(fetchBooks, 300);
     return () => clearTimeout(timer);
-  }, [isPickerOpen, bookPage, bookSearch, isBookForChapter]);
+  }, [isPickerOpen, bookPage, bookSearch, isBookForChapter, t, toast]);
 
-  const load = async () => {
+  const load = React.useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiClient.get<{ data: Schedule[] }>('/scheduled-publications');
@@ -188,11 +192,11 @@ export default function ScheduledPublicationsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t, toast]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const reset = () => {
     setEditingId(null);
@@ -231,25 +235,27 @@ export default function ScheduledPublicationsPage() {
     }
   };
 
-  // Derived: currently selected target label (from picker caches, no new fetch)
   const selectedTargetLabel = useMemo(() => {
     const id = Number(form.targetId);
     if (!id) return null;
+
     if (form.targetType === 'BOOK') {
       const b = draftBooks.find((x) => x.id === id);
-      return b
-        ? { name: (b as any).title ?? (b as any).name ?? `#${id}`, id }
-        : { name: `#${id}`, id };
+      return b ? { name: b.title ?? `#${id}`, id } : { name: `#${id}`, id };
     }
+
     const c = draftChapters.find((x) => x.id === id);
-    return c
-      ? { name: (c as any).title ?? (c as any).name ?? `#${id}`, id }
-      : { name: `#${id}`, id };
+    if (c) {
+      const chapter = c as unknown as { title?: string; name?: string };
+      return { name: chapter.title ?? chapter.name ?? `#${id}`, id };
+    }
+
+    return { name: `#${id}`, id };
   }, [form.targetId, form.targetType, draftBooks, draftChapters]);
 
   const statusLabel = (s: string) => {
-    const key = `Status.${s}`;
-    const translated = t(key as any);
+    const key = `Status.${s}` as Parameters<typeof t>[0];
+    const translated = t(key);
     return translated === key ? s : translated;
   };
 

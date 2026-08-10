@@ -83,7 +83,7 @@ export default function SettingsPage() {
       }
     }
     void fetchProfile();
-  }, []);
+  }, [t]);
 
   const validateAvatarFile = async (file: File) => {
     if (!['image/jpeg', 'image/webp'].includes(file.type)) return t('AvatarInvalidType');

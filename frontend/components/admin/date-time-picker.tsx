@@ -206,7 +206,7 @@ export function DateTimePicker({
       setDraft(makeDraft(base));
       setCursor(base);
     }
-  }, [open]);
+  }, [open, current, max, min]);
 
   const weekdays = React.useMemo(() => getWeekdays(locale), [locale]);
   const grid = React.useMemo(

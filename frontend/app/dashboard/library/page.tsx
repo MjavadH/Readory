@@ -27,14 +27,14 @@ export default function LibraryPage() {
           query: { page, limit: ITEMS_PER_PAGE },
         });
         setData(res);
-      } catch (err: any) {
+      } catch {
         setError(t('FailedLoadLibrary'));
       } finally {
         setLoading(false);
       }
     }
     void fetchData();
-  }, [page]);
+  }, [t, page]);
 
   if (loading && !data) {
     return (

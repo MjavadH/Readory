@@ -51,7 +51,7 @@ export function GenresPageSkeleton() {
             <div
               key={`pill-${i}`}
               className="h-8 animate-pulse rounded-full bg-muted"
-              style={{ width: `${60 + Math.random() * 40}px` }}
+              style={{ width: `${60 + ((i * 17) % 40)}px` }}
             />
           ))}
         </div>

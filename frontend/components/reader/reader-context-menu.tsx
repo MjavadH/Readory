@@ -99,9 +99,15 @@ export function ReaderContextMenu({
   /* filter state */
   const controlledFilter = normalizeFilter(activeFilter);
   const [localFilter, setLocalFilter] = useState<FilterKey>(controlledFilter ?? 'none');
-  useEffect(() => {
-    if (controlledFilter) setLocalFilter(controlledFilter);
-  }, [controlledFilter]);
+  const [prevControlled, setPrevControlled] = useState(controlledFilter);
+
+  if (controlledFilter !== prevControlled) {
+    setPrevControlled(controlledFilter);
+    if (controlledFilter) {
+      setLocalFilter(controlledFilter);
+    }
+  }
+
   const selectedFilter = controlledFilter ?? localFilter;
 
   const [pos, setPos] = useState({ left: x, top: y });

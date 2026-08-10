@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { CalendarDays, Library, Star, UserRound } from 'lucide-react';
+import { CalendarDays, UserRound } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';

@@ -121,9 +121,11 @@ export default function AdminMedia() {
           setTotalPages(Math.max(1, Number(data.totalPages) || 1));
         }
         if (!hasLoadedOnce) setHasLoadedOnce(true);
-      } catch (e: any) {
-        if (e?.name !== 'AbortError') {
-          toast.error(getApiErrorMessage(e));
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          if (err?.name !== 'AbortError') {
+            toast.error(getApiErrorMessage(err));
+          }
         }
       } finally {
         setIsGalleryLoading(false);
@@ -208,8 +210,10 @@ export default function AdminMedia() {
       setRenameDialogOpen(false);
       setFileToRename(null);
       toast.success(t('FileRenamed'));
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setRenamingCode(null);
     }
@@ -238,8 +242,10 @@ export default function AdminMedia() {
       } else {
         setRefreshNonce((n) => n + 1);
       }
-    } catch (err: any) {
-      toast.error(getApiErrorMessage(err));
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
     } finally {
       setDeletingCode(null);
       setDeleteDialogOpen(false);
