@@ -297,7 +297,7 @@ export default function NotificationsPage() {
                             src={getBookCoverThumbnailUrl(coverImage)}
                             alt={n.title}
                             fill
-                            sizes="40px"
+                            sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
                             className="object-cover"
                           />
                         </span>

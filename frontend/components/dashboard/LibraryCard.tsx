@@ -76,6 +76,7 @@ export function LibraryCard({ item, className }: Props) {
             }
             alt={item.book.title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+            sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
             fill
           />
           {isCompleted && (

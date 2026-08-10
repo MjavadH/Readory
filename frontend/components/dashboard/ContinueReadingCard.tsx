@@ -84,6 +84,7 @@ export function ContinueReadingCard({ progress }: Props) {
                 : '/placeholder.svg'
             }
             alt={progress.book.title}
+            sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />

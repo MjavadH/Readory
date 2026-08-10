@@ -66,7 +66,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
                 alt={lang.nativeName}
                 width={24}
                 height={18}
-                className="rounded-sm object-cover"
+                className="rounded-sm object-cover w-6 h-4.5"
               />
             </div>
 
@@ -134,7 +134,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
                   alt={lang.nativeName}
                   width={16}
                   height={12}
-                  className="rounded-[2px] object-cover"
+                  className="rounded-[2px] object-cover w-6 h-4.5"
                 />
                 <span className="truncate">{lang.nativeName}</span>
                 {active && <Check className="ms-auto h-3 w-3" />}
@@ -164,7 +164,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
                 alt={currentLanguage.nativeName}
                 width={18}
                 height={13}
-                className="rounded-sm object-cover"
+                className="rounded-sm object-cover w-6 h-4.5"
               />
             )}
             <span className="hidden sm:inline text-sm font-medium">
@@ -207,7 +207,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
                 alt={lang.nativeName}
                 width={20}
                 height={15}
-                className="rounded-sm object-cover"
+                className="rounded-sm object-cover w-6 h-4.5"
               />
             </div>
 

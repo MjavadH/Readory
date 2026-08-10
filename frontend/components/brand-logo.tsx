@@ -15,12 +15,11 @@ export function BrandLogo({
   withLink = false,
 }: BrandLogoProps) {
   const logo = (
-    <Image
+    <img
       src="/Logo.svg"
       alt="Readory"
       width={Math.round(height * 4)}
       height={height}
-      priority={priority}
       className={className}
     />
   );

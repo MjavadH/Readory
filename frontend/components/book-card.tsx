@@ -101,6 +101,7 @@ export function BookCard({
           )}
           priority={priority}
           onLoad={() => setIsImageLoaded(true)}
+          loading={priority ? 'eager' : 'lazy'}
         />
 
         {/* Hover overlay with subtle gradient */}
