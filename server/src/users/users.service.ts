@@ -256,6 +256,16 @@ export class UsersService {
     return updated;
   }
 
+  async updatePassword(userId: number, passwordHash: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+
+    // Invalidate active sessions to enforce re-login
+    await this.cacheManager.del(`session:user:${userId}`);
+  }
+
   async updatePermissions(userId: number, permissions: string[]) {
     await this.cacheManager.del(`session:user:${userId}`);
 

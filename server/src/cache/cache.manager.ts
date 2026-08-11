@@ -74,6 +74,32 @@ export class CacheManager {
     }
   }
 
+  async getDel(key: string): Promise<string | null> {
+    const safeKey = this.sanitizeSegment(key);
+    const start = Date.now();
+
+    try {
+      const value = await this.redis.getdel(safeKey);
+
+      this.observe({
+        operation: value === null ? 'miss' : 'hit',
+        key: safeKey,
+        elapsedMs: Date.now() - start,
+      });
+
+      return value;
+    } catch (error) {
+      this.observe({
+        operation: 'error',
+        key: safeKey,
+        elapsedMs: Date.now() - start,
+        detail: `cache-getdel-failure:${(error as Error).message}`,
+      });
+
+      return null;
+    }
+  }
+
   async setString(
     key: string,
     value: string,

@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, Mail, Lock, User } from 'lucide-react';
+import { Loader2, ArrowLeft, Mail, Lock, User, KeyRound, MailCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -43,9 +44,24 @@ const otpSchema = z.object({
     .regex(/^\d{6}$/, { message: 'OTP must be numeric' }),
 });
 
+const forgotSchema = z.object({
+  email: z
+    .string()
+    .email({ message: 'Please provide a valid email address.' })
+    .regex(/^[a-zA-Z0-9.]+@gmail\.com$/, { message: 'Email must be a valid Gmail address.' }),
+});
+
 type AuthFormValues = z.infer<typeof authSchema>;
 type OTPFormValues = z.infer<typeof otpSchema>;
-type ViewMode = 'login' | 'register' | 'otp';
+type ForgotFormValues = z.infer<typeof forgotSchema>;
+type ViewMode = 'login' | 'register' | 'otp' | 'forgot' | 'forgot-sent';
+
+const panel = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+  transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const },
+};
 
 export default function AuthPage() {
   const t = useTranslations('Auth');
@@ -55,6 +71,7 @@ export default function AuthPage() {
   const [mode, setMode] = useState<ViewMode>('login');
   const [isLoading, setIsLoading] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
   const [isCheckingSession, setIsCheckingSession] = useState(true);
 
   const authForm = useForm<AuthFormValues>({
@@ -65,6 +82,11 @@ export default function AuthPage() {
   const otpForm = useForm<OTPFormValues>({
     resolver: zodResolver(otpSchema),
     defaultValues: { otp: '' },
+  });
+
+  const forgotForm = useForm<ForgotFormValues>({
+    resolver: zodResolver(forgotSchema),
+    defaultValues: { email: '' },
   });
 
   useEffect(() => {
@@ -138,6 +160,28 @@ export default function AuthPage() {
     }
   };
 
+  const handleForgotPassword = async (values: ForgotFormValues) => {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      await apiClient.post('/auth/forgot-password', { email: values.email.trim() });
+      setResetEmail(values.email.trim());
+      setMode('forgot-sent');
+      forgotForm.reset();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, t('ErrorForgotPassword')), t('ForgotPasswordFailed'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const goToLogin = () => {
+    setMode('login');
+    authForm.reset();
+    otpForm.reset();
+    forgotForm.reset();
+  };
+
   if (isCheckingSession) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -146,200 +190,276 @@ export default function AuthPage() {
     );
   }
 
+  const subtitle =
+    mode === 'login'
+      ? t('SignInEmailUsername')
+      : mode === 'register'
+        ? t('CreateAccount')
+        : mode === 'otp'
+          ? t('VerifyEmail')
+          : t('ResetYourPassword');
+
+  const title =
+    mode === 'login'
+      ? t('SignIn')
+      : mode === 'register'
+        ? t('Register')
+        : mode === 'otp'
+          ? t('OTP')
+          : t('ForgotPassword');
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-muted/20 to-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-background via-muted/20 to-background px-4 py-8 sm:py-12">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          className="text-center mb-6 sm:mb-8"
+        >
           <Link href="/">
             <div className="inline-flex items-center justify-center">
-              <BrandLogo priority className="h-20 w-20" />
+              <BrandLogo priority className="h-16 w-16 sm:h-20 sm:w-20" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground">{g('Readory')}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{g('Readory')}</h1>
           </Link>
-          <p className="text-muted-foreground mt-2">
-            {mode === 'login' && t('SignInEmailUsername')}
-            {mode === 'register' && t('CreateAccount')}
-            {mode === 'otp' && t('VerifyEmail')}
-          </p>
-        </div>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">{subtitle}</p>
+        </motion.div>
 
-        <Card className="border-2">
+        <Card className="border-2 overflow-hidden">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">
-              {mode === 'login' && t('SignIn')}
-              {mode === 'register' && t('Register')}
-              {mode === 'otp' && t('OTP')}
-            </CardTitle>
+            <CardTitle className="text-xl sm:text-2xl">{title}</CardTitle>
             <CardDescription>
               {mode === 'otp' && t('EnterCode', { Email: registeredEmail })}
+              {mode === 'forgot' && t('ForgotPasswordHint')}
+              {mode === 'forgot-sent' && t('ResetLinkSentTo', { Email: resetEmail })}
             </CardDescription>
           </CardHeader>
 
           <CardContent>
-            {(mode === 'login' || mode === 'register') && (
-              <Form {...authForm}>
-                <form
-                  onSubmit={authForm.handleSubmit(mode === 'login' ? handleLogin : handleRegister)}
-                  className="space-y-4"
-                >
-                  {mode === 'register' && (
-                    <FormField
-                      control={authForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>{t('Username')}</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <User className="absolute ltr:left-3 rtl: right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                placeholder={t('Username')}
-                                disabled={isLoading}
-                                className="ps-10"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+            <AnimatePresence mode="wait" initial={false}>
+              {(mode === 'login' || mode === 'register') && (
+                <motion.div key={mode} {...panel}>
+                  <Form {...authForm}>
+                    <form
+                      onSubmit={authForm.handleSubmit(
+                        mode === 'login' ? handleLogin : handleRegister,
                       )}
-                    />
-                  )}
-
-                  <FormField
-                    control={authForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          {mode === 'login' ? t('EmailUsername') : t('EmailAddress')}
-                        </FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder={
-                                mode === 'login' ? t('EmailUsername') : t('ExampleEmail')
-                              }
-                              disabled={isLoading}
-                              className="ps-10"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={authForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('Password')}</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Lock className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder={t('EnterPassword')}
-                              type="password"
-                              disabled={isLoading}
-                              className="ps-10"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                        {t('Processing')}
-                      </>
-                    ) : (
-                      <>{mode === 'login' ? t('SignIn') : t('Register')}</>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            )}
-
-            {mode === 'otp' && (
-              <Form {...otpForm}>
-                <form onSubmit={otpForm.handleSubmit(handleOTPVerify)} className="space-y-6">
-                  <FormField
-                    control={otpForm.control}
-                    name="otp"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('VerificationCode')}</FormLabel>
-                        <FormControl>
-                          <div className="flex justify-center must-ltr">
-                            <InputOTP
-                              maxLength={6}
-                              {...field}
-                              onComplete={() => otpForm.handleSubmit(handleOTPVerify)()}
-                            >
-                              <InputOTPGroup>
-                                <InputOTPSlot index={0} />
-                                <InputOTPSlot index={1} />
-                                <InputOTPSlot index={2} />
-                                <InputOTPSlot index={3} />
-                                <InputOTPSlot index={4} />
-                                <InputOTPSlot index={5} />
-                              </InputOTPGroup>
-                            </InputOTP>
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="space-y-2">
-                    <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-                      {isLoading ? t('Verifying') : t('VerifyActivate')}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => {
-                        setMode('register');
-                        otpForm.reset();
-                      }}
+                      className="space-y-4"
                     >
-                      <ArrowLeft className="me-2 rtl:rotate-180 h-4 w-4" />
-                      {t('BackRegister')}
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            )}
+                      {mode === 'register' && (
+                        <FormField
+                          control={authForm.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('Username')}</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <User className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    placeholder={t('Username')}
+                                    disabled={isLoading}
+                                    className="ps-10"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
 
-            {(mode === 'login' || mode === 'register') && (
-              <div className="mt-6 text-center text-sm">
-                <span className="text-muted-foreground">
-                  {mode === 'login' ? t('NoAccount') : t('HaveAccount')}
-                </span>{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMode(mode === 'login' ? 'register' : 'login');
-                    authForm.reset();
-                  }}
-                  className="text-primary hover:underline font-medium"
-                  disabled={isLoading}
-                >
-                  {mode === 'login' ? t('SignUp') : t('SignIn')}
-                </button>
-              </div>
-            )}
+                      <FormField
+                        control={authForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {mode === 'login' ? t('EmailUsername') : t('EmailAddress')}
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Mail className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder={
+                                    mode === 'login' ? t('EmailUsername') : t('ExampleEmail')
+                                  }
+                                  disabled={isLoading}
+                                  className="ps-10"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={authForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center justify-between gap-2">
+                              <FormLabel>{t('Password')}</FormLabel>
+                              {mode === 'login' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setMode('forgot')}
+                                  className="text-xs font-medium text-primary hover:underline"
+                                >
+                                  {t('ForgotPasswordQuestion')}
+                                </button>
+                              )}
+                            </div>
+                            <FormControl>
+                              <div className="relative">
+                                <Lock className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder={t('EnterPassword')}
+                                  type="password"
+                                  disabled={isLoading}
+                                  className="ps-10"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                        {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                        {mode === 'login' ? t('SignIn') : t('Register')}
+                      </Button>
+                    </form>
+                  </Form>
+
+                  <div className="mt-6 text-center text-sm text-muted-foreground">
+                    {mode === 'login' ? t('NoAccount') : t('HaveAccount')}{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode(mode === 'login' ? 'register' : 'login');
+                        authForm.reset();
+                      }}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {mode === 'login' ? t('Register') : t('SignIn')}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {mode === 'otp' && (
+                <motion.div key="otp" {...panel}>
+                  <Form {...otpForm}>
+                    <form onSubmit={otpForm.handleSubmit(handleOTPVerify)} className="space-y-6">
+                      <FormField
+                        control={otpForm.control}
+                        name="otp"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col items-center">
+                            <FormControl>
+                              <div dir="ltr">
+                                <InputOTP maxLength={6} disabled={isLoading} {...field}>
+                                  <InputOTPGroup>
+                                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                                      <InputOTPSlot key={i} index={i} />
+                                    ))}
+                                  </InputOTPGroup>
+                                </InputOTP>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                        {isLoading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                        {t('Verify')}
+                      </Button>
+                    </form>
+                  </Form>
+
+                  <Button variant="ghost" className="mt-4 w-full" onClick={goToLogin}>
+                    <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+                    {t('BackToSignIn')}
+                  </Button>
+                </motion.div>
+              )}
+
+              {mode === 'forgot' && (
+                <motion.div key="forgot" {...panel}>
+                  <Form {...forgotForm}>
+                    <form
+                      onSubmit={forgotForm.handleSubmit(handleForgotPassword)}
+                      className="space-y-4"
+                    >
+                      <FormField
+                        control={forgotForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('EmailAddress')}</FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Mail className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  placeholder={t('ExampleEmail')}
+                                  disabled={isLoading}
+                                  className="ps-10"
+                                  inputMode="email"
+                                  autoComplete="email"
+                                  {...field}
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                        {isLoading ? (
+                          <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <KeyRound className="me-2 h-4 w-4" />
+                        )}
+                        {t('SendResetLink')}
+                      </Button>
+                    </form>
+                  </Form>
+
+                  <Button variant="ghost" className="mt-4 w-full" onClick={goToLogin}>
+                    <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+                    {t('BackToSignIn')}
+                  </Button>
+                </motion.div>
+              )}
+
+              {mode === 'forgot-sent' && (
+                <motion.div key="forgot-sent" {...panel} className="text-center">
+                  <motion.div
+                    initial={{ scale: 0.7, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+                    className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary"
+                  >
+                    <MailCheck className="h-7 w-7" />
+                  </motion.div>
+                  <p className="mt-4 text-sm text-muted-foreground">{t('CheckInboxHint')}</p>
+                  <Button variant="ghost" className="mt-6 w-full" onClick={goToLogin}>
+                    <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+                    {t('BackToSignIn')}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </CardContent>
         </Card>
       </div>

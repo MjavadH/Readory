@@ -10,11 +10,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RateLimitModule } from '../rate-limit/rate-limit.module';
 import { AuthSecurityService } from './security/auth-security.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     UsersModule,
     PrismaModule,
+    MailModule,
     RateLimitModule,
     PassportModule,
     ConfigModule,

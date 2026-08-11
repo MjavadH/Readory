@@ -194,7 +194,7 @@ export function AdminSidebar() {
           show: has('MANAGE_STAFF'),
         },
         {
-          label: 'Notifications',
+          label: t('Notifications'),
           icon: Bell,
           path: '/admin/notifications',
           show: has('MANAGE_NOTIFICATIONS'),

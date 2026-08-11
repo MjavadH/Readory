@@ -8,6 +8,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthSecurityService } from './security/auth-security.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -84,5 +86,25 @@ export class AuthController {
   @Get('profile')
   async getProfile(@Request() req: any) {
     return this.authService.getProfile(req.user.userId);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Request() req: any) {
+    await this.authSecurityService.assertForgotPasswordAllowed(dto.email, req);
+    await this.authService.forgotPassword(dto.email);
+    return {
+      message: 'If an account with that email exists, a password reset link has been sent.',
+    };
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto, @Request() req: any) {
+    await this.authSecurityService.assertResetPasswordAllowed(req);
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return {
+      message: 'Password has been successfully updated.',
+    };
   }
 }

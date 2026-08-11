@@ -105,4 +105,27 @@ export class AuthSecurityService {
       message: 'Too many verification attempts.',
     });
   }
+
+  async assertForgotPasswordAllowed(email: string, req: Request) {
+    const ip = this.rateLimit.ipFromRequest(req);
+    await this.rateLimit.consume({
+      key: this.rateLimit.key('auth', 'forgot', 'ip', ip),
+      ...RATE_LIMITS.auth.forgotPassword,
+      message: 'Too many password reset requests from this IP.',
+    });
+    await this.rateLimit.consume({
+      key: this.rateLimit.key('auth', 'forgot', 'email', this.rateLimit.emailKey(email)),
+      ...RATE_LIMITS.auth.forgotPassword,
+      message: 'Too many password reset requests for this email.',
+    });
+  }
+
+  async assertResetPasswordAllowed(req: Request) {
+    const ip = this.rateLimit.ipFromRequest(req);
+    await this.rateLimit.consume({
+      key: this.rateLimit.key('auth', 'reset', 'ip', ip),
+      ...RATE_LIMITS.auth.resetPassword,
+      message: 'Too many password reset attempts from this IP.',
+    });
+  }
 }

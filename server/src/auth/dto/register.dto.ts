@@ -2,7 +2,7 @@ import { IsEmail, IsNotEmpty, MinLength, Matches, MaxLength, IsString } from 'cl
 
 export class RegisterDto {
   @IsEmail({}, { message: 'Please provide a valid email address.' })
-  @Matches(/^[a-zA-Z0-9.]+@gmail\.com$/, {
+  @Matches(/^[a-zA-Z0-9._%+-]+@gmail\.com$/, {
     message: 'Email must be a valid Gmail address.',
   })
   email!: string;

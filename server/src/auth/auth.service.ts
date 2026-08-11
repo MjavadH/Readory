@@ -2,6 +2,9 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { CacheManager } from '../cache/cache.manager';
+import { MailService } from '../mail/mail.service';
+import { createHash, randomBytes } from 'node:crypto';
 type UserWithRoleAndWallet = {
   id: number;
   email: string;
@@ -18,6 +21,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private cacheManager: CacheManager,
+    private mailService: MailService,
   ) {}
 
   private toSafeProfile(user: UserWithRoleAndWallet) {
@@ -45,6 +50,10 @@ export class AuthService {
     }
 
     return baseProfile;
+  }
+
+  private hashResetToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex');
   }
 
   // Validate user credentials for login
@@ -107,5 +116,37 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
       user: this.toSafeProfile(fullUser),
     };
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await this.usersService.findUserByIdentifier(normalizedEmail);
+
+    if (!user || user.isBanned) {
+      return;
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = this.hashResetToken(token);
+    const tokenKey = this.cacheManager.buildKey('pwd_reset_token', tokenHash);
+
+    await this.cacheManager.setString(tokenKey, user.id.toString(), 900);
+    await this.mailService.sendPasswordResetEmail(normalizedEmail, token);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = this.hashResetToken(token);
+    const tokenKey = this.cacheManager.buildKey('pwd_reset_token', tokenHash);
+
+    const userIdStr = await this.cacheManager.getDel(tokenKey);
+
+    if (!userIdStr) {
+      throw new UnauthorizedException('Invalid or expired reset token.');
+    }
+
+    const userId = parseInt(userIdStr, 10);
+    const hash = await argon2.hash(newPassword);
+
+    await this.usersService.updatePassword(userId, hash);
   }
 }
