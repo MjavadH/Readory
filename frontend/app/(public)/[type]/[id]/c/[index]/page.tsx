@@ -962,9 +962,7 @@ export default function ChapterPage() {
         <main
           onContextMenu={handleContextMenu}
           className="pt-20 pb-10 transition-[filter] duration-300"
-          style={{
-            filter: `${t('BrightnessN', { Brightness: brightness })} ${readerFilter}`.trim(),
-          }}
+          style={{ filter: `brightness(${brightness}%) ${readerFilter}`.trim() }}
         >
           <ReaderZoomViewport zoom={zoom}>
             <div className="mx-auto w-full px-4 lg:max-w-3/4">
@@ -1004,7 +1002,7 @@ export default function ChapterPage() {
       <main
         onContextMenu={handleContextMenu}
         className="pt-16 pb-24 transition-[filter] duration-300"
-        style={{ filter: `${t('BrightnessN', { Brightness: brightness })} ${readerFilter}`.trim() }}
+        style={{ filter: `brightness(${brightness}%) ${readerFilter}`.trim() }}
       >
         <ReaderZoomViewport zoom={zoom}>
           {readMode === 'page' ? (
