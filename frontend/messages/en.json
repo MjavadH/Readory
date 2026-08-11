@@ -1078,7 +1078,8 @@
     "Appearance": "Appearance",
     "WalletBalance": "Wallet Balance",
     "AddFunds": "Add Funds",
-    "Language": "Language"
+    "Language": "Language",
+    "Notifications": "Notifications"
   },
   "Notifications": {
     "title": "Notifications",

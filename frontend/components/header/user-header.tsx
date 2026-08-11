@@ -721,6 +721,29 @@ export function UserHeader() {
 
           {/* Scrollable Nav */}
           <div className="scrollbar-hide flex-1 space-y-6 overflow-y-auto px-4 py-4">
+            {/* Account */}
+            {authenticated && (
+              <MobileSection title={t('Account')}>
+                <MobileNavLink
+                  href="/dashboard"
+                  icon="layoutDashboard"
+                  label={t('Dashboard')}
+                  onClick={closeMobile}
+                  active={pathname === '/dashboard'}
+                />
+                {isAdmin && (
+                  <MobileNavLink
+                    href="/admin"
+                    icon="shield"
+                    label={t('AdminPanel')}
+                    onClick={closeMobile}
+                    badge={t('Admin')}
+                    active={pathname.startsWith('/admin')}
+                  />
+                )}
+              </MobileSection>
+            )}
+
             {/* Main Nav */}
             <MobileSection title={t('Navigate')}>
               <MobileNavLink
@@ -739,8 +762,8 @@ export function UserHeader() {
               />
               <MobileNavLink
                 href="/notifications"
-                icon="shield"
-                label="Notifications"
+                icon="notifications"
+                label={t('Notifications')}
                 onClick={closeMobile}
                 active={pathname === '/notifications'}
               />
@@ -785,29 +808,6 @@ export function UserHeader() {
                     router.push('/genres');
                   }}
                 />
-              </MobileSection>
-            )}
-
-            {/* Account */}
-            {authenticated && (
-              <MobileSection title={t('Account')}>
-                <MobileNavLink
-                  href="/dashboard"
-                  icon="layoutDashboard"
-                  label={t('Dashboard')}
-                  onClick={closeMobile}
-                  active={pathname === '/dashboard'}
-                />
-                {isAdmin && (
-                  <MobileNavLink
-                    href="/admin"
-                    icon="shield"
-                    label={t('AdminPanel')}
-                    onClick={closeMobile}
-                    badge={t('Admin')}
-                    active={pathname.startsWith('/admin')}
-                  />
-                )}
               </MobileSection>
             )}
 

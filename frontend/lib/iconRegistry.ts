@@ -38,6 +38,7 @@ import {
   FileImage,
   UserCheck,
   Grid2x2,
+  Bell,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { IconKey } from '@readory/shared';
@@ -82,4 +83,5 @@ export const iconRegistry: Record<IconKey, LucideIcon> = {
   rawProvider: FileImage,
   supervisor: UserCheck,
   collections: Grid2x2,
+  notifications: Bell,
 } as const;

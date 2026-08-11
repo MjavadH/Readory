@@ -38,6 +38,7 @@ export const ICON_KEYS = [
   'rawProvider',
   'supervisor',
   'collections',
+  'notifications',
 ] as const;
 
 export type IconKey = (typeof ICON_KEYS)[number];
