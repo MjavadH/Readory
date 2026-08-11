@@ -1,10 +1,8 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { BookMarked, DollarSign, Layers, RefreshCw, Users } from 'lucide-react';
+import { BookMarked, DollarSign, Layers, LayoutDashboard, RefreshCw, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-
 import { ContentSection, type ContentData } from '@/components/admin/dashboard/content-section';
 import {
   DashboardSkeleton,
@@ -19,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 interface AdminOverview {
   users: { total: number; new30d: number; growthPercent: number };
@@ -141,27 +140,23 @@ export default function AdminDashboardPage() {
   return (
     <div className="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 pb-20 sm:pb-0">
       {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-        className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between"
-      >
-        <div className="min-w-0 space-y-1">
-          <h1 className="truncate text-2xl font-bold tracking-tight sm:text-3xl">{t('Title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('Description')}</p>
-        </div>
-        <Button
-          onClick={refreshAll}
-          variant="outline"
-          size="sm"
-          disabled={refreshing}
-          className="shrink-0 gap-2"
-        >
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
-          <span className="hidden sm:inline">{t('Refresh')}</span>
-        </Button>
-      </motion.header>
+      <AdminPageHeader
+        icon={LayoutDashboard}
+        title={t('Title')}
+        description={t('Description')}
+        actions={
+          <Button
+            onClick={refreshAll}
+            variant="outline"
+            size="sm"
+            disabled={refreshing}
+            className="shrink-0 gap-2"
+          >
+            <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} />
+            <span className="hidden sm:inline">{t('Refresh')}</span>
+          </Button>
+        }
+      />
 
       {/* KPI cards */}
       <section aria-label={t('OverviewAria')} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

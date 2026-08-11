@@ -8,6 +8,7 @@ import {
   BookOpen,
   Eye,
   EyeOff,
+  Grid2X2,
   Layers,
   Loader2,
   Lock,
@@ -47,6 +48,7 @@ import {
   type CollectionFormState,
 } from '@/lib/collection-types';
 import Image from 'next/image';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 export default function AdminCollectionsPage() {
   const t = useTranslations('Collections');
@@ -228,23 +230,18 @@ export default function AdminCollectionsPage() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 pb-20 sm:pb-6">
       {/* header */}
-      <motion.header
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div className="min-w-0 text-start">
-          <h1 className="text-xl font-black tracking-tight sm:text-2xl">{t('AdminTitle')}</h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{t('AdminSubtitle')}</p>
-        </div>
-
-        {/* Not fixed — the app menu lives at the bottom on mobile. */}
-        <Button onClick={openCreate} className="w-full gap-1.5 sm:w-auto">
-          <Plus className="h-4 w-4" />
-          {t('Actions.NewCollection')}
-        </Button>
-      </motion.header>
+      <AdminPageHeader
+        icon={Grid2X2}
+        title={t('AdminTitle')}
+        description={t('AdminSubtitle')}
+        className="mb-5"
+        actions={
+          <Button onClick={openCreate} className="w-full gap-1.5 sm:w-auto">
+            <Plus className="h-4 w-4" />
+            {t('Actions.NewCollection')}
+          </Button>
+        }
+      />
 
       {/* stats */}
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">

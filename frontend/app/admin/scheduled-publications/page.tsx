@@ -40,6 +40,7 @@ import { ChapterPicker, type ChapterItemData } from '@/components/admin/chapter-
 import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
 import DateTimePicker from '@/components/admin/date-time-picker';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 type TargetType = 'BOOK' | 'Chapter';
 
@@ -311,17 +312,7 @@ export default function ScheduledPublicationsPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20 pb-20 sm:pb-0">
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
-        <motion.div
-          className="space-y-1"
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-        >
-          <h1 className="bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-transparent sm:text-3xl lg:text-4xl">
-            {t('Title')}
-          </h1>
-          <p className="text-sm text-muted-foreground sm:text-base">{t('Description')}</p>
-        </motion.div>
+        <AdminPageHeader icon={CalendarClock} title={t('Title')} description={t('Description')} />
 
         {/* Form Card */}
         <motion.div

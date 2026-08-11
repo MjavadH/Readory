@@ -121,7 +121,7 @@
       "kebabCaseSlugDescription": "Used in URLs and filters. Must be kebab-case."
     },
     "MediaLibrary": {
-      "Title": "MediaLibrary",
+      "Title": "Media Library",
       "Description": "Upload and manage your media assets",
       "UploadedNFile": "Uploaded {NFile} file(s)",
       "SomeFailed": "Some files failed",

@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   Eye,
   FileSearch,
-  ShieldCheck,
   RefreshCw,
   Search,
   Filter,
@@ -18,6 +17,7 @@ import {
   Globe,
   Hash,
   Clock,
+  ClipboardList,
 } from 'lucide-react';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { usePermission } from '@/hooks/use-permission';
@@ -41,6 +41,7 @@ import { AppPagination } from '@/components/app-pagination';
 import { cn } from '@/lib/utils';
 import { AUDIT_ACTION_VALUES, AUDIT_CATEGORY_VALUES, AUDIT_SEVERITY_VALUES } from '@readory/shared';
 import DateTimePicker from '@/components/admin/date-time-picker';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 type DiffEntry = {
   path: string;
@@ -280,34 +281,30 @@ export default function AuditLogPage() {
   return (
     <div className="mx-auto w-full max-w-400 space-y-4 p-3 sm:p-4 md:space-y-6 md:p-6 pb-20 sm:pb-0">
       {/* Header */}
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{t('Title')}</h1>
-            <p className="truncate text-xs text-muted-foreground sm:text-sm">{t('Description')}</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {data && (
-            <div className="hidden rounded-md border bg-card px-3 py-1.5 text-xs text-muted-foreground sm:block">
-              <span className="font-semibold text-foreground">{data.total}</span> {t('Logs')}
-            </div>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => mutate()}
-            disabled={isValidating}
-            className="gap-2"
-          >
-            <RefreshCw className={cn('h-4 w-4', isValidating && 'animate-spin')} />
-            <span className="hidden sm:inline">{t('Refresh')}</span>
-          </Button>
-        </div>
-      </header>
+      <AdminPageHeader
+        icon={ClipboardList}
+        title={t('Title')}
+        description={t('Description')}
+        actions={
+          <>
+            {data && (
+              <div className="hidden rounded-md border bg-card px-3 py-1.5 text-xs text-muted-foreground sm:block">
+                <span className="font-semibold text-foreground">{data.total}</span> {t('Logs')}
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => mutate()}
+              disabled={isValidating}
+              className="gap-2"
+            >
+              <RefreshCw className={cn('h-4 w-4', isValidating && 'animate-spin')} />
+              <span className="hidden sm:inline">{t('Refresh')}</span>
+            </Button>
+          </>
+        }
+      />
 
       {/* Search + filter toggle bar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

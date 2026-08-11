@@ -46,11 +46,12 @@ import {
   UserCog,
   Crown,
   Check,
+  Lock,
 } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 type Permission =
   'MANAGE_BOOKS' | 'MANAGE_USERS' | 'MANAGE_FINANCE' | 'MANAGE_STAFF' | 'MANAGE_NOTIFICATIONS';
@@ -282,23 +283,17 @@ export default function AdminStaff() {
   return (
     <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20 pb-20 sm:pb-0">
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <motion.div
-            className="space-y-1 p-3 md:p-0"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55 }}
-          >
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-              {t('Title')}
-            </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">{t('Description')}</p>
-          </motion.div>
-          <Button onClick={() => setIsAddStaffOpen(true)} className="gap-2 w-full sm:w-auto">
-            <UserPlus className="size-4" />
-            {t('AddStaff')}
-          </Button>
-        </div>
+        <AdminPageHeader
+          icon={Lock}
+          title={t('Title')}
+          description={t('Description')}
+          actions={
+            <Button onClick={() => setIsAddStaffOpen(true)} className="gap-2 w-full sm:w-auto">
+              <UserPlus className="size-4" />
+              {t('AddStaff')}
+            </Button>
+          }
+        />
 
         {/* Staff Table */}
         <Card className="border-border/50">

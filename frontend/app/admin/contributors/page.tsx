@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Loader2, Plus, Search, UserX } from 'lucide-react';
+import { Loader2, Plus, Search, UserRoundPen, UserX } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,7 @@ import {
 import { useToast } from '@/providers/toast-provider';
 import { ContributorGender } from '@shared/contributor-metadata';
 import { AppPagination } from '@/components/app-pagination';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 
 const PAGE_SIZE = 24;
 
@@ -273,21 +274,17 @@ export default function AdminContributorsPage() {
       className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto pb-20 sm:pb-0"
     >
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
-      >
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('Title')}</h1>
-          <p className="text-sm text-muted-foreground">{t('Description')}</p>
-        </div>
-        <Button onClick={openCreate} className="sm:self-end">
-          <Plus className="me-2 h-4 w-4" />
-          {t('NewContributor')}
-        </Button>
-      </motion.div>
+      <AdminPageHeader
+        icon={UserRoundPen}
+        title={t('Title')}
+        description={t('Description')}
+        actions={
+          <Button onClick={openCreate} className="sm:self-end">
+            <Plus className="me-2 h-4 w-4" />
+            {t('NewContributor')}
+          </Button>
+        }
+      />
 
       {/* Search */}
       <div className="relative">
