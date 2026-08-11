@@ -12,7 +12,7 @@ export interface StatCardProps {
   hint?: string;
   icon: LucideIcon;
   growth?: number | null;
-  accent?: 'primary' | 'emerald' | 'amber' | 'rose';
+  accent?: 'primary' | 'emerald' | 'amber' | 'rose' | 'orange' | 'yellow';
   index?: number;
 }
 
@@ -21,6 +21,8 @@ const accentMap: Record<NonNullable<StatCardProps['accent']>, string> = {
   emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
   rose: 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+  orange: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
+  yellow: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
 };
 
 export function StatCard({

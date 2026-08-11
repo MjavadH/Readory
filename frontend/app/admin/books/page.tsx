@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BookOpen, Plus, Search, CheckCircle2, Clock, X } from 'lucide-react';
+import { BookOpen, Plus, Search, CheckCircle2, Clock, X, Star } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { MediaPicker } from '@/components/admin/media-picker';
@@ -37,6 +37,7 @@ interface BookStats {
   total: number;
   Published: number;
   Drafts: number;
+  Featured: number;
 }
 
 interface AdminApiBook {
@@ -88,6 +89,7 @@ export default function AdminBooks() {
     total: 0,
     Published: 0,
     Drafts: 0,
+    Featured: 0,
   });
   const [newCoverPickerOpen, setNewCoverPickerOpen] = useState(false);
   const [, setNewCoverLabel] = useState<string>('');
@@ -317,7 +319,7 @@ export default function AdminBooks() {
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
         <AdminPageHeader icon={BookOpen} title={t('Title')} description={t('Description')} />
 
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             index={0}
             title={t('TotalBooks')}
@@ -337,7 +339,14 @@ export default function AdminBooks() {
             title={t('Drafts')}
             value={stats.Drafts.toLocaleString()}
             icon={Clock}
-            accent="amber"
+            accent="orange"
+          />
+          <StatCard
+            index={3}
+            title={t('Featured')}
+            value={stats.Featured.toLocaleString()}
+            icon={Star}
+            accent="yellow"
           />
         </div>
 

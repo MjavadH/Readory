@@ -609,10 +609,11 @@ export class BooksService {
 
     const skip = (page - 1) * limit;
 
-    const [total, published, drafts, books] = await this.prisma.$transaction([
+    const [total, published, drafts, featured, books] = await this.prisma.$transaction([
       this.prisma.book.count(),
       this.prisma.book.count({ where: { publishStatus: PublicationStatus.PUBLISHED } }),
       this.prisma.book.count({ where: { publishStatus: PublicationStatus.DRAFT } }),
+      this.prisma.book.count({ where: { isFeatured: true } }),
       this.prisma.book.findMany({
         where,
         orderBy: { updatedAt: 'desc' },
@@ -662,7 +663,7 @@ export class BooksService {
     return {
       books: formattedBooks,
       hasMore: skip + books.length < total,
-      stats: { total, Published: published, Drafts: drafts },
+      stats: { total, Published: published, Drafts: drafts, Featured: featured },
       page,
       limit,
     };
