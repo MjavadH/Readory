@@ -6,6 +6,7 @@ import { CacheManager } from '../cache/cache.manager';
 import { MailService } from '../mail/mail.service';
 import { createHash, randomBytes } from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
+import { GoogleAvatarService } from './google-avatar.service';
 
 type UserWithRoleAndWallet = {
   id: number;
@@ -27,6 +28,7 @@ export class AuthService {
     private jwtService: JwtService,
     private cacheManager: CacheManager,
     private mailService: MailService,
+    private googleAvatarService: GoogleAvatarService,
   ) {}
 
   private toSafeProfile(user: UserWithRoleAndWallet) {
@@ -122,38 +124,82 @@ export class AuthService {
     };
   }
 
-  async googleLogin(credential: string) {
+  private async verifyGoogleCredential(credential: string, nonce: string) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     if (!clientId) {
-      throw new UnauthorizedException('Google sign-in is not configured.');
+      throw new UnauthorizedException('Google sign-in is unavailable.');
     }
 
-    let ticket;
     try {
-      ticket = await this.googleClient.verifyIdToken({
+      const ticket = await this.googleClient.verifyIdToken({
         idToken: credential,
         audience: clientId,
       });
-    } catch {
-      throw new UnauthorizedException('Invalid Google credential.');
+      const payload = ticket.getPayload();
+      if (!payload?.sub || !payload.email || !payload.email_verified) {
+        throw new UnauthorizedException('Invalid Google sign-in.');
+      }
+      if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
+        throw new UnauthorizedException('Invalid Google sign-in.');
+      }
+      if (payload.aud !== clientId || payload.nonce !== nonce) {
+        throw new UnauthorizedException('Invalid Google sign-in.');
+      }
+      return payload;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) throw error;
+      throw new UnauthorizedException('Invalid Google sign-in.');
+    }
+  }
+
+  async googleLogin(credential: string, nonce: string) {
+    const payload = await this.verifyGoogleCredential(credential, nonce);
+    const existingGoogleUser = await this.usersService.findByGoogleSubject(payload.sub);
+    if (existingGoogleUser) {
+      const session = await this.login(existingGoogleUser);
+      return { ...session, created: false };
     }
 
-    const payload = ticket.getPayload();
-    if (!payload?.email || !payload.email_verified) {
-      throw new UnauthorizedException('Google account email must be verified.');
-    }
-    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
-      throw new UnauthorizedException('Invalid Google token issuer.');
+    const existingEmailUser = await this.usersService.findByEmail(payload.email!);
+    if (existingEmailUser) {
+      if (existingEmailUser.isBanned) {
+        throw new UnauthorizedException('Account is blocked. Please contact support.');
+      }
+      return { requiresLink: true, email: existingEmailUser.email };
     }
 
-    const { user, created } = await this.usersService.findOrCreateGoogleUser({
-      email: payload.email,
+    const avatarBuffer = await this.googleAvatarService.fetchAvatar(payload.picture);
+    const result = await this.usersService.createGoogleUser({
+      email: payload.email!,
+      googleSubject: payload.sub,
       name: payload.name,
-      picture: payload.picture,
+      avatarBuffer,
     });
-    const session = await this.login(user);
+    if (result.emailExists) {
+      return { requiresLink: true, email: result.user.email };
+    }
+    const session = await this.login(result.user);
+    return { ...session, created: result.created };
+  }
 
-    return { ...session, created };
+  async linkGoogle(credential: string, nonce: string, password: string) {
+    const payload = await this.verifyGoogleCredential(credential, nonce);
+    const existingGoogleUser = await this.usersService.findByGoogleSubject(payload.sub);
+    if (existingGoogleUser) {
+      return { ...(await this.login(existingGoogleUser)), linked: false };
+    }
+    const user = await this.usersService.findByEmail(payload.email!);
+    if (!user) {
+      throw new UnauthorizedException('Invalid Google sign-in.');
+    }
+    if (user.isBanned) {
+      throw new UnauthorizedException('Account is blocked. Please contact support.');
+    }
+    const ok = await argon2.verify(user.passwordHash, password);
+    if (!ok) throw new UnauthorizedException('Incorrect password.');
+    const avatarBuffer = await this.googleAvatarService.fetchAvatar(payload.picture);
+    const linked = await this.usersService.linkGoogleSubject(user.id, payload.sub, avatarBuffer);
+    return { ...(await this.login(linked)), linked: true };
   }
 
   async forgotPassword(email: string): Promise<void> {

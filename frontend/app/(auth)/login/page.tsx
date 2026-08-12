@@ -25,6 +25,7 @@ import { BrandLogo } from '@/components/brand-logo';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { safeRedirect } from '@/lib/auth/safe-redirect';
 
 type RoleName = 'ADMIN' | 'USER';
 
@@ -111,7 +112,7 @@ export default function AuthPage() {
       });
 
       const redirectTo = new URLSearchParams(window.location.search).get('next');
-      router.push(redirectTo || (data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
+      router.push(safeRedirect(redirectTo, data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('ErrorLogin')), t('LoginFailed'));
     } finally {
@@ -155,7 +156,7 @@ export default function AuthPage() {
       });
       toast.success(t('AccountActive'), t('Verified'));
       const redirectTo = new URLSearchParams(window.location.search).get('next');
-      router.push(redirectTo || (data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
+      router.push(safeRedirect(redirectTo, data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('ErrorVerification')), t('VerificationFailed'));
     } finally {

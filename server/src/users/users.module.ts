@@ -20,6 +20,6 @@ import { AvatarService } from './avatar.service';
   ],
   providers: [UsersService, AvatarService],
   controllers: [UsersController],
-  exports: [UsersService],
+  exports: [UsersService, AvatarService],
 })
 export class UsersModule {}

@@ -10,6 +10,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RateLimitModule } from '../rate-limit/rate-limit.module';
 import { AuthSecurityService } from './security/auth-security.service';
+import { GoogleOriginGuard } from './google-origin.guard';
+import { GoogleAvatarService } from './google-avatar.service';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
@@ -37,7 +39,14 @@ import { MailModule } from '../mail/mail.module';
       },
     }),
   ],
-  providers: [AuthService, AuthSecurityService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    AuthSecurityService,
+    GoogleAvatarService,
+    GoogleOriginGuard,
+    LocalStrategy,
+    JwtStrategy,
+  ],
   controllers: [AuthController],
   exports: [AuthService],
 })

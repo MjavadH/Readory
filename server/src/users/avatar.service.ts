@@ -17,7 +17,7 @@ const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_DIMENSION = 1024;
 const AVATAR_SIZE = 512;
 const AVATAR_CACHE_CONTROL = 'public, max-age=31536000, immutable';
-const SUPPORTED_MIME = new Set(['image/jpeg', 'image/webp']);
+const SUPPORTED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 @Injectable()
 export class AvatarService {
@@ -47,7 +47,7 @@ export class AvatarService {
 
     const type = await fileTypeFromBuffer(file.buffer);
     if (!type || !SUPPORTED_MIME.has(type.mime)) {
-      throw new BadRequestException('Only actual JPG/JPEG or WebP images are allowed');
+      throw new BadRequestException('Only actual JPG/JPEG, PNG, or WebP images are allowed');
     }
 
     let image = sharp(file.buffer, {
@@ -65,10 +65,6 @@ export class AvatarService {
     if (!metadata.width || !metadata.height) {
       throw new BadRequestException('Invalid image dimensions');
     }
-    if (metadata.width > MAX_AVATAR_DIMENSION || metadata.height > MAX_AVATAR_DIMENSION) {
-      throw new BadRequestException('Avatar dimensions must be 1024 × 1024 or smaller');
-    }
-
     try {
       image = sharp(file.buffer, {
         failOn: 'warning',
@@ -76,13 +72,32 @@ export class AvatarService {
       });
       const buffer = await image
         .rotate()
-        .resize(AVATAR_SIZE, AVATAR_SIZE, { fit: 'cover', position: 'center' })
+        .resize(AVATAR_SIZE, AVATAR_SIZE, {
+          fit: 'cover',
+          position: 'center',
+          withoutEnlargement: true,
+        })
         .webp({ quality: 82, effort: 4 })
         .toBuffer();
       return { buffer, contentType: 'image/webp' };
     } catch {
       throw new BadRequestException('Failed to process avatar image');
     }
+  }
+
+  async storeProcessedAvatar(userId: number, input: Buffer) {
+    const processed = await this.processAvatar({
+      buffer: input,
+      size: input.length,
+    } as Express.Multer.File);
+    const key = this.avatarKey(userId);
+    await this.storage.putObject({
+      key,
+      body: processed.buffer,
+      contentType: processed.contentType,
+      cacheControl: AVATAR_CACHE_CONTROL,
+    });
+    return key;
   }
 
   async replaceAvatar(userId: number, file: Express.Multer.File) {
