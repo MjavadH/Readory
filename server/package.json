@@ -30,6 +30,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.11",
+    "@nestjs/throttler": "^6.4.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^6.19.3",
     "@readory/shared": "*",
@@ -41,6 +42,7 @@
     "cookie-parser": "^1.4.7",
     "ejs": "^6.0.1",
     "file-type": "^21.2.0",
+    "google-auth-library": "^11.0.1",
     "helmet": "^8.0.0",
     "ioredis": "^5.8.2",
     "multer": "^2.0.2",
@@ -52,8 +54,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sharp": "^0.34.5",
-    "uuid": "^13.0.0",
-    "@nestjs/throttler": "^6.4.0"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
