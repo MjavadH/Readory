@@ -858,7 +858,13 @@
     "FilterNormal": "عادی",
     "FilterSepia": "سپیا",
     "FilterPaper": "کاغذ",
-    "FilterEInk": "جوهر الکترونیکی"
+    "FilterEInk": "جوهر الکترونیکی",
+    "GoToPage": "برو به صفحه...",
+    "Go": "برو",
+    "More": "بیشتر",
+    "CustomizeToolbar": "سفارشی‌سازی نوار ابزار",
+    "NavigationAlwaysVisible": "ناوبری همیشه قابل مشاهده می‌باشد",
+    "Reset": "بازنشانی"
   },
   "Contributors": {
     "Title": "همکاران",

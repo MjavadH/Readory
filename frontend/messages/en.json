@@ -858,7 +858,13 @@
     "FilterNormal": "Normal",
     "FilterSepia": "Sepia",
     "FilterPaper": "Paper",
-    "FilterEInk": "E-Ink"
+    "FilterEInk": "E-Ink",
+    "GoToPage": "Go to page",
+    "Go": "Go",
+    "More": "More",
+    "CustomizeToolbar": "Customize toolbar",
+    "NavigationAlwaysVisible": "Navigation always visible",
+    "Reset": "Reset"
   },
   "Contributors": {
     "Title": "Contributors",
