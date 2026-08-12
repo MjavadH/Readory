@@ -10,6 +10,7 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthSecurityService } from './security/auth-security.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -68,6 +69,25 @@ export class AuthController {
     return {
       message: 'Login successful',
       user: user,
+    };
+  }
+
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @Post('google')
+  async googleLogin(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) response: Response) {
+    const { access_token, user, created } = await this.authService.googleLogin(dto.credential);
+    response.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return {
+      message: created ? 'Account created' : 'Login successful',
+      user,
+      created,
     };
   }
 

@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import { getLocale, getMessages } from 'next-intl/server';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
+import { GoogleAuthProvider } from '@/providers/google-auth-provider';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],
@@ -35,7 +36,9 @@ export default async function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              <GoogleAuthProvider>{children}</GoogleAuthProvider>
+            </ToastProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

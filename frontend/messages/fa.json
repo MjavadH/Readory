@@ -434,7 +434,8 @@
     "ErrorResetPassword": "به‌روزرسانی رمز عبور ممکن نشد. لطفاً دوباره تلاش کنید.",
     "ResetPasswordFailed": "بازنشانی ناموفق بود",
     "BackToSignIn": "بازگشت به ورود",
-    "Verify": "تأیید"
+    "Verify": "تأیید",
+    "or": "یا"
   },
   "UserDashboard": {
     "FailedLoadDashboard": "خطا در بارگذاری داده‌های داشبورد",

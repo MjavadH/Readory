@@ -8,6 +8,8 @@ import { ToastProvider } from '@/providers/toast-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
+import { GoogleAuthProvider } from '@/providers/google-auth-provider';
+import { GoogleOneTap } from '@/components/auth/google-one-tap';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],
@@ -37,7 +39,12 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             <UserHeader />
 
             <main className="min-h-screen">
-              <ToastProvider>{children}</ToastProvider>
+              <ToastProvider>
+                <GoogleAuthProvider>
+                  <GoogleOneTap />
+                  {children}
+                </GoogleAuthProvider>
+              </ToastProvider>
             </main>
             <UserFooter />
           </ThemeProvider>

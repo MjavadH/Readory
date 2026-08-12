@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { Prisma } from '@prisma/client';
+import type { RoleName } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as argon2 from 'argon2';
 import { MailService } from '../mail/mail.service';
@@ -23,6 +24,38 @@ export class UsersService {
     private readonly collectionsService: CollectionsService,
     private readonly storage: StorageService,
   ) {}
+
+  private normalizeEmail(email: string) {
+    return email.trim().toLowerCase();
+  }
+
+  private normalizeUsername(username: string) {
+    return username
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_');
+  }
+
+  private async buildUniqueUsername(name: string | null | undefined, email: string) {
+    const localPart = email.split('@')[0] || 'reader';
+    const base =
+      this.normalizeUsername(name || localPart)
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 16) || 'reader';
+
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const suffix = attempt === 0 ? '' : crypto.randomInt(1000, 999999).toString();
+      const candidate = `${base}${suffix}`.slice(0, 20);
+      const exists = await this.prisma.user.findUnique({
+        where: { username: candidate },
+        select: { id: true },
+      });
+      if (!exists) return candidate;
+    }
+
+    return `reader${crypto.randomUUID().replace(/-/g, '').slice(0, 14)}`.slice(0, 20);
+  }
 
   getAvatarUrl(avatarKey?: string | null) {
     return avatarKey ? this.storage.getPublicUrl(avatarKey) : null;
@@ -229,6 +262,45 @@ export class UsersService {
     }
 
     return newUser;
+  }
+
+  async findOrCreateGoogleUser(input: {
+    email: string;
+    name?: string | null;
+    picture?: string | null;
+  }) {
+    const email = this.normalizeEmail(input.email);
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+      include: { role: true, wallet: true },
+    });
+
+    if (existingUser) return { user: existingUser, created: false };
+
+    const role = await this.prisma.role.upsert({
+      where: { name: 'USER' as RoleName },
+      update: {},
+      create: { name: 'USER' as RoleName },
+    });
+    const username = await this.buildUniqueUsername(input.name, email);
+    const passwordHash = await argon2.hash(crypto.randomBytes(48).toString('base64url'));
+
+    const newUser = await this.prisma.user.create({
+      data: {
+        email,
+        username,
+        passwordHash,
+        avatarKey: input.picture?.startsWith('https://') ? input.picture : null,
+        roleId: role.id,
+        wallet: { create: { balance: 0 } },
+      },
+      include: { role: true, wallet: true },
+    });
+
+    await this.collectionsService.ensureFavoritesCollection(newUser.id);
+    await this.cacheManager.del('stats:users');
+
+    return { user: newUser, created: true };
   }
 
   async setBanStatus(userId: number, isBanned: boolean) {

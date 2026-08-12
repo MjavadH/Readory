@@ -5,6 +5,8 @@ import * as argon2 from 'argon2';
 import { CacheManager } from '../cache/cache.manager';
 import { MailService } from '../mail/mail.service';
 import { createHash, randomBytes } from 'node:crypto';
+import { OAuth2Client } from 'google-auth-library';
+
 type UserWithRoleAndWallet = {
   id: number;
   email: string;
@@ -18,6 +20,8 @@ type UserWithRoleAndWallet = {
 
 @Injectable()
 export class AuthService {
+  private readonly googleClient = new OAuth2Client();
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
@@ -116,6 +120,40 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
       user: this.toSafeProfile(fullUser),
     };
+  }
+
+  async googleLogin(credential: string) {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new UnauthorizedException('Google sign-in is not configured.');
+    }
+
+    let ticket;
+    try {
+      ticket = await this.googleClient.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid Google credential.');
+    }
+
+    const payload = ticket.getPayload();
+    if (!payload?.email || !payload.email_verified) {
+      throw new UnauthorizedException('Google account email must be verified.');
+    }
+    if (payload.iss !== 'https://accounts.google.com' && payload.iss !== 'accounts.google.com') {
+      throw new UnauthorizedException('Invalid Google token issuer.');
+    }
+
+    const { user, created } = await this.usersService.findOrCreateGoogleUser({
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+    });
+    const session = await this.login(user);
+
+    return { ...session, created };
   }
 
   async forgotPassword(email: string): Promise<void> {

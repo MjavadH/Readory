@@ -24,6 +24,7 @@ import { useToast } from '@/providers/toast-provider';
 import { BrandLogo } from '@/components/brand-logo';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 
 type RoleName = 'ADMIN' | 'USER';
 
@@ -109,7 +110,8 @@ export default function AuthPage() {
         password: values.password,
       });
 
-      router.push(data.user?.roleName === 'ADMIN' ? '/admin' : '/');
+      const redirectTo = new URLSearchParams(window.location.search).get('next');
+      router.push(redirectTo || (data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('ErrorLogin')), t('LoginFailed'));
     } finally {
@@ -152,7 +154,8 @@ export default function AuthPage() {
         otp: values.otp,
       });
       toast.success(t('AccountActive'), t('Verified'));
-      router.push(data.user?.roleName === 'ADMIN' ? '/admin' : '/');
+      const redirectTo = new URLSearchParams(window.location.search).get('next');
+      router.push(redirectTo || (data.user?.roleName === 'ADMIN' ? '/admin' : '/'));
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('ErrorVerification')), t('VerificationFailed'));
     } finally {
@@ -337,6 +340,14 @@ export default function AuthPage() {
                       </Button>
                     </form>
                   </Form>
+
+                  <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-wide text-muted-foreground">
+                    <div className="h-px flex-1 bg-border" />
+                    <span>{t('or')}</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <GoogleSignInButton />
 
                   <div className="mt-6 text-center text-sm text-muted-foreground">
                     {mode === 'login' ? t('NoAccount') : t('HaveAccount')}{' '}

@@ -434,7 +434,8 @@
     "ErrorResetPassword": "Could not update your password. Please try again.",
     "ResetPasswordFailed": "Reset failed",
     "BackToSignIn": "Back to sign in",
-    "Verify": "Verify"
+    "Verify": "Verify",
+    "or": "or"
   },
   "UserDashboard": {
     "FailedLoadDashboard": "Failed to load dashboard data",
