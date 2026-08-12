@@ -20,20 +20,10 @@ const s3RemotePattern = (() => {
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      ...(s3RemotePattern ? [s3RemotePattern] : []),
-
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-        pathname: '/**',
-      },
-    ],
-
+    remotePatterns: [...(s3RemotePattern ? [s3RemotePattern] : [])],
     dangerouslyAllowLocalIP: true,
   },
 };
-
 const withNextIntl = createNextIntlPlugin();
 
 export default withNextIntl(nextConfig);

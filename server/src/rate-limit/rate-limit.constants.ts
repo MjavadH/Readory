@@ -5,7 +5,7 @@ export const RATE_LIMITS = {
     registerIp: { limit: 5, ttlSeconds: 60 * 60 },
     registerEmail: { limit: 3, ttlSeconds: 60 * 60 },
     verifyEmail: { limit: 10, ttlSeconds: 15 * 60 },
-    forgotPassword: { limit: 3, ttlSeconds: 60 * 60 },
+    forgotPassword: { limit: 5, ttlSeconds: 60 * 60 },
     resetPassword: { limit: 5, ttlSeconds: 15 * 60 },
   },
   payment: {

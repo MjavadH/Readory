@@ -137,7 +137,7 @@ export class AuthController {
     return this.authService.getProfile(req.user.userId);
   }
 
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() dto: ForgotPasswordDto, @Request() req: any) {
     await this.authSecurityService.assertForgotPasswordAllowed(dto.email, req);
