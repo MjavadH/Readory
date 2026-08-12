@@ -21,10 +21,6 @@ export function ProfileSkeleton() {
                 <Skeleton className="h-3.5 w-28 sm:w-36" />
               </div>
             </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-12 w-24 rounded-2xl" />
-              <Skeleton className="hidden h-12 w-24 rounded-2xl sm:block" />
-            </div>
           </div>
         </div>
       </div>
