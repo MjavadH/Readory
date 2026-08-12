@@ -1,15 +1,14 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useGoogleOneTapLogin } from '@react-oauth/google';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { createGoogleNonce } from '@/lib/auth/safe-redirect';
 
-type GoogleAuthResponse = {
-  created?: boolean;
-};
+type GoogleAuthResponse = { created?: boolean; requiresLink?: boolean; email?: string };
 
 function GoogleOneTapInner() {
   const { isAuthenticated, isLoading, refresh } = useCurrentUser();
@@ -17,6 +16,7 @@ function GoogleOneTapInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const nonce = useRef(createGoogleNonce()).current;
 
   const refreshSamePage = useCallback(() => {
     const qs = searchParams.toString();
@@ -25,10 +25,15 @@ function GoogleOneTapInner() {
   }, [pathname, router, searchParams]);
 
   useGoogleOneTapLogin({
+    nonce,
     onSuccess: async ({ credential }) => {
       if (!credential) return;
       try {
-        const data = await apiClient.post<GoogleAuthResponse>('/auth/google', { credential });
+        const data = await apiClient.post<GoogleAuthResponse>('/auth/google', {
+          credential,
+          nonce,
+        });
+        if (data.requiresLink) return;
         toast.success(
           data.created ? 'Your Readory account is ready.' : 'Welcome back to Readory.',
           'Signed in with Google',
@@ -49,8 +54,6 @@ function GoogleOneTapInner() {
 
 export function GoogleOneTap() {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-
   if (!clientId || clientId.includes('your_client_id_here')) return null;
-
   return <GoogleOneTapInner />;
 }

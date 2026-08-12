@@ -11,6 +11,8 @@ import { AuthSecurityService } from './security/auth-security.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
+import { LinkGoogleDto } from './dto/link-google.dto';
+import { GoogleOriginGuard } from './google-origin.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -73,9 +75,12 @@ export class AuthController {
   }
 
   @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @UseGuards(GoogleOriginGuard)
   @Post('google')
   async googleLogin(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) response: Response) {
-    const { access_token, user, created } = await this.authService.googleLogin(dto.credential);
+    const result = await this.authService.googleLogin(dto.credential, dto.nonce);
+    if ('requiresLink' in result) return result;
+    const { access_token, user, created } = result;
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -88,6 +93,30 @@ export class AuthController {
       message: created ? 'Account created' : 'Login successful',
       user,
       created,
+    };
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @UseGuards(GoogleOriginGuard)
+  @Post('google/link')
+  async linkGoogle(@Body() dto: LinkGoogleDto, @Res({ passthrough: true }) response: Response) {
+    const { access_token, user, linked } = await this.authService.linkGoogle(
+      dto.credential,
+      dto.nonce,
+      dto.password,
+    );
+    response.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    return {
+      message: linked ? 'Google account linked successfully' : 'Login successful',
+      user,
+      linked,
     };
   }
 

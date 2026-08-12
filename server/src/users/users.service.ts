@@ -13,6 +13,7 @@ import * as argon2 from 'argon2';
 import { MailService } from '../mail/mail.service';
 import { CollectionsService } from '../collections/collections.service';
 import { StorageService } from '../storage/storage.service';
+import { AvatarService } from './avatar.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
@@ -23,6 +24,7 @@ export class UsersService {
     private mailService: MailService,
     private readonly collectionsService: CollectionsService,
     private readonly storage: StorageService,
+    private readonly avatarService: AvatarService,
   ) {}
 
   private normalizeEmail(email: string) {
@@ -37,24 +39,22 @@ export class UsersService {
       .replace(/_+/g, '_');
   }
 
-  private async buildUniqueUsername(name: string | null | undefined, email: string) {
+  buildUsernameCandidate(name: string | null | undefined, email: string, attempt: number) {
     const localPart = email.split('@')[0] || 'reader';
     const base =
       this.normalizeUsername(name || localPart)
         .replace(/^_+|_+$/g, '')
         .slice(0, 16) || 'reader';
+    const suffix = attempt === 0 ? '' : crypto.randomInt(1000, 999999).toString();
+    return `${base}${suffix}`.slice(0, 20);
+  }
 
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const suffix = attempt === 0 ? '' : crypto.randomInt(1000, 999999).toString();
-      const candidate = `${base}${suffix}`.slice(0, 20);
-      const exists = await this.prisma.user.findUnique({
-        where: { username: candidate },
-        select: { id: true },
-      });
-      if (!exists) return candidate;
+  private isUniqueViolation(error: unknown, field?: string) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') {
+      return false;
     }
-
-    return `reader${crypto.randomUUID().replace(/-/g, '').slice(0, 14)}`.slice(0, 20);
+    const target = (error.meta?.target as string[] | string | undefined) ?? [];
+    return !field || String(target).includes(field);
   }
 
   getAvatarUrl(avatarKey?: string | null) {
@@ -264,43 +264,118 @@ export class UsersService {
     return newUser;
   }
 
-  async findOrCreateGoogleUser(input: {
-    email: string;
-    name?: string | null;
-    picture?: string | null;
-  }) {
-    const email = this.normalizeEmail(input.email);
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email },
+  async findByGoogleSubject(googleSubject: string) {
+    return this.prisma.user.findUnique({
+      where: { googleSubject },
       include: { role: true, wallet: true },
     });
+  }
 
-    if (existingUser) return { user: existingUser, created: false };
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email: this.normalizeEmail(email) },
+      include: { role: true, wallet: true },
+    });
+  }
 
+  async createGoogleUser(input: {
+    email: string;
+    googleSubject: string;
+    name?: string | null;
+    avatarBuffer?: Buffer | null;
+  }) {
+    const email = this.normalizeEmail(input.email);
     const role = await this.prisma.role.upsert({
       where: { name: 'USER' as RoleName },
       update: {},
       create: { name: 'USER' as RoleName },
     });
-    const username = await this.buildUniqueUsername(input.name, email);
     const passwordHash = await argon2.hash(crypto.randomBytes(48).toString('base64url'));
 
-    const newUser = await this.prisma.user.create({
-      data: {
-        email,
-        username,
-        passwordHash,
-        avatarKey: input.picture?.startsWith('https://') ? input.picture : null,
-        roleId: role.id,
-        wallet: { create: { balance: 0 } },
-      },
-      include: { role: true, wallet: true },
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const username = this.buildUsernameCandidate(input.name, email, attempt);
+      try {
+        const user = await this.prisma.$transaction(async (tx) => {
+          const created = await tx.user.create({
+            data: {
+              email,
+              username,
+              passwordHash,
+              googleSubject: input.googleSubject,
+              roleId: role.id,
+              wallet: { create: { balance: 0 } },
+            },
+            include: { role: true, wallet: true },
+          });
+          await this.collectionsService.ensureFavoritesCollection(created.id, tx);
+          return created;
+        });
+        if (input.avatarBuffer) {
+          this.storeGoogleAvatar(user.id, input.avatarBuffer).catch(() => undefined);
+        }
+        await this.cacheManager.del('stats:users');
+        return { user, created: true };
+      } catch (error) {
+        if (this.isUniqueViolation(error, 'username')) continue;
+        if (this.isUniqueViolation(error, 'googleSubject')) {
+          const user = await this.findByGoogleSubject(input.googleSubject);
+          if (user) return { user, created: false };
+        }
+        if (this.isUniqueViolation(error, 'email')) {
+          const user = await this.findByEmail(email);
+          if (user) return { user, created: false, emailExists: true };
+        }
+        throw error;
+      }
+    }
+    throw new ConflictException('Could not allocate a unique username');
+  }
+
+  async linkGoogleSubject(userId: number, googleSubject: string, avatarBuffer?: Buffer | null) {
+    let updated;
+    try {
+      updated = await this.prisma.$transaction(async (tx) => {
+        const result = await tx.user.updateMany({
+          where: { id: userId, googleSubject: null },
+          data: { googleSubject },
+        });
+        if (result.count !== 1) {
+          return tx.user.findUnique({
+            where: { id: userId },
+            include: { role: true, wallet: true },
+          });
+        }
+        return tx.user.findUnique({ where: { id: userId }, include: { role: true, wallet: true } });
+      });
+    } catch (error) {
+      if (this.isUniqueViolation(error, 'googleSubject')) {
+        throw new ConflictException('Google account could not be connected.');
+      }
+      throw error;
+    }
+    if (!updated) throw new NotFoundException('User not found');
+    if (updated.googleSubject !== googleSubject) {
+      throw new ConflictException('Google account could not be connected.');
+    }
+    if (avatarBuffer && !updated.avatarKey) {
+      this.storeGoogleAvatar(userId, avatarBuffer).catch(() => undefined);
+    }
+    await this.cacheManager.del(`session:user:${userId}`);
+    return updated;
+  }
+
+  private async storeGoogleAvatar(userId: number, avatarBuffer: Buffer) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarKey: true },
     });
-
-    await this.collectionsService.ensureFavoritesCollection(newUser.id);
-    await this.cacheManager.del('stats:users');
-
-    return { user: newUser, created: true };
+    if (!user || user.avatarKey) return;
+    const key = await this.avatarService.storeProcessedAvatar(userId, avatarBuffer);
+    const updated = await this.prisma.user.updateMany({
+      where: { id: userId, avatarKey: null },
+      data: { avatarKey: key },
+    });
+    if (updated.count !== 1) await this.storage.deleteKeys([key]).catch(() => undefined);
   }
 
   async setBanStatus(userId: number, isBanned: boolean) {

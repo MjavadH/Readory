@@ -24,22 +24,27 @@ export class CollectionsService {
   private readonly userCollectionLimit = Number(process.env.USER_COLLECTION_LIMIT || 25);
   private readonly userCollectionBookLimit = Number(process.env.USER_COLLECTION_BOOK_LIMIT || 100);
 
-  async ensureFavoritesCollection(userId: number) {
+  async ensureFavoritesCollection(userId: number, tx: Prisma.TransactionClient = this.prisma) {
     const slug = 'favorites';
-    const existing = await this.prisma.collection.findFirst({
-      where: { ownerId: userId, type: CollectionType.FAVORITES },
-    });
-    if (existing) return existing;
-    return this.prisma.collection.create({
-      data: {
-        ownerId: userId,
-        type: CollectionType.FAVORITES,
-        title: 'Favorites',
-        slug,
-        visibility: CollectionVisibility.PRIVATE,
-        locked: true,
-      },
-    });
+    try {
+      return await tx.collection.create({
+        data: {
+          ownerId: userId,
+          type: CollectionType.FAVORITES,
+          title: 'Favorites',
+          slug,
+          visibility: CollectionVisibility.PRIVATE,
+          locked: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return tx.collection.findFirstOrThrow({
+          where: { ownerId: userId, type: CollectionType.FAVORITES },
+        });
+      }
+      throw error;
+    }
   }
 
   async listSystem(options?: { cursor?: string; limit?: number }) {

@@ -24,6 +24,7 @@ model User {
   username                      String                         @unique
   isBanned                      Boolean                        @default(false)
   avatarKey                     String?
+  googleSubject                 String?                        @unique
   showMemberSince               Boolean                        @default(true)
   showFavorites                 Boolean                        @default(false)
   showRecentRatings             Boolean                        @default(false)
