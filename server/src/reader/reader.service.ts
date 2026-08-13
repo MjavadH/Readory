@@ -128,6 +128,9 @@ export class ReaderService {
       },
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
+    if (chapter.contentType === null) {
+      throw new HttpException({ message: 'Content is being prepared', code: 'PROCESSING' }, 503);
+    }
 
     const hasAccess = Boolean(
       await this.prisma.accessRecord.findFirst({
@@ -413,7 +416,6 @@ export class ReaderService {
       select: { id: true, bookId: true, isFree: true, pageCount: true },
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
-
     const hasAccess = Boolean(
       await this.prisma.accessRecord.findFirst({
         where: { userId, chapterId },

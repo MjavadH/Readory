@@ -864,7 +864,9 @@
     "More": "بیشتر",
     "CustomizeToolbar": "سفارشی‌سازی نوار ابزار",
     "NavigationAlwaysVisible": "ناوبری همیشه قابل مشاهده می‌باشد",
-    "Reset": "بازنشانی"
+    "Reset": "بازنشانی",
+    "ContentProcessingTitle": "Content is being prepared",
+    "ContentProcessingDescription": "Content is being prepared, please check back soon"
   },
   "Contributors": {
     "Title": "همکاران",
@@ -1214,7 +1216,6 @@
       "backToWallet": "بازگشت به کیف پول",
       "backHome": "رفتن به صفحه اصلی"
     },
-
     "errors": {
       "amountRequired": "لطفاً مبلغ را وارد کنید.",
       "amountInvalid": "مبلغ معتبر وارد کنید.",

@@ -16,6 +16,7 @@ export type ApiRequestOptions<TBody = unknown> = {
 
 export type ApiErrorData = {
   message?: string;
+  code?: string;
 };
 
 export class ApiError<T = ApiErrorData> extends Error {
