@@ -308,6 +308,12 @@ export function UserHeader() {
     setMobileSearchOpen(false);
   };
 
+  const handleSignIn = useCallback(() => {
+    const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+
+    router.push(`/login?next=${encodeURIComponent(next)}`);
+  }, [router]);
+
   return (
     <>
       <header
@@ -587,11 +593,7 @@ export function UserHeader() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button
-                  size="sm"
-                  className="ms-1 gap-2 rounded-xl px-4"
-                  onClick={() => router.push('/login')}
-                >
+                <Button size="sm" className="ms-1 gap-2 rounded-xl px-4" onClick={handleSignIn}>
                   <User className="h-4 w-4" />
                   {t('SignIn')}
                 </Button>
@@ -839,7 +841,7 @@ export function UserHeader() {
                 className="h-11 w-full justify-center gap-2 rounded-xl"
                 onClick={() => {
                   closeMobile();
-                  router.push('/login');
+                  handleSignIn();
                 }}
               >
                 <User className="h-4 w-4" />
