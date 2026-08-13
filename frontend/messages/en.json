@@ -1179,6 +1179,58 @@
     "MonthsAgo": "{count, plural, one {# month ago} other {# months ago}}",
     "YearsAgo": "{count, plural, one {# year ago} other {# years ago}}"
   },
+  "Wallet": {
+    "walletBalance": "Wallet balance",
+    "addFunds": "Add funds",
+    "addFundsSubtitle": "Choose an amount and a payment gateway to top up your wallet.",
+    "amountLabel": "Amount",
+    "providerLabel": "Payment method",
+    "continueToGateway": "Continue to payment",
+    "redirecting": "Redirecting…",
+    "secureNote": "You will be redirected to a secure gateway.",
+    "depositDescription": "Wallet top-up",
+    "refresh": "Refresh balance",
+    "loading": "Loading wallet",
+    "currency": {
+      "IRR": "Rial",
+      "IRT": "Toman",
+      "USD": "USD",
+      "EUR": "EUR"
+    },
+    "providers": {
+      "mock": "Test gateway",
+      "mockDescription": "Sandbox gateway for development"
+    },
+    "result": {
+      "verifying": "Verifying your payment…",
+      "successTitle": "Payment successful",
+      "successDescription": "Your wallet has been topped up.",
+      "failureTitle": "Payment failed",
+      "failureDescription": "The payment was not completed. No amount was deducted.",
+      "refId": "Reference number",
+      "invoiceId": "Invoice",
+      "copy": "Copy reference number",
+      "retry": "Try again",
+      "backToWallet": "Back to wallet",
+      "backHome": "Go to home"
+    },
+
+    "errors": {
+      "amountRequired": "Please enter an amount.",
+      "amountInvalid": "Enter a valid amount.",
+      "amountTooLow": "Minimum deposit is {min}.",
+      "amountTooHigh": "Maximum deposit is {max}.",
+      "noProvider": "No payment gateway is available right now.",
+      "noRedirect": "The gateway did not return a payment link. Please try again.",
+      "invalidRequest": "The request was rejected. Please review the amount and try again.",
+      "unauthenticated": "Please sign in to top up your wallet.",
+      "alreadyProcessed": "This payment has already been processed.",
+      "notFound": "Payment not found or expired.",
+      "rateLimited": "Too many attempts. Please wait a moment and try again.",
+      "server": "The payment service is unavailable. Please try again shortly.",
+      "unknown": "Something went wrong. Please try again."
+    }
+  },
   "Payment": {
     "Loading": "Verifying your payment...",
     "Success": "Payment Successful",

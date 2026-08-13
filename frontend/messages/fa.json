@@ -1179,6 +1179,58 @@
     "MonthsAgo": "{count, plural, one {# ماه پیش} other {# ماه پیش}}",
     "YearsAgo": "{count, plural, one {# سال پیش} other {# سال پیش}}"
   },
+  "Wallet": {
+    "walletBalance": "موجودی کیف پول",
+    "addFunds": "افزایش موجودی",
+    "addFundsSubtitle": "مبلغ و درگاه پرداخت را انتخاب کنید تا کیف پول شما شارژ شود.",
+    "amountLabel": "مبلغ",
+    "providerLabel": "روش پرداخت",
+    "continueToGateway": "ادامه و پرداخت",
+    "redirecting": "در حال انتقال…",
+    "secureNote": "به درگاه پرداخت امن منتقل می‌شوید.",
+    "depositDescription": "شارژ کیف پول",
+    "refresh": "به‌روزرسانی موجودی",
+    "loading": "در حال بارگذاری کیف پول",
+    "currency": {
+      "IRR": "ریال",
+      "IRT": "تومان",
+      "USD": "دلار",
+      "EUR": "یورو"
+    },
+    "providers": {
+      "mock": "درگاه آزمایشی",
+      "mockDescription": "درگاه تستی برای توسعه"
+    },
+    "result": {
+      "verifying": "در حال بررسی پرداخت…",
+      "successTitle": "پرداخت موفق",
+      "successDescription": "کیف پول شما شارژ شد.",
+      "failureTitle": "پرداخت ناموفق",
+      "failureDescription": "پرداخت کامل نشد و مبلغی کسر نگردید.",
+      "refId": "شماره پیگیری",
+      "invoiceId": "شماره فاکتور",
+      "copy": "کپی شماره پیگیری",
+      "retry": "تلاش دوباره",
+      "backToWallet": "بازگشت به کیف پول",
+      "backHome": "رفتن به صفحه اصلی"
+    },
+
+    "errors": {
+      "amountRequired": "لطفاً مبلغ را وارد کنید.",
+      "amountInvalid": "مبلغ معتبر وارد کنید.",
+      "amountTooLow": "حداقل مبلغ شارژ {min} است.",
+      "amountTooHigh": "حداکثر مبلغ شارژ {max} است.",
+      "noProvider": "در حال حاضر درگاه پرداختی در دسترس نیست.",
+      "noRedirect": "درگاه لینک پرداخت را برنگرداند. دوباره تلاش کنید.",
+      "invalidRequest": "درخواست پذیرفته نشد. مبلغ را بررسی و دوباره تلاش کنید.",
+      "unauthenticated": "برای شارژ کیف پول وارد حساب خود شوید.",
+      "alreadyProcessed": "این پرداخت قبلاً پردازش شده است.",
+      "notFound": "پرداخت یافت نشد یا منقضی شده است.",
+      "rateLimited": "تلاش‌های زیاد. کمی صبر کنید و دوباره تلاش کنید.",
+      "server": "سرویس پرداخت در دسترس نیست. کمی بعد تلاش کنید.",
+      "unknown": "خطایی رخ داد. دوباره تلاش کنید."
+    }
+  },
   "Payment": {
     "Loading": "در حال بررسی پرداخت شما...",
     "Success": "پرداخت موفق",

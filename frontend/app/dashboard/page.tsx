@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { DashboardOverview } from '@/lib/types';
 import {
@@ -9,11 +9,11 @@ import {
 } from '@/components/dashboard/ContinueReadingCard';
 import { LibraryCard, LibraryCardSkeleton } from '@/components/dashboard/LibraryCard';
 import { TransactionList, TransactionListSkeleton } from '@/components/dashboard/TransactionList';
+import { WalletSummaryCard } from '@/components/dashboard/wallet-summary-card';
 import {
   ArrowRight,
   BookMarked,
   History,
-  Plus,
   TrendingUp,
   Wallet,
   AlertCircle,
@@ -29,19 +29,21 @@ export default function OverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await apiClient.get<DashboardOverview>('/dashboard');
-        setData(res);
-      } catch {
-        setError(t('FailedLoadDashboard'));
-      } finally {
-        setLoading(false);
-      }
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const res = await apiClient.get<DashboardOverview>('/dashboard');
+      setData(res);
+    } catch {
+      setError(t('FailedLoadDashboard'));
+    } finally {
+      setLoading(false);
     }
-    void fetchData();
   }, [t]);
+
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   if (loading) {
     return (
@@ -249,24 +251,7 @@ export default function OverviewPage() {
                 {t('Wallet')}
               </h2>
             </div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 relative overflow-hidden group"
-            >
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <Wallet className="w-32 h-32 group-hover:scale-110 transition-transform duration-700" />
-              </div>
-              <div className="relative z-10 text-center space-y-6">
-                <div className="text-4xl font-extrabold tracking-tight text-foreground drop-shadow-sm">
-                  ${data.wallet.balance.toFixed(2)}
-                </div>
-                <button className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-lg group/btn">
-                  <Plus className="w-6 h-6 group-hover/btn:rotate-90 transition-transform" />
-                  {t('TopUpBalance')}
-                </button>
-              </div>
-            </motion.div>
+            <WalletSummaryCard balance={data.wallet.balance} currency="IRR" />
           </section>
         </div>
       </div>
