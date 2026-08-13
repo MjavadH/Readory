@@ -12,11 +12,13 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
+  Minus,
   Loader2,
   Lock,
   LogIn,
   RefreshCw,
   ShoppingCart,
+  Plus,
   Unlock,
 } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
@@ -78,6 +80,18 @@ type BookDetailsResponse = {
 
 type ReaderErrorVariant = 'auth' | 'locked' | 'notfound' | 'processing' | 'error';
 
+type ReaderSettings = {
+  fontSize: number;
+  lineHeight: number;
+  fontFamily: string;
+};
+
+const DEFAULT_READER_SETTINGS: ReaderSettings = {
+  fontSize: 18,
+  lineHeight: 1.6,
+  fontFamily: 'Georgia, serif',
+};
+
 export default function ChapterPage() {
   const t = useTranslations('Books');
   const g = useTranslations('General');
@@ -121,15 +135,46 @@ export default function ChapterPage() {
   const maxReachedPageRef = useRef(1);
   const progressCompletedRef = useRef(false);
   const readerRootRef = useRef<HTMLDivElement | null>(null);
+  const [readerRootEl, setReaderRootEl] = useState<HTMLDivElement | null>(null);
   const zoom = useReaderZoom();
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const sessionRef = useRef<SessionResponse | null>(null);
   const refreshingSessionRef = useRef<Promise<SessionResponse> | null>(null);
   const [readerFilter, setReaderFilter] = useState<string>('');
+  const [readerSettings, setReaderSettings] = useState<ReaderSettings>(() => {
+    if (typeof window === 'undefined') return DEFAULT_READER_SETTINGS;
+
+    const stored = window.localStorage.getItem('readory.readerSettings');
+    if (!stored) return DEFAULT_READER_SETTINGS;
+
+    try {
+      const parsed = JSON.parse(stored) as Partial<ReaderSettings>;
+      return {
+        fontSize:
+          typeof parsed.fontSize === 'number' ? parsed.fontSize : DEFAULT_READER_SETTINGS.fontSize,
+        lineHeight:
+          typeof parsed.lineHeight === 'number'
+            ? parsed.lineHeight
+            : DEFAULT_READER_SETTINGS.lineHeight,
+        fontFamily:
+          typeof parsed.fontFamily === 'string'
+            ? parsed.fontFamily
+            : DEFAULT_READER_SETTINGS.fontFamily,
+      };
+    } catch {
+      window.localStorage.removeItem('readory.readerSettings');
+      return DEFAULT_READER_SETTINGS;
+    }
+  });
 
   useEffect(() => {
     sessionRef.current = session;
   }, [session]);
+
+  useEffect(() => {
+    // Persist typography changes after hydration so text chapters keep the user's reading preferences.
+    window.localStorage.setItem('readory.readerSettings', JSON.stringify(readerSettings));
+  }, [readerSettings]);
 
   const currentChapter =
     readerCtx?.chapters.find((c) => c.index === chapterIndex) ??
@@ -142,6 +187,11 @@ export default function ChapterPage() {
     } satisfies ReaderChapterItem);
 
   const chapters = readerCtx?.chapters ?? [currentChapter];
+
+  const setReaderRoot = useCallback((element: HTMLDivElement | null) => {
+    readerRootRef.current = element;
+    setReaderRootEl(element);
+  }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Disable default browser menu
@@ -171,11 +221,16 @@ export default function ChapterPage() {
         setTextHtml('');
         setCurrentPage((prev) => Math.max(1, Math.min(prev, nextManifest.pageCount || 1)));
       } else if (nextSession.contentType === 'text') {
-        const nextText = await apiClient.get<{ html: string }>('/reader/text', {
+        const nextManifest = await apiClient.get<Manifest>('/reader/manifest', {
           query: { token: nextSession.sessionToken },
         });
+        const safePage = Math.max(1, Math.min(currentPage, nextManifest.pageCount || 1));
+        const nextText = await apiClient.get<{ html: string }>('/reader/text', {
+          query: { token: nextSession.sessionToken, p: safePage },
+        });
+        setManifest(nextManifest);
         setTextHtml(nextText.html);
-        setManifest(null);
+        setCurrentPage(safePage);
       }
 
       return nextSession;
@@ -188,7 +243,7 @@ export default function ChapterPage() {
     } finally {
       refreshingSessionRef.current = null;
     }
-  }, [bookId, chapterIndex]);
+  }, [bookId, chapterIndex, currentPage]);
 
   useEffect(() => {
     if (!session) return;
@@ -423,10 +478,18 @@ export default function ChapterPage() {
           if (cancelled) return;
           setManifest(m);
         } else if (s.contentType === 'text') {
-          const txt = await apiClient.get<{ html: string }>('/reader/text', {
+          const m = await apiClient.get<Manifest>('/reader/manifest', {
             query: { token: s.sessionToken },
           });
           if (cancelled) return;
+          setManifest(m);
+
+          const textPage = Math.max(1, Math.min(m.pageCount || 1, startPage));
+          const txt = await apiClient.get<{ html: string }>('/reader/text', {
+            query: { token: s.sessionToken, p: textPage },
+          });
+          if (cancelled) return;
+          setCurrentPage(textPage);
           setTextHtml(txt.html);
         } else {
           setError('Chapter content is unavailable');
@@ -454,6 +517,32 @@ export default function ChapterPage() {
     maxReachedPageRef.current = Math.max(maxReachedPageRef.current, currentPage);
   }, [currentPage]);
 
+  useEffect(() => {
+    if (!session || !manifest || manifest.format !== 'text') return;
+
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        const textPage = await apiClient.get<{ html: string }>('/reader/text', {
+          query: { token: session.sessionToken, p: currentPage },
+        });
+        if (!cancelled) setTextHtml(textPage.html);
+      } catch (e) {
+        if (cancelled) return;
+        if (e instanceof ApiError && e.status === 401) {
+          await refreshReaderSession().catch(() => undefined);
+        }
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, manifest, currentPage, refreshReaderSession]);
+
   // Page mode: draw current page to single canvas
   useEffect(() => {
     if (!session || !manifest || manifest.format !== 'images') return;
@@ -464,7 +553,11 @@ export default function ChapterPage() {
     const signal = abortController.signal;
     const reqId = ++pageDrawRequestIdRef.current;
 
-    setPageTransitionLoading(true);
+    queueMicrotask(() => {
+      if (!signal.aborted && reqId === pageDrawRequestIdRef.current) {
+        setPageTransitionLoading(true);
+      }
+    });
 
     const run = async () => {
       try {
@@ -664,7 +757,7 @@ export default function ChapterPage() {
 
       setCurrentPage(nextPage);
 
-      if (readMode === 'scroll') {
+      if (readMode === 'scroll' && session?.contentType !== 'text') {
         const target = scrollCanvasRefs.current[nextPage - 1];
         target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
@@ -678,7 +771,7 @@ export default function ChapterPage() {
         }
       }
     },
-    [manifest?.pageCount, session?.pageCount, readMode],
+    [manifest?.pageCount, session?.pageCount, readMode, session?.contentType],
   );
 
   // Re-run the full reader load (used after a successful in-page purchase / retry).
@@ -973,7 +1066,7 @@ export default function ChapterPage() {
   // Text mode
   if (session.contentType === 'text') {
     return (
-      <div ref={readerRootRef} className="min-h-screen bg-reader-bg overflow-y-auto">
+      <div ref={setReaderRoot} className="min-h-screen bg-reader-bg overflow-y-auto">
         <main
           onContextMenu={handleContextMenu}
           className="pt-20 pb-10 transition-[filter] duration-300"
@@ -981,8 +1074,59 @@ export default function ChapterPage() {
         >
           <ReaderZoomViewport zoom={zoom}>
             <div className="mx-auto w-full px-4 lg:max-w-3/4">
+              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/70 p-3 text-sm">
+                <span className="font-medium text-foreground">Typography</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setReaderSettings((settings) => ({
+                      ...settings,
+                      fontSize: Math.max(14, settings.fontSize - 1),
+                    }))
+                  }
+                >
+                  <Minus className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <span className="min-w-12 text-center text-muted-foreground">
+                  {readerSettings.fontSize}px
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setReaderSettings((settings) => ({
+                      ...settings,
+                      fontSize: Math.min(28, settings.fontSize + 1),
+                    }))
+                  }
+                >
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <select
+                  className="h-9 rounded-md border border-input bg-background px-3 text-foreground"
+                  value={readerSettings.fontFamily}
+                  onChange={(event) =>
+                    setReaderSettings((settings) => ({
+                      ...settings,
+                      fontFamily: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="Georgia, serif">Serif</option>
+                  <option value="Inter, system-ui, sans-serif">Sans</option>
+                  <option value="ui-monospace, SFMono-Regular, Menlo, monospace">Mono</option>
+                </select>
+              </div>
               <article
                 className="prose max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
+                style={{
+                  fontSize: `${readerSettings.fontSize}px`,
+                  lineHeight: readerSettings.lineHeight,
+                  fontFamily: readerSettings.fontFamily,
+                }}
                 dangerouslySetInnerHTML={{ __html: textHtml }}
               />
             </div>
@@ -990,13 +1134,13 @@ export default function ChapterPage() {
         </main>
 
         <ReaderToolbar
-          currentPage={1}
-          totalPages={1}
+          currentPage={currentPage}
+          totalPages={totalPages}
           brightness={brightness}
-          readMode="scroll"
+          readMode="page"
           currentChapter={currentChapter}
           chapters={chapters}
-          onPageChange={() => {}}
+          onPageChange={handlePageChange}
           onBrightnessChange={setBrightness}
           onReadModeChange={() => {}}
           onChapterChange={handleChapterChange}
@@ -1004,7 +1148,7 @@ export default function ChapterPage() {
           typeSlug={typeSlug}
           onPurchased={handlePurchased}
           showReadModeToggle={false}
-          fullscreenTarget={readerRootRef.current}
+          fullscreenTarget={readerRootEl}
           zoom={zoom}
         />
       </div>
@@ -1012,7 +1156,7 @@ export default function ChapterPage() {
   }
 
   return (
-    <div ref={readerRootRef} className="min-h-screen bg-reader-bg overflow-y-auto">
+    <div ref={setReaderRoot} className="min-h-screen bg-reader-bg overflow-y-auto">
       {/* Main content */}
       <main
         onContextMenu={handleContextMenu}
@@ -1088,7 +1232,7 @@ export default function ChapterPage() {
         book={book}
         typeSlug={typeSlug}
         onPurchased={handlePurchased}
-        fullscreenTarget={readerRootRef.current}
+        fullscreenTarget={readerRootEl}
         zoom={zoom}
       />
 

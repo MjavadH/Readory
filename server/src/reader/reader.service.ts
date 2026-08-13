@@ -257,7 +257,33 @@ export class ReaderService {
     return this.getManifestByPayload(payload);
   }
 
-  async getText(token: string, req: Request): Promise<string> {
+  private encodeZeroWidthUserId(userId: number): string {
+    const bits = Buffer.from(String(userId), 'utf8')
+      .toString('binary')
+      .split('')
+      .map((char) => char.charCodeAt(0).toString(2).padStart(8, '0'))
+      .join('');
+
+    return bits.replace(/0/g, '\u200b').replace(/1/g, '\u200c');
+  }
+
+  private injectZeroWidthWatermark(html: string, userId: number): string {
+    const watermark = this.encodeZeroWidthUserId(userId);
+    let injected = false;
+
+    // Inject the encoded user id after an early inter-word space while leaving tags intact.
+    const nextHtml = html.replace(
+      /(<p[^>]*>[^<]{1,240}?\s)([^<]*<\/p>)/i,
+      (match, prefix, suffix) => {
+        injected = true;
+        return `${prefix}${watermark}${suffix}`;
+      },
+    );
+
+    return injected ? nextHtml : `${watermark}${html}`;
+  }
+
+  async getText(token: string, pageNumber: number, req: Request): Promise<string> {
     const payload = await this.verifyToken(token, req);
     const manifest = await this.getManifestByPayload(payload);
 
@@ -265,11 +291,17 @@ export class ReaderService {
       throw new BadRequestException('Not text chapter');
     }
 
-    const page = manifest.pages[0];
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > manifest.pageCount) {
+      throw new BadRequestException('Invalid page');
+    }
+
+    const page = manifest.pages[pageNumber - 1];
     if (!page?.key) throw new NotFoundException('Text content missing');
 
     const buffer = await this.storageService.getObjectBuffer(page.key);
-    return buffer.toString('utf8');
+    return payload.scope === 'admin-preview'
+      ? buffer.toString('utf8')
+      : this.injectZeroWidthWatermark(buffer.toString('utf8'), payload.userId);
   }
 
   async getPage(token: string, page: number, req: Request): Promise<Buffer> {
