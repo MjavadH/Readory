@@ -9,17 +9,22 @@ import {
   Check,
   FileStack,
   FileText,
+  FileType2,
   FolderOpen,
   GitBranch,
   Hash,
   ImageIcon,
   Layers,
   Loader2,
+  Plus,
   RefreshCcw,
   Trash2,
   Upload,
   X,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
 import { Button } from '@/components/ui/button';
@@ -36,13 +41,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { UploadProgressBar } from '@/components/admin/upload-progress-bar';
-import { useParams } from 'next/navigation';
 import { AppPagination } from '@/components/app-pagination';
+import { UploadPanel } from '@/components/admin/upload-panel';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
-import { FileUploadPicker } from '@/components/admin/file-upload-picker';
-import { useTranslations } from 'next-intl';
 
 type ChapterMeta = {
   id: number;
@@ -53,6 +54,9 @@ type ChapterMeta = {
   pageCount: number;
   contentVersion: number;
   updatedAt: string;
+  pdfKey?: string | null;
+  pdfPageCount?: number | null;
+  pdfUploadedAt?: string | null;
 };
 
 type Manifest = {
@@ -76,33 +80,49 @@ type AdminPreviewSessionResponse = {
   adminPreview: true;
 };
 
-// Skeleton
+type UploadTab = 'images' | 'text' | 'pdf';
+
+const PAGE_SIZE = 24;
+const POLL_INTERVAL_MS = 5000;
+
+// Mirrors backend limits (chapter-content.service.ts / pdf-processing.service.ts)
+const IMAGE_MAX_FILES = 120;
+const IMAGE_MAX_BYTES = 12 * 1024 * 1024;
+const TEXT_MAX_BYTES = 2 * 1024 * 1024;
+const PDF_MAX_BYTES = 100 * 1024 * 1024;
+
+const EASE = [0.25, 0.46, 0.45, 0.94] as const;
+
+function formatBytes(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${Math.round(bytes / (1024 * 1024))} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
 function PageSkeleton() {
   return (
-    <div className="min-h-screen bg-background p-6 lg:p-10 space-y-6 max-w-6xl mx-auto">
-      <div className="flex items-start justify-between gap-4">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-9 w-64" />
-          <Skeleton className="h-4 w-80" />
+          <Skeleton className="h-8 w-56 sm:w-72" />
+          <Skeleton className="h-4 w-40 sm:w-80" />
         </div>
-        <div className="flex gap-2 pt-1">
+        <div className="flex gap-2">
           <Skeleton className="h-9 w-24 rounded-lg" />
-          <Skeleton className="h-9 w-36 rounded-lg" />
+          <Skeleton className="h-9 w-28 rounded-lg" />
         </div>
       </div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <Skeleton key={i} className="h-20 rounded-xl" />
         ))}
       </div>
-      <Skeleton className="h-56 rounded-xl" />
-      <Skeleton className="h-80 rounded-xl" />
+      <Skeleton className="h-64 rounded-2xl" />
+      <Skeleton className="h-80 rounded-2xl" />
     </div>
   );
 }
 
-// Stat card
-function StatCard({
+function MetaCard({
   icon,
   label,
   value,
@@ -117,24 +137,23 @@ function StatCard({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="group relative rounded-xl border border-border bg-card p-4 overflow-hidden hover:border-primary/30 transition-colors duration-200"
+      transition={{ delay, duration: 0.35, ease: EASE }}
+      className="group relative overflow-hidden rounded-xl border border-border bg-card p-3 transition-colors duration-200 hover:border-primary/40 sm:p-4"
     >
-      <div className="absolute inset-0 bg-linear-to-br from-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium text-muted-foreground sm:text-xs">
         <span className="text-primary/70">{icon}</span>
-        {label}
+        <span className="truncate">{label}</span>
       </div>
-      <div className={cn('text-sm font-semibold truncate', mono && 'font-mono text-xs')}>
+      <div className={cn('truncate text-xs font-semibold sm:text-sm', mono && 'font-mono text-xs')}>
         {value}
       </div>
     </motion.div>
   );
 }
 
-// Section wrapper
 function Section({
   title,
   subtitle,
@@ -148,48 +167,59 @@ function Section({
 }) {
   return (
     <motion.section
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="rounded-2xl border border-border bg-card overflow-hidden"
+      transition={{ duration: 0.4, ease: EASE }}
+      className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
     >
-      <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-4">
-        <div>
-          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-          {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
+      <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold text-foreground">{title}</h2>
+          {subtitle && <p className="mt-0.5 truncate text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {action}
       </div>
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </motion.section>
   );
 }
 
-// Tab button
 function TabBtn({
   active,
   icon,
   label,
   onClick,
+  disabled,
 }: {
   active: boolean;
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
       className={cn(
-        'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150',
-        active
-          ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/30'
-          : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+        'relative flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150 sm:flex-none sm:px-4 sm:text-sm',
+        'disabled:cursor-not-allowed disabled:opacity-50',
+        active ? 'text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      {icon}
-      {label}
+      {active && (
+        <motion.span
+          layoutId="upload-tab-pill"
+          transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+          className="absolute inset-0 rounded-lg bg-primary shadow-sm shadow-primary/30"
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-1.5 whitespace-nowrap">
+        {icon}
+        {label}
+      </span>
     </button>
   );
 }
@@ -205,12 +235,20 @@ export default function ChapterContentManager() {
 
   const [data, setData] = useState<ChapterContentResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [activeTab, setActiveTab] = useState<'images' | 'text'>('images');
+  const [activeTab, setActiveTab] = useState<UploadTab>('images');
+
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [textFile, setTextFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [textError, setTextError] = useState<string | null>(null);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
   const [imagePage, setImagePage] = useState(1);
   const imagePaginationScrollRef = useRef<HTMLDivElement>(null);
   const [adminPreviewToken, setAdminPreviewToken] = useState<string | null>(null);
@@ -221,77 +259,134 @@ export default function ChapterContentManager() {
   const canLoad =
     Number.isInteger(bookId) && bookId > 0 && Number.isInteger(chapterIndex) && chapterIndex > 0;
 
-  const loadContent = useCallback(async () => {
-    if (!canLoad) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await apiClient.get<ChapterContentResponse>(
-        `/admin/books/${bookId}/chapters/${chapterIndex}/content`,
-      );
-      setData(response);
-      setDeleteMode(false);
-      setSelectedImagePages([]);
-
-      if (response.manifest?.format === 'images' && response.manifest.pageCount > 0) {
-        try {
-          const preview = await apiClient.post<AdminPreviewSessionResponse>(
-            '/reader/admin/session',
-            { bookId, chapterIndex },
-          );
-          setAdminPreviewToken(preview.sessionToken);
-        } catch (error) {
-          setAdminPreviewToken(null);
-          toast.error(getApiErrorMessage(error, t('UnableCreatePreview')), t('PreviewUnavailable'));
-        }
-      } else {
-        setAdminPreviewToken(null);
+  const loadContent = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!canLoad) {
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      toast.error(getApiErrorMessage(error, t('UnableFetchChapterContent')));
-    } finally {
-      setLoading(false);
-    }
-  }, [bookId, chapterIndex, canLoad, toast, t]);
+      if (!options?.silent) setLoading(true);
+      try {
+        const response = await apiClient.get<ChapterContentResponse>(
+          `/admin/books/${bookId}/chapters/${chapterIndex}/content`,
+        );
+        setData(response);
+        setLoadError(null);
+        setDeleteMode(false);
+        setSelectedImagePages([]);
+
+        if (response.manifest?.format === 'images' && response.manifest.pageCount > 0) {
+          try {
+            const preview = await apiClient.post<AdminPreviewSessionResponse>(
+              '/reader/admin/session',
+              { bookId, chapterIndex },
+            );
+            setAdminPreviewToken(preview.sessionToken);
+          } catch (error) {
+            setAdminPreviewToken(null);
+            toast.error(
+              getApiErrorMessage(error, t('UnableCreatePreview')),
+              t('PreviewUnavailable'),
+            );
+          }
+        } else {
+          setAdminPreviewToken(null);
+        }
+      } catch (error) {
+        const message = getApiErrorMessage(error, t('UnableFetchChapterContent'));
+        setLoadError(message);
+        if (!options?.silent) toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [bookId, chapterIndex, canLoad, toast, t],
+  );
 
   useEffect(() => {
     void loadContent();
   }, [loadContent]);
 
-  const pageSize = 24;
-  const imagePages = data?.manifest?.format === 'images' ? data.manifest.pages : [];
-  const pagedImages = imagePages.slice((imagePage - 1) * pageSize, imagePage * pageSize);
-  const totalImagePages = Math.max(1, Math.ceil(imagePages.length / pageSize));
+  const chapter = data?.chapter ?? null;
+  const isPdfProcessing = Boolean(chapter && !chapter.contentType && chapter.pdfKey);
+  const hasContent = Boolean(chapter?.contentType);
 
-  const uploadWithXhr = async (url: string, formData: FormData): Promise<void> =>
-    new Promise((resolve, reject) => {
-      const request = new XMLHttpRequest();
-      const base = process.env.NEXT_PUBLIC_API_BASE ?? '';
-      request.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          setProgress(Math.round((event.loaded / event.total) * 100));
-        }
-      };
-      request.onerror = () => reject(new Error(t('NetworkUploadError')));
-      request.onload = () => {
-        if (request.status >= 200 && request.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(t('UploadFailedStatus', { RequestStatus: request.status })));
-        }
-      };
-      request.open('POST', `${base}${url}`);
-      request.withCredentials = true;
-      request.send(formData);
-    });
+  // Poll while the PDF worker converts pages in the background.
+  useEffect(() => {
+    if (!isPdfProcessing) return;
+    const timer = window.setInterval(() => {
+      void loadContent({ silent: true });
+    }, POLL_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [isPdfProcessing, loadContent]);
+
+  const imagePages = useMemo(
+    () => (data?.manifest?.format === 'images' ? data.manifest.pages : []),
+    [data],
+  );
+  const totalImagePages = Math.max(1, Math.ceil(imagePages.length / PAGE_SIZE));
+  const pagedImages = imagePages.slice((imagePage - 1) * PAGE_SIZE, imagePage * PAGE_SIZE);
+
+  useEffect(() => {
+    if (imagePage > totalImagePages) setImagePage(totalImagePages);
+  }, [imagePage, totalImagePages]);
+
+  const uploadWithXhr = useCallback(
+    (url: string, formData: FormData): Promise<void> =>
+      new Promise((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        const base = process.env.NEXT_PUBLIC_API_BASE ?? '';
+        request.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            setProgress(Math.round((event.loaded / event.total) * 100));
+          }
+        };
+        request.onerror = () => reject(new Error(t('NetworkUploadError')));
+        request.ontimeout = () => reject(new Error(t('NetworkUploadError')));
+        request.onload = () => {
+          if (request.status >= 200 && request.status < 300) {
+            resolve();
+            return;
+          }
+          let serverMessage: string;
+          try {
+            const parsed = JSON.parse(request.responseText) as { message?: string | string[] };
+            serverMessage = Array.isArray(parsed.message)
+              ? parsed.message.join(', ')
+              : (parsed.message ?? '');
+          } catch {
+            serverMessage = '';
+          }
+          reject(
+            new Error(serverMessage || t('UploadFailedStatus', { RequestStatus: request.status })),
+          );
+        };
+        request.open('POST', `${base}${url}`);
+        request.withCredentials = true;
+        request.send(formData);
+      }),
+    [t],
+  );
 
   const handleUploadImages = async (mode: 'replace' | 'append') => {
     if (imageFiles.length === 0) {
+      setImageError(t('SelectMoreImage'));
       toast.error(t('SelectMoreImage'), t('NoFilesSelected'));
       return;
     }
+    if (imageFiles.length > IMAGE_MAX_FILES) {
+      setImageError(t('TooManyImages', { Max: IMAGE_MAX_FILES }));
+      return;
+    }
+    const oversized = imageFiles.find((file) => file.size > IMAGE_MAX_BYTES);
+    if (oversized) {
+      setImageError(
+        t('FileTooLarge', { FileName: oversized.name, Max: formatBytes(IMAGE_MAX_BYTES) }),
+      );
+      return;
+    }
+
+    setImageError(null);
     setUploading(true);
     setProgress(0);
     try {
@@ -304,12 +399,11 @@ export default function ChapterContentManager() {
       await uploadWithXhr(url, formData);
       toast.success(mode === 'append' ? t('ImagesAppended') : t('ImageContentReplaced'));
       setImageFiles([]);
-      await loadContent();
+      await loadContent({ silent: true });
     } catch (error) {
-      toast.error(
-        getApiErrorMessage(error, t('VerifyFile')),
-        mode === 'append' ? t('AppendFailed') : t('UploadFailed'),
-      );
+      const message = getApiErrorMessage(error, t('VerifyFile'));
+      setImageError(message);
+      toast.error(message, mode === 'append' ? t('AppendFailed') : t('UploadFailed'));
     } finally {
       setUploading(false);
       setProgress(0);
@@ -318,9 +412,18 @@ export default function ChapterContentManager() {
 
   const handleUploadText = async () => {
     if (!textFile) {
+      setTextError(t('SelectTextFile'));
       toast.error(t('SelectTextFile'), t('NoFileSelected'));
       return;
     }
+    if (textFile.size > TEXT_MAX_BYTES) {
+      setTextError(
+        t('FileTooLarge', { FileName: textFile.name, Max: formatBytes(TEXT_MAX_BYTES) }),
+      );
+      return;
+    }
+
+    setTextError(null);
     setUploading(true);
     setProgress(0);
     try {
@@ -329,9 +432,42 @@ export default function ChapterContentManager() {
       await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/text`, formData);
       toast.success(t('TextContentUploaded'));
       setTextFile(null);
-      await loadContent();
+      await loadContent({ silent: true });
     } catch (error) {
-      toast.error(getApiErrorMessage(error, t('UnableUploadTextContent')), t('TextUploadFailed'));
+      const message = getApiErrorMessage(error, t('UnableUploadTextContent'));
+      setTextError(message);
+      toast.error(message, t('TextUploadFailed'));
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  const handleUploadPdf = async () => {
+    if (!pdfFile) {
+      setPdfError(t('SelectPdfFile'));
+      toast.error(t('SelectPdfFile'), t('NoFileSelected'));
+      return;
+    }
+    if (pdfFile.size > PDF_MAX_BYTES) {
+      setPdfError(t('FileTooLarge', { FileName: pdfFile.name, Max: formatBytes(PDF_MAX_BYTES) }));
+      return;
+    }
+
+    setPdfError(null);
+    setUploading(true);
+    setProgress(0);
+    try {
+      const formData = new FormData();
+      formData.append('file', pdfFile);
+      await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/pdf`, formData);
+      toast.success(t('PdfQueued'), t('PdfProcessingStarted'));
+      setPdfFile(null);
+      await loadContent({ silent: true });
+    } catch (error) {
+      const message = getApiErrorMessage(error, t('UnableUploadPdf'));
+      setPdfError(message);
+      toast.error(message, t('PdfUploadFailed'));
     } finally {
       setUploading(false);
       setProgress(0);
@@ -343,7 +479,7 @@ export default function ChapterContentManager() {
     try {
       await apiClient.delete(`/admin/books/${bookId}/chapters/${chapterIndex}/content`);
       toast.success(t('AllContentRemoved'));
-      await loadContent();
+      await loadContent({ silent: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('CouldNotDeleteContent')), t('DeleteFailed'));
     } finally {
@@ -356,7 +492,7 @@ export default function ChapterContentManager() {
     `${apiBase}/reader/page?token=${encodeURIComponent(adminPreviewToken ?? '')}&p=${pageNumber}`;
 
   const absolutePageNumber = (pageIndexInCurrentPage: number) =>
-    (imagePage - 1) * pageSize + pageIndexInCurrentPage + 1;
+    (imagePage - 1) * PAGE_SIZE + pageIndexInCurrentPage + 1;
 
   const selectedImagePageSet = useMemo(() => new Set(selectedImagePages), [selectedImagePages]);
 
@@ -369,7 +505,7 @@ export default function ChapterContentManager() {
   };
 
   const currentPagedPageNumbers = useMemo(
-    () => pagedImages.map((_, idx) => (imagePage - 1) * pageSize + idx + 1),
+    () => pagedImages.map((_, idx) => (imagePage - 1) * PAGE_SIZE + idx + 1),
     [pagedImages, imagePage],
   );
 
@@ -378,24 +514,22 @@ export default function ChapterContentManager() {
     [currentPagedPageNumbers, selectedImagePageSet],
   );
 
+  const allCurrentSelected =
+    currentPagedPageNumbers.length > 0 &&
+    selectedCountOnCurrentPage === currentPagedPageNumbers.length;
+
   const toggleSelectCurrentPage = () => {
-    const allSelected =
-      currentPagedPageNumbers.length > 0 &&
-      currentPagedPageNumbers.every((p) => selectedImagePageSet.has(p));
-    if (allSelected) {
+    if (allCurrentSelected) {
       setSelectedImagePages((prev) => prev.filter((p) => !currentPagedPageNumbers.includes(p)));
       return;
     }
     setSelectedImagePages((prev) =>
-      Array.from(new Set([...prev, ...currentPagedPageNumbers])).sort((a, b) => a - b),
+      [...new Set([...prev, ...currentPagedPageNumbers])].sort((a, b) => a - b),
     );
   };
 
   const handleDeleteSelectedImages = async () => {
-    if (selectedImagePages.length === 0) {
-      toast.error(t('NoImagesSelected'), t('NothingToDelete'));
-      return;
-    }
+    if (selectedImagePages.length === 0) return;
     setDeletingImages(true);
     try {
       await apiClient.delete(`/admin/books/${bookId}/chapters/${chapterIndex}/content/images`, {
@@ -404,7 +538,7 @@ export default function ChapterContentManager() {
       toast.success(t('NImageDeleted', { NImage: selectedImagePages.length }));
       setDeleteMode(false);
       setSelectedImagePages([]);
-      await loadContent();
+      await loadContent({ silent: true });
     } catch (error) {
       toast.error(getApiErrorMessage(error, t('CouldNotDeleteImages')), t('DeleteFailed'));
     } finally {
@@ -412,66 +546,62 @@ export default function ChapterContentManager() {
     }
   };
 
-  useEffect(() => {
-    if (imagePage > totalImagePages) setImagePage(totalImagePages);
-  }, [imagePage, totalImagePages]);
-
   const metadataRows = useMemo(() => {
-    if (!data) return [];
+    if (!chapter) return [];
     return [
       {
         icon: <BookOpen className="h-3.5 w-3.5" />,
         label: t('Chapter'),
-        value: `${data.chapter.index} — ${data.chapter.title}`,
+        value: `${chapter.index} — ${chapter.title}`,
       },
       {
         icon: <Layers className="h-3.5 w-3.5" />,
         label: t('ContentType'),
-        value: data.chapter.contentType ?? t('None'),
+        value: chapter.contentType ?? (isPdfProcessing ? t('Processing') : t('None')),
       },
       {
         icon: <Hash className="h-3.5 w-3.5" />,
         label: t('PageCount'),
-        value: String(data.chapter.pageCount ?? 0),
+        value: String(chapter.pageCount ?? 0),
       },
       {
         icon: <GitBranch className="h-3.5 w-3.5" />,
         label: t('ContentVersion'),
-        value: `v${data.chapter.contentVersion ?? 0}`,
+        value: `v${chapter.contentVersion ?? 0}`,
       },
       {
         icon: <FolderOpen className="h-3.5 w-3.5" />,
         label: t('StoragePrefix'),
-        value: data.chapter.contentPath ?? `b${bookId}/c${chapterIndex}`,
+        value: chapter.contentPath ?? `b${bookId}/c${chapterIndex}`,
         mono: true,
       },
       {
         icon: <FileStack className="h-3.5 w-3.5" />,
         label: t('Manifest'),
-        value: data.manifest ? (
-          <span className="flex items-center gap-1.5">
-            <Badge variant="outline" className="font-mono text-xs px-1.5 py-0 h-5">
+        value: data?.manifest ? (
+          <span className="flex flex-wrap items-center gap-1.5">
+            <Badge variant="outline" className="h-5 px-1.5 py-0 font-mono text-xs">
               v{data.manifest.version}
             </Badge>
-            <Badge className="text-xs px-1.5 py-0 h-5 bg-primary/15 text-primary border-primary/20">
+            <Badge className="h-5 border-primary/20 bg-primary/15 px-1.5 py-0 text-xs text-primary">
               {data.manifest.format}
             </Badge>
-            <span>{data.manifest.pageCount}p</span>
+            <span className="tabular-nums">{data.manifest.pageCount}p</span>
           </span>
         ) : (
-          <span className="text-muted-foreground text-xs">{t('NoManifest')}</span>
+          <span className="text-xs text-muted-foreground">{t('NoManifest')}</span>
         ),
       },
     ];
-  }, [data, bookId, chapterIndex, t]);
+  }, [chapter, data, bookId, chapterIndex, isPdfProcessing, t]);
 
   const isBusy = loading || uploading || deleting || deletingImages;
+  const imagesDisabledByPdf = isPdfProcessing;
 
-  // Guard: invalid params
   if (!canLoad) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-8">
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-8 max-w-sm text-center space-y-3">
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="max-w-sm space-y-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-8 text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-destructive" />
           <p className="font-semibold text-foreground">{t('InvalidRoute')}</p>
           <p className="text-sm text-muted-foreground">{t('PathInvalid')}</p>
@@ -480,35 +610,65 @@ export default function ChapterContentManager() {
     );
   }
 
-  if (loading) return <PageSkeleton />;
+  if (loading && !data) return <PageSkeleton />;
+
+  if (loadError && !data) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: EASE }}
+          className="max-w-sm space-y-4 rounded-2xl border border-border bg-card p-8 text-center"
+        >
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-destructive/10">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">{t('UnableFetchChapterContent')}</p>
+            <p className="text-sm wrap-break-word text-muted-foreground">{loadError}</p>
+          </div>
+          <Button className="w-full gap-2" onClick={() => void loadContent()}>
+            <RefreshCcw className="h-3.5 w-3.5" />
+            {g('Retry')}
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background pb-20 sm:pb-0">
-      <div className="relative max-w-6xl mx-auto px-6 py-10 space-y-8">
+    <div className="min-h-screen bg-background pb-16">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 sm:space-y-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
+        <motion.header
+          initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="flex flex-wrap items-start justify-between gap-4"
+          transition={{ duration: 0.4, ease: EASE }}
+          className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1 hover:text-blue-500">
+          <div className="min-w-0 space-y-1">
+            <Link
+              href={`/admin/books/${bookId}`}
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
+            >
               <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" />
-              <Link href={`/admin/books/${bookId}`}>{t('GoBack')}</Link>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+              {t('GoBack')}
+            </Link>
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
               {t('ChapterContentManager')}
             </h1>
-            <p className="text-sm text-muted-foreground">{t('ChapterContentManagerDescription')}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              {t('ChapterContentManagerDescription')}
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-border/60"
-              onClick={loadContent}
+              className="flex-1 gap-2 sm:flex-none"
+              onClick={() => void loadContent({ silent: true })}
               disabled={isBusy}
             >
               <RefreshCcw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
@@ -517,7 +677,12 @@ export default function ChapterContentManager() {
 
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="gap-2" disabled={isBusy}>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1 gap-2 sm:flex-none"
+                  disabled={isBusy || (!hasContent && !isPdfProcessing)}
+                >
                   {deleting ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
@@ -534,7 +699,7 @@ export default function ChapterContentManager() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>{g('Cancel')}</AlertDialogCancel>
+                  <AlertDialogCancel disabled={deleting}>{g('Cancel')}</AlertDialogCancel>
                   <AlertDialogAction variant="destructive" onClick={handleDeleteAll}>
                     {t('ConfirmDelete')}
                   </AlertDialogAction>
@@ -542,157 +707,280 @@ export default function ChapterContentManager() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        </motion.div>
+        </motion.header>
 
-        {/* Metadata grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {/* Background refresh error (data already on screen) */}
+        <AnimatePresence>
+          {loadError && data && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex items-center gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs text-destructive"
+              role="alert"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1 wrap-break-word">{loadError}</span>
+              <Button size="sm" variant="ghost" onClick={() => void loadContent({ silent: true })}>
+                {g('Retry')}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* PDF processing banner */}
+        <AnimatePresence>
+          {isPdfProcessing && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{t('PdfProcessingTitle')}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('PdfProcessingDescription', { Pages: chapter?.pdfPageCount ?? 0 })}
+                  </p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => void loadContent({ silent: true })}
+                disabled={isBusy}
+              >
+                <RefreshCcw className="h-3.5 w-3.5" />
+                {g('Refresh')}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Metadata */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
           {metadataRows.map((row, i) => (
-            <StatCard
+            <MetaCard
               key={row.label}
               icon={row.icon}
               label={row.label}
               value={row.value}
               mono={row.mono}
-              delay={i * 0.05}
+              delay={i * 0.04}
             />
           ))}
         </div>
 
         {/* Upload */}
         <Section title={t('UploadContent')} subtitle={t('UploadContentDescription')}>
-          {/* Tab switcher */}
-          <div className="flex items-center gap-1 rounded-lg bg-muted/60 border border-border p-1 w-fit mb-6">
+          <div className="mb-5 flex items-center gap-1 rounded-xl border border-border bg-muted/60 p-1 sm:w-fit">
             <TabBtn
               active={activeTab === 'images'}
               icon={<ImageIcon className="h-3.5 w-3.5" />}
               label={t('Images')}
               onClick={() => setActiveTab('images')}
+              disabled={uploading}
             />
             <TabBtn
               active={activeTab === 'text'}
               icon={<FileText className="h-3.5 w-3.5" />}
               label={t('Text')}
               onClick={() => setActiveTab('text')}
+              disabled={uploading}
+            />
+            <TabBtn
+              active={activeTab === 'pdf'}
+              icon={<FileType2 className="h-3.5 w-3.5" />}
+              label={t('Pdf')}
+              onClick={() => setActiveTab('pdf')}
+              disabled={uploading}
             />
           </div>
 
           <AnimatePresence mode="wait">
             {activeTab === 'images' && (
-              <motion.div
+              <UploadPanel
                 key="images"
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 6 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <p className="text-xs text-muted-foreground">{t('UploadImageFiles')}</p>
+                kind="image"
+                description={t('UploadImageFiles')}
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                maxFiles={IMAGE_MAX_FILES}
+                allowAddMore
+                files={imageFiles}
+                onFilesChange={setImageFiles}
+                uploading={uploading && activeTab === 'images'}
+                disabled={imagesDisabledByPdf}
+                progress={progress}
+                progressLabel={t('UploadingImages')}
+                error={imageError}
+                onErrorChange={setImageError}
+                blockedErrorText={t('OnlyImageAllowed')}
+                maxFilesErrorText={(max) => t('TooManyImages', { Max: max })}
+                helperText={t('ImageAllowed')}
+                notice={
+                  imagesDisabledByPdf ? (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {t('PdfProcessingBlocksUpload')}
+                    </p>
+                  ) : chapter?.contentType === 'text' ? (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {t('AppendDisabled')}
+                    </p>
+                  ) : null
+                }
+                actions={
+                  <>
+                    {chapter?.contentType === 'images' && (
+                      <Button
+                        size="sm"
+                        className="w-full gap-2 sm:w-auto"
+                        onClick={() => void handleUploadImages('append')}
+                        disabled={isBusy || imagesDisabledByPdf}
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        {t('AppendImages')}
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant={hasContent ? 'outline' : 'default'}
+                      className="w-full gap-2 sm:w-auto"
+                      onClick={() => void handleUploadImages('replace')}
+                      disabled={isBusy || imagesDisabledByPdf}
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : hasContent ? (
+                        <RefreshCcw className="h-3.5 w-3.5" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5" />
+                      )}
+                      {hasContent ? t('ReplaceAll') : t('AddImages')}
+                    </Button>
+                  </>
+                }
+              />
+            )}
 
-                <FileUploadPicker
-                  kind="image"
-                  files={imageFiles}
-                  onFilesChange={setImageFiles}
-                  accept="image/png,image/jpeg,image/webp"
-                  multiple
-                  disabled={uploading}
-                  allowAddMore
-                  blockedErrorText={t('OnlyImageAllowed')}
-                  helperText={t('ImageAllowed')}
-                />
-
-                {uploading && <UploadProgressBar value={progress} />}
-
-                <div className="flex flex-wrap gap-2">
+            {activeTab === 'text' && (
+              <UploadPanel
+                key="text"
+                kind="file"
+                description={t('UploadTextFile')}
+                accept=".md,.txt,text/plain,text/markdown"
+                maxFiles={1}
+                files={textFile ? [textFile] : []}
+                onFilesChange={(files) => setTextFile(files[0] ?? null)}
+                uploading={uploading && activeTab === 'text'}
+                disabled={imagesDisabledByPdf}
+                progress={progress}
+                progressLabel={t('UploadingText')}
+                error={textError}
+                onErrorChange={setTextError}
+                blockedErrorText={t('OnlyTextAllowed')}
+                maxFilesErrorText={() => t('OnlyOneFileAllowed')}
+                dropTitleIdle={t('DropTextFile')}
+                helperText={t('TextFormats')}
+                notice={
+                  imagesDisabledByPdf ? (
+                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {t('PdfProcessingBlocksUpload')}
+                    </p>
+                  ) : null
+                }
+                actions={
                   <Button
                     size="sm"
-                    className="gap-2"
-                    onClick={() => handleUploadImages('append')}
-                    disabled={
-                      isBusy || data?.chapter.contentType === 'text' || !data?.chapter.contentType
-                    }
+                    className="w-full gap-2 sm:w-auto"
+                    onClick={() => void handleUploadText()}
+                    disabled={isBusy || imagesDisabledByPdf}
                   >
                     {uploading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
                       <Upload className="h-3.5 w-3.5" />
                     )}
-                    {t('AppendImages')}
+                    {t('UploadText')}
                   </Button>
+                }
+              />
+            )}
+
+            {activeTab === 'pdf' && (
+              <UploadPanel
+                key="pdf"
+                kind="file"
+                description={t('UploadPdfDescription')}
+                accept="application/pdf,.pdf"
+                maxFiles={1}
+                files={pdfFile ? [pdfFile] : []}
+                onFilesChange={(files) => setPdfFile(files[0] ?? null)}
+                isAllowedFile={(file) =>
+                  file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+                }
+                uploading={uploading && activeTab === 'pdf'}
+                disabled={imagesDisabledByPdf}
+                progress={progress}
+                progressLabel={t('UploadingPdf')}
+                error={pdfError}
+                onErrorChange={setPdfError}
+                blockedErrorText={t('OnlyPdfAllowed')}
+                maxFilesErrorText={() => t('OnlyOneFileAllowed')}
+                dropTitleIdle={t('DropPdfFile')}
+                helperText={t('PdfLimits', { Max: formatBytes(PDF_MAX_BYTES) })}
+                notice={
+                  <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                    <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+                    {imagesDisabledByPdf ? t('PdfProcessingBlocksUpload') : t('PdfReplaceWarning')}
+                  </p>
+                }
+                actions={
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => handleUploadImages('replace')}
-                    disabled={isBusy}
+                    className="w-full gap-2 sm:w-auto"
+                    onClick={() => void handleUploadPdf()}
+                    disabled={isBusy || imagesDisabledByPdf}
                   >
                     {uploading ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <RefreshCcw className="h-3.5 w-3.5" />
+                      <Upload className="h-3.5 w-3.5" />
                     )}
-                    {t('ReplaceAll')}
+                    {t('UploadPdf')}
                   </Button>
-                </div>
-
-                {data?.chapter.contentType === 'text' && (
-                  <p className="flex items-center gap-1.5 text-xs text-amber-400">
-                    <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                    {t('AppendDisabled')}
-                  </p>
-                )}
-              </motion.div>
-            )}
-
-            {activeTab === 'text' && (
-              <motion.div
-                key="text"
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 6 }}
-                transition={{ duration: 0.2 }}
-                className="space-y-4"
-              >
-                <p className="text-xs text-muted-foreground">{t('UploadTextFile')}</p>
-
-                <FileUploadPicker
-                  kind="file"
-                  files={textFile ? [textFile] : []}
-                  onFilesChange={(arr) => setTextFile(arr[0] ?? null)}
-                  accept=".md,.txt,text/plain,text/markdown"
-                  multiple={false}
-                  maxFiles={1}
-                  disabled={uploading}
-                  blockedErrorText={t('OnlyTextAllowed')}
-                  dropTitleIdle={t('DropTextFile')}
-                  helperText={t('TextFormats')}
-                />
-
-                {uploading && <UploadProgressBar value={progress} />}
-
-                <Button size="sm" className="gap-2" onClick={handleUploadText} disabled={isBusy}>
-                  {uploading ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Upload className="h-3.5 w-3.5" />
-                  )}
-                  {t('UploadText')}
-                </Button>
-              </motion.div>
+                }
+              />
             )}
           </AnimatePresence>
         </Section>
 
-        {/* Current Content */}
+        {/* Current content */}
         <Section
           title={t('CurrentContent')}
           subtitle={
             data?.manifest
-              ? `${data.manifest.format} · ${data.manifest.pageCount} page${data.manifest.pageCount !== 1 ? 's' : ''}`
-              : t('NoContentUploaded')
+              ? `${data.manifest.format} · ${t('NPages', { NPages: data.manifest.pageCount })}`
+              : isPdfProcessing
+                ? t('PdfProcessingTitle')
+                : t('NoContentUploaded')
           }
           action={
             data?.manifest?.format === 'images' && imagePages.length > 0 ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {deleteMode ? (
                   <>
                     <span className="text-xs text-muted-foreground">
@@ -701,21 +989,18 @@ export default function ChapterContentManager() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="gap-1.5 h-7 px-2 text-xs"
+                      className="h-7 px-2 text-xs"
                       onClick={toggleSelectCurrentPage}
                       disabled={deletingImages}
                     >
-                      {selectedCountOnCurrentPage === currentPagedPageNumbers.length &&
-                      currentPagedPageNumbers.length > 0
-                        ? t('DeselectPage')
-                        : t('SelectPage')}
+                      {allCurrentSelected ? t('DeselectPage') : t('SelectPage')}
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
                           size="sm"
                           variant="destructive"
-                          className="gap-1.5 h-7 px-2.5 text-xs"
+                          className="h-7 gap-1.5 px-2.5 text-xs"
                           disabled={deletingImages || selectedImagePages.length === 0}
                         >
                           {deletingImages ? (
@@ -751,7 +1036,7 @@ export default function ChapterContentManager() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="gap-1.5 h-7 px-2 text-xs text-muted-foreground"
+                      className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
                       onClick={() => {
                         setDeleteMode(false);
                         setSelectedImagePages([]);
@@ -766,7 +1051,7 @@ export default function ChapterContentManager() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-1.5 h-7 px-2.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    className="h-7 gap-1.5 border-destructive/30 px-2.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                     onClick={() => {
                       setDeleteMode(true);
                       setSelectedImagePages([]);
@@ -781,31 +1066,39 @@ export default function ChapterContentManager() {
             ) : undefined
           }
         >
-          {!data?.manifest && (
+          {!data?.manifest && !isPdfProcessing && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-16 text-muted-foreground"
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-12 text-muted-foreground sm:py-16"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <AlertCircle className="h-5 w-5" />
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-muted">
+                <FileStack className="h-5 w-5" />
               </div>
               <p className="text-sm">{t('NoContentUploaded')}</p>
             </motion.div>
           )}
 
+          {!data?.manifest && isPdfProcessing && (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-3/4 rounded-xl" />
+              ))}
+            </div>
+          )}
+
           {data?.manifest?.format === 'text' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4 text-primary" />
                 <span>{t('TextChapterUploaded')}</span>
-                <Badge variant="outline" className="text-xs font-mono px-1.5 py-0 h-5">
+                <Badge variant="outline" className="h-5 px-1.5 py-0 font-mono text-xs">
                   {data.manifest.format}
                 </Badge>
               </div>
               {data.textPreviewHtml && (
                 <div
-                  className="rounded-xl border border-border bg-muted/30 px-6 py-5 text-sm leading-relaxed prose prose-invert max-w-none overflow-auto max-h-96"
+                  className="prose prose-sm dark:prose-invert max-h-96 max-w-none overflow-auto rounded-xl border border-border bg-muted/30 px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5"
                   dangerouslySetInnerHTML={{ __html: data.textPreviewHtml }}
                 />
               )}
@@ -814,10 +1107,9 @@ export default function ChapterContentManager() {
 
           {data?.manifest?.format === 'images' && (
             <div className="space-y-5">
-              {/* Image grid */}
               <div
                 ref={imagePaginationScrollRef}
-                className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6"
+                className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6"
               >
                 {pagedImages.map((page, idx) => {
                   const pageNumber = absolutePageNumber(idx);
@@ -827,29 +1119,29 @@ export default function ChapterContentManager() {
                     <motion.button
                       type="button"
                       key={page.key}
-                      initial={{ opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: idx * 0.015, duration: 0.22 }}
+                      transition={{ delay: Math.min(idx * 0.015, 0.3), duration: 0.22 }}
+                      whileTap={deleteMode ? { scale: 0.97 } : undefined}
                       onClick={() => {
                         if (!deleteMode) return;
                         toggleImageSelection(pageNumber);
                       }}
                       disabled={deletingImages}
+                      aria-pressed={deleteMode ? isSelected : undefined}
                       className={cn(
-                        'group relative text-left rounded-xl border overflow-hidden transition-all duration-150',
+                        'group relative overflow-hidden rounded-xl border text-start transition-all duration-150',
                         deleteMode ? 'cursor-pointer' : 'cursor-default',
                         isSelected
                           ? 'border-destructive ring-2 ring-destructive/40'
                           : 'border-border hover:border-primary/40',
                       )}
                     >
-                      {/* Thumbnail */}
-                      <div className="relative aspect-3/4 bg-muted/40 overflow-hidden">
+                      <div className="relative aspect-3/4 overflow-hidden bg-muted/40">
                         {adminPreviewToken ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={buildAdminPreviewImageUrl(pageNumber)}
-                            alt={`Page ${pageNumber}`}
+                            alt={t('PageNumber', { Page: pageNumber })}
                             loading="lazy"
                             crossOrigin="use-credentials"
                             className="h-full w-full object-cover"
@@ -860,33 +1152,29 @@ export default function ChapterContentManager() {
                           </div>
                         )}
 
-                        {/* Delete overlay */}
                         {deleteMode && (
-                          <div className="absolute inset-0 bg-black/20 pointer-events-none" />
-                        )}
-
-                        {/* Selection checkbox */}
-                        {deleteMode && (
-                          <div
-                            className={cn(
-                              'absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border transition-colors',
-                              isSelected
-                                ? 'bg-destructive border-destructive text-white'
-                                : 'bg-background/80 border-border',
-                            )}
-                          >
-                            {isSelected && <Check className="h-3 w-3" />}
-                          </div>
+                          <>
+                            <div className="pointer-events-none absolute inset-0 bg-foreground/20" />
+                            <div
+                              className={cn(
+                                'absolute top-1.5 flex h-5 w-5 items-center justify-center rounded-full border transition-colors ltr:right-1.5 rtl:left-1.5',
+                                isSelected
+                                  ? 'border-destructive bg-destructive text-destructive-foreground'
+                                  : 'border-border bg-background/80',
+                              )}
+                            >
+                              {isSelected && <Check className="h-3 w-3" />}
+                            </div>
+                          </>
                         )}
                       </div>
 
-                      {/* Page label */}
-                      <div className="px-2 py-1.5 flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground tabular-nums">
+                      <div className="flex items-center justify-between px-2 py-1.5">
+                        <span className="text-xs tabular-nums text-muted-foreground">
                           p.{pageNumber}
                         </span>
                         {page.w && page.h ? (
-                          <span className="text-[10px] text-muted-foreground/60 font-mono">
+                          <span className="hidden font-mono text-[10px] text-muted-foreground/60 sm:inline">
                             {page.w}×{page.h}
                           </span>
                         ) : null}
@@ -899,7 +1187,7 @@ export default function ChapterContentManager() {
               {totalImagePages > 1 && (
                 <AppPagination
                   currentPage={imagePage}
-                  pageSize={pageSize}
+                  pageSize={PAGE_SIZE}
                   totalItems={imagePages.length}
                   itemLabel={t('images')}
                   totalPages={totalImagePages}

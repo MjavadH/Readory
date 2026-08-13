@@ -866,7 +866,31 @@
     "NavigationAlwaysVisible": "Navigation always visible",
     "Reset": "Reset",
     "ContentProcessingTitle": "Content is being prepared",
-    "ContentProcessingDescription": "Content is being prepared, please check back soon"
+    "ContentProcessingDescription": "Content is being prepared, please check back soon",
+    "Pdf": "PDF",
+    "TooManyImages": "You can upload at most {Max} images at once.",
+    "AddImages": "Add images",
+    "UploadingImages": "Uploading images…",
+    "OnlyOneFileAllowed": "Only one file can be uploaded.",
+    "UploadingText": "Uploading text file…",
+    "UploadPdfDescription": "Upload a PDF and we convert every page into reader images automatically.",
+    "DropPdfFile": "Drop your PDF here",
+    "PdfLimits": "Single PDF — up to {Max} and 1000 pages.",
+    "OnlyPdfAllowed": "Only PDF files are allowed.",
+    "UploadPdf": "Upload PDF",
+    "UploadingPdf": "Uploading PDF…",
+    "PdfQueued": "PDF uploaded and queued for conversion.",
+    "PdfProcessingStarted": "Processing started",
+    "PdfUploadFailed": "PDF upload failed",
+    "UnableUploadPdf": "Unable to upload the PDF.",
+    "PdfReplaceWarning": "Uploading a PDF replaces all existing content of this chapter.",
+    "PdfProcessingTitle": "PDF is being converted",
+    "PdfProcessingDescription": "{Pages} pages are being rendered. This page refreshes automatically.",
+    "PdfProcessingBlocksUpload": "Uploads are disabled while the PDF is being processed.",
+    "NPages": "{NPages} pages",
+    "PageNumber": "Page {Page}",
+    "SelectPdfFile": "Select pdf file",
+    "FileTooLarge": "{FileName} is too large (max {Max})."
   },
   "Contributors": {
     "Title": "Contributors",
@@ -1319,6 +1343,7 @@
     "Total": "Total",
     "MorePages": "More pages",
     "Edit": "Edit",
-    "View": "View"
+    "View": "View",
+    "Retry": "Retry"
   }
 }
