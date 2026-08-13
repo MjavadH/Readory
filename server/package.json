@@ -52,6 +52,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pdf-lib": "^1.17.1",
+    "pdf-to-img": "^6.2.0",
     "pdf2pic": "^3.2.0",
     "pg": "^8.18.0",
     "reflect-metadata": "^0.2.2",

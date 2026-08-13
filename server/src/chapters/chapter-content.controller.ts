@@ -25,6 +25,7 @@ import {
   IMAGE_UPLOAD_MAX_FILE_BYTES,
   IMAGE_UPLOAD_MAX_FILES,
   TEXT_UPLOAD_MAX_FILE_BYTES,
+  PDF_UPLOAD_MAX_FILE_BYTES,
 } from './chapter-content.service';
 
 const IMAGE_UPLOAD_MULTER = {
@@ -40,6 +41,14 @@ const TEXT_UPLOAD_MULTER = {
   limits: {
     files: 1,
     fileSize: TEXT_UPLOAD_MAX_FILE_BYTES,
+  },
+};
+
+const PDF_UPLOAD_MULTER = {
+  storage: multer.memoryStorage(),
+  limits: {
+    files: 1,
+    fileSize: PDF_UPLOAD_MAX_FILE_BYTES,
   },
 };
 
@@ -83,6 +92,16 @@ export class ChapterContentController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.service.uploadText(bookId, index, file);
+  }
+
+  @Post('pdf')
+  @UseInterceptors(FileInterceptor('file', PDF_UPLOAD_MULTER))
+  uploadPdf(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('index', ParseIntPipe) index: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.uploadPdf(bookId, index, file);
   }
 
   @Delete()

@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReaderService } from '../reader/reader.service';
 import { StorageService } from '../storage/storage.service';
+import { randomUUID } from 'node:crypto';
 
 export const PDF_UPLOAD_MAX_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_PDF_PAGES = 1000;
@@ -22,11 +23,18 @@ const PDF_QUEUE_NAME = 'pdf';
 
 type BullQueue = {
   add: (name: string, data: PdfJobData, options?: any) => Promise<any>;
-  getJob: (jobId: string) => Promise<{ remove: () => Promise<void> } | null>;
+  getJob: (jobId: string) => Promise<{ remove: () => Promise<void> } | null | undefined>;
   close: () => Promise<void>;
 };
 type BullWorker = { close: () => Promise<void> };
-type PdfJobData = { chapterId: number; pdfKey: string; contentVersion: number; pageCount: number };
+type PdfJobData = {
+  bookId: number;
+  chapterId: number;
+  chapterIndex: number;
+  pdfKey: string;
+  contentPath: string;
+  pageCount: number;
+};
 type ImagePage = { key: string; w: number; h: number };
 
 @Injectable()
@@ -34,13 +42,20 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PdfProcessingService.name);
   private queue?: BullQueue;
   private worker?: BullWorker;
-  private cleanupTimer?: NodeJS.Timeout;
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: StorageService,
     private readonly readerService: ReaderService,
   ) {}
+
+  private chapterBasePrefix(bookId: number, chapterIndex: number): string {
+    return `b${bookId}/c${chapterIndex}`;
+  }
+
+  private chapterVersionPrefix(bookId: number, chapterIndex: number): string {
+    return `${this.chapterBasePrefix(bookId, chapterIndex)}/v${Date.now()}-${randomUUID()}`;
+  }
 
   async onModuleInit() {
     const bullmq = await import('bullmq');
@@ -49,82 +64,110 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       maxRetriesPerRequest: null,
     };
+    const configuredConcurrency = Number(process.env.PDF_PROCESSING_CONCURRENCY || 2);
+
+    const concurrency = Math.min(Math.max(configuredConcurrency, 1), 4);
     this.queue = new bullmq.Queue(PDF_QUEUE_NAME, { connection });
-    this.worker = new bullmq.Worker(
-      PDF_QUEUE_NAME,
-      (job: { data: PdfJobData }) => this.process(job.data),
-      {
-        connection,
-        concurrency: Number(process.env.PDF_PROCESSING_CONCURRENCY || 2),
-      },
-    );
-    this.cleanupTimer = setInterval(() => void this.cleanupOldContent(), 24 * 60 * 60 * 1000);
-    this.cleanupTimer.unref();
+    this.worker = new bullmq.Worker(PDF_QUEUE_NAME, (job) => this.process(job), {
+      connection,
+      concurrency: concurrency,
+    });
+    console.log('PDF worker initialized');
   }
 
   async onModuleDestroy() {
-    if (this.cleanupTimer) clearInterval(this.cleanupTimer);
     await Promise.all([this.worker?.close(), this.queue?.close()]);
   }
 
-  async uploadAndReplace(chapterId: number, fileBuffer: Buffer, originalName: string) {
-    if (!fileBuffer || !Buffer.isBuffer(fileBuffer))
+  async uploadAndReplace(bookId: number, chapterIndex: number, file: Express.Multer.File) {
+    if (!file?.buffer) {
       throw new BadRequestException('PDF file is required');
-    if (fileBuffer.length > PDF_UPLOAD_MAX_FILE_BYTES)
+    }
+
+    if (file.buffer.length > PDF_UPLOAD_MAX_FILE_BYTES) {
       throw new BadRequestException('PDF file too large');
+    }
 
-    const pageCount = await this.validatePdf(fileBuffer, originalName);
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId },
-      select: { id: true, pdfKey: true },
+    const pdfBuffer = file.buffer;
+
+    const pageCount = await this.validatePdf(pdfBuffer, file.originalname);
+
+    const chapter = await this.prisma.chapter.findFirst({
+      where: {
+        bookId,
+        index: chapterIndex,
+      },
+      select: {
+        id: true,
+        contentPath: true,
+        contentType: true,
+        pdfKey: true,
+      },
     });
-    if (!chapter) throw new NotFoundException('Chapter not found');
 
-    const pdfKey = `chapters/${chapterId}/source/${Date.now()}.pdf`;
+    if (!chapter) {
+      throw new NotFoundException('Chapter not found');
+    }
+
+    if (chapter.contentType === null && chapter.pdfKey !== null) {
+      throw new BadRequestException('A PDF is already being processed for this chapter');
+    }
+
+    const contentPath = this.chapterVersionPrefix(bookId, chapterIndex);
+
+    const pdfKey = `${contentPath}/source.pdf`;
+
     await this.storage.putObject({
       key: pdfKey,
-      body: fileBuffer,
+      body: pdfBuffer,
       contentType: 'application/pdf',
       cacheControl: 'private, no-store',
     });
 
-    const updated = await this.prisma.chapter.update({
-      where: { id: chapterId },
+    await this.prisma.chapter.update({
+      where: {
+        id: chapter.id,
+      },
       data: {
-        contentVersion: { increment: 1 },
         contentPath: null,
         contentType: null,
         pageCount: 0,
+        contentVersion: {
+          increment: 1,
+        },
         pdfKey,
         pdfPageCount: pageCount,
         pdfUploadedAt: new Date(),
       },
-      select: { contentVersion: true },
     });
 
-    if (chapter.pdfKey && chapter.pdfKey !== pdfKey) {
-      await this.storage
-        .deleteKeys([chapter.pdfKey])
-        .catch((e) =>
-          this.logger.warn(`Failed to cleanup replaced PDF ${chapter.pdfKey}: ${String(e)}`),
-        );
-    }
+    await this.enqueue({
+      bookId,
+      chapterId: chapter.id,
+      chapterIndex,
+      pdfKey,
+      contentPath,
+      pageCount,
+    });
 
-    await this.enqueue({ chapterId, pdfKey, contentVersion: updated.contentVersion, pageCount });
-    await this.readerService.clearChapterManifestCache(chapterId);
-    return { ok: true, chapterId, pageCount, contentVersion: updated.contentVersion };
+    return {
+      ok: true,
+      pageCount,
+    };
   }
 
   private async enqueue(data: PdfJobData) {
-    if (!this.queue) throw new Error('PDF queue is not initialized');
-    const jobId = `chapter-${data.chapterId}`;
-    const existing = await this.queue.getJob(jobId);
-    await existing?.remove().catch(() => undefined);
+    if (!this.queue) {
+      throw new Error('PDF queue is not initialized');
+    }
+
     await this.queue.add('convert', data, {
-      jobId,
+      jobId: `chapter-${data.chapterId}`,
       attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
-      removeOnComplete: true,
+      backoff: {
+        type: 'exponential',
+        delay: 5000,
+      },
     });
   }
 
@@ -142,104 +185,108 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
     return pageCount;
   }
 
-  private async process(job: PdfJobData) {
-    const tempDir = await mkdtemp(
-      join(tmpdir(), `readory-pdf-${job.chapterId}-${job.contentVersion}-`),
-    );
+  private async process(job: any) {
+    const data: PdfJobData = job.data;
+    this.logger.log(`PDF processing started: chapter=${data.chapterId}, key=${data.pdfKey}`);
+    const tempDir = await mkdtemp(join(tmpdir(), `readory-pdf-${data.chapterId}-`));
     const pdfPath = join(tempDir, 'source.pdf');
     try {
-      const pdf = await this.storage.getObjectBuffer(job.pdfKey);
+      const pdf = await this.storage.getObjectBuffer(data.pdfKey);
+      this.logger.log(`PDF downloaded: ${pdf.length} bytes`);
       const actualPageCount = await this.validatePdf(pdf);
-      if (actualPageCount !== job.pageCount) throw new Error('PDF page count changed');
+      if (actualPageCount !== data.pageCount) throw new Error('PDF page count changed');
       await writeFile(pdfPath, pdf);
-
-      const { fromPath } = await import('pdf2pic');
-      const converter = fromPath(pdfPath, {
-        density: 200,
-        width: 1400,
-        savePath: tempDir,
-        format: 'png',
+      const currentChapter = await this.prisma.chapter.findUnique({
+        where: {
+          id: data.chapterId,
+        },
+        select: {
+          pdfKey: true,
+        },
       });
-      const pages: ImagePage[] = [];
 
-      for (let pageNumber = 1; pageNumber <= actualPageCount; pageNumber += 1) {
-        // Rasterize one page at a time so large PDFs do not accumulate rendered pages in memory.
-        const result = await converter(pageNumber, { responseType: 'buffer' });
-        if (!result.buffer) throw new Error(`Failed to rasterize PDF page ${pageNumber}`);
-        const { data, info } = await sharp(result.buffer)
-          .webp({ quality: 85, effort: 4 })
-          .toBuffer({ resolveWithObject: true });
-        const key = `chapters/${job.chapterId}/v${job.contentVersion}/page-${pageNumber}.webp`;
-        await this.storage.putBuffer(key, data, 'image/webp');
-        pages.push({ key, w: info.width, h: info.height });
-      }
+      if (currentChapter?.pdfKey !== data.pdfKey) {
+        this.logger.warn(`Skipping outdated PDF job for chapter ${data.chapterId}`);
 
-      const chapter = await this.prisma.chapter.findUnique({
-        where: { id: job.chapterId },
-        select: { contentVersion: true },
-      });
-      if (!chapter || chapter.contentVersion !== job.contentVersion) {
-        await this.storage
-          .deletePrefix(`chapters/${job.chapterId}/v${job.contentVersion}`)
-          .catch(() => 0);
-        await this.storage.deleteKeys([job.pdfKey]).catch(() => 0);
-        await this.enqueueCurrentChapterJob(job.chapterId);
         return;
       }
 
-      const contentPath = `chapters/${job.chapterId}/v${job.contentVersion}`;
+      this.logger.log(`Starting rasterization: pages=${actualPageCount}`);
+
+      const { pdf: renderPdfToImages } = await import('pdf-to-img');
+      const document = await renderPdfToImages(pdfPath, { scale: 2 });
+
+      const pages: ImagePage[] = [];
+      let pageNumber = 1;
+
+      for await (const pageBuffer of document) {
+        this.logger.log(`Rendering page ${pageNumber}/${actualPageCount}`);
+
+        const { data: webpBuffer, info } = await sharp(pageBuffer)
+          .resize({ width: 1400, withoutEnlargement: true })
+          .webp({
+            quality: 85,
+            effort: 4,
+          })
+          .toBuffer({
+            resolveWithObject: true,
+          });
+
+        const key = `${data.contentPath}/pages/page-${pageNumber}.webp`;
+
+        await this.storage.putBuffer(key, webpBuffer, 'image/webp');
+
+        await job.updateProgress({
+          current: pageNumber,
+          total: actualPageCount,
+        });
+
+        pages.push({
+          key,
+          w: info.width,
+          h: info.height,
+        });
+
+        pageNumber += 1;
+      }
+
       await this.storage.putJson(
-        `${contentPath}/manifest.json`,
+        `${data.contentPath}/manifest.json`,
         this.readerService.buildManifest('images', pages),
       );
-      await this.prisma.chapter.updateMany({
-        where: { id: job.chapterId, contentVersion: job.contentVersion },
+
+      await this.prisma.chapter.update({
+        where: {
+          id: data.chapterId,
+        },
         data: {
           contentType: ChapterContentType.images,
-          contentPath,
+          contentPath: data.contentPath,
           pageCount: pages.length,
           pdfKey: null,
         },
       });
-      await this.storage.deleteKeys([job.pdfKey]);
-      await this.readerService.clearChapterManifestCache(job.chapterId);
+      await this.storage.deleteKeys([data.pdfKey]);
+      await this.readerService.clearChapterManifestCache(data.chapterId);
+    } catch (error) {
+      this.logger.error(
+        `PDF processing failed for chapter=${data.chapterId}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      await this.prisma.chapter.update({
+        where: {
+          id: data.chapterId,
+        },
+        data: {
+          pdfKey: null,
+          contentType: null,
+        },
+      });
+      throw error;
     } finally {
       await rm(tempDir, { recursive: true, force: true }).catch((e) =>
         this.logger.warn(`Failed to clean temp PDF directory: ${String(e)}`),
       );
     }
-  }
-
-  private async enqueueCurrentChapterJob(chapterId: number) {
-    const chapter = await this.prisma.chapter.findUnique({
-      where: { id: chapterId },
-      select: { pdfKey: true, pdfPageCount: true, contentVersion: true, contentType: true },
-    });
-    if (!chapter?.pdfKey || !chapter.pdfPageCount || chapter.contentType !== null) return;
-    await this.enqueue({
-      chapterId,
-      pdfKey: chapter.pdfKey,
-      contentVersion: chapter.contentVersion,
-      pageCount: chapter.pdfPageCount,
-    });
-  }
-
-  async cleanupOldContent() {
-    const chapters = await this.prisma.chapter.findMany({
-      select: { id: true, contentVersion: true },
-    });
-    await Promise.all(
-      chapters.map(async (chapter) => {
-        for (let version = 0; version < chapter.contentVersion; version += 1) {
-          await this.storage
-            .deletePrefix(`chapters/${chapter.id}/v${version}`)
-            .catch((e) =>
-              this.logger.warn(
-                `Failed to cleanup chapter ${chapter.id} version ${version}: ${String(e)}`,
-              ),
-            );
-        }
-      }),
-    );
   }
 }

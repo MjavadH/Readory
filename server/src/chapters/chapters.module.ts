@@ -12,7 +12,6 @@ import { ReaderModule } from '../reader/reader.module';
 import { RecommendationService } from '../books/recommendation/recommendation.service';
 import { OutboxModule } from '../outbox/outbox.module';
 import { PdfProcessingService } from './pdf-processing.service';
-import { PdfAdminController } from './pdf-admin.controller';
 
 @Module({
   imports: [
@@ -25,6 +24,6 @@ import { PdfAdminController } from './pdf-admin.controller';
     ReaderModule,
   ],
   providers: [ChaptersService, ChapterContentService, PdfProcessingService, RecommendationService],
-  controllers: [ChaptersController, ChapterContentController, PdfAdminController],
+  controllers: [ChaptersController, ChapterContentController],
 })
 export class ChaptersModule {}

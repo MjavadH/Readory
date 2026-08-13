@@ -7,10 +7,12 @@ import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReaderService } from '../reader/reader.service';
 import { StorageService } from '../storage/storage.service';
+import { PdfProcessingService } from './pdf-processing.service';
 
 export const IMAGE_UPLOAD_MAX_FILES = 120;
 export const IMAGE_UPLOAD_MAX_FILE_BYTES = 12 * 1024 * 1024;
 export const TEXT_UPLOAD_MAX_FILE_BYTES = 2 * 1024 * 1024;
+export const PDF_UPLOAD_MAX_FILE_BYTES = 100 * 1024 * 1024;
 
 const MAX_CHAPTER_PAGES = 300;
 const MAX_IMAGE_DIM = 9000;
@@ -28,6 +30,7 @@ export class ChapterContentService {
     private readonly storage: StorageService,
     private readonly readerService: ReaderService,
     private readonly cacheManager: CacheManager,
+    private readonly pdfProcessingService: PdfProcessingService,
   ) {}
   private readonly logger = new Logger(ChapterContentService.name);
 
@@ -98,6 +101,8 @@ export class ChapterContentService {
       contentPath?: string | null;
       contentType?: ChapterContentType | null;
       pageCount: number;
+      pdfKey?: string | null;
+      pdfPageCount?: number | null;
     },
   ) {
     await this.prisma.$transaction([
@@ -108,6 +113,8 @@ export class ChapterContentService {
           contentType: data.contentType ?? null,
           pageCount: data.pageCount,
           contentVersion: { increment: 1 },
+          pdfKey: data.pdfKey,
+          pdfPageCount: data.pdfPageCount,
         },
       }),
       this.prisma.book.update({
@@ -322,6 +329,14 @@ export class ChapterContentService {
     return { ok: true };
   }
 
+  async uploadPdf(bookId: number, index: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('PDF file is required');
+    }
+
+    return this.pdfProcessingService.uploadAndReplace(bookId, index, file);
+  }
+
   async deleteContent(bookId: number, index: number) {
     const chapter = await this.getChapter(bookId, index);
     const basePrefix = this.chapterBasePrefix(bookId, index);
@@ -332,6 +347,8 @@ export class ChapterContentService {
       contentPath: null,
       contentType: null,
       pageCount: 0,
+      pdfKey: null,
+      pdfPageCount: null,
     });
 
     return { deleted: true };
