@@ -12,6 +12,7 @@ import { ReaderModule } from '../reader/reader.module';
 import { RecommendationService } from '../books/recommendation/recommendation.service';
 import { OutboxModule } from '../outbox/outbox.module';
 import { PdfProcessingService } from './pdf-processing.service';
+import { TextProcessingService } from './text-processing.service';
 
 @Module({
   imports: [
@@ -23,7 +24,13 @@ import { PdfProcessingService } from './pdf-processing.service';
     CacheModule,
     ReaderModule,
   ],
-  providers: [ChaptersService, ChapterContentService, PdfProcessingService, RecommendationService],
+  providers: [
+    ChaptersService,
+    ChapterContentService,
+    PdfProcessingService,
+    TextProcessingService,
+    RecommendationService,
+  ],
   controllers: [ChaptersController, ChapterContentController],
 })
 export class ChaptersModule {}

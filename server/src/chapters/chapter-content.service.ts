@@ -8,6 +8,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ReaderService } from '../reader/reader.service';
 import { StorageService } from '../storage/storage.service';
 import { PdfProcessingService } from './pdf-processing.service';
+import { TextProcessingService } from './text-processing.service';
 
 export const IMAGE_UPLOAD_MAX_FILES = 120;
 export const IMAGE_UPLOAD_MAX_FILE_BYTES = 12 * 1024 * 1024;
@@ -31,6 +32,7 @@ export class ChapterContentService {
     private readonly readerService: ReaderService,
     private readonly cacheManager: CacheManager,
     private readonly pdfProcessingService: PdfProcessingService,
+    private readonly textProcessingService: TextProcessingService,
   ) {}
   private readonly logger = new Logger(ChapterContentService.name);
 
@@ -270,63 +272,8 @@ export class ChapterContentService {
     };
   }
 
-  private toSafeHtml(raw: string): string {
-    const escaped = raw
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-
-    return escaped
-      .replace(/^###\s+(.+)$/gm, '<h3>$1</h3>')
-      .replace(/^##\s+(.+)$/gm, '<h2>$1</h2>')
-      .replace(/^#\s+(.+)$/gm, '<h1>$1</h1>')
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n\n+/g, '</p><p>')
-      .replace(/\n/g, '<br/>');
-  }
-
   async uploadText(bookId: number, index: number, file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('Text file is required');
-    if (!file.buffer || !Buffer.isBuffer(file.buffer)) {
-      throw new BadRequestException('Invalid text upload buffer');
-    }
-    if ((file.size ?? file.buffer.length) > TEXT_UPLOAD_MAX_FILE_BYTES) {
-      throw new BadRequestException('Text file too large');
-    }
-
-    const ext = file.originalname.toLowerCase();
-    if (!ext.endsWith('.md') && !ext.endsWith('.txt')) {
-      throw new BadRequestException('Only .md and .txt supported in MVP');
-    }
-
-    const chapter = await this.getChapter(bookId, index);
-    const oldPrefix = chapter.contentPath;
-    const prefix = this.chapterVersionPrefix(bookId, index);
-
-    const html = `<article><p>${this.toSafeHtml(file.buffer.toString('utf8'))}</p></article>`;
-    const key = `${prefix}/text/content.html`;
-
-    await this.storage.putBuffer(key, Buffer.from(html, 'utf8'), 'text/html; charset=utf-8');
-
-    const manifest = this.readerService.buildManifest('text', [{ key }]);
-    await this.storage.putJson(`${prefix}/manifest.json`, manifest);
-
-    await this.updateChapterAfterContentChange(bookId, chapter.id, {
-      contentPath: prefix,
-      contentType: ChapterContentType.text,
-      pageCount: 1,
-    });
-
-    if (oldPrefix && oldPrefix !== prefix) {
-      await this.storage.deletePrefix(oldPrefix).catch((e) => {
-        this.logger.warn(`Failed to cleanup old prefix ${oldPrefix}: ${String(e)}`);
-        return 0;
-      });
-    }
-
-    return { ok: true };
+    return this.textProcessingService.uploadAndQueue(bookId, index, file);
   }
 
   async uploadPdf(bookId: number, index: number, file: Express.Multer.File) {

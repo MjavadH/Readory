@@ -76,8 +76,12 @@ export class ReaderController {
 
   @Get('text')
   @Header('Cache-Control', 'private, no-store, max-age=0')
-  async text(@Query('token') token: string, @Req() req: Request) {
-    const html = await this.readerService.getText(token, req);
+  async text(
+    @Query('token') token: string,
+    @Query('p', ParseIntPipe) p: number,
+    @Req() req: Request,
+  ) {
+    const html = await this.readerService.getText(token, p, req);
     return { html };
   }
 
