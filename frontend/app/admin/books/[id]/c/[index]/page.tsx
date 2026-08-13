@@ -709,7 +709,7 @@ export default function ChapterContentManager() {
           </div>
         </motion.header>
 
-        {/* Background refresh error (data already on screen) */}
+        {/* Background refresh error */}
         <AnimatePresence>
           {loadError && data && (
             <motion.div
@@ -1139,6 +1139,7 @@ export default function ChapterContentManager() {
                     >
                       <div className="relative aspect-3/4 overflow-hidden bg-muted/40">
                         {adminPreviewToken ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img
                             src={buildAdminPreviewImageUrl(pageNumber)}
                             alt={t('PageNumber', { Page: pageNumber })}
