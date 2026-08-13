@@ -1,0 +1,4 @@
+ALTER TABLE "Chapter"
+ADD COLUMN "pdfKey" TEXT,
+ADD COLUMN "pdfPageCount" INTEGER,
+ADD COLUMN "pdfUploadedAt" TIMESTAMP(3);

@@ -76,7 +76,7 @@ type BookDetailsResponse = {
   type: PurchaseDialogBook['type'];
 };
 
-type ReaderErrorVariant = 'auth' | 'locked' | 'notfound' | 'error';
+type ReaderErrorVariant = 'auth' | 'locked' | 'notfound' | 'processing' | 'error';
 
 export default function ChapterPage() {
   const t = useTranslations('Books');
@@ -101,6 +101,7 @@ export default function ChapterPage() {
   const [book, setBook] = useState<PurchaseDialogBook | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -371,6 +372,7 @@ export default function ChapterPage() {
       setLoading(true);
       setError(null);
       setErrorStatus(null);
+      setErrorCode(null);
       resetChapterRenderState();
 
       try {
@@ -433,6 +435,7 @@ export default function ChapterPage() {
       } catch (e) {
         if (!cancelled) {
           setErrorStatus(e instanceof ApiError ? e.status : 0);
+          setErrorCode(e instanceof ApiError ? (e.data?.code ?? null) : null);
           setError(getApiErrorMessage(e, 'Unable to open chapter'));
         }
       } finally {
@@ -729,6 +732,7 @@ export default function ChapterPage() {
   }
 
   if (error) {
+    const isProcessing = errorStatus === 503 && errorCode === 'PROCESSING';
     const variant: ReaderErrorVariant =
       errorStatus === 401
         ? 'auth'
@@ -736,7 +740,9 @@ export default function ChapterPage() {
           ? 'locked'
           : errorStatus === 404
             ? 'notfound'
-            : 'error';
+            : isProcessing
+              ? 'processing'
+              : 'error';
 
     const lockedChapter = readerCtx?.chapters.find((c) => c.index === chapterIndex);
     const lockedPrice = lockedChapter?.price ?? null;
@@ -803,6 +809,12 @@ export default function ChapterPage() {
         title: t('BookNotFound'),
         description: error || t('BookNotFoundDescription'),
       },
+      processing: {
+        icon: Loader2,
+        iconWrap: 'bg-blue-600 dark:bg-blue-500',
+        title: t('ContentProcessingTitle'),
+        description: t('ContentProcessingDescription'),
+      },
       error: {
         icon: AlertCircle,
         iconWrap: 'bg-destructive',
@@ -823,7 +835,10 @@ export default function ChapterPage() {
                 <div
                   className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white shadow-lg ${view.iconWrap}`}
                 >
-                  <Icon className="h-7 w-7" aria-hidden="true" />
+                  <Icon
+                    className={`h-7 w-7 ${variant === 'processing' ? 'animate-spin' : ''}`}
+                    aria-hidden="true"
+                  />
                 </div>
                 <h1 className="mt-5 text-balance text-xl font-bold leading-tight text-foreground sm:text-2xl">
                   {view.title}

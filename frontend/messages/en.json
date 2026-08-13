@@ -864,7 +864,9 @@
     "More": "More",
     "CustomizeToolbar": "Customize toolbar",
     "NavigationAlwaysVisible": "Navigation always visible",
-    "Reset": "Reset"
+    "Reset": "Reset",
+    "ContentProcessingTitle": "Content is being prepared",
+    "ContentProcessingDescription": "Content is being prepared, please check back soon"
   },
   "Contributors": {
     "Title": "Contributors",
@@ -1214,7 +1216,6 @@
       "backToWallet": "Back to wallet",
       "backHome": "Go to home"
     },
-
     "errors": {
       "amountRequired": "Please enter an amount.",
       "amountInvalid": "Enter a valid amount.",

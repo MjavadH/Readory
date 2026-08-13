@@ -185,6 +185,9 @@ model Chapter {
   contentType     ChapterContentType?
   pageCount       Int                 @default(0)
   contentVersion  Int                 @default(0)
+  pdfKey          String?
+  pdfPageCount    Int?
+  pdfUploadedAt   DateTime?
   publishStatus   PublicationStatus   @default(DRAFT)
   accessRecords   AccessRecord[]
   book            Book                @relation(fields: [bookId], references: [id])
