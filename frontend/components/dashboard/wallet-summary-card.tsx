@@ -53,7 +53,6 @@ export function WalletSummaryCard({
           className,
         )}
       >
-        {/* Logical inset so the watermark flips correctly in RTL */}
         <div aria-hidden className="pointer-events-none absolute top-0 inset-e-0 p-8 opacity-5">
           <Wallet className="h-32 w-32 transition-transform duration-700 group-hover:scale-110" />
         </div>

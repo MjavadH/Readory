@@ -66,7 +66,7 @@ export function WalletCard({
           className,
         )}
       >
-        {/* Ambient light — logical inset keeps it correct in RTL */}
+        {/* Ambient light */}
         <motion.span
           aria-hidden
           initial={{ opacity: 0.5, scale: 0.9 }}

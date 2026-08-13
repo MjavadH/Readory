@@ -54,11 +54,15 @@ export function AddFundsPanel({ open, onOpenChange, currency, onSuccess }: AddFu
 
   useEffect(() => {
     if (!open) {
-      setRawAmount('');
-      setTouched(false);
-      setServerError(null);
-      setSubmitting(false);
-      setProviderId(providers[0]?.id ?? '');
+      const timer = setTimeout(() => {
+        setRawAmount('');
+        setTouched(false);
+        setServerError(null);
+        setSubmitting(false);
+        setProviderId(providers[0]?.id ?? '');
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, [open, providers]);
 

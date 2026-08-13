@@ -60,7 +60,19 @@ export default function PaymentResultPage() {
   }, [t, token]);
 
   useEffect(() => {
-    void load();
+    let isMounted = true;
+
+    const init = async () => {
+      if (isMounted) {
+        await load();
+      }
+    };
+
+    void init();
+
+    return () => {
+      isMounted = false;
+    };
   }, [load]);
 
   const copyRef = async () => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { GoogleLogin } from '@react-oauth/google';
-import { useRef } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
@@ -20,7 +20,8 @@ function GoogleSignInButtonInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const nonce = useRef(createGoogleNonce()).current;
+
+  const [nonce] = useState(() => createGoogleNonce());
 
   return (
     <div className="flex justify-center">

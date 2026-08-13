@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
@@ -52,7 +52,7 @@ function GoogleOneTapInner({ clientId }: { clientId: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const nonce = useRef(createGoogleNonce()).current;
+  const [nonce] = useState(() => createGoogleNonce());
   const initializedRef = useRef(false);
 
   const refreshSamePage = useCallback(() => {

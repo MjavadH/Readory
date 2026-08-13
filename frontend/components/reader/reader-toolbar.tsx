@@ -67,7 +67,7 @@ type PanelKey = 'brightness' | 'jump' | 'more' | 'settings' | null;
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 340 };
 
-/* ---------------- toolbar customization prefs (localStorage) ---------------- */
+/* toolbar customization prefs */
 
 type ToolbarPrefs = {
   brightness: boolean;
@@ -111,8 +111,12 @@ function useToolbarPrefs() {
 
   // Read after mount so SSR markup and first client render match.
   useEffect(() => {
-    setPrefs(readStoredPrefs());
-    setHydrated(true);
+    const timer = setTimeout(() => {
+      setPrefs(readStoredPrefs());
+      setHydrated(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -956,9 +960,13 @@ function Popover({
   const [shift, setShift] = useState(0);
 
   useEffect(() => {
-    if (open) onOpened?.();
-    if (!open) setShift(0);
-  }, [open]);
+    if (open) {
+      onOpened?.();
+    } else {
+      const timer = setTimeout(() => setShift(0), 0);
+      return () => clearTimeout(timer);
+    }
+  }, [open, onOpened]);
 
   /* Keep the panel inside the viewport */
   useIsomorphicLayoutEffect(() => {
