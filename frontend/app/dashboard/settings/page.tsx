@@ -24,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers/auth-provider';
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import { Switch } from '@/components/ui/switch';
+import ConnectedDevices from '@/components/dashboard/ConnectedDevices';
 
 type ProfileVisibilitySettings = {
   showMemberSince: boolean;
@@ -455,6 +456,8 @@ export default function SettingsPage() {
               </button>
             </div>
           </motion.section>
+
+          <ConnectedDevices />
 
           {/* Password Form */}
           <motion.section

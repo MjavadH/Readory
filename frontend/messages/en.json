@@ -524,6 +524,26 @@
       "showFavorites": "Show favorite books",
       "showRecentRatings": "Show recent ratings",
       "showRecentlyReading": "Show recently reading"
+    },
+    "Devices": {
+      "Title": "Connected Devices",
+      "Subtitle": "Devices currently signed in to your account",
+      "Refresh": "Refresh device list",
+      "CurrentDevice": "This device",
+      "UnknownBrowser": "Unknown browser",
+      "UnknownOs": "Unknown system",
+      "IpAddress": "IP address",
+      "LastActive": "Last active",
+      "SignedInAt": "Signed in",
+      "Revoke": "Remove",
+      "SignOut": "Sign out",
+      "RevokeAll": "Remove all other devices",
+      "RevokeAllHint": "{count} other devices are signed in to your account.",
+      "RevokedOne": "Device removed successfully.",
+      "RevokedAll": "All other devices were removed.",
+      "RevokeFailed": "Could not remove the device. Please try again.",
+      "LoadFailed": "Failed to load your connected devices.",
+      "Empty": "No active devices found."
     }
   },
   "HomePage": {
