@@ -72,7 +72,7 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
       connection,
       concurrency: concurrency,
     });
-    console.log('PDF worker initialized');
+    this.logger.log('PDF worker initialized');
   }
 
   async onModuleDestroy() {

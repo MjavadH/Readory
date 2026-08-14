@@ -170,7 +170,7 @@ export function NotificationBell() {
   const refresh = useCallback(async () => {
     try {
       const [list, unread] = await Promise.all([
-        apiClient.get<{ items: NotificationItem[] }>('/notifications', { query: { limit: 10 } }),
+        apiClient.get<{ items: NotificationItem[] }>('/notifications', { query: { limit: 5 } }),
         apiClient.get<{ unreadCount: number }>('/notifications/unread-count'),
       ]);
       setItems(list.items);
