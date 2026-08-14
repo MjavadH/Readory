@@ -1,12 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { CacheManager } from '../cache/cache.manager';
 import { MailService } from '../mail/mail.service';
 import { createHash, randomBytes } from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { GoogleAvatarService } from './google-avatar.service';
+import { SessionService } from './sessions/session.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 
 type UserWithRoleAndWallet = {
   id: number;
@@ -25,10 +28,11 @@ export class AuthService {
 
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService,
     private cacheManager: CacheManager,
     private mailService: MailService,
     private googleAvatarService: GoogleAvatarService,
+    private sessionService: SessionService,
+    private prisma: PrismaService,
   ) {}
 
   private toSafeProfile(user: UserWithRoleAndWallet) {
@@ -78,9 +82,9 @@ export class AuthService {
     return user;
   }
 
-  async verifyEmail(email: string, otp: string) {
+  async verifyEmail(email: string, otp: string, req: Request, res: Response) {
     const createdUser = await this.usersService.verifyAndCreateUser(email, otp);
-    return this.login(createdUser);
+    return this.login(createdUser, req, res);
   }
 
   async getProfile(userId: number) {
@@ -101,7 +105,7 @@ export class AuthService {
     return this.usersService.registerTemporaryUser(email, username, hash);
   }
 
-  async login(user: { id: number }) {
+  async login(user: { id: number }, req: Request, res: Response) {
     const fullUser = await this.usersService.findById(user.id);
     if (!fullUser) {
       throw new Error('User not found');
@@ -112,14 +116,8 @@ export class AuthService {
 
     this.usersService.updateLastLogin(fullUser.id).catch(() => {});
 
-    const payload = {
-      sub: fullUser.id,
-      email: fullUser.email,
-      username: fullUser.username,
-      roleName: fullUser.role?.name,
-    };
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      access_token: await this.sessionService.createLoginSession(fullUser, req, res),
       user: this.toSafeProfile(fullUser),
     };
   }
@@ -152,11 +150,11 @@ export class AuthService {
     }
   }
 
-  async googleLogin(credential: string, nonce: string) {
+  async googleLogin(credential: string, nonce: string, req: Request, res: Response) {
     const payload = await this.verifyGoogleCredential(credential, nonce);
     const existingGoogleUser = await this.usersService.findByGoogleSubject(payload.sub);
     if (existingGoogleUser) {
-      const session = await this.login(existingGoogleUser);
+      const session = await this.login(existingGoogleUser, req, res);
       return { ...session, created: false };
     }
 
@@ -178,15 +176,21 @@ export class AuthService {
     if (result.emailExists) {
       return { requiresLink: true, email: result.user.email };
     }
-    const session = await this.login(result.user);
+    const session = await this.login(result.user, req, res);
     return { ...session, created: result.created };
   }
 
-  async linkGoogle(credential: string, nonce: string, password: string) {
+  async linkGoogle(
+    credential: string,
+    nonce: string,
+    password: string,
+    req: Request,
+    res: Response,
+  ) {
     const payload = await this.verifyGoogleCredential(credential, nonce);
     const existingGoogleUser = await this.usersService.findByGoogleSubject(payload.sub);
     if (existingGoogleUser) {
-      return { ...(await this.login(existingGoogleUser)), linked: false };
+      return { ...(await this.login(existingGoogleUser, req, res)), linked: false };
     }
     const user = await this.usersService.findByEmail(payload.email!);
     if (!user) {
@@ -199,7 +203,7 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Incorrect password.');
     const avatarBuffer = await this.googleAvatarService.fetchAvatar(payload.picture);
     const linked = await this.usersService.linkGoogleSubject(user.id, payload.sub, avatarBuffer);
-    return { ...(await this.login(linked)), linked: true };
+    return { ...(await this.login(linked, req, res)), linked: true };
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -231,6 +235,48 @@ export class AuthService {
     const userId = parseInt(userIdStr, 10);
     const hash = await argon2.hash(newPassword);
 
-    await this.usersService.updatePassword(userId, hash);
+    const revokedSessionIds = await this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        await tx.user.update({ where: { id: userId }, data: { passwordHash: hash } });
+        const sessions = await (tx as any).userSession.findMany({
+          where: { userId },
+          select: { id: true },
+        });
+        await (tx as any).userSession.deleteMany({ where: { userId } });
+        return (sessions as Array<{ id: string }>).map((session) => session.id);
+      },
+    );
+
+    await this.sessionService.invalidateSessionCache(revokedSessionIds);
+    await this.cacheManager.del(`session:user:${userId}`);
+  }
+
+  async rotateRefreshToken(refreshToken: string | undefined, req: Request, res: Response) {
+    return this.sessionService.rotateRefreshToken(refreshToken, req, res);
+  }
+
+  async dashboardPasswordChange(
+    userId: number,
+    currentSessionId: string | undefined,
+    newPassword: string,
+  ) {
+    await this.sessionService.assertTrustedSession(currentSessionId);
+    const passwordHash = await argon2.hash(newPassword);
+    const revokedSessionIds = await this.prisma.$transaction(
+      async (tx: Prisma.TransactionClient) => {
+        await tx.user.update({ where: { id: userId }, data: { passwordHash } });
+        const sessions = await (tx as any).userSession.findMany({
+          where: { userId, id: { not: currentSessionId } },
+          select: { id: true },
+        });
+        await (tx as any).userSession.deleteMany({
+          where: { userId, id: { not: currentSessionId } },
+        });
+        return (sessions as Array<{ id: string }>).map((session) => session.id);
+      },
+    );
+
+    await this.sessionService.invalidateSessionCache(revokedSessionIds);
+    await this.cacheManager.del(`session:user:${userId}`);
   }
 }

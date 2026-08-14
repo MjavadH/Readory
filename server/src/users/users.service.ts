@@ -384,6 +384,18 @@ export class UsersService {
       data: { isBanned },
     });
 
+    if (isBanned) {
+      const sessions = await (this.prisma as any).userSession.findMany({
+        where: { userId },
+        select: { id: true },
+      });
+      await (this.prisma as any).userSession.deleteMany({ where: { userId } });
+      await Promise.all(
+        (sessions as Array<{ id: string }>).map((session) =>
+          this.cacheManager.del(this.cacheManager.buildKey('auth:session', session.id)),
+        ),
+      );
+    }
     await this.cacheManager.del(`session:user:${userId}`);
 
     return updated;
