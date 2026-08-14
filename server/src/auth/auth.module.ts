@@ -13,6 +13,7 @@ import { AuthSecurityService } from './security/auth-security.service';
 import { GoogleOriginGuard } from './google-origin.guard';
 import { GoogleAvatarService } from './google-avatar.service';
 import { MailModule } from '../mail/mail.module';
+import { SessionService } from './sessions/session.service';
 
 @Module({
   imports: [
@@ -46,8 +47,9 @@ import { MailModule } from '../mail/mail.module';
     GoogleOriginGuard,
     LocalStrategy,
     JwtStrategy,
+    SessionService,
   ],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, SessionService],
 })
 export class AuthModule {}

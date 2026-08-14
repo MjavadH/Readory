@@ -32,6 +32,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { AvatarService } from './avatar.service';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('users')
 export class UsersController {
@@ -41,10 +42,24 @@ export class UsersController {
     private readonly configService: ConfigService,
     private readonly avatarService: AvatarService,
     private readonly rateLimitService: RateLimitService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private getSuperAdminId(): number {
     return Number(this.configService.get<number>('SUPER_ADMIN_ID')) || 1;
+  }
+
+  private async assertTrustedSession(sessionId?: string) {
+    if (!sessionId) throw new ForbiddenException('Trusted device required.');
+    const session = await (this.prisma as any).userSession.findUnique({
+      where: { id: sessionId },
+      select: { createdAt: true },
+    });
+    if (!session || Date.now() - session.createdAt.getTime() < 48 * 60 * 60 * 1000) {
+      throw new ForbiddenException(
+        'This security action is unavailable on new devices for 48 hours.',
+      );
+    }
   }
 
   private checkHierarchy(targetUserId: number, requesterId: number) {
@@ -181,7 +196,16 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(@Request() req: any, @Body() dto: UpdateUserDto) {
-    return this.usersService.updateUser(req.user.userId, dto);
+    if (dto.username !== undefined || dto.newPassword !== undefined) {
+      await this.assertTrustedSession(req.user.sessionId);
+    }
+    const result = await this.usersService.updateUser(req.user.userId, dto);
+    if (dto.newPassword !== undefined) {
+      await (this.prisma as any).userSession.deleteMany({
+        where: { userId: req.user.userId, id: { not: req.user.sessionId } },
+      });
+    }
+    return result;
   }
 
   @Patch(':id/role')

@@ -3,14 +3,12 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
-import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
-    private prisma: PrismaService,
     private readonly cacheManager: CacheManager,
   ) {
     super({
@@ -26,39 +24,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     const userId = payload.sub;
-    const cacheKey = `session:user:${userId}`;
-    const cachedUser = await this.cacheManager.getString(cacheKey);
-    if (cachedUser) {
-      const user = JSON.parse(cachedUser);
-      if (user.isBanned) throw new UnauthorizedException('Account suspended.');
-      return user;
+    const sessionId = payload.sid;
+    if (!sessionId) throw new UnauthorizedException('Session is required');
+
+    const sessionKey = this.cacheManager.buildKey('auth:session', sessionId);
+    const cachedSession = await this.cacheManager.getString(sessionKey);
+    if (!cachedSession) throw new UnauthorizedException('Session expired');
+
+    const session = JSON.parse(cachedSession);
+    if (session.userId !== userId) throw new UnauthorizedException('Invalid session');
+    if (session.isBanned) throw new UnauthorizedException('Account suspended.');
+    if (new Date(session.expiresAt).getTime() <= Date.now()) {
+      await this.cacheManager.del(sessionKey);
+      throw new UnauthorizedException('Session expired');
     }
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { role: true },
-    });
-
-    if (!user) throw new UnauthorizedException('User not found');
-    if (user.isBanned) throw new UnauthorizedException('Account suspended.');
-
-    const sessionUser: {
-      userId: number;
-      username: string;
-      roleName?: 'ADMIN';
-      permissions?: string[];
-    } = {
-      userId: user.id,
-      username: user.username,
+    return {
+      userId: session.userId,
+      username: session.username,
+      sessionId,
+      roleName: session.roleName === 'ADMIN' ? 'ADMIN' : undefined,
+      permissions: session.roleName === 'ADMIN' ? session.permissions || [] : undefined,
     };
-
-    if (user.role?.name === 'ADMIN') {
-      sessionUser.roleName = 'ADMIN';
-      sessionUser.permissions = user.permissions || [];
-    }
-
-    await this.cacheManager.setString(cacheKey, JSON.stringify(sessionUser), 1800);
-
-    return sessionUser;
   }
 }

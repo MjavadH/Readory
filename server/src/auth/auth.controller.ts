@@ -1,4 +1,14 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Res } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Request,
+  Get,
+  Res,
+  Delete,
+  Param,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -10,15 +20,18 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthSecurityService } from './security/auth-security.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { LinkGoogleDto } from './dto/link-google.dto';
 import { GoogleOriginGuard } from './google-origin.guard';
+import { SessionService } from './sessions/session.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private authSecurityService: AuthSecurityService,
+    private sessionService: SessionService,
   ) {}
 
   // User registration
@@ -37,7 +50,12 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authSecurityService.assertVerificationAllowed(body.email, req);
-    const { access_token, user } = await this.authService.verifyEmail(body.email, body.otp);
+    const { access_token, user } = await this.authService.verifyEmail(
+      body.email,
+      body.otp,
+      req,
+      response,
+    );
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -60,7 +78,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body() _loginDto: LoginDto,
   ) {
-    const { access_token, user } = await this.authService.login(req.user);
+    const { access_token, user } = await this.authService.login(req.user, req, response);
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -77,8 +95,12 @@ export class AuthController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UseGuards(GoogleOriginGuard)
   @Post('google')
-  async googleLogin(@Body() dto: GoogleLoginDto, @Res({ passthrough: true }) response: Response) {
-    const result = await this.authService.googleLogin(dto.credential, dto.nonce);
+  async googleLogin(
+    @Body() dto: GoogleLoginDto,
+    @Request() req: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const result = await this.authService.googleLogin(dto.credential, dto.nonce, req, response);
     if ('requiresLink' in result) return result;
     const { access_token, user, created } = result;
     response.cookie('access_token', access_token, {
@@ -99,11 +121,17 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(GoogleOriginGuard)
   @Post('google/link')
-  async linkGoogle(@Body() dto: LinkGoogleDto, @Res({ passthrough: true }) response: Response) {
+  async linkGoogle(
+    @Body() dto: LinkGoogleDto,
+    @Request() req: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const { access_token, user, linked } = await this.authService.linkGoogle(
       dto.credential,
       dto.nonce,
       dto.password,
+      req,
+      response,
     );
     response.cookie('access_token', access_token, {
       httpOnly: true,
@@ -120,15 +148,77 @@ export class AuthController {
     };
   }
 
+  @Post('refresh')
+  async refresh(@Request() req: any, @Res({ passthrough: true }) response: Response) {
+    const { accessToken, accessTokenMaxAgeMs } = await this.authService.rotateRefreshToken(
+      req.cookies?.refresh_token,
+      req,
+      response,
+    );
+    response.cookie('access_token', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: accessTokenMaxAgeMs,
+      path: '/',
+    });
+    return { message: 'Token refreshed' };
+  }
+
   @Post('logout')
-  async logout(@Res({ passthrough: true }) response: Response) {
+  async logout(@Request() req: any, @Res({ passthrough: true }) response: Response) {
+    if (req.user?.sessionId) {
+      await this.sessionService.revokeSession(
+        req.user.userId,
+        req.user.sessionId,
+        req.user.sessionId,
+      );
+    }
     response.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
     });
+    response.clearCookie('refresh_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
     return { message: 'Logged out' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('sessions')
+  async listSessions(@Request() req: any) {
+    return this.sessionService.listSessions(req.user.userId, req.user.sessionId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions/others')
+  async revokeOtherSessions(@Request() req: any) {
+    await this.sessionService.revokeOtherSessions(req.user.userId, req.user.sessionId);
+    return { success: true };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('sessions/:id')
+  async revokeSession(@Param('id') id: string, @Request() req: any) {
+    await this.sessionService.revokeSession(req.user.userId, id, req.user.sessionId);
+    return { success: true };
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  async changePassword(@Body() dto: ChangePasswordDto, @Request() req: any) {
+    await this.authService.dashboardPasswordChange(
+      req.user.userId,
+      req.user.sessionId,
+      dto.newPassword,
+    );
+    return { message: 'Password has been successfully updated.' };
   }
 
   @UseGuards(JwtAuthGuard)
