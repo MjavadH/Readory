@@ -20,7 +20,6 @@ import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthSecurityService } from './security/auth-security.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ChangePasswordDto } from './dto/change-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { LinkGoogleDto } from './dto/link-google.dto';
 import { GoogleOriginGuard } from './google-origin.guard';
@@ -50,7 +49,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authSecurityService.assertVerificationAllowed(body.email, req);
-    const { access_token, user } = await this.authService.verifyEmail(
+    const { access_token, access_token_max_age, user } = await this.authService.verifyEmail(
       body.email,
       body.otp,
       req,
@@ -60,7 +59,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: access_token_max_age,
     });
 
     return {
@@ -78,12 +77,16 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body() _loginDto: LoginDto,
   ) {
-    const { access_token, user } = await this.authService.login(req.user, req, response);
+    const { access_token, access_token_max_age, user } = await this.authService.login(
+      req.user,
+      req,
+      response,
+    );
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: access_token_max_age,
     });
 
     return {
@@ -102,12 +105,12 @@ export class AuthController {
   ) {
     const result = await this.authService.googleLogin(dto.credential, dto.nonce, req, response);
     if ('requiresLink' in result) return result;
-    const { access_token, user, created } = result;
+    const { access_token, access_token_max_age, user, created } = result;
     response.cookie('access_token', access_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: access_token_max_age,
       path: '/',
     });
 
@@ -126,7 +129,7 @@ export class AuthController {
     @Request() req: any,
     @Res({ passthrough: true }) response: Response,
   ) {
-    const { access_token, user, linked } = await this.authService.linkGoogle(
+    const { access_token, access_token_max_age, user, linked } = await this.authService.linkGoogle(
       dto.credential,
       dto.nonce,
       dto.password,
@@ -137,7 +140,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: access_token_max_age,
       path: '/',
     });
 
@@ -165,6 +168,7 @@ export class AuthController {
     return { message: 'Token refreshed' };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(@Request() req: any, @Res({ passthrough: true }) response: Response) {
     if (req.user?.sessionId) {
@@ -207,18 +211,6 @@ export class AuthController {
   async revokeSession(@Param('id') id: string, @Request() req: any) {
     await this.sessionService.revokeSession(req.user.userId, id, req.user.sessionId);
     return { success: true };
-  }
-
-  @Throttle({ default: { limit: 3, ttl: 3600000 } })
-  @UseGuards(JwtAuthGuard)
-  @Post('change-password')
-  async changePassword(@Body() dto: ChangePasswordDto, @Request() req: any) {
-    await this.authService.dashboardPasswordChange(
-      req.user.userId,
-      req.user.sessionId,
-      dto.newPassword,
-    );
-    return { message: 'Password has been successfully updated.' };
   }
 
   @UseGuards(JwtAuthGuard)

@@ -27,6 +27,20 @@ export class UsersService {
     private readonly avatarService: AvatarService,
   ) {}
 
+  private async revokeAllUserSessions(userId: number) {
+    const sessions = await this.prisma.userSession.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+    await this.prisma.userSession.deleteMany({ where: { userId } });
+    await Promise.all(
+      (sessions as Array<{ id: string }>).map((session) =>
+        this.cacheManager.del(this.cacheManager.buildKey('auth:session', session.id)),
+      ),
+    );
+    await this.cacheManager.del(`session:user:${userId}`);
+  }
+
   private normalizeEmail(email: string) {
     return email.trim().toLowerCase();
   }
@@ -108,7 +122,7 @@ export class UsersService {
     }
     if (roleName) {
       where.role = {
-        name: roleName as any,
+        name: roleName as RoleName,
       };
     }
 
@@ -385,16 +399,7 @@ export class UsersService {
     });
 
     if (isBanned) {
-      const sessions = await (this.prisma as any).userSession.findMany({
-        where: { userId },
-        select: { id: true },
-      });
-      await (this.prisma as any).userSession.deleteMany({ where: { userId } });
-      await Promise.all(
-        (sessions as Array<{ id: string }>).map((session) =>
-          this.cacheManager.del(this.cacheManager.buildKey('auth:session', session.id)),
-        ),
-      );
+      await this.revokeAllUserSessions(userId);
     }
     await this.cacheManager.del(`session:user:${userId}`);
 
@@ -410,23 +415,13 @@ export class UsersService {
       data: { roleId: role.id },
     });
 
-    await this.cacheManager.del(`session:user:${userId}`);
+    await this.revokeAllUserSessions(userId);
 
     return updated;
   }
 
-  async updatePassword(userId: number, passwordHash: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { passwordHash },
-    });
-
-    // Invalidate active sessions to enforce re-login
-    await this.cacheManager.del(`session:user:${userId}`);
-  }
-
   async updatePermissions(userId: number, permissions: string[]) {
-    await this.cacheManager.del(`session:user:${userId}`);
+    await this.revokeAllUserSessions(userId);
 
     return this.prisma.user.update({
       where: { id: userId },
@@ -510,11 +505,12 @@ export class UsersService {
       },
     });
 
-    // clear jwt-session cache so new username/permissions are reflected
-    await Promise.all([
-      this.cacheManager.del(`session:user:${userId}`),
-      this.cacheManager.bumpVersion(`public_profile:version:${userId}`),
-    ]);
+    if (dto.username != null || dto.newPassword != null) {
+      await this.revokeAllUserSessions(userId);
+    } else {
+      await this.cacheManager.del(`session:user:${userId}`);
+    }
+    await this.cacheManager.bumpVersion(`public_profile:version:${userId}`);
 
     return { success: true, user: { ...updated, avatarUrl: this.getAvatarUrl(updated.avatarKey) } };
   }

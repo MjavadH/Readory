@@ -21,6 +21,7 @@ import {
   FeaturedCollectionsSection,
   FeaturedCollectionsSkeleton,
 } from '@/components/Home/featured-collections-section';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 interface Chapter {
   id: number;
@@ -50,23 +51,39 @@ interface PersonalizedContent {
 }
 
 const fetcher = (url: string) => apiClient.get<HomeContent>(url);
-const PersonalizedFetcher = (url: string) => apiClient.get<PersonalizedContent>(url);
+const PersonalizedFetcher = (url: string) =>
+  apiClient.get<PersonalizedContent>(url, { authRequired: true });
 const collectionsFetcher = (url: string) =>
   apiClient.get<{ items: CollectionSummary[]; nextCursor?: string; hasMore?: boolean }>(url);
 
 export default function Home() {
+  const { status } = useCurrentUser();
+
   const { data: homeData, isLoading: homeLoading } = useSWR<HomeContent>(
     `${process.env.NEXT_PUBLIC_API_BASE}/public/content`,
     fetcher,
   );
+
   const { data: personalizedData } = useSWR<PersonalizedContent>(
-    `${process.env.NEXT_PUBLIC_API_BASE}/public/personalized`,
+    status === 'authenticated' || status === 'loading'
+      ? `${process.env.NEXT_PUBLIC_API_BASE}/public/personalized`
+      : null,
     PersonalizedFetcher,
+    {
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        if (error?.status === 401) return;
+
+        if (retryCount >= 3) return;
+        setTimeout(() => revalidate({ retryCount }), 5000);
+      },
+    },
   );
+
   const { data: collectionsData, isLoading: collectionsLoading } = useSWR(
     `${process.env.NEXT_PUBLIC_API_BASE}/collections?limit=12`,
     collectionsFetcher,
   );
+
   const featuredCollections = (collectionsData?.items ?? [])
     .filter((collection) => collection.featured)
     .slice(0, 4);

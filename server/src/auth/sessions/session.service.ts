@@ -11,6 +11,7 @@ import { Request, Response } from 'express';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CacheManager } from '../../cache/cache.manager';
 import { MailService } from '../../mail/mail.service';
+import { Prisma } from '@prisma/client';
 
 type SessionRecord = { id: string };
 
@@ -139,25 +140,66 @@ export class SessionService implements OnModuleInit {
   async createLoginSession(user: SessionUser, req: Request, res: Response) {
     const roleName = user.role?.name;
     const { accessSeconds, refreshSeconds, maxDevices } = this.lifetimes(roleName);
-    const deviceId = req.cookies?.[this.deviceCookie] || randomUUID();
+    const cookieDeviceId = req.cookies?.[this.deviceCookie];
+    const deviceId = cookieDeviceId || randomUUID();
     const refreshToken = randomBytes(64).toString('base64url');
     const refreshTokenHash = this.sha256(refreshToken);
     const expiresAt = new Date(Date.now() + refreshSeconds * 1000);
     const meta = this.requestMeta(req);
 
-    const existing = await (this.prisma as any).userSession.findUnique({ where: { deviceId } });
-    const session = await (this.prisma as any).userSession.upsert({
-      where: { deviceId },
-      update: { userId: user.id, refreshTokenHash, expiresAt, lastActiveAt: new Date(), ...meta },
-      create: { userId: user.id, deviceId, refreshTokenHash, expiresAt, ...meta },
-    });
+    let session;
+    let isNewDevice = false;
+
+    if (cookieDeviceId) {
+      try {
+        session = await this.prisma.userSession.update({
+          where: { deviceId },
+          data: { userId: user.id, refreshTokenHash, expiresAt, lastActiveAt: new Date(), ...meta },
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+          isNewDevice = true;
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      isNewDevice = true;
+    }
+
+    if (isNewDevice) {
+      try {
+        session = await this.prisma.userSession.create({
+          data: { userId: user.id, deviceId, refreshTokenHash, expiresAt, ...meta },
+        });
+
+        this.mailService
+          .sendNewDeviceLoginEmail(user.email, user.username, meta)
+          .catch(() => undefined);
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          session = await this.prisma.userSession.update({
+            where: { deviceId },
+            data: {
+              userId: user.id,
+              refreshTokenHash,
+              expiresAt,
+              lastActiveAt: new Date(),
+              ...meta,
+            },
+          });
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!session) {
+      throw new Error('Failed to create user session');
+    }
 
     await this.cacheSession(session, user);
     await this.enforceDeviceLimit(user.id, maxDevices, session.id);
-    if (!existing)
-      this.mailService
-        .sendNewDeviceLoginEmail(user.email, user.username, meta)
-        .catch(() => undefined);
 
     res.cookie(this.deviceCookie, deviceId, this.cookieOptions(365 * 24 * 60 * 60 * 1000));
     res.cookie(this.refreshCookie, refreshToken, this.cookieOptions(refreshSeconds * 1000));
@@ -171,27 +213,73 @@ export class SessionService implements OnModuleInit {
   async rotateRefreshToken(refreshToken: string | undefined, req: Request, res: Response) {
     if (!refreshToken) throw new UnauthorizedException('Refresh token is required.');
     const tokenHash = this.sha256(refreshToken);
-    const session = await (this.prisma as any).userSession.findUnique({
+
+    const session = await this.prisma.userSession.findUnique({
       where: { refreshTokenHash: tokenHash },
       include: { user: { include: { role: true } } },
     });
-    if (!session || session.expiresAt <= new Date() || session.user.isBanned) {
-      const stale = await (this.prisma as any).userSession.findFirst({
-        where: { deviceId: req.cookies?.[this.deviceCookie] },
-      });
-      if (stale) await this.revokeAllSessions(stale.userId);
+
+    if (!session) {
       throw new UnauthorizedException('Invalid refresh token.');
     }
-    const accessToken = await this.createLoginSession(session.user, req, res);
+
+    if (session.expiresAt <= new Date() || session.user.isBanned) {
+      await this.revokeAllSessions(session.userId);
+      throw new UnauthorizedException('Session expired or account suspended.');
+    }
+
+    const roleName = session.user.role?.name;
+    const { accessSeconds, refreshSeconds } = this.lifetimes(roleName);
+    const newRefreshToken = randomBytes(64).toString('base64url');
+    const newRefreshTokenHash = this.sha256(newRefreshToken);
+    const expiresAt = new Date(Date.now() + refreshSeconds * 1000);
+    const meta = this.requestMeta(req);
+
+    const { count } = await this.prisma.userSession.updateMany({
+      where: { id: session.id, refreshTokenHash: tokenHash },
+      data: { refreshTokenHash: newRefreshTokenHash, expiresAt, lastActiveAt: new Date(), ...meta },
+    });
+
+    if (count === 0) {
+      throw new UnauthorizedException('Token already rotated or session invalid.');
+    }
+
+    const updatedSession = {
+      ...session,
+      refreshTokenHash: newRefreshTokenHash,
+      expiresAt,
+      lastActiveAt: new Date(),
+      ...meta,
+    };
+    await this.cacheSession(updatedSession, session.user);
+
+    res.cookie(
+      this.deviceCookie,
+      updatedSession.deviceId,
+      this.cookieOptions(365 * 24 * 60 * 60 * 1000),
+    );
+    res.cookie(this.refreshCookie, newRefreshToken, this.cookieOptions(refreshSeconds * 1000));
+
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: session.userId,
+        sid: session.id,
+        email: session.user.email,
+        username: session.user.username,
+        roleName,
+      },
+      { expiresIn: accessSeconds },
+    );
+
     return {
       accessToken,
-      accessTokenMaxAgeMs: this.getAccessTokenMaxAgeMs(session.user.role?.name),
+      accessTokenMaxAgeMs: this.getAccessTokenMaxAgeMs(roleName),
     };
   }
 
   async assertTrustedSession(sessionId?: string) {
     if (!sessionId) throw new ForbiddenException('Trusted device required.');
-    const session = await (this.prisma as any).userSession.findUnique({
+    const session = await this.prisma.userSession.findUnique({
       where: { id: sessionId },
       select: { createdAt: true },
     });
@@ -203,7 +291,7 @@ export class SessionService implements OnModuleInit {
   }
 
   async listSessions(userId: number, currentSessionId?: string) {
-    const sessions = await (this.prisma as any).userSession.findMany({
+    const sessions = await this.prisma.userSession.findMany({
       where: { userId, expiresAt: { gt: new Date() } },
       orderBy: { lastActiveAt: 'desc' },
     });
@@ -220,34 +308,34 @@ export class SessionService implements OnModuleInit {
 
   async revokeSession(userId: number, sessionId: string, currentSessionId?: string) {
     if (sessionId !== currentSessionId) await this.assertTrustedSession(currentSessionId);
-    await (this.prisma as any).userSession.deleteMany({ where: { id: sessionId, userId } });
+    await this.prisma.userSession.deleteMany({ where: { id: sessionId, userId } });
     await this.invalidateSessionCache([sessionId]);
   }
 
   async revokeOtherSessions(userId: number, currentSessionId?: string) {
     await this.assertTrustedSession(currentSessionId);
-    const sessions = await (this.prisma as any).userSession.findMany({
+    const sessions = await this.prisma.userSession.findMany({
       where: { userId, id: { not: currentSessionId } },
       select: { id: true },
     });
-    await (this.prisma as any).userSession.deleteMany({
+    await this.prisma.userSession.deleteMany({
       where: { userId, id: { not: currentSessionId } },
     });
     await this.invalidateSessionCache((sessions as SessionRecord[]).map((session) => session.id));
   }
 
   async revokeAllSessions(userId: number) {
-    const sessions = await (this.prisma as any).userSession.findMany({
+    const sessions = await this.prisma.userSession.findMany({
       where: { userId },
       select: { id: true },
     });
-    await (this.prisma as any).userSession.deleteMany({ where: { userId } });
+    await this.prisma.userSession.deleteMany({ where: { userId } });
     await this.invalidateSessionCache((sessions as SessionRecord[]).map((session) => session.id));
     await this.cacheManager.del(`session:user:${userId}`);
   }
 
   private async enforceDeviceLimit(userId: number, maxDevices: number, keepSessionId: string) {
-    const sessions = await (this.prisma as any).userSession.findMany({
+    const sessions = await this.prisma.userSession.findMany({
       where: { userId },
       orderBy: { lastActiveAt: 'asc' },
       select: { id: true },
@@ -259,7 +347,7 @@ export class SessionService implements OnModuleInit {
       .slice(0, overflow)
       .map((s) => s.id);
     if (evictIds.length) {
-      await (this.prisma as any).userSession.deleteMany({ where: { id: { in: evictIds } } });
+      await this.prisma.userSession.deleteMany({ where: { id: { in: evictIds } } });
       await this.invalidateSessionCache(evictIds);
     }
   }
@@ -273,17 +361,33 @@ export class SessionService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async collectExpiredSessions() {
-    const sixMonthsAgo = new Date(Date.now() - 183 * 24 * 60 * 60 * 1000);
-    const expiredSessions = await (this.prisma as any).userSession.findMany({
-      where: { OR: [{ expiresAt: { lt: new Date() } }, { lastActiveAt: { lt: sixMonthsAgo } }] },
-      select: { id: true },
-    });
-    if (!expiredSessions.length) return;
-    await (this.prisma as any).userSession.deleteMany({
-      where: { id: { in: (expiredSessions as SessionRecord[]).map((session) => session.id) } },
-    });
-    await this.invalidateSessionCache(
-      (expiredSessions as SessionRecord[]).map((session) => session.id),
+    const inactivityTimeoutSeconds = Number(
+      process.env.SESSION_INACTIVITY_TIMEOUT_SECONDS || 15552000,
     );
+
+    const inactivityCutoff = new Date(Date.now() - inactivityTimeoutSeconds * 1000);
+
+    const batchSize = 1000;
+
+    const hasMore = true;
+    while (hasMore) {
+      const expiredSessions = await this.prisma.userSession.findMany({
+        where: {
+          OR: [{ expiresAt: { lt: new Date() } }, { lastActiveAt: { lt: inactivityCutoff } }],
+        },
+        select: { id: true },
+        take: batchSize,
+      });
+
+      if (!expiredSessions.length) break;
+
+      const evictIds = (expiredSessions as SessionRecord[]).map((session) => session.id);
+
+      await this.prisma.userSession.deleteMany({
+        where: { id: { in: evictIds } },
+      });
+
+      await this.invalidateSessionCache(evictIds);
+    }
   }
 }

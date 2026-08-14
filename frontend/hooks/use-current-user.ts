@@ -39,7 +39,7 @@ const fetchProfile = (force = false): Promise<CurrentUser | null> => {
   if (hasFetched && !force) return Promise.resolve(state.user);
 
   inflight = apiClient
-    .get<CurrentUser>('/auth/profile')
+    .get<CurrentUser>('/auth/profile', { authRequired: true })
     .then((user) => {
       hasFetched = true;
       const normalizedUser = user
@@ -82,6 +82,17 @@ export function useCurrentUser() {
 
   React.useEffect(() => {
     void fetchProfile();
+
+    const handleSessionExpired = () => {
+      hasFetched = true;
+      emit({ user: null, status: 'unauthenticated' });
+    };
+
+    window.addEventListener('auth-session-expired', handleSessionExpired);
+
+    return () => {
+      window.removeEventListener('auth-session-expired', handleSessionExpired);
+    };
   }, []);
 
   const refresh = React.useCallback(() => fetchProfile(true), []);

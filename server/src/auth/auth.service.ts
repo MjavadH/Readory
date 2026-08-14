@@ -118,6 +118,7 @@ export class AuthService {
 
     return {
       access_token: await this.sessionService.createLoginSession(fullUser, req, res),
+      access_token_max_age: this.sessionService.getAccessTokenMaxAgeMs(fullUser.role?.name),
       user: this.toSafeProfile(fullUser),
     };
   }
@@ -238,11 +239,11 @@ export class AuthService {
     const revokedSessionIds = await this.prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         await tx.user.update({ where: { id: userId }, data: { passwordHash: hash } });
-        const sessions = await (tx as any).userSession.findMany({
+        const sessions = await tx.userSession.findMany({
           where: { userId },
           select: { id: true },
         });
-        await (tx as any).userSession.deleteMany({ where: { userId } });
+        await tx.userSession.deleteMany({ where: { userId } });
         return (sessions as Array<{ id: string }>).map((session) => session.id);
       },
     );
@@ -253,30 +254,5 @@ export class AuthService {
 
   async rotateRefreshToken(refreshToken: string | undefined, req: Request, res: Response) {
     return this.sessionService.rotateRefreshToken(refreshToken, req, res);
-  }
-
-  async dashboardPasswordChange(
-    userId: number,
-    currentSessionId: string | undefined,
-    newPassword: string,
-  ) {
-    await this.sessionService.assertTrustedSession(currentSessionId);
-    const passwordHash = await argon2.hash(newPassword);
-    const revokedSessionIds = await this.prisma.$transaction(
-      async (tx: Prisma.TransactionClient) => {
-        await tx.user.update({ where: { id: userId }, data: { passwordHash } });
-        const sessions = await (tx as any).userSession.findMany({
-          where: { userId, id: { not: currentSessionId } },
-          select: { id: true },
-        });
-        await (tx as any).userSession.deleteMany({
-          where: { userId, id: { not: currentSessionId } },
-        });
-        return (sessions as Array<{ id: string }>).map((session) => session.id);
-      },
-    );
-
-    await this.sessionService.invalidateSessionCache(revokedSessionIds);
-    await this.cacheManager.del(`session:user:${userId}`);
   }
 }

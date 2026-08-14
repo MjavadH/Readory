@@ -51,7 +51,7 @@ export class UsersController {
 
   private async assertTrustedSession(sessionId?: string) {
     if (!sessionId) throw new ForbiddenException('Trusted device required.');
-    const session = await (this.prisma as any).userSession.findUnique({
+    const session = await this.prisma.userSession.findUnique({
       where: { id: sessionId },
       select: { createdAt: true },
     });
@@ -200,11 +200,7 @@ export class UsersController {
       await this.assertTrustedSession(req.user.sessionId);
     }
     const result = await this.usersService.updateUser(req.user.userId, dto);
-    if (dto.newPassword !== undefined) {
-      await (this.prisma as any).userSession.deleteMany({
-        where: { userId: req.user.userId, id: { not: req.user.sessionId } },
-      });
-    }
+
     return result;
   }
 

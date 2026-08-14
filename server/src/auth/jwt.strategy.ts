@@ -31,7 +31,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const cachedSession = await this.cacheManager.getString(sessionKey);
     if (!cachedSession) throw new UnauthorizedException('Session expired');
 
-    const session = JSON.parse(cachedSession);
+    let session;
+    try {
+      session = JSON.parse(cachedSession);
+    } catch {
+      await this.cacheManager.del(sessionKey);
+      throw new UnauthorizedException('Corrupted session data');
+    }
+
     if (session.userId !== userId) throw new UnauthorizedException('Invalid session');
     if (session.isBanned) throw new UnauthorizedException('Account suspended.');
     if (new Date(session.expiresAt).getTime() <= Date.now()) {
