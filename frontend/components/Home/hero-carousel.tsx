@@ -127,6 +127,7 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
             aria-hidden
             className="absolute inset-0 w-full h-full object-cover blur-md"
             fill
+            loading="eager"
             sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
           />
           <div className="absolute inset-0 bg-linear-to-r from-secondary/95 via-secondary/85 to-secondary/50 rtl:bg-linear-to-l" />
