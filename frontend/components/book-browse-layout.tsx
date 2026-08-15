@@ -397,7 +397,7 @@ export function BookBrowseLayout({
                 <SelectContent>
                   {SORT_OPTIONS.map((o: { value: string; label: string }) => (
                     <SelectItem key={o.value} value={o.value}>
-                      {o.label}
+                      {t(o.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>

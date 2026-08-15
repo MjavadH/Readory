@@ -608,7 +608,7 @@ export class BooksService {
       this.prisma.book.count({ where: { isFeatured: true } }),
       this.prisma.book.findMany({
         where,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { lastContentUpdate: 'desc' },
         skip,
         take: limit,
         select: {
