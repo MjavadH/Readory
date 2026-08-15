@@ -18,10 +18,10 @@ import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
+import { BrowseSort } from './dto/base-browse.dto';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
-type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated' | 'trend';
 
 type CursorPayload = { sort: BrowseSort; id: number; v: string };
 

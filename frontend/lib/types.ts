@@ -174,13 +174,14 @@ export function getBookUrl(book: Pick<BookCardData, 'id' | 'slug' | 'type'>): st
   return `/${typeSlug}/${identifier}`;
 }
 
-export type SortOption = 'newest' | 'oldest' | 'most_popular' | 'recently_updated';
+export type SortOption = 'newest' | 'oldest' | 'most_popular' | 'recently_updated' | 'trend';
 
 export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'recently_updated', label: 'Recently Updated' },
+  { value: 'most_popular', label: 'Most Popular' },
+  { value: 'trend', label: 'Trend' },
   { value: 'newest', label: 'Newest' },
   { value: 'oldest', label: 'Oldest' },
-  { value: 'most_popular', label: 'Most Popular' },
 ];
 
 export type CollectionType = 'SYSTEM' | 'USER' | 'FAVORITES';
