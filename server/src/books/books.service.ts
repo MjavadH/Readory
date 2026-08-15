@@ -21,7 +21,7 @@ import { OutboxService } from '../outbox/outbox.service';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
-type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated';
+type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated' | 'trend';
 
 type CursorPayload = { sort: BrowseSort; id: number; v: string };
 
@@ -424,26 +424,56 @@ export class BooksService {
     }
 
     if (sort === 'most_popular') {
-      // Popular = ratingAvg desc, ratingCount desc, updatedAt desc, id desc
       const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-        { ratingAvg: 'desc' },
-        { ratingCount: 'desc' },
-        { updatedAt: 'desc' },
+        { popularityScore: 'desc' },
         { id: 'desc' },
       ];
 
-      // Cursor.v is JSON string of compound fields
-      const seekWhere = cursor ? this.popularSeekWhere(cursor) : null;
+      const seekWhere = cursor
+        ? {
+            OR: [
+              { popularityScore: { lt: new Prisma.Decimal(cursor.v) } },
+              {
+                AND: [
+                  { popularityScore: { equals: new Prisma.Decimal(cursor.v) } },
+                  { id: { lt: cursor.id } },
+                ],
+              },
+            ],
+          }
+        : null;
 
       return {
         orderBy,
         seekWhere,
-        cursorValue: (r) =>
-          JSON.stringify({
-            ratingAvg: toNumber(r.ratingAvg),
-            ratingCount: r.ratingCount,
-            updatedAt: r.updatedAt.toISOString(),
-          }),
+        cursorValue: (r) => toNumber(r.popularityScore).toString(),
+      };
+    }
+
+    if (sort === 'trend') {
+      const orderBy: Prisma.BookOrderByWithRelationInput[] = [
+        { trendScore: 'desc' },
+        { id: 'desc' },
+      ];
+
+      const seekWhere = cursor
+        ? {
+            OR: [
+              { trendScore: { lt: new Prisma.Decimal(cursor.v) } },
+              {
+                AND: [
+                  { trendScore: { equals: new Prisma.Decimal(cursor.v) } },
+                  { id: { lt: cursor.id } },
+                ],
+              },
+            ],
+          }
+        : null;
+
+      return {
+        orderBy,
+        seekWhere,
+        cursorValue: (r) => toNumber(r.trendScore).toString(),
       };
     }
 
@@ -543,44 +573,6 @@ export class BooksService {
       .slice(0, 24);
 
     return `books:genre:browse:${genreSlug}:${fp}`;
-  }
-
-  private popularSeekWhere(cursor: CursorPayload): Prisma.BookWhereInput {
-    let v: { ratingAvg: number; ratingCount: number; updatedAt: string } | null;
-    try {
-      v = JSON.parse(cursor.v);
-    } catch {
-      v = null;
-    }
-    if (!v) return { id: { lt: cursor.id } };
-
-    const avg = new Prisma.Decimal(v.ratingAvg);
-    const count = v.ratingCount;
-    const updatedAt = new Date(v.updatedAt);
-
-    return {
-      OR: [
-        { ratingAvg: { lt: avg } },
-        {
-          AND: [{ ratingAvg: { equals: avg } }, { ratingCount: { lt: count } }],
-        },
-        {
-          AND: [
-            { ratingAvg: { equals: avg } },
-            { ratingCount: { equals: count } },
-            { updatedAt: { lt: updatedAt } },
-          ],
-        },
-        {
-          AND: [
-            { ratingAvg: { equals: avg } },
-            { ratingCount: { equals: count } },
-            { updatedAt: { equals: updatedAt } },
-            { id: { lt: cursor.id } },
-          ],
-        },
-      ],
-    };
   }
 
   // List all books
@@ -797,7 +789,7 @@ export class BooksService {
               type: book.type,
               ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
               ratingCount: book.ratingCount,
-              popularityScore: Number(book.popularityScore),
+              popularityScore: Number(toNumber(book.popularityScore).toFixed(4)),
               genres: book.genres.map((g) => g.genre).sort((a, b) => a.name.localeCompare(b.name)),
               chapterCount: book.chapterCount,
               isFeatured: book.isFeatured,
@@ -814,6 +806,64 @@ export class BooksService {
           items,
           generatedAt: new Date().toISOString(),
         };
+      },
+    );
+  }
+
+  async getPopularBooks(limitInput: number) {
+    const limit = clamp(limitInput || 12, 1, 50);
+
+    const version = await this.cacheManager.getVersion(this.CACHE_KEY_RECOMMENDATION_VERSION);
+    const cacheKey = this.cacheManager.buildKey('books:popular', version, limit);
+
+    return this.cacheManager.getOrSet(
+      cacheKey,
+      {
+        ttlSeconds: 1800,
+        earlyRefreshWindowSeconds: 300,
+      },
+      async () => {
+        const books = await this.prisma.book.findMany({
+          where: { publishStatus: PublicationStatus.PUBLISHED },
+          orderBy: [{ popularityScore: 'desc' }, { ratingCount: 'desc' }, { id: 'desc' }],
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            coverImage: true,
+            ratingAvg: true,
+            ratingCount: true,
+            chapterCount: true,
+            type: { select: { id: true, name: true, slug: true } },
+            contributors: {
+              select: {
+                role: true,
+                contributor: { select: { name: true } },
+              },
+            },
+            genres: {
+              select: { genre: { select: { id: true, name: true, slug: true } } },
+            },
+          },
+        });
+
+        const items = books.map((b) => {
+          const mainContributor =
+            b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
+          return {
+            id: b.id,
+            title: b.title,
+            coverImage: b.coverImage,
+            type: b.type,
+            ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
+            ratingCount: b.ratingCount,
+            chapterCount: b.chapterCount,
+            genres: b.genres.map((g) => g.genre),
+            contributors: mainContributor ? mainContributor.contributor.name : null,
+          };
+        });
+
+        return items;
       },
     );
   }
@@ -1199,8 +1249,6 @@ export class BooksService {
         },
       });
 
-      await this.recommendationService.recalculatePopularity(tx, bookId);
-
       return {
         rating,
         ratingAvg,
@@ -1287,7 +1335,6 @@ export class BooksService {
           data: { bookCount: { decrement: 1 } },
         });
         await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { decrement: 1 } } });
-        await this.recommendationService.recalculatePopularity(tx, bookId);
 
         return {
           favorited: false,
@@ -1307,7 +1354,6 @@ export class BooksService {
         data: { bookCount: { increment: 1 } },
       });
       await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
-      await this.recommendationService.recalculatePopularity(tx, bookId);
 
       return {
         favorited: true,

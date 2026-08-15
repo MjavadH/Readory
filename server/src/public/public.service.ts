@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { DashboardService } from '../dashboard/dashboard.service';
 import { PublicationStatus } from '@readory/shared';
 import { CollectionType, CollectionVisibility } from '@prisma/client';
+import { BooksService } from '../books/books.service';
 
 @Injectable()
 export class PublicService {
@@ -11,6 +12,8 @@ export class PublicService {
     private prisma: PrismaService,
     private readonly cacheManager: CacheManager,
     private readonly dashboardService: DashboardService,
+    @Inject(forwardRef(() => BooksService))
+    private readonly bookService: BooksService,
   ) {}
 
   private readonly CACHE_KEY_HOME_PUBLIC_CONTENT = 'home_public_content_data';
@@ -225,7 +228,7 @@ export class PublicService {
             this.getLatestBooks(),
             this.getTrendingBooks(),
             this.getTopGenres(),
-            this.getPopularBooks(),
+            this.bookService.getPopularBooks(10),
           ]);
 
         return {
@@ -271,21 +274,7 @@ export class PublicService {
               ratingCount: b.ratingCount,
             };
           }),
-          popular: popularBooks.map((b) => {
-            const mainContributor =
-              b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
-            return {
-              id: b.id,
-              title: b.title,
-              contributors: mainContributor ? mainContributor.contributor.name : null,
-              coverImage: b.coverImage,
-              type: b.type,
-              genres: b.genres.map((g) => g.genre),
-              chapterCount: b.chapterCount,
-              ratingAvg: Number(b.ratingAvg),
-              ratingCount: b.ratingCount,
-            };
-          }),
+          popular: popularBooks,
           genres: topGenres,
         };
       },
@@ -413,7 +402,7 @@ export class PublicService {
       take: 10,
 
       orderBy: {
-        popularityScore: 'desc',
+        trendScore: 'desc',
       },
 
       select: {
@@ -475,73 +464,6 @@ export class PublicService {
         name: true,
         slug: true,
         iconKey: true,
-      },
-    });
-  }
-
-  private async getPopularBooks() {
-    return this.prisma.book.findMany({
-      where: {
-        publishStatus: PublicationStatus.PUBLISHED,
-        ratingCount: {
-          gte: 5,
-        },
-      },
-
-      take: 10,
-
-      orderBy: [
-        {
-          ratingAvg: 'desc',
-        },
-        {
-          ratingCount: 'desc',
-        },
-        {
-          updatedAt: 'desc',
-        },
-      ],
-
-      select: {
-        id: true,
-        title: true,
-        coverImage: true,
-
-        contributors: {
-          select: {
-            role: true,
-            contributor: {
-              select: {
-                name: true,
-              },
-            },
-          },
-        },
-
-        type: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
-        },
-
-        chapterCount: true,
-
-        genres: {
-          select: {
-            genre: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-              },
-            },
-          },
-        },
-
-        ratingAvg: true,
-        ratingCount: true,
       },
     });
   }

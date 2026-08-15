@@ -25,6 +25,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { CollectionsModule } from './collections/collections.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { NotificationsModule } from './notifications/notifications.module';
         limit: Number(process.env.THROTTLE_LIMIT || 120),
       },
     ]),
+    ScheduleModule.forRoot(),
     RedisModule,
     RateLimitModule,
     CacheModule,

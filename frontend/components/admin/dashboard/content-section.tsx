@@ -28,7 +28,7 @@ export interface ContentData {
   trendingBooks?: Array<{
     id: number;
     title: string;
-    popularityScore: number;
+    trendScore: number;
     coverImage?: string | null;
   }>;
   topAccessedBooks: Array<{
@@ -109,7 +109,7 @@ export function ContentSection({ data }: { data: ContentData }) {
                       <div className="min-w-0">
                         <p className="line-clamp-2 text-xs font-medium leading-snug">{b.title}</p>
                         <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-                          {t('Score', { score: formatter.format(Math.round(b.popularityScore)) })}
+                          {t('Score', { score: formatter.format(Math.round(b.trendScore)) })}
                         </p>
                       </div>
                     </div>

@@ -434,9 +434,9 @@ export class DashboardService {
             select: { id: true, title: true, ratingAvg: true, ratingCount: true },
           }),
           this.prisma.book.findMany({
-            orderBy: { popularityScore: 'desc' },
+            orderBy: { trendScore: 'desc' },
             take: 10,
-            select: { id: true, title: true, popularityScore: true, coverImage: true },
+            select: { id: true, title: true, trendScore: true, coverImage: true },
           }),
           this.prisma.genre.findMany({
             select: { name: true, _count: { select: { books: true } } },
@@ -457,7 +457,7 @@ export class DashboardService {
         return {
           trendingBooks: trending.map((b) => ({
             ...b,
-            popularityScore: Number(b.popularityScore),
+            trendScore: Number(b.trendScore),
           })),
           topAccessedBooks: topAccessed.map((access) => ({
             accessCount: access._count.bookId,

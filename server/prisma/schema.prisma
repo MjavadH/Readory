@@ -123,6 +123,7 @@ model Book {
   chapterCount              Int                            @default(0)
   favoriteCount             Int                            @default(0)
   popularityScore           Decimal                        @default(0) @db.Decimal(8, 4)
+  trendScore                Decimal                        @default(0) @db.Decimal(8, 4)
   AccessRecord              AccessRecord[]
   coverMedia                Media?                         @relation(fields: [coverImage], references: [code])
   type                      BookType                       @relation(fields: [typeId], references: [id])
@@ -136,6 +137,8 @@ model Book {
 
   @@index([ratingAvg, ratingCount])
   @@index([publishStatus, isFeatured])
+  @@index([popularityScore])
+  @@index([trendScore])
   @@index([createdAt])
   @@index([updatedAt])
   @@index([lastContentUpdate])
@@ -244,6 +247,7 @@ model AccessRecord {
   @@unique([userId, chapterId])
   @@index([userId, purchasedAt])
   @@index([userId, bookId])
+  @@index([bookId, purchasedAt])
 }
 
 model Media {

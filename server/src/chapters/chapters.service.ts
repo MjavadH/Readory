@@ -354,7 +354,6 @@ export class ChaptersService {
         const record = await tx.accessRecord.create({
           data: { userId, chapterId, bookId: chapter.book.id },
         });
-        await this.recommendationService.recalculatePopularity(tx, chapter.book.id);
         return record;
       });
     }
@@ -376,9 +375,6 @@ export class ChaptersService {
       const record = await tx.accessRecord.create({
         data: { userId, chapterId, bookId: chapter.book.id },
       });
-
-      // Recalculate popularity within the same transaction context
-      await this.recommendationService.recalculatePopularity(tx, chapter.book.id);
 
       return record;
     });
