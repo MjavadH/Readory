@@ -1,23 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
 import { DomainEvent } from './domain-events';
 import { notificationConfig } from '../notifications/notification.config';
 
 @Injectable()
 export class OutboxService {
-  constructor(private prisma: PrismaService) {}
+  constructor() {}
 
-  create(tx: Prisma.TransactionClient, event: DomainEvent) {
-    return tx.domainOutboxEvent.create({
-      data: {
-        eventType: event.type,
-        eventVersion: event.version,
-        aggregateType: event.aggregateType,
-        aggregateId: event.aggregateId,
-        payload: event.payload as Prisma.InputJsonValue,
-        maxAttempts: notificationConfig.maxAttempts,
-      },
-    });
+  async create(tx: Prisma.TransactionClient, event: DomainEvent) {
+    const outboxData = {
+      eventType: event.type,
+      eventVersion: event.version,
+      aggregateType: event.aggregateType,
+      aggregateId: event.aggregateId,
+      payload: event.payload as Prisma.InputJsonValue,
+      maxAttempts: notificationConfig.maxAttempts,
+    };
+
+    await Promise.all([
+      tx.domainOutboxEvent.create({ data: outboxData }),
+      tx.searchOutboxEvent.create({ data: outboxData }),
+    ]);
   }
 }

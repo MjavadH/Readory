@@ -1,22 +1,42 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { BookSearchIcon, Settings } from 'lucide-react';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { useToast } from '@/providers/toast-provider';
+import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
+  const t = useTranslations('AdminPage.Settings');
+  const toast = useToast();
+
+  const [isSyncBooks, setIsSyncBooks] = useState(false);
+
+  const syncAllBooks = async () => {
+    try {
+      setIsSyncBooks(true);
+      const data = await apiClient.post(`/search/admin/sync-all`);
+      toast.success('success');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(getApiErrorMessage(err));
+      }
+    } finally {
+      setIsSyncBooks(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20 pb-20 sm:pb-0">
       <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-400 mx-auto">
-        <motion.div
-          className="space-y-1 p-3 md:p-0"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.55 }}
-        >
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            Settings
-          </h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Configure system preferences</p>
-        </motion.div>
+        <AdminPageHeader icon={Settings} title={t('Title')} description={t('Description')} />
+
+        <Button onClick={syncAllBooks} disabled={isSyncBooks} className="mt-6">
+          <BookSearchIcon className="me-2 h-4 w-4" />
+          {t('SyncAllBooks')}
+        </Button>
       </div>
     </div>
   );

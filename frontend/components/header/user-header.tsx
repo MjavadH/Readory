@@ -36,6 +36,8 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { getAvatarUrl } from '@/lib/media';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { useLiveSearch } from '@/hooks/use-live-search';
+import { LiveSearchResults } from '@/components/header/live-search-results';
 
 type BookType = { name: string; slug: string; iconKey: IconKey };
 
@@ -188,6 +190,12 @@ export function UserHeader() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const {
+    results: searchResults,
+    isLoading: searchLoading,
+    error: searchError,
+  } = useLiveSearch(searchQuery);
+
   const { isRTL } = useLocaleInfo();
 
   /* current user */
@@ -313,6 +321,12 @@ export function UserHeader() {
 
     router.push(`/login?next=${encodeURIComponent(next)}`);
   }, [router]);
+
+  const closeSearch = useCallback(() => {
+    setShowSearchResults(false);
+    setMobileSearchOpen(false);
+    setSearchQuery('');
+  }, []);
 
   return (
     <>
@@ -461,27 +475,15 @@ export function UserHeader() {
             </div>
 
             <AnimatePresence>
-              {showSearchResults && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="absolute inset-x-0 top-full z-50 mt-2 rounded-xl border border-border bg-popover p-2 shadow-xl shadow-black/5"
-                >
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-lg p-2.5 text-start text-sm transition-colors hover:bg-accent"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={submitSearch}
-                  >
-                    <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-                    <span className="truncate">
-                      {t('SearchFor')}{' '}
-                      <span className="font-medium text-foreground">{searchQuery.trim()}</span>
-                    </span>
-                  </button>
-                </motion.div>
+              {showSearchResults && searchQuery.trim().length > 0 && (
+                <LiveSearchResults
+                  query={searchQuery}
+                  results={searchResults}
+                  isLoading={searchLoading}
+                  error={searchError}
+                  onSubmit={submitSearch}
+                  onSelect={closeSearch}
+                />
               )}
             </AnimatePresence>
           </div>
@@ -553,11 +555,7 @@ export function UserHeader() {
                         </div>
                       </div>
                       <div className="mt-3">
-                        <WalletCard
-                          balance={user.walletBalance ?? 0}
-                          isLoading={userLoading}
-                          onAddFunds={() => router.push('/wallet')}
-                        />
+                        <WalletCard balance={user.walletBalance ?? 0} isLoading={userLoading} />
                       </div>
                     </DropdownMenuLabel>
 
@@ -636,7 +634,7 @@ export function UserHeader() {
         <div
           className={cn(
             'overflow-hidden transition-all duration-300 md:hidden',
-            mobileSearchOpen ? 'max-h-20 border-t border-border/50' : 'max-h-0',
+            mobileSearchOpen ? 'max-h-[80vh] border-t border-border/50' : 'max-h-0',
           )}
         >
           <div className="container mx-auto px-4 py-3">
@@ -662,16 +660,19 @@ export function UserHeader() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            {searchQuery.trim() && (
-              <Button
-                variant="ghost"
-                className="mt-1.5 w-full justify-start gap-2 rounded-xl text-sm"
-                onClick={submitSearch}
-              >
-                <Search className="h-4 w-4" />
-                {t('SearchFor')} {searchQuery.trim()}
-              </Button>
-            )}
+            <AnimatePresence>
+              {searchQuery.trim().length > 0 && (
+                <LiveSearchResults
+                  inline
+                  query={searchQuery}
+                  results={searchResults}
+                  isLoading={searchLoading}
+                  error={searchError}
+                  onSubmit={submitSearch}
+                  onSelect={closeSearch}
+                />
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </header>
@@ -700,11 +701,7 @@ export function UserHeader() {
                 </div>
 
                 {/* Wallet */}
-                <WalletCard
-                  balance={user.walletBalance ?? 0}
-                  isLoading={userLoading}
-                  onAddFunds={() => router.push('/wallet')}
-                />
+                <WalletCard balance={user.walletBalance ?? 0} isLoading={userLoading} />
               </div>
             ) : (
               <div className="flex items-center gap-3">

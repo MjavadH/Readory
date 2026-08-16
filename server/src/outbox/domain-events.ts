@@ -19,6 +19,22 @@ export type ChapterPublishedEvent = {
 };
 export type AdminBroadcastRequestedEvent = { broadcastId: string };
 
+export type BookUpdatedEvent = {
+  bookId: number;
+  title: string;
+  bookType: string;
+  genres: string[];
+  status: string;
+  trendScore: number;
+  popularityScore: number;
+  coverImage?: string | null;
+  updatedAt: string;
+};
+
+export type BookDeletedEvent = {
+  bookId: number;
+};
+
 export type DomainEvent =
   | {
       type: DomainEventType.BOOK_PUBLISHED;
@@ -40,4 +56,18 @@ export type DomainEvent =
       aggregateType: 'NotificationBroadcast';
       aggregateId: string;
       payload: AdminBroadcastRequestedEvent;
+    }
+  | {
+      type: DomainEventType.BOOK_UPDATED;
+      version: 1;
+      aggregateType: 'Book';
+      aggregateId: string;
+      payload: BookUpdatedEvent;
+    }
+  | {
+      type: DomainEventType.BOOK_DELETED;
+      version: 1;
+      aggregateType: 'Book';
+      aggregateId: string;
+      payload: BookDeletedEvent;
     };

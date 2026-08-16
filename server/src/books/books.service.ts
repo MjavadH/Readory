@@ -5,7 +5,6 @@ import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
 import { createHash } from 'crypto';
 import { clamp, toNumber, normalizeQ, normalizeSlug, slugify } from '../common';
-import { RecommendationService } from './recommendation/recommendation.service';
 import { CollectionsService } from '../collections/collections.service';
 import {
   RELATED_EXPONENTIAL_DECAY_LAMBDA,
@@ -19,33 +18,10 @@ import { UpdateBookDto } from './dto/update-book.dto';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
 import { BrowseSort } from './dto/base-browse.dto';
+import { SearchService } from '../search/search.service';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
-
-type CursorPayload = { sort: BrowseSort; id: number; v: string };
-
-function encodeCursor(payload: CursorPayload): string {
-  return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
-}
-
-function decodeCursor(cursor?: string): CursorPayload | null {
-  if (!cursor) return null;
-  try {
-    const raw = Buffer.from(cursor, 'base64url').toString('utf8');
-    const obj = JSON.parse(raw);
-    if (
-      !obj ||
-      typeof obj !== 'object' ||
-      typeof obj.id !== 'number' ||
-      typeof obj.sort !== 'string'
-    )
-      return null;
-    return obj as CursorPayload;
-  } catch {
-    return null;
-  }
-}
 
 @Injectable()
 export class BooksService {
@@ -53,9 +29,9 @@ export class BooksService {
     private prisma: PrismaService,
     private publicService: PublicService,
     private readonly cacheManager: CacheManager,
-    private readonly recommendationService: RecommendationService,
     private readonly collectionsService: CollectionsService,
     private readonly outbox: OutboxService,
+    private readonly searchService: SearchService,
   ) {}
 
   private readonly CACHE_KEY_BROWSE_DEFAULT = 'books:browse:default';
@@ -86,95 +62,7 @@ export class BooksService {
       }
     }
 
-    const limitRaw = Number(args.limit) || 18;
-    const limit = clamp(limitRaw, 1, 50);
-    const sort: BrowseSort = args.sort ?? 'recently_updated';
-    const q = normalizeQ(args.q);
-
-    const where: Prisma.BookWhereInput = {
-      publishStatus: PublicationStatus.PUBLISHED,
-      type: { isActive: true },
-    };
-
-    if (args.types?.length) {
-      where.type = { is: { slug: { in: args.types } } };
-    }
-
-    if (q) {
-      where.OR = this.buildBookSearchWhere(q);
-    }
-
-    if (args.genres?.length) {
-      const existingAnd = Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : [];
-
-      where.AND = [
-        ...existingAnd,
-        ...args.genres.map((slug) => ({
-          genres: { some: { genre: { slug } } },
-        })),
-      ];
-    }
-
-    const cursor = decodeCursor(args.cursor);
-    const take = limit + 1;
-
-    const { orderBy, seekWhere, cursorValue } = this.buildBrowseSort(sort, cursor);
-
-    const rows = await this.prisma.book.findMany({
-      where: seekWhere ? { AND: [where, seekWhere] } : where,
-      orderBy,
-      take,
-      select: {
-        id: true,
-        title: true,
-        coverImage: true,
-        type: { select: { name: true, slug: true } },
-        contributors: {
-          select: {
-            role: true,
-            contributor: { select: { name: true } },
-          },
-        },
-        ratingAvg: true,
-        ratingCount: true,
-        isFeatured: true,
-        createdAt: true,
-        updatedAt: true,
-        lastContentUpdate: true,
-        status: true,
-        chapterCount: true,
-        genres: { select: { genre: { select: { name: true, slug: true } } } },
-      },
-    });
-
-    const hasMore = rows.length > limit;
-    const pageRows = hasMore ? rows.slice(0, limit) : rows;
-
-    const items = pageRows.map((b) => {
-      const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
-      return {
-        id: b.id,
-        title: b.title,
-        coverImage: b.coverImage,
-        type: b.type,
-        contributors: mainContributor ? mainContributor.contributor.name : null,
-        ratingAvg: Number(toNumber(b.ratingAvg).toFixed(2)),
-        ratingCount: b.ratingCount,
-        genres: b.genres.map((g) => g.genre),
-        isFeatured: b.isFeatured,
-        status: b.status,
-        chapterCount: b.chapterCount,
-        updatedAt: (b.lastContentUpdate ?? b.updatedAt).toISOString(),
-      };
-    });
-
-    let nextCursor: string | null = null;
-    if (hasMore) {
-      const last = pageRows[pageRows.length - 1];
-      nextCursor = encodeCursor({ sort, id: last.id, v: cursorValue(last) });
-    }
-
-    const result = { items, nextCursor, hasMore };
+    const result = await this.searchService.browseSearch(args);
 
     if (isDefaultView) {
       await this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
@@ -369,138 +257,6 @@ export class BooksService {
       .slice(0, 24);
 
     return `books:type:browse:v1:${typeSlug}:${fingerprint}`;
-  }
-
-  private buildBrowseSort(
-    sort: BrowseSort,
-    cursor: CursorPayload | null,
-  ): {
-    orderBy: Prisma.BookOrderByWithRelationInput[];
-    seekWhere: Prisma.BookWhereInput | null;
-    cursorValue: (row: any) => string;
-  } {
-    // Stable seek pagination using (sortField, id) tie-breaker.
-    if (sort === 'newest') {
-      const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-        { createdAt: 'desc' },
-        { id: 'desc' },
-      ];
-      const seekWhere = cursor
-        ? {
-            OR: [
-              { createdAt: { lt: new Date(cursor.v) } },
-              {
-                AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { lt: cursor.id } }],
-              },
-            ],
-          }
-        : null;
-
-      return {
-        orderBy,
-        seekWhere,
-        cursorValue: (r) => r.createdAt.toISOString(),
-      };
-    }
-
-    if (sort === 'oldest') {
-      const orderBy: Prisma.BookOrderByWithRelationInput[] = [{ createdAt: 'asc' }, { id: 'asc' }];
-      const seekWhere = cursor
-        ? {
-            OR: [
-              { createdAt: { gt: new Date(cursor.v) } },
-              {
-                AND: [{ createdAt: { equals: new Date(cursor.v) } }, { id: { gt: cursor.id } }],
-              },
-            ],
-          }
-        : null;
-
-      return {
-        orderBy,
-        seekWhere,
-        cursorValue: (r) => r.createdAt.toISOString(),
-      };
-    }
-
-    if (sort === 'most_popular') {
-      const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-        { popularityScore: 'desc' },
-        { id: 'desc' },
-      ];
-
-      const seekWhere = cursor
-        ? {
-            OR: [
-              { popularityScore: { lt: new Prisma.Decimal(cursor.v) } },
-              {
-                AND: [
-                  { popularityScore: { equals: new Prisma.Decimal(cursor.v) } },
-                  { id: { lt: cursor.id } },
-                ],
-              },
-            ],
-          }
-        : null;
-
-      return {
-        orderBy,
-        seekWhere,
-        cursorValue: (r) => toNumber(r.popularityScore).toString(),
-      };
-    }
-
-    if (sort === 'trend') {
-      const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-        { trendScore: 'desc' },
-        { id: 'desc' },
-      ];
-
-      const seekWhere = cursor
-        ? {
-            OR: [
-              { trendScore: { lt: new Prisma.Decimal(cursor.v) } },
-              {
-                AND: [
-                  { trendScore: { equals: new Prisma.Decimal(cursor.v) } },
-                  { id: { lt: cursor.id } },
-                ],
-              },
-            ],
-          }
-        : null;
-
-      return {
-        orderBy,
-        seekWhere,
-        cursorValue: (r) => toNumber(r.trendScore).toString(),
-      };
-    }
-
-    // recently_updated (default)
-    const orderBy: Prisma.BookOrderByWithRelationInput[] = [
-      { lastContentUpdate: 'desc' },
-      { id: 'desc' },
-    ];
-    const seekWhere = cursor
-      ? {
-          OR: [
-            { lastContentUpdate: { lt: new Date(cursor.v) } },
-            {
-              AND: [
-                { lastContentUpdate: { equals: new Date(cursor.v) } },
-                { id: { lt: cursor.id } },
-              ],
-            },
-          ],
-        }
-      : null;
-
-    return {
-      orderBy,
-      seekWhere,
-      cursorValue: (r) => (r.lastContentUpdate ?? r.updatedAt).toISOString(),
-    };
   }
 
   private async getAllGenresCached() {

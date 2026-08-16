@@ -7,9 +7,17 @@ import { PublicModule } from '../public/public.module';
 import { RecommendationService } from './recommendation/recommendation.service';
 import { CollectionsModule } from '../collections/collections.module';
 import { OutboxModule } from '../outbox/outbox.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
-  imports: [OutboxModule, PrismaModule, WalletsModule, PublicModule, CollectionsModule],
+  imports: [
+    OutboxModule,
+    PrismaModule,
+    WalletsModule,
+    PublicModule,
+    SearchModule,
+    CollectionsModule,
+  ],
   providers: [BooksService, RecommendationService],
   controllers: [BooksController],
   exports: [BooksService],

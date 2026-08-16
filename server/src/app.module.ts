@@ -26,6 +26,7 @@ import { RateLimitModule } from './rate-limit/rate-limit.module';
 import { CollectionsModule } from './collections/collections.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     PaymentsModule,
     CollectionsModule,
     NotificationsModule,
+    SearchModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

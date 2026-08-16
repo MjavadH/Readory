@@ -9,6 +9,8 @@ export enum DomainEventType {
   BOOK_PUBLISHED = 'book.published.v1',
   CHAPTER_PUBLISHED = 'chapter.published.v1',
   ADMIN_BROADCAST_REQUESTED = 'admin.broadcast.requested.v1',
+  BOOK_UPDATED = 'book.updated.v1',
+  BOOK_DELETED = 'book.deleted.v1',
 }
 
 export enum NotificationAudienceType {
