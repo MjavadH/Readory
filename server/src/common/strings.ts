@@ -14,3 +14,26 @@ export function normalizeQ(q?: string): string | undefined {
 export function normalizeSlug(input: string): string {
   return input.trim().toLowerCase();
 }
+
+const SAFE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * Validates a slug-safe string.
+ */
+export function isValidSlug(value: string): boolean {
+  return SAFE_SLUG_PATTERN.test(value);
+}
+
+/**
+ * Normalizes and validates a slug.
+ * Throws when input is invalid.
+ */
+export function normalizeAndValidateSlug(value: string): string {
+  const slug = normalizeSlug(value);
+
+  if (!isValidSlug(slug)) {
+    throw new Error('Invalid slug format');
+  }
+
+  return slug;
+}

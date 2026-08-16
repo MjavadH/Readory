@@ -172,7 +172,7 @@ export default function AdminBooks() {
         limit: String(ITEMS_PER_PAGE),
         status: statusFilter,
       });
-      if (debouncedQ) qs.set('q', debouncedQ);
+      if (debouncedQ.length >= 2) qs.set('q', debouncedQ);
 
       const data = await apiClient.get<{ books: AdminApiBook[]; stats?: BookStats }>(
         `/books/allBooks?${qs.toString()}`,

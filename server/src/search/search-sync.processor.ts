@@ -3,15 +3,7 @@ import { OutboxEventStatus, SearchOutboxEvent } from '@prisma/client';
 import { DomainEventType } from '@readory/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { SearchService, BookSearchDocument } from './search.service';
-
-const searchSyncConfig = {
-  workerIntervalMs: 2000,
-  leaseMs: 30000,
-  workerBatchSize: 10,
-  workerConcurrency: 5,
-  leaseHeartbeatMs: 10000,
-  retryBaseMs: 1000,
-};
+import { searchSyncConfig } from './config/search-sync.config';
 
 type ClaimedOutboxEvent = SearchOutboxEvent;
 type OutboxHandler = (event: ClaimedOutboxEvent) => Promise<void>;
@@ -85,18 +77,22 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
 
   private async processEvent(event: ClaimedOutboxEvent) {
     const heartbeat = this.startHeartbeat(event.id);
+
     try {
       const handler = this.handlers[event.eventType];
 
       if (!handler) {
-        // Ignored events (e.g. ChapterPublished) are safely marked as processed
         this.logger.debug(`Ignoring unrelated search event type: ${event.eventType}`);
       } else {
         await handler(event);
       }
 
-      await this.prisma.searchOutboxEvent.update({
-        where: { id: event.id },
+      const result = await this.prisma.searchOutboxEvent.updateMany({
+        where: {
+          id: event.id,
+          status: OutboxEventStatus.PROCESSING,
+          lockedBy: this.workerId,
+        },
         data: {
           status: OutboxEventStatus.PROCESSED,
           processedAt: new Date(),
@@ -104,6 +100,10 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
           lockedBy: null,
         },
       });
+
+      if (result.count !== 1) {
+        this.logger.warn(`Search outbox ${event.id} lease was lost before completion.`);
+      }
     } catch (error: unknown) {
       await this.fail(event, error);
     } finally {
@@ -124,11 +124,17 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
     const attempts = event.attempts + 1;
     const dead = attempts >= event.maxAttempts;
     const delay = Math.min(searchSyncConfig.retryBaseMs * 2 ** Math.max(attempts - 1, 0), 3600_000);
+
     const message = error instanceof Error ? error.message : String(error);
+
     this.logger.error(`Search outbox ${event.id} failed attempt ${attempts}: ${message}`);
 
-    await this.prisma.searchOutboxEvent.update({
-      where: { id: event.id },
+    const result = await this.prisma.searchOutboxEvent.updateMany({
+      where: {
+        id: event.id,
+        status: OutboxEventStatus.PROCESSING,
+        lockedBy: this.workerId,
+      },
       data: {
         attempts,
         status: dead ? OutboxEventStatus.DEAD_LETTER : OutboxEventStatus.PENDING,
@@ -139,6 +145,10 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
         lastError: message.slice(0, 1000),
       },
     });
+
+    if (result.count !== 1) {
+      this.logger.warn(`Search outbox ${event.id} lease was lost before failure handling.`);
+    }
   }
 
   // Idempotent State-Based Sync Implementation
@@ -185,14 +195,15 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
       createdAt: book.createdAt.getTime(),
       lastContentUpdate: (book.lastContentUpdate ?? book.updatedAt).getTime(),
 
-      // UI Display fields
       type: { name: book.type.name, slug: book.type.slug },
+      typeIsActive: book.type.isActive,
       genres: book.genres.map((bg) => ({ name: bg.genre.name, slug: bg.genre.slug })),
       contributors: mainContributor ? mainContributor.contributor.name : null,
       ratingAvg: Number(Number(book.ratingAvg).toFixed(2)),
       ratingCount: book.ratingCount,
       isFeatured: book.isFeatured,
       status: book.status,
+      ageRating: book.ageRating,
       chapterCount: book.chapterCount,
       updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
     };

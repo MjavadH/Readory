@@ -230,14 +230,6 @@ export class BooksService {
     };
   }
 
-  private buildBookSearchWhere(q: string): Prisma.BookWhereInput[] {
-    return [
-      { title: { contains: q, mode: 'insensitive' } },
-      { originalTitle: { contains: q, mode: 'insensitive' } },
-      { alternativeTitles: { has: q } },
-    ];
-  }
-
   private buildTypeBrowseCacheKey(
     typeSlug: string,
     args: { genres?: string[]; q?: string; sort?: BrowseSort; limit?: number },
@@ -336,33 +328,71 @@ export class BooksService {
     const page = clamp(args.page, 1, 10_000);
     const limit = clamp(args.limit, 1, 50);
     const q = normalizeQ(args.q);
-
-    const where: Prisma.BookWhereInput = {};
-    if (q) {
-      where.OR = this.buildBookSearchWhere(q);
-    }
-    switch (args.status) {
-      case 'all':
-        break;
-      case 'published':
-        where.publishStatus = PublicationStatus.PUBLISHED;
-        break;
-      case 'draft':
-        where.publishStatus = PublicationStatus.DRAFT;
-        break;
-      case 'featured':
-        where.isFeatured = true;
-        break;
-    }
-
     const skip = (page - 1) * limit;
 
-    const [total, published, drafts, featured, books] = await this.prisma.$transaction([
+    // Fetch global dashboard stats independently
+    const globalStatsPromise = this.prisma.$transaction([
       this.prisma.book.count(),
       this.prisma.book.count({ where: { publishStatus: PublicationStatus.PUBLISHED } }),
       this.prisma.book.count({ where: { publishStatus: PublicationStatus.DRAFT } }),
       this.prisma.book.count({ where: { isFeatured: true } }),
-      this.prisma.book.findMany({
+    ]);
+
+    let books: any[] = [];
+    let filteredTotal: number;
+
+    if (q) {
+      const searchResult = await this.searchService.adminSearchBookIds(q, {
+        status: args.status,
+        offset: skip,
+        limit,
+      });
+
+      filteredTotal = searchResult.total;
+
+      if (searchResult.ids.length > 0) {
+        const fetchedBooks = await this.prisma.book.findMany({
+          where: { id: { in: searchResult.ids } },
+          select: {
+            id: true,
+            title: true,
+            originalTitle: true,
+            alternativeTitles: true,
+            contributors: {
+              select: { role: true, contributor: { select: { name: true } } },
+            },
+            coverImage: true,
+            publishStatus: true,
+            isFeatured: true,
+            status: true,
+            ageRating: true,
+            publicationYear: true,
+            chapterCount: true,
+            lastContentUpdate: true,
+            ratingAvg: true,
+            ratingCount: true,
+            updatedAt: true,
+            genres: {
+              include: { genre: { select: { id: true, name: true, slug: true } } },
+              take: 3,
+            },
+            type: { select: { name: true } },
+          },
+        });
+
+        const bookMap = new Map(fetchedBooks.map((b) => [b.id, b]));
+        books = searchResult.ids.map((id) => bookMap.get(id)).filter(Boolean);
+      }
+    } else {
+      // Fallback to Prisma chronological order when no search query
+      const where: Prisma.BookWhereInput = {};
+      if (args.status === 'published') where.publishStatus = PublicationStatus.PUBLISHED;
+      else if (args.status === 'draft') where.publishStatus = PublicationStatus.DRAFT;
+      else if (args.status === 'featured') where.isFeatured = true;
+
+      filteredTotal = await this.prisma.book.count({ where });
+
+      books = await this.prisma.book.findMany({
         where,
         orderBy: { lastContentUpdate: 'desc' },
         skip,
@@ -373,10 +403,7 @@ export class BooksService {
           originalTitle: true,
           alternativeTitles: true,
           contributors: {
-            select: {
-              role: true,
-              contributor: { select: { name: true } },
-            },
+            select: { role: true, contributor: { select: { name: true } } },
           },
           coverImage: true,
           publishStatus: true,
@@ -390,18 +417,19 @@ export class BooksService {
           ratingCount: true,
           updatedAt: true,
           genres: {
-            include: {
-              genre: { select: { id: true, name: true, slug: true } },
-            },
+            include: { genre: { select: { id: true, name: true, slug: true } } },
             take: 3,
           },
           type: { select: { name: true } },
         },
-      }),
-    ]);
+      });
+    }
+
+    const [total, published, drafts, featured] = await globalStatsPromise;
 
     const formattedBooks = books.map((b) => {
-      const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
+      const mainContributor =
+        b.contributors.find((a: any) => a.role === 'AUTHOR') || b.contributors[0];
       return {
         ...b,
         contributors: mainContributor ? mainContributor.contributor.name : null,
@@ -410,7 +438,7 @@ export class BooksService {
 
     return {
       books: formattedBooks,
-      hasMore: skip + books.length < total,
+      hasMore: skip + books.length < filteredTotal,
       stats: { total, Published: published, Drafts: drafts, Featured: featured },
       page,
       limit,
@@ -936,10 +964,10 @@ export class BooksService {
             },
           },
         });
-        if (
-          currentBook.publishStatus !== PublicationStatus.PUBLISHED &&
-          updatedBook.publishStatus === PublicationStatus.PUBLISHED
-        ) {
+        const wasPublished = currentBook.publishStatus === PublicationStatus.PUBLISHED;
+        const isPublished = updatedBook.publishStatus === PublicationStatus.PUBLISHED;
+
+        if (!wasPublished && isPublished) {
           await this.outbox.create(tx, {
             type: DomainEventType.BOOK_PUBLISHED,
             version: 1,
@@ -954,6 +982,25 @@ export class BooksService {
             },
           });
         }
+
+        await this.outbox.create(tx, {
+          type: DomainEventType.BOOK_UPDATED,
+          version: 1,
+          aggregateType: 'Book',
+          aggregateId: String(updatedBook.id),
+          payload: {
+            bookId: updatedBook.id,
+            title: updatedBook.title,
+            bookType: updatedBook.type.slug,
+            genres: updatedBook.genres.map((item) => item.genre.slug),
+            status: updatedBook.status,
+            trendScore: Number(updatedBook.trendScore ?? 0),
+            popularityScore: Number(updatedBook.popularityScore ?? 0),
+            coverImage: updatedBook.coverImage,
+            updatedAt: (updatedBook.lastContentUpdate ?? updatedBook.updatedAt).toISOString(),
+          },
+        });
+
         return updatedBook;
       });
 
@@ -1044,6 +1091,16 @@ export class BooksService {
         by: ['collectionId'],
         where: { bookId: id },
         _count: { _all: true },
+      });
+
+      await this.outbox.create(tx, {
+        type: DomainEventType.BOOK_DELETED,
+        version: 1,
+        aggregateType: 'Book',
+        aggregateId: String(id),
+        payload: {
+          bookId: id,
+        },
       });
 
       await tx.book.delete({ where: { id } });

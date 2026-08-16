@@ -7,17 +7,21 @@ import { Roles } from '../auth/roles.decorator';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
+import { LiveSearchDto } from './dto/live_search_dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('search')
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get('live')
-  async liveSearch(@Query('q') q: string) {
-    return this.searchService.liveSearch(q || '');
+  @Throttle({ default: { limit: 60, ttl: 60000 } })
+  async liveSearch(@Query() query: LiveSearchDto) {
+    return this.searchService.liveSearch(query.q);
   }
 
   @Get('browse')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async browseSearch(@Query() query: SearchQueryDto) {
     return this.searchService.browseSearch(query);
   }
@@ -27,7 +31,13 @@ export class SearchController {
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
   @Roles('ADMIN')
   async syncAllBooks() {
-    await this.searchService.syncAllDatabaseBooks();
-    return { message: 'Full synchronization started successfully.' };
+    const result = await this.searchService.startFullSync();
+
+    return {
+      started: result.started,
+      message: result.started
+        ? 'Full synchronization started.'
+        : 'Full synchronization is already running.',
+    };
   }
 }

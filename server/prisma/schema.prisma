@@ -553,7 +553,8 @@ model SearchOutboxEvent {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
-  @@index([status, availableAt])
+  @@index([status, availableAt, id])
+  @@index([status, lockedAt])
 }
 
 enum OutboxEventStatus {

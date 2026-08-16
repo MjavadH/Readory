@@ -1,8 +1,9 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
 import { Meilisearch, Index } from 'meilisearch';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, PublicationStatus } from '@prisma/client';
 import { SearchQueryDto } from './dto/search-query.dto';
+import { normalizeAndValidateSlug } from '../common';
 
 export interface BookSearchDocument {
   id: number;
@@ -18,12 +19,14 @@ export interface BookSearchDocument {
   createdAt: number;
   lastContentUpdate: number;
   type: { name: string; slug: string };
+  typeIsActive: boolean;
   genres: { name: string; slug: string }[];
   contributors: string | null;
   ratingAvg: number;
   ratingCount: number;
   isFeatured: boolean;
   status: string;
+  ageRating: string | null;
   chapterCount: number;
   updatedAt: string;
 }
@@ -32,6 +35,7 @@ export interface BookSearchDocument {
 export class SearchService {
   private readonly logger = new Logger(SearchService.name);
   private bookIndex: Index<BookSearchDocument>;
+  private fullSyncRunning = false;
 
   constructor(
     @Inject('MEILISEARCH_CLIENT') private readonly client: Meilisearch,
@@ -40,12 +44,24 @@ export class SearchService {
     this.bookIndex = this.client.index('books');
   }
 
+  private buildSlugFilter(attribute: string, values: string[], operator: 'OR' | 'AND'): string {
+    const normalizedValues = values.map(normalizeAndValidateSlug);
+
+    return `(${normalizedValues
+      .map((value) => `${attribute} = "${value}"`)
+      .join(` ${operator} `)})`;
+  }
+
   async setupIndexes() {
     try {
       await this.bookIndex.updateFilterableAttributes([
         'bookTypeSlug',
         'genreSlugs',
         'publishStatus',
+        'typeIsActive',
+        'status',
+        'ageRating',
+        'isFeatured',
       ]);
       await this.bookIndex.updateSortableAttributes([
         'trendScore',
@@ -62,16 +78,23 @@ export class SearchService {
       await this.bookIndex.updateTypoTolerance({
         minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 },
       });
+
+      await this.bookIndex.updatePagination({ maxTotalHits: 100000 });
       this.logger.log('Meilisearch indexes and settings configured successfully.');
     } catch (error) {
-      this.logger.error('Failed to configure Meilisearch settings', error);
+      this.logger.error(
+        'Failed to configure Meilisearch settings',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw error;
     }
   }
 
   async liveSearch(query: string) {
     const result = await this.bookIndex.search(query, {
       limit: 5,
-      filter: ['publishStatus = "published"'],
+      filter: ['publishStatus = "PUBLISHED"', 'typeIsActive = true'],
       attributesToRetrieve: ['id', 'title', 'coverImage', 'bookTypeSlug'],
     });
     return result.hits;
@@ -79,18 +102,29 @@ export class SearchService {
 
   async browseSearch(query: SearchQueryDto) {
     const limit = query.limit ? Math.min(Math.max(Number(query.limit), 1), 50) : 18;
-    const offset = query.cursor ? parseInt(query.cursor, 10) : 0;
 
-    const filterArray: string[] = ['publishStatus = "PUBLISHED"'];
+    const offset = query.cursor ? Number.parseInt(query.cursor, 10) : 0;
 
-    if (query.types && query.types.length > 0) {
-      const typeFilters = query.types.map((t) => `bookTypeSlug = "${t}"`).join(' OR ');
-      filterArray.push(`(${typeFilters})`);
+    if (!Number.isSafeInteger(offset) || offset < 0) {
+      throw new BadRequestException('Invalid cursor');
     }
 
-    if (query.genres && query.genres.length > 0) {
-      const genreFilters = query.genres.map((g) => `genreSlugs = "${g}"`).join(' AND ');
-      filterArray.push(`(${genreFilters})`);
+    const filterArray: string[] = ['publishStatus = "PUBLISHED"', 'typeIsActive = true'];
+
+    if (query.types?.length) {
+      filterArray.push(this.buildSlugFilter('bookTypeSlug', query.types, 'OR'));
+    }
+
+    if (query.genres?.length) {
+      filterArray.push(this.buildSlugFilter('genreSlugs', query.genres, 'AND'));
+    }
+
+    if (query.status?.length) {
+      filterArray.push(this.buildSlugFilter('status', query.status, 'OR'));
+    }
+
+    if (query.ageRatings?.length) {
+      filterArray.push(this.buildSlugFilter('ageRating', query.ageRatings, 'OR'));
     }
 
     let sortParams = ['lastContentUpdate:desc', 'id:desc'];
@@ -131,13 +165,57 @@ export class SearchService {
     return { items, nextCursor, hasMore };
   }
 
+  async adminSearchBookIds(q: string, args: { status: string; offset: number; limit: number }) {
+    const filter: string[] = [];
+
+    if (args.status === 'published') {
+      filter.push(`publishStatus = "PUBLISHED"`);
+    } else if (args.status === 'draft') {
+      filter.push(`publishStatus = "DRAFT"`);
+    } else if (args.status === 'featured') {
+      filter.push(`isFeatured = true`);
+    }
+
+    const result = await this.bookIndex.search(q, {
+      filter: filter.length > 0 ? filter : undefined,
+      offset: args.offset,
+      limit: args.limit,
+      attributesToRetrieve: ['id'], // Retrieve only IDs for performance
+    });
+
+    return {
+      ids: result.hits.map((hit) => hit.id as number),
+      total: result.estimatedTotalHits || 0,
+    };
+  }
+
+  async startFullSync(): Promise<{ started: boolean }> {
+    if (this.fullSyncRunning) {
+      return { started: false };
+    }
+
+    this.fullSyncRunning = true;
+
+    setImmediate(() => {
+      void this.syncAllDatabaseBooks()
+        .catch((error: unknown) => {
+          this.logger.error('Full search synchronization failed', error);
+        })
+        .finally(() => {
+          this.fullSyncRunning = false;
+        });
+    });
+
+    return { started: true };
+  }
+
   async syncAllDatabaseBooks() {
     let cursorId: number | undefined = undefined;
     const batchSize = 500;
 
     type SyncBookType = Prisma.BookGetPayload<{
       include: {
-        type: { select: { name: true; slug: true } };
+        type: { select: { name: true; slug: true; isActive: true } };
         genres: { select: { genre: { select: { name: true; slug: true } } } };
         contributors: {
           select: { role: true; contributor: { select: { name: true } } };
@@ -148,8 +226,11 @@ export class SearchService {
     while (true) {
       const queryOptions: Prisma.BookFindManyArgs = {
         take: batchSize,
+        orderBy: {
+          id: 'asc',
+        },
         include: {
-          type: { select: { name: true, slug: true } },
+          type: { select: { name: true, slug: true, isActive: true } },
           genres: { select: { genre: { select: { name: true, slug: true } } } },
           contributors: {
             select: { role: true, contributor: { select: { name: true } } },
@@ -166,38 +247,45 @@ export class SearchService {
 
       if (books.length === 0) break;
 
-      const documents: BookSearchDocument[] = books.map((book: SyncBookType) => {
-        const mainContributor =
-          book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
+      try {
+        const documents: BookSearchDocument[] = books.map((book: SyncBookType) => {
+          const mainContributor =
+            book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
 
-        return {
-          id: book.id,
-          title: book.title,
-          originalTitle: book.originalTitle,
-          alternativeTitles: book.alternativeTitles,
-          coverImage: book.coverImage || null,
-          bookTypeSlug: book.type.slug,
-          genreSlugs: book.genres.map((bg) => bg.genre.slug),
-          publishStatus: book.publishStatus,
-          trendScore: Number(book.trendScore || 0),
-          popularityScore: Number(book.popularityScore || 0),
-          createdAt: book.createdAt.getTime(),
-          lastContentUpdate: (book.lastContentUpdate ?? book.updatedAt).getTime(),
+          return {
+            id: book.id,
+            title: book.title,
+            originalTitle: book.originalTitle,
+            alternativeTitles: book.alternativeTitles,
+            coverImage: book.coverImage || null,
+            bookTypeSlug: book.type.slug,
+            genreSlugs: book.genres.map((bg) => bg.genre.slug),
+            publishStatus: book.publishStatus,
+            trendScore: Number(book.trendScore || 0),
+            popularityScore: Number(book.popularityScore || 0),
+            createdAt: book.createdAt.getTime(),
+            lastContentUpdate: (book.lastContentUpdate ?? book.updatedAt).getTime(),
 
-          type: book.type,
-          genres: book.genres.map((bg) => bg.genre),
-          contributors: mainContributor ? mainContributor.contributor.name : null,
-          ratingAvg: Number(Number(book.ratingAvg).toFixed(2)),
-          ratingCount: book.ratingCount,
-          isFeatured: book.isFeatured,
-          status: book.status,
-          chapterCount: book.chapterCount,
-          updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
-        };
-      });
+            type: { name: book.type.name, slug: book.type.slug },
+            typeIsActive: book.type.isActive,
+            genres: book.genres.map((bg) => bg.genre),
+            contributors: mainContributor ? mainContributor.contributor.name : null,
+            ratingAvg: Number(book.ratingAvg),
+            ratingCount: book.ratingCount,
+            isFeatured: book.isFeatured,
+            status: book.status,
+            ageRating: book.ageRating,
+            chapterCount: book.chapterCount,
+            updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
+          };
+        });
 
-      await this.bookIndex.addDocuments(documents);
-      cursorId = books[books.length - 1].id;
+        await this.bookIndex.addDocuments(documents);
+        cursorId = books[books.length - 1].id;
+      } catch (error) {
+        this.logger.error(`Batch sync failed at cursor ${cursorId}`, error);
+        throw error;
+      }
     }
 
     this.logger.log('Database synchronization completed.');

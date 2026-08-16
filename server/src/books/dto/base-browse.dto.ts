@@ -1,6 +1,5 @@
-// base-browse.dto.ts
 import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export type BrowseSort = 'newest' | 'oldest' | 'most_popular' | 'recently_updated' | 'trend';
 
@@ -18,6 +17,8 @@ export function TransformCsvToArray() {
 export class BaseBrowseDto {
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  @MinLength(2)
   q?: string;
 
   @IsOptional()
@@ -28,10 +29,11 @@ export class BaseBrowseDto {
   @IsInt()
   @Transform(({ value }) => Number.parseInt(String(value), 10))
   @Min(1)
-  @Max(50)
+  @Max(30)
   limit?: number;
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   cursor?: string;
 }

@@ -13,10 +13,21 @@ import { SearchController } from './search.controller';
   providers: [
     {
       provide: 'MEILISEARCH_CLIENT',
-      useFactory: (configService: ConfigService) => {
+      useFactory: () => {
+        const host = process.env.MEILISEARCH_HOST;
+        const apiKey = process.env.MEILISEARCH_API_KEY;
+
+        if (!host) {
+          throw new Error('MEILISEARCH_URL is not configured');
+        }
+
+        if (!apiKey) {
+          throw new Error('MEILISEARCH_API_KEY is not configured');
+        }
+
         return new Meilisearch({
-          host: configService.get<string>('meilisearch.host')!,
-          apiKey: configService.get<string>('meilisearch.apiKey')!,
+          host,
+          apiKey,
         });
       },
       inject: [ConfigService],
