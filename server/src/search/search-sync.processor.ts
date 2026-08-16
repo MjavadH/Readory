@@ -8,6 +8,10 @@ import { searchSyncConfig } from './config/search-sync.config';
 type ClaimedOutboxEvent = SearchOutboxEvent;
 type OutboxHandler = (event: ClaimedOutboxEvent) => Promise<void>;
 
+interface SyncEventPayload {
+  bookId: number;
+}
+
 @Injectable()
 export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SearchSyncProcessor.name);
@@ -153,10 +157,10 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
 
   // Idempotent State-Based Sync Implementation
   private async handleBookSync(event: ClaimedOutboxEvent) {
-    const payload = event.payload as any;
+    const payload = event.payload as unknown as SyncEventPayload;
     const bookId = payload.bookId;
 
-    if (!bookId || typeof bookId !== 'number') {
+    if (!Number.isSafeInteger(bookId) || bookId <= 0) {
       throw new Error('Invalid payload: missing bookId');
     }
 
@@ -178,9 +182,6 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const mainContributor =
-      book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
-
     const document: BookSearchDocument = {
       id: book.id,
       title: book.title,
@@ -194,18 +195,10 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
       popularityScore: Number(book.popularityScore || 0),
       createdAt: book.createdAt.getTime(),
       lastContentUpdate: (book.lastContentUpdate ?? book.updatedAt).getTime(),
-
-      type: { name: book.type.name, slug: book.type.slug },
       typeIsActive: book.type.isActive,
-      genres: book.genres.map((bg) => ({ name: bg.genre.name, slug: bg.genre.slug })),
-      contributors: mainContributor ? mainContributor.contributor.name : null,
-      ratingAvg: Number(Number(book.ratingAvg).toFixed(2)),
-      ratingCount: book.ratingCount,
       isFeatured: book.isFeatured,
       status: book.status,
       ageRating: book.ageRating,
-      chapterCount: book.chapterCount,
-      updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
     };
 
     await this.searchService.syncBook(document);
@@ -213,10 +206,10 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
   }
 
   private async handleBookDelete(event: ClaimedOutboxEvent) {
-    const payload = event.payload as any;
+    const payload = event.payload as unknown as SyncEventPayload;
     const bookId = payload.bookId;
 
-    if (!bookId || typeof bookId !== 'number') {
+    if (!Number.isSafeInteger(bookId) || bookId <= 0) {
       throw new Error('Invalid payload: missing bookId');
     }
 

@@ -1,10 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CollectionType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheManager } from '../cache/cache.manager';
 import { PublicService } from '../public/public.service';
 import { createHash } from 'crypto';
-import { clamp, toNumber, normalizeQ, normalizeSlug, slugify } from '../common';
+import { clamp, normalizeQ, normalizeSlug, slugify, toNumber } from '../common';
 import { CollectionsService } from '../collections/collections.service';
 import {
   RELATED_EXPONENTIAL_DECAY_LAMBDA,
@@ -19,6 +19,7 @@ import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
 import { BrowseSort } from './dto/base-browse.dto';
 import { SearchService } from '../search/search.service';
+import { BrowseBooksDto } from './dto/browse-books.dto';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
@@ -40,14 +41,41 @@ export class BooksService {
   private readonly CACHE_KEY_GENRES_ALL = 'genres:all';
   private readonly CACHE_KEY_RECOMMENDATION_VERSION = 'books:recommendation:version';
 
-  async browse(args: {
-    types?: string[];
-    genres?: string[];
-    q?: string;
-    sort?: BrowseSort;
-    limit?: number;
-    cursor?: string;
-  }) {
+  async browse(args: BrowseBooksDto) {
+    type FetchedBookType = Prisma.BookGetPayload<{
+      select: {
+        id: true;
+        title: true;
+        coverImage: true;
+        type: { select: { name: true; slug: true } };
+        contributors: { select: { role: true; contributor: { select: { name: true } } } };
+        ratingAvg: true;
+        ratingCount: true;
+        genres: { select: { genre: { select: { name: true; slug: true } } } };
+        isFeatured: true;
+        status: true;
+        chapterCount: true;
+        updatedAt: true;
+        lastContentUpdate: true;
+      };
+    }>;
+
+    // Define hydrated item interface for frontend
+    interface BrowseItem {
+      id: number;
+      title: string;
+      coverImage: string | null;
+      type: { name: string; slug: string };
+      contributors: string | null;
+      ratingAvg: number;
+      ratingCount: number;
+      genres: { name: string; slug: string }[];
+      isFeatured: boolean;
+      status: string;
+      chapterCount: number;
+      updatedAt: string;
+    }
+
     const isDefaultView =
       (!args.types || args.types.length === 0) &&
       (!args.genres || args.genres.length === 0) &&
@@ -62,7 +90,63 @@ export class BooksService {
       }
     }
 
-    const result = await this.searchService.browseSearch(args);
+    const { ids, nextCursor, hasMore } = await this.searchService.browseSearch(args);
+
+    let items: BrowseItem[] = [];
+
+    if (ids.length > 0) {
+      const fetchedBooks = (await this.prisma.book.findMany({
+        where: { id: { in: ids } },
+        select: {
+          id: true,
+          title: true,
+          coverImage: true,
+          type: { select: { name: true, slug: true } },
+          contributors: {
+            select: { role: true, contributor: { select: { name: true } } },
+          },
+          ratingAvg: true,
+          ratingCount: true,
+          genres: {
+            select: { genre: { select: { name: true, slug: true } } },
+          },
+          isFeatured: true,
+          status: true,
+          chapterCount: true,
+          updatedAt: true,
+          lastContentUpdate: true,
+        },
+      })) as FetchedBookType[];
+
+      const bookMap = new Map<number, FetchedBookType>(fetchedBooks.map((b) => [b.id, b]));
+
+      items = ids
+        .map((id): BrowseItem | null => {
+          const b = bookMap.get(id);
+          if (!b) return null;
+
+          const mainContributor =
+            b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
+
+          return {
+            id: b.id,
+            title: b.title,
+            coverImage: b.coverImage,
+            type: b.type,
+            contributors: mainContributor ? mainContributor.contributor.name : null,
+            ratingAvg: Number(b.ratingAvg),
+            ratingCount: b.ratingCount,
+            genres: b.genres.map((g) => g.genre),
+            isFeatured: b.isFeatured,
+            status: b.status,
+            chapterCount: b.chapterCount,
+            updatedAt: (b.lastContentUpdate ?? b.updatedAt).toISOString(),
+          };
+        })
+        .filter((item): item is BrowseItem => item !== null);
+    }
+
+    const result = { items, nextCursor, hasMore };
 
     if (isDefaultView) {
       await this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
@@ -631,7 +715,7 @@ export class BooksService {
           },
         });
 
-        const items = books.map((b) => {
+        return books.map((b) => {
           const mainContributor =
             b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
           return {
@@ -646,8 +730,6 @@ export class BooksService {
             contributors: mainContributor ? mainContributor.contributor.name : null,
           };
         });
-
-        return items;
       },
     );
   }

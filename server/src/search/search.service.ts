@@ -18,17 +18,10 @@ export interface BookSearchDocument {
   popularityScore: number;
   createdAt: number;
   lastContentUpdate: number;
-  type: { name: string; slug: string };
   typeIsActive: boolean;
-  genres: { name: string; slug: string }[];
-  contributors: string | null;
-  ratingAvg: number;
-  ratingCount: number;
-  isFeatured: boolean;
   status: string;
   ageRating: string | null;
-  chapterCount: number;
-  updatedAt: string;
+  isFeatured: boolean;
 }
 
 @Injectable()
@@ -101,12 +94,16 @@ export class SearchService {
   }
 
   async browseSearch(query: SearchQueryDto) {
+    const MAX_SEARCH_OFFSET = 10000;
     const limit = query.limit ? Math.min(Math.max(Number(query.limit), 1), 50) : 18;
-
     const offset = query.cursor ? Number.parseInt(query.cursor, 10) : 0;
 
     if (!Number.isSafeInteger(offset) || offset < 0) {
       throw new BadRequestException('Invalid cursor');
+    }
+
+    if (offset > MAX_SEARCH_OFFSET) {
+      throw new BadRequestException('Pagination limit exceeded.');
     }
 
     const filterArray: string[] = ['publishStatus = "PUBLISHED"', 'typeIsActive = true'];
@@ -139,30 +136,16 @@ export class SearchService {
       sort: sortParams,
       limit: limit + 1,
       offset: offset,
+      attributesToRetrieve: ['id'],
     });
 
     const hasMore = result.hits.length > limit;
     const hits = hasMore ? result.hits.slice(0, limit) : result.hits;
 
-    // Map fields directly to preserve frontend compatibility.
-    const items = hits.map((hit) => ({
-      id: hit.id,
-      title: hit.title,
-      coverImage: hit.coverImage,
-      type: hit.type,
-      contributors: hit.contributors,
-      ratingAvg: hit.ratingAvg,
-      ratingCount: hit.ratingCount,
-      genres: hit.genres,
-      isFeatured: hit.isFeatured,
-      status: hit.status,
-      chapterCount: hit.chapterCount,
-      updatedAt: hit.updatedAt,
-    }));
-
+    const ids = hits.map((hit) => hit.id as number);
     const nextCursor = hasMore ? String(offset + limit) : null;
 
-    return { items, nextCursor, hasMore };
+    return { ids, nextCursor, hasMore };
   }
 
   async adminSearchBookIds(q: string, args: { status: string; offset: number; limit: number }) {
@@ -249,9 +232,6 @@ export class SearchService {
 
       try {
         const documents: BookSearchDocument[] = books.map((book: SyncBookType) => {
-          const mainContributor =
-            book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
-
           return {
             id: book.id,
             title: book.title,
@@ -265,18 +245,10 @@ export class SearchService {
             popularityScore: Number(book.popularityScore || 0),
             createdAt: book.createdAt.getTime(),
             lastContentUpdate: (book.lastContentUpdate ?? book.updatedAt).getTime(),
-
-            type: { name: book.type.name, slug: book.type.slug },
             typeIsActive: book.type.isActive,
-            genres: book.genres.map((bg) => bg.genre),
-            contributors: mainContributor ? mainContributor.contributor.name : null,
-            ratingAvg: Number(book.ratingAvg),
-            ratingCount: book.ratingCount,
             isFeatured: book.isFeatured,
             status: book.status,
             ageRating: book.ageRating,
-            chapterCount: book.chapterCount,
-            updatedAt: (book.lastContentUpdate ?? book.updatedAt).toISOString(),
           };
         });
 
