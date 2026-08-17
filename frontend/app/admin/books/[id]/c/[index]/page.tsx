@@ -252,6 +252,10 @@ export default function ChapterContentManager() {
   const [imagePage, setImagePage] = useState(1);
   const imagePaginationScrollRef = useRef<HTMLDivElement>(null);
   const [adminPreviewToken, setAdminPreviewToken] = useState<string | null>(null);
+  const [textPage, setTextPage] = useState(1);
+  const [currentTextHtml, setCurrentTextHtml] = useState<string | null>(null);
+  const [isLoadingText, setIsLoadingText] = useState(false);
+  const textContainerRef = useRef<HTMLDivElement>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
   const [deletingImages, setDeletingImages] = useState(false);
@@ -274,8 +278,10 @@ export default function ChapterContentManager() {
         setLoadError(null);
         setDeleteMode(false);
         setSelectedImagePages([]);
+        setTextPage(1);
+        setCurrentTextHtml(null);
 
-        if (response.manifest?.format === 'images' && response.manifest.pageCount > 0) {
+        if (response.manifest && response.manifest.pageCount > 0) {
           try {
             const preview = await apiClient.post<AdminPreviewSessionResponse>(
               '/reader/admin/session',
@@ -330,6 +336,33 @@ export default function ChapterContentManager() {
   useEffect(() => {
     if (imagePage > totalImagePages) setImagePage(totalImagePages);
   }, [imagePage, totalImagePages]);
+
+  useEffect(() => {
+    if (data?.manifest?.format !== 'text' || !adminPreviewToken) return;
+
+    let isMounted = true;
+    setIsLoadingText(true);
+
+    apiClient
+      .get<{ html: string }>('/reader/text', {
+        query: { token: adminPreviewToken, p: textPage },
+      })
+      .then((res) => {
+        if (isMounted) setCurrentTextHtml(res.html);
+      })
+      .catch((err) => {
+        if (isMounted) {
+          toast.error(getApiErrorMessage(err, t('UnableFetchChapterContent')));
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingText(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adminPreviewToken, textPage, data?.manifest?.format, toast, t]);
 
   const uploadWithXhr = useCallback(
     (url: string, formData: FormData): Promise<void> =>
@@ -1088,7 +1121,12 @@ export default function ChapterContentManager() {
           )}
 
           {data?.manifest?.format === 'text' && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+              ref={textContainerRef}
+            >
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <FileText className="h-4 w-4 text-primary" />
                 <span>{t('TextChapterUploaded')}</span>
@@ -1096,10 +1134,24 @@ export default function ChapterContentManager() {
                   {data.manifest.format}
                 </Badge>
               </div>
-              {data.textPreviewHtml && (
-                <div
-                  className="prose prose-sm dark:prose-invert max-h-96 max-w-none overflow-auto rounded-xl border border-border bg-muted/30 px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5"
-                  dangerouslySetInnerHTML={{ __html: data.textPreviewHtml }}
+
+              <div
+                className={cn(
+                  'prose prose-sm dark:prose-invert max-h-150 max-w-none overflow-auto rounded-xl border border-border bg-muted/30 px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5 transition-opacity duration-200',
+                  isLoadingText ? 'opacity-50 pointer-events-none' : 'opacity-100',
+                )}
+                dangerouslySetInnerHTML={{ __html: currentTextHtml || data.textPreviewHtml || '' }}
+              />
+
+              {(data.manifest.pageCount || 0) > 1 && (
+                <AppPagination
+                  currentPage={textPage}
+                  pageSize={1}
+                  totalItems={data.manifest.pageCount}
+                  itemLabel={t('Text')}
+                  totalPages={data.manifest.pageCount}
+                  onPageChange={setTextPage}
+                  scrollTarget={textContainerRef}
                 />
               )}
             </motion.div>

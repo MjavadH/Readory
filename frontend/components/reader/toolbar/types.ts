@@ -56,6 +56,7 @@ export const TEXT_DIRECTIONS = [
 ] as const;
 
 export const FONT_FAMILIES = [
+  { value: 'var(--font-vazirmatn), sans-serif', labelKey: 'FontDefault' },
   { value: 'Georgia, serif', labelKey: 'FontSerif' },
   { value: 'Inter, system-ui, sans-serif', labelKey: 'FontSans' },
   { value: 'ui-monospace, SFMono-Regular, Menlo, monospace', labelKey: 'FontMono' },

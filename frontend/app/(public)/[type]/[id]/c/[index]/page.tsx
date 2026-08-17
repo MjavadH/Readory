@@ -31,7 +31,6 @@ import {
   type PurchaseDialogBook,
   type PurchaseDialogChapter,
 } from '@/components/chapter-purchase-dialog';
-import { ReaderTextContent } from '@/components/reader/reader-text-content';
 
 type SessionResponse = {
   chapterId: number;
@@ -142,6 +141,14 @@ export default function ChapterPage() {
   const sessionRef = useRef<SessionResponse | null>(null);
   const refreshingSessionRef = useRef<Promise<SessionResponse> | null>(null);
   const [readerFilter, setReaderFilter] = useState<string>('');
+  const [footnote, setFootnote] = useState<{
+    id: string;
+    text: string;
+    top: number;
+    left: number;
+    arrowLeft: number;
+  } | null>(null);
+  const hideFootnoteTimeout = useRef<number | null>(null);
   const [readerSettings, setReaderSettings] = useState<ReaderSettings>(() => {
     if (typeof window === 'undefined') return DEFAULT_READER_SETTINGS;
 
@@ -470,11 +477,15 @@ export default function ChapterPage() {
 
         setSession(s);
 
-        const startPage = Math.max(1, Math.min(s.pageCount || 1, s.resume?.lastPage ?? 1));
-        maxReachedPageRef.current = startPage;
+        const rawStartPage = Math.max(1, Math.min(s.pageCount || 1, s.resume?.lastPage ?? 1));
+        const isCompleted =
+          (s.resume?.lastPage ?? 0) >= (s.pageCount || 1) || (s.resume?.percent ?? 0) === 100;
+        const initialPage = isCompleted ? 1 : rawStartPage;
+
+        maxReachedPageRef.current = initialPage;
         lastSavedPageRef.current = s.resume?.lastPage ?? 0;
-        progressCompletedRef.current = (s.resume?.lastPage ?? 0) >= (s.pageCount || 1);
-        setCurrentPage(progressCompletedRef.current ? 1 : startPage);
+        progressCompletedRef.current = isCompleted;
+        setCurrentPage(initialPage);
 
         if (s.contentType === 'images') {
           const m = await apiClient.get<Manifest>('/reader/manifest', {
@@ -489,7 +500,7 @@ export default function ChapterPage() {
           if (cancelled) return;
           setManifest(m);
 
-          const textPage = Math.max(1, Math.min(m.pageCount || 1, startPage));
+          const textPage = Math.max(1, Math.min(m.pageCount || 1, initialPage));
           const txt = await apiClient.get<{ html: string }>('/reader/text', {
             query: { token: s.sessionToken, p: textPage },
           });
@@ -808,6 +819,83 @@ export default function ChapterPage() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [readMode, currentPage, handlePageChange, toggleFullscreen]);
 
+  const showFootnote = useCallback((target: HTMLElement) => {
+    if (hideFootnoteTimeout.current) window.clearTimeout(hideFootnoteTimeout.current);
+
+    const text = target.getAttribute('data-footnote') || target.getAttribute('title');
+    if (!text) return;
+
+    // Prevent default browser tooltip overlap.
+    if (target.hasAttribute('title')) {
+      target.setAttribute('data-footnote', text);
+      target.removeAttribute('title');
+    }
+
+    const rect = target.getBoundingClientRect();
+    const tooltipWidth = 260;
+    const margin = 16;
+    const windowWidth = window.innerWidth;
+
+    let left = rect.left + rect.width / 2;
+    let arrowOffset = 0;
+
+    // Screen edge boundary protection.
+    if (left - tooltipWidth / 2 < margin) {
+      const minLeft = tooltipWidth / 2 + margin;
+      arrowOffset = left - minLeft;
+      left = minLeft;
+    } else if (left + tooltipWidth / 2 > windowWidth - margin) {
+      const maxLeft = windowWidth - tooltipWidth / 2 - margin;
+      arrowOffset = left - maxLeft;
+      left = maxLeft;
+    }
+
+    setFootnote({
+      id: target.id || Math.random().toString(),
+      text,
+      top: rect.top - 8,
+      left,
+      arrowLeft: arrowOffset,
+    });
+  }, []);
+
+  const handleFootnoteInteraction = useCallback(
+    (e: React.MouseEvent | React.TouchEvent) => {
+      const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement;
+      if (target) {
+        e.preventDefault();
+        showFootnote(target);
+      } else {
+        setFootnote(null);
+      }
+    },
+    [showFootnote],
+  );
+
+  const handleFootnoteHover = useCallback(
+    (e: React.MouseEvent) => {
+      const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement;
+      if (target) showFootnote(target);
+    },
+    [showFootnote],
+  );
+
+  const handleFootnoteLeave = useCallback((e: React.MouseEvent) => {
+    const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement;
+    if (target) {
+      hideFootnoteTimeout.current = window.setTimeout(() => setFootnote(null), 250);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => setFootnote(null);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      if (hideFootnoteTimeout.current) window.clearTimeout(hideFootnoteTimeout.current);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-reader-bg">
@@ -1078,19 +1166,48 @@ export default function ChapterPage() {
           style={{ filter: `brightness(${brightness}%) ${readerFilter}`.trim() }}
         >
           <div className="mx-auto w-full px-4 lg:max-w-3/4">
-            <ReaderTextContent
-              html={textHtml}
+            <article
               dir={readerSettings.textDirection}
-              className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground sm:p-6"
+              onClick={handleFootnoteInteraction}
+              onMouseOver={handleFootnoteHover}
+              onMouseOut={handleFootnoteLeave}
+              className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground/90 sm:p-6"
               style={{
                 fontSize: `${readerSettings.fontSize}px`,
                 lineHeight: readerSettings.lineHeight,
                 fontFamily: readerSettings.fontFamily,
-                color: 'var(--foreground)',
               }}
+              dangerouslySetInnerHTML={{ __html: textHtml }}
             />
           </div>
         </main>
+
+        {footnote && (
+          <div
+            className="fixed z-50 animate-in zoom-in-95 duration-200 pointer-events-none fade-in-0 rounded-xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-xl backdrop-blur-md"
+            style={{
+              top: `${footnote.top}px`,
+              left: `${footnote.left}px`,
+              transform: 'translate(-50%, -100%)',
+              width: 'max-content',
+              maxWidth: '260px',
+            }}
+          >
+            <div
+              className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-foreground/80"
+              dir={readerSettings.textDirection}
+            >
+              {footnote.text}
+              <div
+                className="absolute bottom-[-6.5px] h-3 w-3 border-b border-r border-border bg-popover"
+                style={{
+                  left: `calc(50% + ${footnote.arrowLeft}px)`,
+                  transform: 'translateX(-50%) rotate(45deg)',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <ReaderToolbar
           contentMode="text"

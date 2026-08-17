@@ -187,6 +187,7 @@
     border-radius: 0.25rem;
     color: var(--primary, #2563eb);
     transition: background-color 0.15s ease, color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .reader-footnote:hover,

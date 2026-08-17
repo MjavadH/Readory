@@ -25,7 +25,7 @@ import {
 export const DEFAULT_TYPOGRAPHY: ReaderTypographySettings = {
   fontSize: 18,
   lineHeight: 1.6,
-  fontFamily: 'Georgia, serif',
+  fontFamily: 'var(--font-vazirmatn), sans-serif',
   textDirection: 'ltr',
 };
 
@@ -79,7 +79,7 @@ export function TypographyPanel({
         <span className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
           {t('FontFamily')}
         </span>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-4 gap-1.5">
           {FONT_FAMILIES.map((font) => {
             const active = value.fontFamily === font.value;
             return (

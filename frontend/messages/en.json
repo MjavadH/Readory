@@ -921,6 +921,7 @@
     "FontFamily": "Font",
     "FontSize": "Font size",
     "LineHeight": "Line height",
+    "FontDefault": "Default",
     "FontSerif": "Serif",
     "FontSans": "Sans",
     "FontMono": "Mono",
