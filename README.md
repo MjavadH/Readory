@@ -203,3 +203,16 @@ Build outputs:
 ### Browse books
 
 ![Browse](assets/browse-books.png)
+
+### Reader
+
+| Text                            | Image                             |
+|---------------------------------|-----------------------------------|
+| ![Text](assets/reader-text.png) | ![Image](assets/reader-image.png) |
+
+### Dashboard
+
+| Admin                                | User                               |
+|--------------------------------------|------------------------------------|
+| ![Admin](assets/admin-dashboard.png) | ![User](assets/user-dashboard.png) |
+
