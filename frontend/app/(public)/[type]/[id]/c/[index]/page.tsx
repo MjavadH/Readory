@@ -31,6 +31,7 @@ import {
   type PurchaseDialogBook,
   type PurchaseDialogChapter,
 } from '@/components/chapter-purchase-dialog';
+import { ReaderTextContent } from '@/components/reader/reader-text-content';
 
 type SessionResponse = {
   chapterId: number;
@@ -1076,65 +1077,19 @@ export default function ChapterPage() {
           className="pt-20 pb-10 transition-[filter] duration-300"
           style={{ filter: `brightness(${brightness}%) ${readerFilter}`.trim() }}
         >
-          <ReaderZoomViewport zoom={zoom}>
-            <div className="mx-auto w-full px-4 lg:max-w-3/4">
-              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/70 p-3 text-sm">
-                <span className="font-medium text-foreground">Typography</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setReaderSettings((settings) => ({
-                      ...settings,
-                      fontSize: Math.max(14, settings.fontSize - 1),
-                    }))
-                  }
-                >
-                  <Minus className="h-4 w-4" aria-hidden="true" />
-                </Button>
-                <span className="min-w-12 text-center text-muted-foreground">
-                  {readerSettings.fontSize}px
-                </span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setReaderSettings((settings) => ({
-                      ...settings,
-                      fontSize: Math.min(28, settings.fontSize + 1),
-                    }))
-                  }
-                >
-                  <Plus className="h-4 w-4" aria-hidden="true" />
-                </Button>
-                <select
-                  className="h-9 rounded-md border border-input bg-background px-3 text-foreground"
-                  value={readerSettings.fontFamily}
-                  onChange={(event) =>
-                    setReaderSettings((settings) => ({
-                      ...settings,
-                      fontFamily: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="Georgia, serif">Serif</option>
-                  <option value="Inter, system-ui, sans-serif">Sans</option>
-                  <option value="ui-monospace, SFMono-Regular, Menlo, monospace">Mono</option>
-                </select>
-              </div>
-              <article
-                className="prose max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 sm:p-6"
-                style={{
-                  fontSize: `${readerSettings.fontSize}px`,
-                  lineHeight: readerSettings.lineHeight,
-                  fontFamily: readerSettings.fontFamily,
-                }}
-                dangerouslySetInnerHTML={{ __html: textHtml }}
-              />
-            </div>
-          </ReaderZoomViewport>
+          <div className="mx-auto w-full px-4 lg:max-w-3/4">
+            <ReaderTextContent
+              html={textHtml}
+              dir={readerSettings.textDirection}
+              className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground sm:p-6"
+              style={{
+                fontSize: `${readerSettings.fontSize}px`,
+                lineHeight: readerSettings.lineHeight,
+                fontFamily: readerSettings.fontFamily,
+                color: 'var(--foreground)',
+              }}
+            />
+          </div>
         </main>
 
         <ReaderToolbar

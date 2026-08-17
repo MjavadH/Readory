@@ -176,4 +176,26 @@
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid hsl(var(--reader-toolbar-border) / 0.6);
   }
+
+  .reader-footnote {
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 0.75em;
+    vertical-align: super;
+    line-height: 0;
+    padding: 0 0.15em;
+    border-radius: 0.25rem;
+    color: var(--primary, #2563eb);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .reader-footnote:hover,
+  .reader-footnote:focus-visible {
+    background-color: color-mix(in oklab, var(--primary, #2563eb) 15%, transparent);
+    outline: none;
+  }
+
+  .prose :where(p, h1, h2, h3, h4, li, blockquote, strong, em) {
+    color: inherit;
+  }
 }
