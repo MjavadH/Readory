@@ -36,7 +36,7 @@ export function useLiveSearch(query: string, { minLength = 2, delay = 300 } = {}
           { signal: ac.signal },
         );
         setResults(Array.isArray(data) ? data : []);
-      } catch (e) {
+      } catch {
         if (!ac.signal.aborted) {
           setResults([]);
           setError(true);

@@ -27,20 +27,39 @@ export function ToolbarSettingsPanel({
   const t = useTranslations('Books');
   const isText = contentMode === 'text';
 
-  const items: { key: keyof ToolbarPrefs; label: string; icon: React.ReactNode; hidden?: boolean }[] =
-    [
-      { key: 'chapters', label: t('Chapters'), icon: <BookOpen className="h-4 w-4" /> },
-      { key: 'typography', label: t('Typography'), icon: <Type className="h-4 w-4" />, hidden: !isText },
-      { key: 'brightness', label: t('Brightness'), icon: <Sun className="h-4 w-4" />, hidden: isText },
-      {
-        key: 'readMode',
-        label: readMode === 'scroll' ? t('PageMode') : t('ScrollMode'),
-        icon: <Layers className="h-4 w-4" />,
-        hidden: isText || !showReadModeToggle,
-      },
-      { key: 'zoom', label: t('ZoomIn'), icon: <ZoomIn className="h-4 w-4" />, hidden: isText || !hasZoom },
-      { key: 'fullscreen', label: t('Fullscreen'), icon: <Maximize className="h-4 w-4" /> },
-    ];
+  const items: {
+    key: keyof ToolbarPrefs;
+    label: string;
+    icon: React.ReactNode;
+    hidden?: boolean;
+  }[] = [
+    { key: 'chapters', label: t('Chapters'), icon: <BookOpen className="h-4 w-4" /> },
+    {
+      key: 'typography',
+      label: t('Typography'),
+      icon: <Type className="h-4 w-4" />,
+      hidden: !isText,
+    },
+    {
+      key: 'brightness',
+      label: t('Brightness'),
+      icon: <Sun className="h-4 w-4" />,
+      hidden: isText,
+    },
+    {
+      key: 'readMode',
+      label: readMode === 'scroll' ? t('PageMode') : t('ScrollMode'),
+      icon: <Layers className="h-4 w-4" />,
+      hidden: isText || !showReadModeToggle,
+    },
+    {
+      key: 'zoom',
+      label: t('ZoomIn'),
+      icon: <ZoomIn className="h-4 w-4" />,
+      hidden: isText || !hasZoom,
+    },
+    { key: 'fullscreen', label: t('Fullscreen'), icon: <Maximize className="h-4 w-4" /> },
+  ];
 
   return (
     <div className="w-[min(18rem,calc(100vw-2.5rem))]">

@@ -82,14 +82,10 @@ export function ReaderToolbar({
     };
   }, []);
 
-  // Never hide the bar while a panel/drawer is open.
-  useEffect(() => {
-    if (panelOpen) setVisible(true);
-  }, [panelOpen]);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        setVisible(true);
         setPanel(null);
         setShowChapters(false);
       }
@@ -98,14 +94,16 @@ export function ReaderToolbar({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // A hidden or mode-irrelevant control must not stay open.
-  useEffect(() => {
-    if (!prefs.chapters && showChapters) setShowChapters(false);
-    if (!prefs.brightness && panel === 'brightness') setPanel(null);
-    if (!prefs.typography && panel === 'typography') setPanel(null);
-    if (isText && panel === 'brightness') setPanel(null);
-    if (!isText && panel === 'typography') setPanel(null);
-  }, [prefs.brightness, prefs.chapters, prefs.typography, panel, showChapters, isText]);
+  if (!prefs.chapters && showChapters) {
+    setShowChapters(false);
+  }
+
+  if (
+    (panel === 'brightness' && (!prefs.brightness || isText)) ||
+    (panel === 'typography' && (!prefs.typography || !isText))
+  ) {
+    setPanel(null);
+  }
 
   const prevChapter = chapters.find((c) => c.index === currentChapter.index - 1);
   const nextChapter = chapters.find((c) => c.index === currentChapter.index + 1);

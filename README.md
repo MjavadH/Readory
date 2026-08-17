@@ -1,3 +1,5 @@
+<img src="frontend/public/Logo.svg" style="display: flex; justify-self: center" alt="Logo" height="120">
+
 # Readory
 
 Readory is a TypeScript npm-workspace monorepo for a serialized reading platform. It includes a Next.js frontend, a NestJS API server, and a shared package consumed by both applications.
@@ -207,12 +209,11 @@ Build outputs:
 ### Reader
 
 | Text                            | Image                             |
-|---------------------------------|-----------------------------------|
+| ------------------------------- | --------------------------------- |
 | ![Text](assets/reader-text.png) | ![Image](assets/reader-image.png) |
 
 ### Dashboard
 
 | Admin                                | User                               |
-|--------------------------------------|------------------------------------|
+| ------------------------------------ | ---------------------------------- |
 | ![Admin](assets/admin-dashboard.png) | ![User](assets/user-dashboard.png) |
-

@@ -17,7 +17,7 @@ export default function SettingsPage() {
   const syncAllBooks = async () => {
     try {
       setIsSyncBooks(true);
-      const data = await apiClient.post(`/search/admin/sync-all`);
+      await apiClient.post(`/search/admin/sync-all`);
       toast.success('success');
     } catch (err: unknown) {
       if (err instanceof Error) {

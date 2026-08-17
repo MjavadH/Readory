@@ -49,7 +49,9 @@ export function ChaptersDrawer({
           >
             <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border px-4 py-4 pt-[max(1rem,env(safe-area-inset-top))]">
               <div className="min-w-0">
-                <h3 className="truncate text-base font-semibold text-foreground">{t('Chapters')}</h3>
+                <h3 className="truncate text-base font-semibold text-foreground">
+                  {t('Chapters')}
+                </h3>
                 {bookTitle && <p className="truncate text-xs text-muted-foreground">{bookTitle}</p>}
               </div>
               <button

@@ -6,7 +6,6 @@ import { spring } from './types';
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-/** Animated wrapper so toggled controls collapse/expand smoothly. */
 export function ControlSlot({
   children,
   className = '',
@@ -14,20 +13,19 @@ export function ControlSlot({
   children: ReactNode;
   className?: string;
 }) {
-  const [animating, setAnimating] = useState(true);
-
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, width: 0, scale: 0.8 }}
-      animate={{ opacity: 1, width: 'auto', scale: 1 }}
-      exit={{ opacity: 0, width: 0, scale: 0.8 }}
+      initial={{ opacity: 0, width: 0, scale: 0.8, overflow: 'hidden' }}
+      animate={{
+        opacity: 1,
+        width: 'auto',
+        scale: 1,
+        transitionEnd: { overflow: 'visible' },
+      }}
+      exit={{ opacity: 0, width: 0, scale: 0.8, overflow: 'hidden' }}
       transition={spring}
-      onAnimationStart={() => setAnimating(true)}
-      onAnimationComplete={() => setAnimating(false)}
-      onLayoutAnimationStart={() => setAnimating(true)}
-      onLayoutAnimationComplete={() => setAnimating(false)}
-      className={`${animating ? 'overflow-hidden' : 'overflow-visible'} ${className}`}
+      className={className}
     >
       {children}
     </motion.div>
