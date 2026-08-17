@@ -916,7 +916,21 @@
     "NPages": "{NPages} pages",
     "PageNumber": "Page {Page}",
     "SelectPdfFile": "Select pdf file",
-    "FileTooLarge": "{FileName} is too large (max {Max})."
+    "FileTooLarge": "{FileName} is too large (max {Max}).",
+    "Typography": "Typography",
+    "FontFamily": "Font",
+    "FontSize": "Font size",
+    "LineHeight": "Line height",
+    "FontSerif": "Serif",
+    "FontSans": "Sans",
+    "FontMono": "Mono",
+    "IncreaseFontSize": "Increase font size",
+    "DecreaseFontSize": "Decrease font size",
+    "IncreaseLineHeight": "Increase line height",
+    "DecreaseLineHeight": "Decrease line height",
+    "TextDirection": "Text direction",
+    "TextDirectionLtr": "LTR",
+    "TextDirectionRtl": "RTL"
   },
   "Contributors": {
     "Title": "Contributors",

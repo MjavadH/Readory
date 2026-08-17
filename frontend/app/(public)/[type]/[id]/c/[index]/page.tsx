@@ -12,13 +12,11 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
-  Minus,
   Loader2,
   Lock,
   LogIn,
   RefreshCw,
   ShoppingCart,
-  Plus,
   Unlock,
 } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
@@ -84,12 +82,14 @@ type ReaderSettings = {
   fontSize: number;
   lineHeight: number;
   fontFamily: string;
+  textDirection: 'ltr' | 'rtl';
 };
 
 const DEFAULT_READER_SETTINGS: ReaderSettings = {
   fontSize: 18,
   lineHeight: 1.6,
   fontFamily: 'Georgia, serif',
+  textDirection: 'ltr',
 };
 
 export default function ChapterPage() {
@@ -160,6 +160,10 @@ export default function ChapterPage() {
           typeof parsed.fontFamily === 'string'
             ? parsed.fontFamily
             : DEFAULT_READER_SETTINGS.fontFamily,
+        textDirection:
+          parsed.textDirection === 'rtl' || parsed.textDirection === 'ltr'
+            ? parsed.textDirection
+            : DEFAULT_READER_SETTINGS.textDirection,
       };
     } catch {
       window.localStorage.removeItem('readory.readerSettings');
@@ -1134,10 +1138,13 @@ export default function ChapterPage() {
         </main>
 
         <ReaderToolbar
+          contentMode="text"
           currentPage={currentPage}
           totalPages={totalPages}
           brightness={brightness}
           readMode="page"
+          typography={readerSettings}
+          onTypographyChange={setReaderSettings}
           currentChapter={currentChapter}
           chapters={chapters}
           onPageChange={handlePageChange}
@@ -1149,7 +1156,6 @@ export default function ChapterPage() {
           onPurchased={handlePurchased}
           showReadModeToggle={false}
           fullscreenTarget={readerRootEl}
-          zoom={zoom}
         />
       </div>
     );
@@ -1219,6 +1225,7 @@ export default function ChapterPage() {
 
       {/* Toolbar */}
       <ReaderToolbar
+        contentMode="image"
         currentPage={currentPage}
         totalPages={totalPages}
         brightness={brightness}

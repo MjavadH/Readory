@@ -887,7 +887,21 @@
     "NavigationAlwaysVisible": "ناوبری همیشه قابل مشاهده می‌باشد",
     "Reset": "بازنشانی",
     "ContentProcessingTitle": "Content is being prepared",
-    "ContentProcessingDescription": "Content is being prepared, please check back soon"
+    "ContentProcessingDescription": "Content is being prepared, please check back soon",
+    "Typography": "تایپوگرافی",
+    "FontFamily": "فونت",
+    "FontSize": "اندازه فونت",
+    "LineHeight": "ارتفاع خط",
+    "FontSerif": "سریف",
+    "FontSans": "سن‌سریف",
+    "FontMono": "مونو",
+    "IncreaseFontSize": "افزایش اندازه فونت",
+    "DecreaseFontSize": "کاهش اندازه فونت",
+    "IncreaseLineHeight": "افزایش ارتفاع خط",
+    "DecreaseLineHeight": "کاهش ارتفاع خط",
+    "TextDirection": "جهت متن",
+    "TextDirectionLtr": "چپ به راست",
+    "TextDirectionRtl": "راست به چپ"
   },
   "Contributors": {
     "Title": "همکاران",
