@@ -259,6 +259,7 @@ export default function ChapterContentManager() {
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
   const [deletingImages, setDeletingImages] = useState(false);
+  const [refreshPulse, setRefreshPulse] = useState(false);
 
   const canLoad =
     Number.isInteger(bookId) && bookId > 0 && Number.isInteger(chapterIndex) && chapterIndex > 0;
@@ -273,6 +274,7 @@ export default function ChapterContentManager() {
       try {
         const response = await apiClient.get<ChapterContentResponse>(
           `/admin/books/${bookId}/chapters/${chapterIndex}/content`,
+          { authRequired: true },
         );
         setData(response);
         setLoadError(null);
@@ -631,6 +633,13 @@ export default function ChapterContentManager() {
   const isBusy = loading || uploading || deleting || deletingImages;
   const imagesDisabledByPdf = isPdfProcessing;
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshPulse(false);
+    await loadContent();
+    setRefreshPulse(true);
+    window.setTimeout(() => setRefreshPulse(false), 1200);
+  }, [loadContent]);
+
   if (!canLoad) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
@@ -701,10 +710,29 @@ export default function ChapterContentManager() {
               variant="outline"
               size="sm"
               className="flex-1 gap-2 sm:flex-none"
-              onClick={() => void loadContent({ silent: true })}
+              onClick={() => void handleRefresh()}
               disabled={isBusy}
             >
-              <RefreshCcw className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+              <motion.div
+                animate={
+                  loading
+                    ? { rotate: 360 }
+                    : refreshPulse
+                      ? { rotate: [0, -25, 25, 0], scale: [1, 1.25, 1] }
+                      : { rotate: 0, scale: 1 }
+                }
+                transition={
+                  loading
+                    ? { repeat: Infinity, duration: 0.9, ease: 'linear' }
+                    : { duration: 0.45, ease: EASE }
+                }
+              >
+                {refreshPulse && !loading ? (
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                ) : (
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                )}
+              </motion.div>
               {g('Refresh')}
             </Button>
 
