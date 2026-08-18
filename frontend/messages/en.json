@@ -524,6 +524,7 @@
     "SaveVisibility": "Save visibility",
     "ProfileVisibilityUpdated": "Profile visibility updated.",
     "FailedUpdateProfileVisibility": "Could not update profile visibility.",
+    "ViewPublicProfile": "View public profile",
     "ProfileVisibility": {
       "showMemberSince": "Show member since date",
       "showFavorites": "Show favorite books",

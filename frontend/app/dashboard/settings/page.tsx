@@ -17,6 +17,7 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/providers/toast-provider';
@@ -25,6 +26,7 @@ import { useAuth } from '@/providers/auth-provider';
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import { Switch } from '@/components/ui/switch';
 import ConnectedDevices from '@/components/dashboard/ConnectedDevices';
+import Link from 'next/link';
 
 type ProfileVisibilitySettings = {
   showMemberSince: boolean;
@@ -440,12 +442,33 @@ export default function SettingsPage() {
               ))}
             </div>
 
-            <div className="flex justify-end pt-8">
-              <button
+            <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 pt-8">
+              {profile?.username && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-full sm:w-auto"
+                >
+                  <Link
+                    href={`/u/${profile.username}`}
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 px-8 py-4 bg-muted/50 text-foreground border border-border rounded-2xl font-bold hover:bg-muted hover:border-primary/40 focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-base sm:text-lg group"
+                  >
+                    <ExternalLink className="w-5 h-5 text-primary group-hover:-translate-y-0.5 transition-transform rtl:-scale-x-100" />
+                    {t('ViewPublicProfile')}
+                  </Link>
+                </motion.div>
+              )}
+
+              <motion.button
                 type="button"
                 disabled={saving}
                 onClick={handleUpdateVisibility}
-                className="flex items-center gap-2 px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed transition-all text-lg group"
+                whileHover={{ scale: saving ? 1 : 1.02 }}
+                whileTap={{ scale: saving ? 1 : 0.95 }}
+                className="flex w-full sm:w-auto items-center justify-center gap-2 px-10 py-4 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-base sm:text-lg group"
               >
                 {saving ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -453,7 +476,7 @@ export default function SettingsPage() {
                   <Save className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
                 )}
                 {t('SaveVisibility')}
-              </button>
+              </motion.button>
             </div>
           </motion.section>
 

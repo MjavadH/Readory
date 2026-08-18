@@ -524,6 +524,7 @@
     "SaveVisibility": "ذخیره نمایش",
     "ProfileVisibilityUpdated": "تنظیمات نمایش نمایه به‌روزرسانی شد.",
     "FailedUpdateProfileVisibility": "به‌روزرسانی تنظیمات نمایش نمایه ممکن نشد.",
+    "ViewPublicProfile": "مشاهده پروفایل عمومی",
     "ProfileVisibility": {
       "showMemberSince": "نمایش تاریخ عضویت",
       "showFavorites": "نمایش کتاب‌های موردعلاقه",
