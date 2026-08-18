@@ -161,17 +161,19 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
               </h1>
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3 sm:mb-4">
-                <span className="text-sm font-medium text-secondary-foreground/70">
-                  {t('By')} {book.contributors}
-                </span>
-                {book.ratingAvg && (
+                {book.contributors && (
                   <>
-                    <span className="w-1 h-1 rounded-full bg-secondary-foreground/30" />
-                    <span className="inline-flex items-center gap-1 text-sm font-medium text-secondary-foreground/70">
-                      <Star className="w-3.5 h-3.5 fill-primary text-primary" />
-                      {book.ratingAvg}
+                    <span className="text-sm font-medium text-secondary-foreground/70">
+                      {t('By')} {book.contributors}
                     </span>
+                    <span className="w-1 h-1 rounded-full bg-secondary-foreground/30" />
                   </>
+                )}
+                {book.ratingAvg && (
+                  <span className="inline-flex items-center gap-1 text-sm font-medium text-secondary-foreground/70">
+                    <Star className="w-3.5 h-3.5 fill-primary text-primary" />
+                    {book.ratingAvg}
+                  </span>
                 )}
               </div>
 
