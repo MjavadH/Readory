@@ -1,6 +1,7 @@
 'use client';
 
 import { type LucideIcon } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { BookCard, BookCardSkeleton } from '@/components/book-card';
 import type { BookCardData } from '@/lib/types';
@@ -54,6 +55,67 @@ export function BookCarouselSkeleton({
   );
 }
 
+function useDragScroll<T extends HTMLElement>() {
+  const ref = useRef<T | null>(null);
+  const state = useRef({ pointerId: -1, startX: 0, startScroll: 0, moved: false });
+  const [isDragging, setIsDragging] = useState(false);
+
+  const onPointerDown = useCallback((e: React.PointerEvent<T>) => {
+    if (e.pointerType === 'touch' || e.button !== 0) return;
+    const el = ref.current;
+    if (!el) return;
+    state.current = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startScroll: el.scrollLeft,
+      moved: false,
+    };
+    setIsDragging(true);
+  }, []);
+
+  const endDrag = useCallback((e: React.PointerEvent<T>) => {
+    if (state.current.pointerId !== e.pointerId) return;
+    const el = ref.current;
+    if (el?.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+    state.current.pointerId = -1;
+    setIsDragging(false);
+  }, []);
+
+  const onPointerMove = useCallback((e: React.PointerEvent<T>) => {
+    const el = ref.current;
+    if (!el || state.current.pointerId !== e.pointerId) return;
+    const dx = e.clientX - state.current.startX;
+    if (!state.current.moved) {
+      if (Math.abs(dx) < 4) return;
+      state.current.moved = true;
+      el.setPointerCapture(e.pointerId);
+    }
+    e.preventDefault();
+    el.scrollLeft = state.current.startScroll - dx;
+  }, []);
+
+  // Swallow the click that follows a drag so cards don't navigate accidentally.
+  const onClickCapture = useCallback((e: React.MouseEvent<T>) => {
+    if (state.current.moved) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
+
+  return {
+    ref,
+    isDragging,
+    dragProps: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: endDrag,
+      onPointerCancel: endDrag,
+      onClickCapture,
+      onDragStartCapture: (e: React.DragEvent<T>) => e.preventDefault(),
+    },
+  };
+}
+
 export function BookCarouselSection({
   books,
   icon: Icon,
@@ -62,6 +124,7 @@ export function BookCarouselSection({
   ariaLabel,
 }: BookCarouselSectionProps) {
   const prefersReducedMotion = useReducedMotion();
+  const { ref: railRef, isDragging, dragProps } = useDragScroll<HTMLDivElement>();
 
   if (books.length === 0) return null;
 
@@ -111,10 +174,14 @@ export function BookCarouselSection({
         />
 
         <motion.div
+          ref={railRef}
+          {...dragProps}
           className={cn(
             'scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-visible px-4 pb-3 pt-1 sm:gap-4 sm:px-6 md:-mx-6',
             'scroll-px-4 sm:scroll-px-6',
             '[-webkit-overflow-scrolling:touch] overscroll-x-contain',
+            'md:cursor-grab',
+            isDragging && 'md:cursor-grabbing select-none snap-none',
           )}
           style={{
             scrollbarWidth: 'none',
