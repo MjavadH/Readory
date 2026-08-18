@@ -84,10 +84,10 @@ export function ContentSection({ data }: { data: ContentData }) {
               <CardDescription>{t('TrendingDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-                <div className="flex gap-3 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+              <div className="-mx-4 scrollbar-thin overflow-x-auto px-4">
+                <div className="flex gap-3">
                   {trending.slice(0, 10).map((b, i) => (
-                    <div key={b.id} className="group flex w-40 shrink-0 flex-col gap-2 sm:w-auto">
+                    <div key={b.id} className="group flex w-40 shrink-0 flex-col gap-2 ">
                       <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-muted">
                         {b.coverImage ? (
                           <Image
