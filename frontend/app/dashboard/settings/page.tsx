@@ -69,12 +69,12 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchProfile() {
       try {
-        const res = await apiClient.get<UserProfile>('/auth/profile');
+        const res = await apiClient.get<UserProfile>('/auth/profile', { authRequired: true });
         setProfile(res);
         setUsername(res.username);
         const publicProfile = await apiClient.get<{
           viewer: { settings?: ProfileVisibilitySettings };
-        }>(`/public/profiles/${encodeURIComponent(res.username)}`);
+        }>(`/public/profiles/${encodeURIComponent(res.username)}`, { authRequired: true });
 
         const loadedSettings = publicProfile.viewer.settings ?? defaultVisibilitySettings;
         setVisibilitySettings(loadedSettings);
@@ -129,7 +129,9 @@ export default function SettingsPage() {
     try {
       const form = new FormData();
       form.append('avatar', avatarFile);
-      const res = await apiClient.post<{ user: UserProfile }>('/users/me/avatar', form);
+      const res = await apiClient.post<{ user: UserProfile }>('/users/me/avatar', form, {
+        authRequired: true,
+      });
       setProfile((current) => (current ? { ...current, ...res.user } : res.user));
       await auth.refresh();
       setAvatarFile(null);
@@ -147,7 +149,7 @@ export default function SettingsPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiClient.patch('/users/profile', { username });
+      await apiClient.patch('/users/profile', { username, authRequired: true });
       toast.success(t('ProfileUpdated'));
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('FailedUpdateProfile')));
@@ -171,7 +173,7 @@ export default function SettingsPage() {
 
     setSaving(true);
     try {
-      await apiClient.patch('/users/profile', changedSettings);
+      await apiClient.patch('/users/profile', changedSettings, { authRequired: true });
       setInitialVisibilitySettings(visibilitySettings);
       toast.success(t('ProfileVisibilityUpdated'));
     } catch (err) {
@@ -193,6 +195,7 @@ export default function SettingsPage() {
         username,
         currentPassword,
         newPassword,
+        authRequired: true,
       });
       toast.success(t('PasswordChanged'));
       setCurrentPassword('');

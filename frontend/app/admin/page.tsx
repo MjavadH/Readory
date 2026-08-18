@@ -51,7 +51,9 @@ export default function AdminDashboardPage() {
   const loadOverview = useCallback(async () => {
     setOverview((prev) => (prev.status === 'loading' ? prev : { status: 'loading' }));
     try {
-      const data = await apiClient.get<AdminOverview>('/dashboard/admin/overview');
+      const data = await apiClient.get<AdminOverview>('/dashboard/admin/overview', {
+        authRequired: true,
+      });
       setOverview({ status: 'success', data });
     } catch (err) {
       setOverview({ status: 'error', message: getApiErrorMessage(err) });
