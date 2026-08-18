@@ -100,7 +100,7 @@ function formatBytes(bytes: number) {
 
 function PageSkeleton() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-10">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
           <Skeleton className="h-8 w-56 sm:w-72" />
@@ -137,18 +137,25 @@ function MetaCard({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.35, ease: EASE }}
-      className="group relative overflow-hidden rounded-xl border border-border bg-card p-3 transition-colors duration-200 hover:border-primary/40 sm:p-4"
+      transition={{ delay, duration: 0.3, ease: EASE }}
+      className="group relative flex min-w-0 items-start gap-2.5 overflow-hidden rounded-xl border border-border bg-card p-3 transition-colors duration-200 hover:border-primary/40"
     >
       <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      <div className="mb-1.5 flex items-center gap-2 text-[11px] font-medium text-muted-foreground sm:text-xs">
-        <span className="text-primary/70">{icon}</span>
-        <span className="truncate">{label}</span>
-      </div>
-      <div className={cn('truncate text-xs font-semibold sm:text-sm', mono && 'font-mono text-xs')}>
-        {value}
+      <span className="relative mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <div className="relative min-w-0 flex-1">
+        <div className="truncate text-[11px] font-medium text-muted-foreground">{label}</div>
+        <div
+          className={cn(
+            'mt-0.5 truncate text-xs font-semibold text-foreground sm:text-sm',
+            mono && 'font-mono text-[11px] sm:text-xs',
+          )}
+        >
+          {value}
+        </div>
       </div>
     </motion.div>
   );
@@ -416,7 +423,10 @@ export default function ChapterContentManager() {
     const oversized = imageFiles.find((file) => file.size > IMAGE_MAX_BYTES);
     if (oversized) {
       setImageError(
-        t('FileTooLarge', { FileName: oversized.name, Max: formatBytes(IMAGE_MAX_BYTES) }),
+        t('FileTooLarge', {
+          FileName: oversized.name,
+          Max: formatBytes(IMAGE_MAX_BYTES),
+        }),
       );
       return;
     }
@@ -453,7 +463,10 @@ export default function ChapterContentManager() {
     }
     if (textFile.size > TEXT_MAX_BYTES) {
       setTextError(
-        t('FileTooLarge', { FileName: textFile.name, Max: formatBytes(TEXT_MAX_BYTES) }),
+        t('FileTooLarge', {
+          FileName: textFile.name,
+          Max: formatBytes(TEXT_MAX_BYTES),
+        }),
       );
       return;
     }
@@ -485,7 +498,12 @@ export default function ChapterContentManager() {
       return;
     }
     if (pdfFile.size > PDF_MAX_BYTES) {
-      setPdfError(t('FileTooLarge', { FileName: pdfFile.name, Max: formatBytes(PDF_MAX_BYTES) }));
+      setPdfError(
+        t('FileTooLarge', {
+          FileName: pdfFile.name,
+          Max: formatBytes(PDF_MAX_BYTES),
+        }),
+      );
       return;
     }
 
@@ -681,7 +699,7 @@ export default function ChapterContentManager() {
 
   return (
     <div className="min-h-screen bg-background pb-16">
-      <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 sm:space-y-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 sm:space-y-8">
         {/* Header */}
         <motion.header
           initial={{ opacity: 0, y: -10 }}
@@ -824,87 +842,138 @@ export default function ChapterContentManager() {
           )}
         </AnimatePresence>
 
-        {/* Metadata */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-3">
-          {metadataRows.map((row, i) => (
-            <MetaCard
-              key={row.label}
-              icon={row.icon}
-              label={row.label}
-              value={row.value}
-              mono={row.mono}
-              delay={i * 0.04}
-            />
-          ))}
-        </div>
-
         {/* Upload */}
-        <Section title={t('UploadContent')} subtitle={t('UploadContentDescription')}>
-          <div className="mb-5 flex items-center gap-1 rounded-xl border border-border bg-muted/60 p-1 sm:w-fit">
-            <TabBtn
-              active={activeTab === 'images'}
-              icon={<ImageIcon className="h-3.5 w-3.5" />}
-              label={t('Images')}
-              onClick={() => setActiveTab('images')}
-              disabled={uploading}
-            />
-            <TabBtn
-              active={activeTab === 'text'}
-              icon={<FileText className="h-3.5 w-3.5" />}
-              label={t('Text')}
-              onClick={() => setActiveTab('text')}
-              disabled={uploading}
-            />
-            <TabBtn
-              active={activeTab === 'pdf'}
-              icon={<FileType2 className="h-3.5 w-3.5" />}
-              label={t('Pdf')}
-              onClick={() => setActiveTab('pdf')}
-              disabled={uploading}
-            />
-          </div>
+        <div className="grid grid-cols-1 items-start gap-4 sm:gap-6 lg:grid-cols-4">
+          <div className="order-2 min-w-0 lg:order-1 lg:col-span-3">
+            <Section title={t('UploadContent')} subtitle={t('UploadContentDescription')}>
+              <div className="mb-5 flex items-center gap-1 rounded-xl border border-border bg-muted/60 p-1 sm:w-fit">
+                <TabBtn
+                  active={activeTab === 'images'}
+                  icon={<ImageIcon className="h-3.5 w-3.5" />}
+                  label={t('Images')}
+                  onClick={() => setActiveTab('images')}
+                  disabled={uploading}
+                />
+                <TabBtn
+                  active={activeTab === 'text'}
+                  icon={<FileText className="h-3.5 w-3.5" />}
+                  label={t('Text')}
+                  onClick={() => setActiveTab('text')}
+                  disabled={uploading}
+                />
+                <TabBtn
+                  active={activeTab === 'pdf'}
+                  icon={<FileType2 className="h-3.5 w-3.5" />}
+                  label={t('Pdf')}
+                  onClick={() => setActiveTab('pdf')}
+                  disabled={uploading}
+                />
+              </div>
 
-          <AnimatePresence mode="wait">
-            {activeTab === 'images' && (
-              <UploadPanel
-                key="images"
-                kind="image"
-                description={t('UploadImageFiles')}
-                accept="image/png,image/jpeg,image/webp"
-                multiple
-                maxFiles={IMAGE_MAX_FILES}
-                allowAddMore
-                files={imageFiles}
-                onFilesChange={setImageFiles}
-                uploading={uploading && activeTab === 'images'}
-                disabled={imagesDisabledByPdf}
-                progress={progress}
-                progressLabel={t('UploadingImages')}
-                error={imageError}
-                onErrorChange={setImageError}
-                blockedErrorText={t('OnlyImageAllowed')}
-                maxFilesErrorText={(max) => t('TooManyImages', { Max: max })}
-                helperText={t('ImageAllowed')}
-                notice={
-                  imagesDisabledByPdf ? (
-                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      {t('PdfProcessingBlocksUpload')}
-                    </p>
-                  ) : chapter?.contentType === 'text' ? (
-                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      {t('AppendDisabled')}
-                    </p>
-                  ) : null
-                }
-                actions={
-                  <>
-                    {chapter?.contentType === 'images' && (
+              <AnimatePresence mode="wait">
+                {activeTab === 'images' && (
+                  <UploadPanel
+                    key="images"
+                    kind="image"
+                    description={t('UploadImageFiles')}
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    maxFiles={IMAGE_MAX_FILES}
+                    allowAddMore
+                    files={imageFiles}
+                    onFilesChange={setImageFiles}
+                    uploading={uploading && activeTab === 'images'}
+                    disabled={imagesDisabledByPdf}
+                    progress={progress}
+                    progressLabel={t('UploadingImages')}
+                    error={imageError}
+                    onErrorChange={setImageError}
+                    blockedErrorText={t('OnlyImageAllowed')}
+                    maxFilesErrorText={(max) => t('TooManyImages', { Max: max })}
+                    helperText={t('ImageAllowed')}
+                    notice={
+                      imagesDisabledByPdf ? (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          {t('PdfProcessingBlocksUpload')}
+                        </p>
+                      ) : chapter?.contentType === 'text' ? (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          {t('AppendDisabled')}
+                        </p>
+                      ) : null
+                    }
+                    actions={
+                      <>
+                        {chapter?.contentType === 'images' && (
+                          <Button
+                            size="sm"
+                            className="w-full gap-2 sm:w-auto"
+                            onClick={() => void handleUploadImages('append')}
+                            disabled={isBusy || imagesDisabledByPdf}
+                          >
+                            {uploading ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="h-3.5 w-3.5" />
+                            )}
+                            {t('AppendImages')}
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant={hasContent ? 'outline' : 'default'}
+                          className="w-full gap-2 sm:w-auto"
+                          onClick={() => void handleUploadImages('replace')}
+                          disabled={isBusy || imagesDisabledByPdf}
+                        >
+                          {uploading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : hasContent ? (
+                            <RefreshCcw className="h-3.5 w-3.5" />
+                          ) : (
+                            <Plus className="h-3.5 w-3.5" />
+                          )}
+                          {hasContent ? t('ReplaceAll') : t('AddImages')}
+                        </Button>
+                      </>
+                    }
+                  />
+                )}
+
+                {activeTab === 'text' && (
+                  <UploadPanel
+                    key="text"
+                    kind="file"
+                    description={t('UploadTextFile')}
+                    accept=".md,.txt,text/plain,text/markdown"
+                    maxFiles={1}
+                    files={textFile ? [textFile] : []}
+                    onFilesChange={(files) => setTextFile(files[0] ?? null)}
+                    uploading={uploading && activeTab === 'text'}
+                    disabled={imagesDisabledByPdf}
+                    progress={progress}
+                    progressLabel={t('UploadingText')}
+                    error={textError}
+                    onErrorChange={setTextError}
+                    blockedErrorText={t('OnlyTextAllowed')}
+                    maxFilesErrorText={() => t('OnlyOneFileAllowed')}
+                    dropTitleIdle={t('DropTextFile')}
+                    helperText={t('TextFormats')}
+                    notice={
+                      imagesDisabledByPdf ? (
+                        <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                          {t('PdfProcessingBlocksUpload')}
+                        </p>
+                      ) : null
+                    }
+                    actions={
                       <Button
                         size="sm"
                         className="w-full gap-2 sm:w-auto"
-                        onClick={() => void handleUploadImages('append')}
+                        onClick={() => void handleUploadText()}
                         disabled={isBusy || imagesDisabledByPdf}
                       >
                         {uploading ? (
@@ -912,122 +981,93 @@ export default function ChapterContentManager() {
                         ) : (
                           <Upload className="h-3.5 w-3.5" />
                         )}
-                        {t('AppendImages')}
+                        {t('UploadText')}
                       </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant={hasContent ? 'outline' : 'default'}
-                      className="w-full gap-2 sm:w-auto"
-                      onClick={() => void handleUploadImages('replace')}
-                      disabled={isBusy || imagesDisabledByPdf}
-                    >
-                      {uploading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : hasContent ? (
-                        <RefreshCcw className="h-3.5 w-3.5" />
-                      ) : (
-                        <Plus className="h-3.5 w-3.5" />
-                      )}
-                      {hasContent ? t('ReplaceAll') : t('AddImages')}
-                    </Button>
-                  </>
-                }
-              />
-            )}
+                    }
+                  />
+                )}
 
-            {activeTab === 'text' && (
-              <UploadPanel
-                key="text"
-                kind="file"
-                description={t('UploadTextFile')}
-                accept=".md,.txt,text/plain,text/markdown"
-                maxFiles={1}
-                files={textFile ? [textFile] : []}
-                onFilesChange={(files) => setTextFile(files[0] ?? null)}
-                uploading={uploading && activeTab === 'text'}
-                disabled={imagesDisabledByPdf}
-                progress={progress}
-                progressLabel={t('UploadingText')}
-                error={textError}
-                onErrorChange={setTextError}
-                blockedErrorText={t('OnlyTextAllowed')}
-                maxFilesErrorText={() => t('OnlyOneFileAllowed')}
-                dropTitleIdle={t('DropTextFile')}
-                helperText={t('TextFormats')}
-                notice={
-                  imagesDisabledByPdf ? (
-                    <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                      {t('PdfProcessingBlocksUpload')}
-                    </p>
-                  ) : null
-                }
-                actions={
-                  <Button
-                    size="sm"
-                    className="w-full gap-2 sm:w-auto"
-                    onClick={() => void handleUploadText()}
-                    disabled={isBusy || imagesDisabledByPdf}
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="h-3.5 w-3.5" />
-                    )}
-                    {t('UploadText')}
-                  </Button>
-                }
-              />
-            )}
+                {activeTab === 'pdf' && (
+                  <UploadPanel
+                    key="pdf"
+                    kind="file"
+                    description={t('UploadPdfDescription')}
+                    accept="application/pdf,.pdf"
+                    maxFiles={1}
+                    files={pdfFile ? [pdfFile] : []}
+                    onFilesChange={(files) => setPdfFile(files[0] ?? null)}
+                    isAllowedFile={(file) =>
+                      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+                    }
+                    uploading={uploading && activeTab === 'pdf'}
+                    disabled={imagesDisabledByPdf}
+                    progress={progress}
+                    progressLabel={t('UploadingPdf')}
+                    error={pdfError}
+                    onErrorChange={setPdfError}
+                    blockedErrorText={t('OnlyPdfAllowed')}
+                    maxFilesErrorText={() => t('OnlyOneFileAllowed')}
+                    dropTitleIdle={t('DropPdfFile')}
+                    helperText={t('PdfLimits', {
+                      Max: formatBytes(PDF_MAX_BYTES),
+                    })}
+                    notice={
+                      <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+                        {imagesDisabledByPdf
+                          ? t('PdfProcessingBlocksUpload')
+                          : t('PdfReplaceWarning')}
+                      </p>
+                    }
+                    actions={
+                      <Button
+                        size="sm"
+                        className="w-full gap-2 sm:w-auto"
+                        onClick={() => void handleUploadPdf()}
+                        disabled={isBusy || imagesDisabledByPdf}
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        {t('UploadPdf')}
+                      </Button>
+                    }
+                  />
+                )}
+              </AnimatePresence>
+            </Section>
+          </div>
 
-            {activeTab === 'pdf' && (
-              <UploadPanel
-                key="pdf"
-                kind="file"
-                description={t('UploadPdfDescription')}
-                accept="application/pdf,.pdf"
-                maxFiles={1}
-                files={pdfFile ? [pdfFile] : []}
-                onFilesChange={(files) => setPdfFile(files[0] ?? null)}
-                isAllowedFile={(file) =>
-                  file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-                }
-                uploading={uploading && activeTab === 'pdf'}
-                disabled={imagesDisabledByPdf}
-                progress={progress}
-                progressLabel={t('UploadingPdf')}
-                error={pdfError}
-                onErrorChange={setPdfError}
-                blockedErrorText={t('OnlyPdfAllowed')}
-                maxFilesErrorText={() => t('OnlyOneFileAllowed')}
-                dropTitleIdle={t('DropPdfFile')}
-                helperText={t('PdfLimits', { Max: formatBytes(PDF_MAX_BYTES) })}
-                notice={
-                  <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                    <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
-                    {imagesDisabledByPdf ? t('PdfProcessingBlocksUpload') : t('PdfReplaceWarning')}
-                  </p>
-                }
-                actions={
-                  <Button
-                    size="sm"
-                    className="w-full gap-2 sm:w-auto"
-                    onClick={() => void handleUploadPdf()}
-                    disabled={isBusy || imagesDisabledByPdf}
-                  >
-                    {uploading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Upload className="h-3.5 w-3.5" />
-                    )}
-                    {t('UploadPdf')}
-                  </Button>
-                }
-              />
-            )}
-          </AnimatePresence>
-        </Section>
+          {/* Metadata */}
+          <motion.aside
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            className="order-1 min-w-0 lg:order-2 lg:col-span-1 lg:sticky lg:top-6"
+          >
+            <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <div className="border-b border-border px-4 py-3">
+                <h2 className="truncate text-sm font-semibold text-foreground">
+                  {t('ChapterMetadata')}
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 gap-2.5 p-3 sm:grid-cols-2 sm:p-4 lg:grid-cols-1">
+                {metadataRows.map((row, i) => (
+                  <MetaCard
+                    key={row.label}
+                    icon={row.icon}
+                    label={row.label}
+                    value={row.value}
+                    mono={row.mono}
+                    delay={i * 0.04}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.aside>
+        </div>
 
         {/* Current content */}
         <Section

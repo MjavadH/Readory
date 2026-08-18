@@ -932,7 +932,8 @@
     "DecreaseLineHeight": "Decrease line height",
     "TextDirection": "Text direction",
     "TextDirectionLtr": "LTR",
-    "TextDirectionRtl": "RTL"
+    "TextDirectionRtl": "RTL",
+    "ChapterMetadata": "Chapter Metadata"
   },
   "Contributors": {
     "Title": "Contributors",

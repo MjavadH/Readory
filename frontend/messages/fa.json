@@ -932,7 +932,8 @@
     "DecreaseLineHeight": "کاهش ارتفاع خط",
     "TextDirection": "جهت متن",
     "TextDirectionLtr": "چپ به راست",
-    "TextDirectionRtl": "راست به چپ"
+    "TextDirectionRtl": "راست به چپ",
+    "ChapterMetadata": "فراداده فصل"
   },
   "Contributors": {
     "Title": "همکاران",
