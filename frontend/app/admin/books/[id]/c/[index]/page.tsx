@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
-  ArrowLeft,
   BookOpen,
   Check,
   FileStack,
@@ -22,7 +21,6 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';

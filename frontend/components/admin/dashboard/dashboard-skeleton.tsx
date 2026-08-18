@@ -220,18 +220,6 @@ export function UsersSectionSkeleton() {
 export function DashboardSkeleton() {
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* header */}
-      <motion.div
-        {...rise(0)}
-        className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div className="space-y-2">
-          <Skeleton className="h-6 sm:h-8 w-48 sm:w-64" />
-          <Skeleton className="h-3 sm:h-4 w-64 sm:w-96 max-w-full" />
-        </div>
-        <Skeleton className="h-9 w-full sm:w-28 rounded-md" />
-      </motion.div>
-
       {/* KPI row */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (

@@ -73,7 +73,6 @@ export function AddFundsPanel({ open, onOpenChange, currency, onSuccess }: AddFu
         return t('errors.amountTooLow', { min: formatAmount(provider.minAmount, locale) });
       if (validationKey === 'amountTooHigh' && provider)
         return t('errors.amountTooHigh', { max: formatAmount(provider.maxAmount, locale) });
-      return t(`errors.${validationKey}`);
     }
     return null;
   })();
