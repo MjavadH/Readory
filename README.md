@@ -1,4 +1,6 @@
-<img src="frontend/public/Logo.svg" style="display: flex; justify-self: center" alt="Logo" height="120">
+<p align="center">
+  <img src="frontend/public/Logo.svg" alt="Logo" height="120">
+</p>
 
 # Readory
 
