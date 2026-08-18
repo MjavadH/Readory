@@ -71,7 +71,7 @@
         "SectionTitle": "Content",
         "NoAccess": "You don't have access to content analytics.",
         "TrendingTitle": "Trending books",
-        "TrendingDescription": "Top books ranked by popularity score",
+        "TrendingDescription": "Top books ranked by trend score",
         "Score": "Score {score}",
         "TopAccessedTitle": "Most accessed books",
         "TopAccessedDescription": "Books with the highest access counts",
