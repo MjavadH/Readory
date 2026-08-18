@@ -459,14 +459,16 @@ export function BookDetails({
                   className="flex flex-wrap gap-2"
                 >
                   {book.genres.map((genre) => (
-                    <Badge
-                      key={genre.id}
-                      variant="outline"
-                      className="gap-1.5 select-none rounded-full border-border bg-background/60 px-3 py-1 font-medium backdrop-blur transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
-                    >
-                      <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
-                      {genre.name}
-                    </Badge>
+                    <Link href={`/genres/${genre.slug}`} key={genre.slug}>
+                      <Badge
+                        key={genre.id}
+                        variant="outline"
+                        className="gap-1.5 select-none rounded-full border-border bg-background/60 px-3 py-1 font-medium backdrop-blur transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+                      >
+                        <AppIcon name={genre.iconKey} className="h-3.5 w-3.5" />
+                        {genre.name}
+                      </Badge>
+                    </Link>
                   ))}
                 </motion.div>
               )}
