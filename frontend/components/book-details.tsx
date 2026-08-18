@@ -433,7 +433,9 @@ export function BookDetails({
                                 )}
                               </span>
                               <span className="truncate">{contributorName}</span>
-                              <span className="text-xs text-muted-foreground">({roleLabel})</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({t(`ContributorRole_${roleLabel}`)})
+                              </span>
                             </span>
                           </Link>
                         );
