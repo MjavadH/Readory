@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AppPagination } from '@/components/app-pagination';
 import { UploadPanel } from '@/components/admin/upload-panel';
+import { AdminPageHeader } from '@/components/admin/admin-page-header';
 import { cn } from '@/lib/utils';
 
 type ChapterMeta = {
@@ -701,92 +702,77 @@ export default function ChapterContentManager() {
     <div className="min-h-screen bg-background pb-16">
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 sm:space-y-8">
         {/* Header */}
-        <motion.header
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
-          className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-        >
-          <div className="min-w-0 space-y-1">
-            <Link
-              href={`/admin/books/${bookId}`}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-primary"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" />
-              {t('GoBack')}
-            </Link>
-            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl lg:text-3xl">
-              {t('ChapterContentManager')}
-            </h1>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              {t('ChapterContentManagerDescription')}
-            </p>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 gap-2 sm:flex-none"
-              onClick={() => void handleRefresh()}
-              disabled={isBusy}
-            >
-              <motion.div
-                animate={
-                  loading
-                    ? { rotate: 360 }
-                    : refreshPulse
-                      ? { rotate: [0, -25, 25, 0], scale: [1, 1.25, 1] }
-                      : { rotate: 0, scale: 1 }
-                }
-                transition={
-                  loading
-                    ? { repeat: Infinity, duration: 0.9, ease: 'linear' }
-                    : { duration: 0.45, ease: EASE }
-                }
+        <AdminPageHeader
+          icon={FileStack}
+          title={t('ChapterContentManager')}
+          description={t('ChapterContentManagerDescription')}
+          back={{ href: `/admin/books/${bookId}`, label: t('GoBack') }}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-2 sm:flex-none"
+                onClick={() => void handleRefresh()}
+                disabled={isBusy}
               >
-                {refreshPulse && !loading ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                ) : (
-                  <RefreshCcw className="h-3.5 w-3.5" />
-                )}
-              </motion.div>
-              {g('Refresh')}
-            </Button>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1 gap-2 sm:flex-none"
-                  disabled={isBusy || (!hasContent && !isPdfProcessing)}
+                <motion.div
+                  animate={
+                    loading
+                      ? { rotate: 360 }
+                      : refreshPulse
+                        ? { rotate: [0, -25, 25, 0], scale: [1, 1.25, 1] }
+                        : { rotate: 0, scale: 1 }
+                  }
+                  transition={
+                    loading
+                      ? { repeat: Infinity, duration: 0.9, ease: 'linear' }
+                      : { duration: 0.45, ease: EASE }
+                  }
                 >
-                  {deleting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  {refreshPulse && !loading ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
                   ) : (
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <RefreshCcw className="h-3.5 w-3.5" />
                   )}
-                  {g('DeleteAll')}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t('DeleteAllContent')}</AlertDialogTitle>
-                  <AlertDialogDescription className="rtl:text-right">
-                    {t('DeleteAllContentDescription')}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={deleting}>{g('Cancel')}</AlertDialogCancel>
-                  <AlertDialogAction variant="destructive" onClick={handleDeleteAll}>
-                    {t('ConfirmDelete')}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </motion.header>
+                </motion.div>
+                {g('Refresh')}
+              </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="flex-1 gap-2 sm:flex-none"
+                    disabled={isBusy || (!hasContent && !isPdfProcessing)}
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                    {g('DeleteAll')}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t('DeleteAllContent')}</AlertDialogTitle>
+                    <AlertDialogDescription className="rtl:text-right">
+                      {t('DeleteAllContentDescription')}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={deleting}>{g('Cancel')}</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={handleDeleteAll}>
+                      {t('ConfirmDelete')}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          }
+        ></AdminPageHeader>
 
         {/* Background refresh error */}
         <AnimatePresence>

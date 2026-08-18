@@ -1,8 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
+import { ArrowLeft, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/lib/utils';
 
@@ -10,6 +12,8 @@ export interface AdminPageHeaderProps {
   icon: LucideIcon;
   title: React.ReactNode;
   description?: React.ReactNode;
+  /** Optional back link. When omitted, no back button is rendered. */
+  back?: string | { href: string; label?: React.ReactNode };
   /** Buttons / meta chips rendered on the opposite side. */
   actions?: React.ReactNode;
   /** Optional extra row rendered under the header (search bar, tabs, ...). */
@@ -21,11 +25,16 @@ export function AdminPageHeader({
   icon: Icon,
   title,
   description,
+  back,
   actions,
   children,
   className,
 }: AdminPageHeaderProps) {
   const reduceMotion = useReducedMotion();
+  const t = useTranslations('General');
+
+  const backHref = typeof back === 'string' ? back : back?.href;
+  const backLabel = (typeof back === 'object' && back?.label) || (backHref ? t('Back') : null);
 
   const container = {
     hidden: { opacity: 0, y: reduceMotion ? 0 : -8 },
@@ -60,6 +69,24 @@ export function AdminPageHeader({
           <Icon className="h-5 w-5" aria-hidden="true" />
         </div>
         <div className="min-w-0">
+          {backHref ? (
+            <motion.div
+              whileTap={reduceMotion ? undefined : { scale: 0.9 }}
+              className="mb-0.5 inline-flex"
+            >
+              <Link
+                href={backHref}
+                aria-label={typeof backLabel === 'string' ? backLabel : undefined}
+                className="group inline-flex min-h-7 items-center gap-1.5 rounded-md px-1.5 py-0.5 -ms-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ArrowLeft
+                  className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:-translate-x-0.5 rtl:rotate-180 rtl:group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+                <span className="truncate">{backLabel}</span>
+              </Link>
+            </motion.div>
+          ) : null}
           <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
           {description ? (
             <p className="truncate text-xs text-muted-foreground sm:text-sm">{description}</p>
