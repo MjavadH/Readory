@@ -603,6 +603,8 @@
     "TotalBooks": "Total Books",
     "Published": "Published",
     "Drafts": "Drafts",
+    "Scheduled": "Scheduled",
+    "AllStatuses": "All statuses",
     "AddNewBook": "Add New Book",
     "ClickToCreate": "Click to create a new book entry",
     "BookTitle": "Title",

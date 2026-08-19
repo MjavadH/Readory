@@ -9,7 +9,6 @@ import { ListChaptersDto } from './dto/list-chapters.dto';
 import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
 import { normalizeQ } from '../common';
-import { RecommendationService } from '../books/recommendation/recommendation.service';
 import { DomainEventType } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
 
@@ -21,7 +20,6 @@ export class ChaptersService {
     private publicService: PublicService,
     private readonly cacheManager: CacheManager,
     private readonly chapterCache: ChapterCache,
-    private readonly recommendationService: RecommendationService,
     private readonly outbox: OutboxService,
   ) {}
 
@@ -41,12 +39,13 @@ export class ChaptersService {
     const safeLimit = Math.max(limit, 1);
     const skip = (safePage - 1) * safeLimit;
     const order = query.order === 'desc' ? 'desc' : 'asc';
+    const status = query.publishStatus;
 
     const shouldCache = safePage <= 20;
 
     const where: Prisma.ChapterWhereInput = {
       bookId,
-      publishStatus: query.publishStatus,
+      publishStatus: status,
       ...(q
         ? {
             OR: [
@@ -100,6 +99,7 @@ export class ChaptersService {
     const cacheKey = this.chapterCache.buildListKey({
       bookId,
       q,
+      status,
       page: safePage,
       limit: safeLimit,
       path,

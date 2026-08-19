@@ -8,6 +8,7 @@ import {
   ArrowUp10,
   BookOpen,
   Check,
+  ChevronDown,
   Clock,
   Edit,
   EyeIcon,
@@ -51,6 +52,13 @@ type CommonProps = {
   /** Ref for pagination scroll target + section anchor */
   scrollRef?: RefObject<HTMLDivElement | null>;
 
+  /** Search + sort */
+  searchInput: string;
+  onSearchInputChange: (v: string) => void;
+  onSearchSubmit: () => void;
+  order: 'asc' | 'desc';
+  onToggleOrder: () => void;
+
   /** i18n */
   t: Translator; // Books namespace
   ti: Translator; // Time namespace
@@ -61,13 +69,6 @@ type PublicProps = CommonProps & {
   mode: 'public';
   purchasedChapterIds: number[];
   onChapterSelect: (chapter: ChaptersSectionChapter) => void;
-
-  /** Search + sort */
-  searchInput: string;
-  onSearchInputChange: (v: string) => void;
-  onSearchSubmit: () => void;
-  order: 'asc' | 'desc';
-  onToggleOrder: () => void;
 };
 
 type AdminProps = CommonProps & {
@@ -77,6 +78,9 @@ type AdminProps = CommonProps & {
   onDeleteChapter: (chapterId: number) => void;
   /** Builds the "view" link (admin preview of a chapter). */
   buildChapterHref: (chapter: ChaptersSectionChapter) => string;
+
+  statusFilter: PublicationStatus | 'ALL';
+  onStatusFilterChange: (status: PublicationStatus | 'ALL') => void;
 };
 
 export type ChaptersSectionProps = PublicProps | AdminProps;
@@ -110,6 +114,11 @@ export function ChaptersSection(props: ChaptersSectionProps) {
     pageSize,
     onPageChange,
     scrollRef,
+    searchInput,
+    onSearchInputChange,
+    onSearchSubmit,
+    order,
+    onToggleOrder,
     t,
     ti,
   } = props;
@@ -125,10 +134,10 @@ export function ChaptersSection(props: ChaptersSectionProps) {
   return (
     <section ref={sectionRef} id="chapters" className="scroll-mt-24">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
         className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/60 shadow-sm backdrop-blur-sm"
       >
         {/* Ambient gradient */}
@@ -174,64 +183,83 @@ export function ChaptersSection(props: ChaptersSectionProps) {
             </div>
           </div>
 
-          {/* Public: search + sort */}
-          {!isAdmin && (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="group relative flex-1">
-                <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary ltr:left-3 rtl:right-3" />
-                <Input
-                  value={(props as PublicProps).searchInput}
-                  onChange={(e) => (props as PublicProps).onSearchInputChange(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (props as PublicProps).onSearchSubmit()}
-                  placeholder={t('SearchNameOrIndex')}
-                  className="h-11 rounded-xl border-border/70 bg-background/70 ps-9 transition-all focus-visible:ring-2 focus-visible:ring-primary/30"
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={(props as PublicProps).onSearchSubmit}
-                  disabled={chaptersLoading}
-                  className="h-11 flex-1 rounded-xl sm:flex-none"
-                >
-                  <Search className="me-2 h-4 w-4" />
-                  {t('Search')}
-                </Button>
-                <motion.button
-                  type="button"
-                  onClick={(props as PublicProps).onToggleOrder}
-                  disabled={chaptersLoading}
-                  whileTap={{ scale: 0.92 }}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/70 text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
-                  aria-label="Toggle sorting order"
-                >
-                  <motion.span
-                    key={(props as PublicProps).order}
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                    className="flex items-center justify-center"
-                  >
-                    {(props as PublicProps).order === 'asc' ? (
-                      <ArrowDown10 className="h-5 w-5" />
-                    ) : (
-                      <ArrowUp10 className="h-5 w-5" />
-                    )}
-                  </motion.span>
-                </motion.button>
-              </div>
+          {/* Search + sort */}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="group relative flex-1">
+              <Search className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary ltr:left-3 rtl:right-3" />
+              <Input
+                value={searchInput}
+                onChange={(e) => onSearchInputChange(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && onSearchSubmit()}
+                placeholder={t('SearchNameOrIndex')}
+                className="h-11 rounded-xl border-border/70 bg-background/70 ps-9 transition-all focus-visible:ring-2 focus-visible:ring-primary/30"
+              />
             </div>
-          )}
+            <div className="flex gap-2">
+              {isAdmin && (
+                <div className="relative shrink-0">
+                  <select
+                    value={(props as AdminProps).statusFilter}
+                    onChange={(e) =>
+                      (props as AdminProps).onStatusFilterChange(
+                        e.target.value as PublicationStatus | 'ALL',
+                      )
+                    }
+                    className="h-11 w-full appearance-none rounded-xl border border-border/70 bg-background/70 py-2 pe-9 ps-4 text-sm font-medium text-foreground outline-none transition-all hover:border-primary/40 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 sm:w-36"
+                    aria-label="Filter by status"
+                  >
+                    <option value="ALL">{t('AllStatuses')}</option>
+                    <option value={PublicationStatus.PUBLISHED}>{t('Published')}</option>
+                    <option value={PublicationStatus.DRAFT}>{t('Draft')}</option>
+                    <option value={PublicationStatus.SCHEDULED}>{t('Scheduled')}</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:right-3 rtl:left-3" />
+                </div>
+              )}
+              <Button
+                onClick={onSearchSubmit}
+                disabled={chaptersLoading}
+                className="h-11 flex-1 rounded-xl sm:flex-none"
+              >
+                <Search className="me-2 h-4 w-4" />
+                {t('Search')}
+              </Button>
+              <motion.button
+                type="button"
+                onClick={onToggleOrder}
+                disabled={chaptersLoading}
+                whileTap={{ scale: 0.92 }}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/70 text-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:opacity-50"
+                aria-label="Toggle sorting order"
+              >
+                <motion.span
+                  key={(props as PublicProps).order}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+                  className="flex items-center justify-center"
+                >
+                  {order === 'asc' ? (
+                    <ArrowDown10 className="h-5 w-5" />
+                  ) : (
+                    <ArrowUp10 className="h-5 w-5" />
+                  )}
+                </motion.span>
+              </motion.button>
+            </div>
+          </div>
         </div>
 
         {/* Body */}
         <div className="space-y-6 p-4 sm:p-6">
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="wait">
             {chaptersLoading ? (
               <motion.div
                 key="loading"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
               >
                 <ChaptersGridSkeleton />
               </motion.div>
@@ -267,16 +295,12 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                 )}
               </motion.div>
             ) : (
-              <motion.div key="grid" layout className="space-y-6">
-                <motion.div
-                  layout
-                  className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                >
-                  {chapters.map((chapter, index) => (
+              <div key="grid" className="space-y-6">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {chapters.map((chapter) => (
                     <ChapterCard
                       key={chapter.id}
                       chapter={chapter}
-                      index={index}
                       isAdmin={isAdmin}
                       owned={purchasedIds.has(chapter.id)}
                       t={t}
@@ -296,15 +320,10 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                       }
                     />
                   ))}
-                </motion.div>
+                </div>
 
                 {chaptersTotalPages > 1 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
-                    className="border-t border-border/60 pt-6"
-                  >
+                  <div className="border-t border-border/60 pt-6">
                     <AppPagination
                       currentPage={chaptersPage}
                       totalPages={chaptersTotalPages}
@@ -316,9 +335,9 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                       canGoNext={!chaptersLoading && chaptersPage < chaptersTotalPages}
                       scrollTarget={sectionRef}
                     />
-                  </motion.div>
+                  </div>
                 )}
-              </motion.div>
+              </div>
             )}
           </AnimatePresence>
         </div>
@@ -329,7 +348,6 @@ export function ChaptersSection(props: ChaptersSectionProps) {
 
 type ChapterCardProps = {
   chapter: ChaptersSectionChapter;
-  index: number;
   isAdmin: boolean;
   owned: boolean;
   t: Translator;
@@ -343,7 +361,6 @@ type ChapterCardProps = {
 
 function ChapterCard({
   chapter,
-  index,
   isAdmin,
   owned,
   t,
@@ -397,7 +414,7 @@ function ChapterCard({
   }
 
   const cardClasses = cn(
-    'group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-4 text-start transition-colors duration-200 hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right',
+    'group relative flex flex-col overflow-hidden rounded-2xl border border-border/70 bg-card/80 p-4 text-start transition-colors duration-200 hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ltr:text-left rtl:text-right',
   );
 
   const inner = (
@@ -437,7 +454,7 @@ function ChapterCard({
       </div>
 
       <div className="mb-3 mt-4 flex items-start gap-3 pe-16 ps-4">
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/5 text-sm font-bold text-primary ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 tabular-nums">
+        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary/20 to-primary/5 text-sm font-bold text-primary ring-1 ring-primary/20 tabular-nums">
           {chapter.index}
         </div>
         <div className="min-w-0 flex-1">
@@ -514,46 +531,13 @@ function ChapterCard({
 
   // Public: whole card is a button. Admin: div (action icons handle intent).
   if (isAdmin) {
-    return (
-      <motion.div
-        layout
-        layoutId={`chapter-${chapter.id}`}
-        initial={{ opacity: 0, y: 18, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -12 }}
-        transition={{
-          duration: 0.28,
-          delay: index * 0.035,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-        whileHover={{ scale: 1.015 }}
-        className={cardClasses}
-      >
-        {inner}
-      </motion.div>
-    );
+    return <div className={cardClasses}>{inner}</div>;
   }
 
   return (
-    <motion.button
-      layout
-      layoutId={`chapter-${chapter.id}`}
-      type="button"
-      onClick={onSelect}
-      initial={{ opacity: 0, y: 18, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -12 }}
-      transition={{
-        duration: 0.28,
-        delay: index * 0.035,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      whileHover={{ scale: 1.015 }}
-      whileTap={{ scale: 0.985 }}
-      className={cardClasses}
-    >
+    <button type="button" onClick={onSelect} className={cardClasses}>
       {inner}
-    </motion.button>
+    </button>
   );
 }
 

@@ -603,6 +603,8 @@
     "TotalBooks": "مجموع کتاب‌ها",
     "Published": "منتشر شده",
     "Drafts": "پیش‌نویس‌ها",
+    "Scheduled": "زمان‌بندی‌شده",
+    "AllStatuses": "همه وضعیت‌ها",
     "AddNewBook": "افزودن کتاب جدید",
     "ClickToCreate": "برای ایجاد یک کتاب جدید کلیک کنید",
     "BookTitle": "عنوان",

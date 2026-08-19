@@ -1,15 +1,15 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
+  Param,
   ParseIntPipe,
   Patch,
   Post,
-  Param,
-  Body,
-  UseGuards,
-  Request,
   Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ChaptersService } from './chapters.service';
@@ -24,7 +24,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { ListChaptersDto } from './dto/list-chapters.dto';
 import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
+import { AuditAction, AuditCategory, PublicationStatus } from '@readory/shared';
 
 @Controller('books/:bookId/chapters')
 export class ChaptersController {
@@ -33,7 +33,10 @@ export class ChaptersController {
   // Public: list chapters of a book
   @Get()
   async list(@Param('bookId', ParseIntPipe) bookId: number, @Query() query: ListChaptersDto) {
-    return this.chaptersService.listChapters(bookId, query);
+    return this.chaptersService.listChapters(bookId, {
+      ...query,
+      publishStatus: PublicationStatus.PUBLISHED,
+    });
   }
 
   // Admin: full list chapters of a book

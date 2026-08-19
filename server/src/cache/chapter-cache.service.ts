@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CacheManager } from './cache.manager';
+import { PublicationStatus } from '@readory/shared';
 
 @Injectable()
 export class ChapterCache {
@@ -21,6 +22,7 @@ export class ChapterCache {
   buildListKey(params: {
     bookId: number;
     q?: string;
+    status?: PublicationStatus;
     page: number;
     limit: number;
     path: boolean;

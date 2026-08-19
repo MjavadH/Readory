@@ -80,6 +80,13 @@ export default function AdminBookDetail() {
   const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
   const [chaptersLoading, setChaptersLoading] = useState(false);
 
+  const [chaptersSearchInput, setChaptersSearchInput] = useState('');
+  const [chaptersQuery, setChaptersQuery] = useState('');
+  const [chaptersOrder, setChaptersOrder] = useState<'asc' | 'desc'>('asc');
+  const [chaptersStatusFilter, setChaptersStatusFilter] = useState<PublicationStatus | 'ALL'>(
+    'ALL',
+  );
+
   const [editMode, setEditMode] = useState(false);
   const [editedBook, setEditedBook] = useState<
     Omit<Partial<BookDetailsData>, 'contributors'> & {
@@ -147,8 +154,22 @@ export default function AdminBookDetail() {
 
     setChaptersLoading(true);
     try {
+      const queryParams = new URLSearchParams({
+        page: chaptersPage.toString(),
+        limit: CHAPTERS_PER_PAGE.toString(),
+        order: chaptersOrder,
+      });
+
+      if (chaptersQuery) {
+        queryParams.append('q', chaptersQuery);
+      }
+
+      if (chaptersStatusFilter !== 'ALL') {
+        queryParams.append('publishStatus', chaptersStatusFilter);
+      }
+
       const data = await apiClient.get<ChaptersResponse>(
-        `/books/${bookId}/chapters/admin?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}`,
+        `/books/${bookId}/chapters/admin?${queryParams.toString()}`,
       );
       setChapters(data.items);
       setChaptersTotal(data.pagination.total);
@@ -158,7 +179,7 @@ export default function AdminBookDetail() {
     } finally {
       setChaptersLoading(false);
     }
-  }, [bookId, chaptersPage, t, toast]);
+  }, [bookId, chaptersPage, chaptersQuery, chaptersOrder, chaptersStatusFilter, t, toast]);
 
   useEffect(() => {
     void loadBook();
@@ -250,6 +271,16 @@ export default function AdminBookDetail() {
       toast.error(getApiErrorMessage(error, t('ChapterSaveFailed')));
     }
   };
+
+  const handleSearchSubmit = useCallback(() => {
+    setChaptersQuery(chaptersSearchInput);
+    setChaptersPage(1);
+  }, [chaptersSearchInput]);
+
+  const handleToggleOrder = useCallback(() => {
+    setChaptersOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    setChaptersPage(1);
+  }, []);
 
   const openAddChapter = () => {
     setChapterForm({
@@ -400,6 +431,16 @@ export default function AdminBookDetail() {
           pageSize={CHAPTERS_PER_PAGE}
           onPageChange={setChaptersPage}
           scrollRef={chaptersPaginationScrollRef}
+          searchInput={chaptersSearchInput}
+          onSearchInputChange={setChaptersSearchInput}
+          onSearchSubmit={handleSearchSubmit}
+          order={chaptersOrder}
+          onToggleOrder={handleToggleOrder}
+          statusFilter={chaptersStatusFilter}
+          onStatusFilterChange={(val) => {
+            setChaptersStatusFilter(val);
+            setChaptersPage(1);
+          }}
           t={t}
           ti={ti}
           g={g}
