@@ -179,9 +179,10 @@ export class UsersService {
   }
 
   async findUserByIdentifier(identifier: string) {
+    const normalizedIdentifier = identifier.trim().toLowerCase();
     return this.prisma.user.findFirst({
       where: {
-        OR: [{ email: identifier }, { username: identifier }],
+        OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }],
       },
       include: { role: true },
     });
@@ -195,13 +196,14 @@ export class UsersService {
   }
 
   async registerTemporaryUser(email: string, username: string, passwordHash: string) {
+    const normalizedUsername = username.trim().toLowerCase();
     const existingUser = await this.prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+      where: { OR: [{ email }, { username: normalizedUsername }] },
     });
 
     if (existingUser) {
       if (existingUser.email === email) throw new ConflictException('Email already exists');
-      if (existingUser.username.toLowerCase() === username.toLowerCase())
+      if (existingUser.username.toLowerCase() === normalizedUsername)
         throw new ConflictException('Username already taken');
     }
     const verificationCode = crypto.randomInt(100000, 999999).toString();
@@ -211,10 +213,10 @@ export class UsersService {
       throw new BadRequestException('Verification code already sent. Please wait.');
     }
 
-    const tempData = { email, username, passwordHash, verificationCode };
+    const tempData = { email, username: normalizedUsername, passwordHash, verificationCode };
     await this.cacheManager.setString(redisKey, JSON.stringify(tempData), 120);
 
-    await this.mailService.sendUserConfirmation(email, username, verificationCode);
+    await this.mailService.sendUserConfirmation(email, normalizedUsername, verificationCode);
 
     return { message: 'Verification code sent. Please confirm your email.', tempEmail: email };
   }
