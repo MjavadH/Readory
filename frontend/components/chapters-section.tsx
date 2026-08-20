@@ -383,34 +383,27 @@ function ChapterCard({
       : `$${Number(chapter.price).toFixed(2)}`;
 
   let accent;
-  let dotColor;
 
   if (isAdmin) {
     switch (chapter.publishStatus) {
       case PublicationStatus.DRAFT:
-        accent = 'from-yellow-500/15 to-yellow-500/0 ring-yellow-500/30';
-        dotColor = 'bg-yellow-500';
+        accent = 'from-yellow-500/60 to-yellow-500/20';
         break;
       case PublicationStatus.PUBLISHED:
-        accent = 'from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30';
-        dotColor = 'bg-emerald-500';
+        accent = 'from-emerald-500/60 to-emerald-500/20';
         break;
       case PublicationStatus.SCHEDULED:
-        accent = 'from-blue-500/15 to-blue-500/0 ring-blue-500/30';
-        dotColor = 'bg-blue-500';
+        accent = 'from-blue-500/60 to-blue-500/20';
         break;
       default:
-        accent = 'from-muted-foreground/10 to-transparent ring-border';
-        dotColor = 'bg-muted-foreground/40';
+        accent = 'from-muted-foreground/60 to-muted-foreground/20';
     }
   } else {
     accent = owned
-      ? 'from-emerald-500/15 to-emerald-500/0 ring-emerald-500/30'
+      ? 'from-emerald-500/60 to-emerald-500/20'
       : isFree
-        ? 'from-primary/15 to-primary/0 ring-primary/30'
-        : 'from-muted-foreground/10 to-transparent ring-border';
-
-    dotColor = owned ? 'bg-emerald-500' : isFree ? 'bg-primary' : 'bg-muted-foreground/40';
+        ? 'from-primary/60 to-primary/20'
+        : 'from-muted-foreground/60 to-muted-foreground/20';
   }
 
   const cardClasses = cn(
@@ -427,14 +420,6 @@ function ChapterCard({
           accent,
         )}
       />
-
-      {/* Status dot */}
-      <span
-        aria-hidden
-        className={cn('absolute top-3 h-2 w-2 rounded-full ltr:left-3 rtl:right-3', dotColor)}
-      >
-        <span className={cn('absolute inset-0 animate-ping rounded-full opacity-60', dotColor)} />
-      </span>
 
       {/* Price / Owned pill */}
       <div className="absolute top-3 ltr:right-3 rtl:left-3">

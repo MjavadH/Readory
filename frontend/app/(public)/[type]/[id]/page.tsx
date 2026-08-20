@@ -2,8 +2,7 @@
 
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { AlertCircle } from 'lucide-react';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -93,7 +92,6 @@ export default function BookDetailsPage() {
 
   const loadBase = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      toast.error(t('InvalidBookLink'));
       setIsLoading(false);
       return;
     }
@@ -107,7 +105,6 @@ export default function BookDetailsPage() {
       ]);
 
       if (!bookData || bookData.type.slug !== typeSlug) {
-        toast.error(t('BookNotFoundForThisCategory'));
         return;
       }
 
@@ -298,19 +295,7 @@ export default function BookDetailsPage() {
   }
 
   if (!book) {
-    return (
-      <div className="mx-auto w-full max-w-7xl px-4 py-20 text-center sm:py-28">
-        <div className="mx-auto max-w-md">
-          <div className="mb-5 flex justify-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-            </div>
-          </div>
-          <h2 className="mb-2 text-2xl font-bold text-foreground">{t('BookNotFound')}</h2>
-          <p className="text-muted-foreground">{t('BookNotFoundDescription')}</p>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
   const ratingValue = Number(book.ratingAvg ?? 0);

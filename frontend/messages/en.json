@@ -643,7 +643,6 @@
     "ErrorFetchingTypes": "Error fetching book types",
     "ErrorFetchingGenres": "Error fetching genres",
     "ErrorFetchingBooks": "Error fetching books",
-    "InvalidBookLink": "Invalid book link",
     "FailedLoadDetails": "Failed to load book details",
     "FailedLoadChapters": "Failed to load chapters",
     "BookUpdated": "Book updated successfully!",
@@ -777,7 +776,6 @@
     "Processing": "Processing...",
     "ConfirmAccess": "Confirm Access",
     "ConfirmPurchase": "Confirm Purchase",
-    "BookNotFoundForThisCategory": "Book not found for this category",
     "SelectRating": "Please select a rating before submitting",
     "RatingSaved": "Rating saved successfully!",
     "UnableSaveRating": "Unable to save your rating",
@@ -1284,7 +1282,7 @@
       "invoiceId": "Invoice",
       "copy": "Copy reference number",
       "retry": "Try again",
-      "backToWallet": "Back to wallet",
+      "backToDashboard": "Back to dashboard",
       "backHome": "Go to home"
     },
     "errors": {

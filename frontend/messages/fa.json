@@ -643,7 +643,6 @@
     "ErrorFetchingTypes": "خطا در دریافت انواع کتاب",
     "ErrorFetchingGenres": "خطا در دریافت ژانرها",
     "ErrorFetchingBooks": "خطا در دریافت کتاب‌ها",
-    "InvalidBookLink": "لینک کتاب نامعتبر است",
     "FailedLoadDetails": "بارگذاری جزئیات کتاب با خطا مواجه شد",
     "FailedLoadChapters": "بارگذاری فصل‌ها با خطا مواجه شد",
     "BookUpdated": "کتاب با موفقیت به‌روزرسانی شد!",
@@ -777,7 +776,6 @@
     "Processing": "درحال پردازش...",
     "ConfirmAccess": "تایید دسترسی",
     "ConfirmPurchase": "تایید خرید",
-    "BookNotFoundForThisCategory": "کتاب برای این دسته بندی یافت نشد",
     "SelectRating": "لطفا قبل از تایید یک امتیازی انتخاب کنید",
     "RatingSaved": "امتیاز با موفقیت ذخیره شد!",
     "UnableSaveRating": "امکان ذخیره امتیاز وجود ندارد",
@@ -1282,7 +1280,7 @@
       "invoiceId": "شماره فاکتور",
       "copy": "کپی شماره پیگیری",
       "retry": "تلاش دوباره",
-      "backToWallet": "بازگشت به کیف پول",
+      "backToDashboard": "بازگشت به داشبورد",
       "backHome": "رفتن به صفحه اصلی"
     },
     "errors": {

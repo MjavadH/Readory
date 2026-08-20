@@ -127,7 +127,6 @@ export default function AdminBookDetail() {
 
   const loadBook = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0) {
-      toast.error(t('InvalidBookLink'));
       setIsLoading(false);
       return;
     }
