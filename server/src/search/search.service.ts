@@ -142,7 +142,7 @@ export class SearchService {
     const hasMore = result.hits.length > limit;
     const hits = hasMore ? result.hits.slice(0, limit) : result.hits;
 
-    const ids = hits.map((hit) => hit.id as number);
+    const ids = hits.map((hit) => hit.id);
     const nextCursor = hasMore ? String(offset + limit) : null;
 
     return { ids, nextCursor, hasMore };
@@ -167,7 +167,7 @@ export class SearchService {
     });
 
     return {
-      ids: result.hits.map((hit) => hit.id as number),
+      ids: result.hits.map((hit) => hit.id),
       total: result.estimatedTotalHits || 0,
     };
   }

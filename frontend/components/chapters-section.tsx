@@ -233,7 +233,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                 aria-label="Toggle sorting order"
               >
                 <motion.span
-                  key={(props as PublicProps).order}
+                  key={props.order}
                   initial={{ rotate: -90, opacity: 0 }}
                   animate={{ rotate: 0, opacity: 1 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 20 }}

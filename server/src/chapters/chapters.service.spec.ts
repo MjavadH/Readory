@@ -36,7 +36,7 @@ describe('ChaptersService', () => {
       },
       $transaction: jest.fn((args: unknown) => {
         if (Array.isArray(args)) return Promise.all(args);
-        if (typeof args === 'function') return (args as Function)(prisma);
+        if (typeof args === 'function') return args(prisma);
         return Promise.resolve(args);
       }),
     };

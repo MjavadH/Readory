@@ -318,7 +318,7 @@ export class BooksService {
     typeSlug: string,
     args: { genres?: string[]; q?: string; sort?: BrowseSort; limit?: number },
   ) {
-    const sort = (args.sort ?? 'recently_updated') as BrowseSort;
+    const sort = args.sort ?? 'recently_updated';
     const limit = clamp(args.limit ?? 24, 1, 50);
     const q = (args.q ?? '').trim().toLowerCase();
 

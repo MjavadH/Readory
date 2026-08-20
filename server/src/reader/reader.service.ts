@@ -355,8 +355,8 @@ export class ReaderService {
     if (isAdminPreview) return source;
 
     const trace = createHash('sha256').update(token).digest('hex').slice(0, 8);
-    const dynamicRotation = -25 + (parseInt(trace[0]!, 16) % 6) - 3;
-    const dynamicOpacity = 0.35 + (parseInt(trace[1]!, 16) % 15) / 100;
+    const dynamicRotation = -25 + (parseInt(trace[0], 16) % 6) - 3;
+    const dynamicOpacity = 0.35 + (parseInt(trace[1], 16) % 15) / 100;
 
     const watermarkText = `Readory #u${payload.userId}c${payload.chapterId}#${trace}`;
     const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg">

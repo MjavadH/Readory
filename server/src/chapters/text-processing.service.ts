@@ -141,7 +141,7 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
     }
 
     return pages.map((page) => {
-      const renderedHtml = parse(page, { async: false }) as string;
+      const renderedHtml = parse(page, { async: false });
       const htmlWithFootnotes = this.injectFootnotes(renderedHtml, footnotes);
       const sanitizedHtml = DOMPurify.sanitize(htmlWithFootnotes);
       return `<article>${sanitizedHtml}</article>`;

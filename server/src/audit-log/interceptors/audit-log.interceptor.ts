@@ -45,7 +45,7 @@ export class AuditLogInterceptor implements NestInterceptor {
     }
     return next.handle().pipe(
       tap((result) => {
-        const resolvedTargetId = meta.getTargetId?.(result, req) ?? (result as any)?.id ?? targetId;
+        const resolvedTargetId = meta.getTargetId?.(result, req) ?? result?.id ?? targetId;
         const action =
           meta.action === AuditAction.USER_BANNED && req.body?.isBanned === false
             ? AuditAction.USER_UNBANNED
