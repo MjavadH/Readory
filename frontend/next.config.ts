@@ -19,6 +19,7 @@ const s3RemotePattern = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [...(s3RemotePattern ? [s3RemotePattern] : [])],
     dangerouslyAllowLocalIP: true,

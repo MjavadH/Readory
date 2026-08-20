@@ -219,3 +219,80 @@ Build outputs:
 | Admin                                | User                               |
 | ------------------------------------ | ---------------------------------- |
 | ![Admin](assets/admin-dashboard.png) | ![User](assets/user-dashboard.png) |
+
+## Docker Compose
+
+Readory includes a Docker setup for the full stack: Next.js frontend, NestJS backend, PostgreSQL, Redis, MinIO, and Meilisearch.
+
+### Development
+
+Development keeps source files bind-mounted so frontend and backend changes do not require image rebuilds. Dependencies stay inside named Docker volumes so host `node_modules` do not overwrite container dependencies.
+
+```bash
+cp .env.development.example .env
+```
+
+Start only shared infrastructure when you want to run the apps with their normal local commands on the host:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up postgres redis minio meilisearch
+npm install
+npm run build:shared
+npm --workspace server run start:dev
+npm --workspace frontend run dev -- --port 3001
+```
+
+Or run the app containers with hot reload enabled:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile app up --build
+```
+
+Useful local endpoints:
+
+- Frontend: <http://localhost:3001>
+- Backend API: <http://localhost:3000>
+- MinIO API: <http://localhost:9000>
+- MinIO console: <http://localhost:9001>
+- Meilisearch: <http://localhost:7700>
+
+### Production
+
+Create a production `.env` from `.env.example`, replace every secret, and point public URLs at the deployed hostnames:
+
+```bash
+cp .env.example .env
+# edit .env
+```
+
+Build reproducible production images and start the full stack:
+
+```bash
+docker compose up --build -d
+```
+
+Run database migrations explicitly if needed:
+
+```bash
+docker compose run --rm migrate
+```
+
+Stop the stack while preserving data volumes:
+
+```bash
+docker compose down
+```
+
+Stop the stack and delete local data volumes:
+
+```bash
+docker compose down -v
+```
+
+### Design notes
+
+- Production images use a single multi-stage `Dockerfile` with separate `server` and `frontend` targets.
+- Development uses `docker-compose.dev.yml` overrides, bind mounts, and named `node_modules` volumes for fast hot reload without rebuild loops.
+- Containers communicate through Compose service names such as `postgres`, `redis`, `minio`, and `meilisearch`.
+- Secrets and deployment-specific values live in `.env`; committed files only provide examples.
+- Healthchecks gate backend startup on infrastructure readiness and frontend startup on backend readiness.
