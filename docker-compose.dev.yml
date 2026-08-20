@@ -1,0 +1,87 @@
+services:
+  postgres:
+    ports:
+      - '5432:5432'
+
+  redis:
+    ports:
+      - '6379:6379'
+
+  minio:
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+
+  meilisearch:
+    environment:
+      MEILI_ENV: development
+    ports:
+      - '7700:7700'
+
+  migrate:
+    profiles: ['app']
+    build:
+      target: deps
+    command: npx prisma migrate deploy --schema server/prisma/schema.prisma
+    working_dir: /app
+    volumes:
+      - .:/app
+      - root-node-modules:/app/node_modules
+      - server-node-modules:/app/server/node_modules
+      - frontend-node-modules:/app/frontend/node_modules
+      - shared-node-modules:/app/shared/node_modules
+
+  backend:
+    profiles: ['app']
+    build:
+      target: deps
+    command: sh -c "npm run build --workspace @readory/shared && npx prisma generate --schema server/prisma/schema.prisma && npm run start:dev --workspace server"
+    working_dir: /app
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: 'true'
+    volumes:
+      - .:/app
+      - root-node-modules:/app/node_modules
+      - server-node-modules:/app/server/node_modules
+      - frontend-node-modules:/app/frontend/node_modules
+      - shared-node-modules:/app/shared/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      meilisearch:
+        condition: service_healthy
+
+  frontend:
+    profiles: ['app']
+    build:
+      target: deps
+    command: npm run dev --workspace frontend -- --hostname 0.0.0.0 --port 3001
+    working_dir: /app
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: 'true'
+      NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:3000}
+      NEXT_PUBLIC_S3_PUBLIC_BASE_URL: ${NEXT_PUBLIC_S3_PUBLIC_BASE_URL:-http://localhost:9000/readory-book}
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
+    volumes:
+      - .:/app
+      - root-node-modules:/app/node_modules
+      - server-node-modules:/app/server/node_modules
+      - frontend-node-modules:/app/frontend/node_modules
+      - shared-node-modules:/app/shared/node_modules
+      - frontend-next-cache:/app/frontend/.next
+    depends_on:
+      backend:
+        condition: service_started
+
+volumes:
+  root-node-modules:
+  server-node-modules:
+  frontend-node-modules:
+  shared-node-modules:
+  frontend-next-cache:
