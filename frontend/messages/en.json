@@ -1363,6 +1363,16 @@
     "LoadFailed": "Something went wrong while loading the profile. Please try again.",
     "Retry": "Try again"
   },
+  "NotFound": {
+    "badge": "Lost in the library",
+    "title": "This page isn't on our shelves",
+    "description": "The page you're looking for was moved, removed, or never existed. Let's get you back to reading.",
+    "actions": {
+      "home": "Return home",
+      "browse": "Browse books"
+    },
+    "hint": "Tip: use the search in the header to find any title."
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "$",

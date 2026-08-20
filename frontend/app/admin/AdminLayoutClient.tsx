@@ -1,12 +1,14 @@
 'use client';
 
-import { notFound } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { Loader2 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/providers/auth-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { ToastProvider } from '@/providers/toast-provider';
 import { NextIntlClientProvider, AbstractIntlMessages } from 'next-intl';
+import { NotFoundContent } from '@/components/not-found-content';
+import { UserHeader } from '@/components/header/user-header';
+import { UserFooter } from '@/components/user-footer';
 
 function AdminContent({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -20,7 +22,13 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   }
 
   if (!user || user.roleName !== 'ADMIN') {
-    return notFound();
+    return (
+      <>
+        <UserHeader />
+        <NotFoundContent />
+        <UserFooter />
+      </>
+    );
   }
 
   return (

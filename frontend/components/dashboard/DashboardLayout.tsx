@@ -8,7 +8,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { useAuth } from '@/providers/auth-provider';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl } from '@/lib/media';
 import Link from 'next/link';
@@ -30,7 +30,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   if (!user) {
-    return notFound();
+    redirect('/login');
   }
 
   function initialsFromUsername(username: string) {
