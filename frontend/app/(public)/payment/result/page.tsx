@@ -235,7 +235,7 @@ export default function PaymentResultPage() {
                     className="h-12 w-full rounded-2xl text-sm font-semibold"
                   >
                     <Wallet className="h-4 w-4" aria-hidden />
-                    {t('result.backToWallet')}
+                    {t('result.backToDashboard')}
                   </Button>
 
                   <Button
