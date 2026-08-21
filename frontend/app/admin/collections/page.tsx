@@ -75,7 +75,7 @@ export default function AdminCollectionsPage() {
         items: Collection[];
         nextCursor?: string;
         hasMore?: boolean;
-      }>('/collections/admin?limit=24');
+      }>('/collections/admin?limit=24', { authRequired: true });
       setCollections(res.items ?? []);
       setNextCursor(res.nextCursor);
       setHasMore(Boolean(res.hasMore));
@@ -98,7 +98,9 @@ export default function AdminCollectionsPage() {
         items: Collection[];
         nextCursor?: string;
         hasMore?: boolean;
-      }>(`/collections/admin?limit=24&cursor=${encodeURIComponent(nextCursor)}`);
+      }>(`/collections/admin?limit=24&cursor=${encodeURIComponent(nextCursor)}`, {
+        authRequired: true,
+      });
       setCollections((prev) => [...prev, ...(res.items ?? [])]);
       setNextCursor(res.nextCursor);
       setHasMore(Boolean(res.hasMore));

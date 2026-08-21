@@ -98,6 +98,7 @@ export default function AdminMedia() {
         const data = await apiClient
           .get<MediaItem[] | PagedMediaResponse>(`/media?${qs.toString()}`, {
             signal: controller.signal,
+            authRequired: true,
           })
           .catch(
             () =>

@@ -140,6 +140,7 @@ export default function ScheduledPublicationsPage() {
           pagination?: { total: number; totalPages: number };
         }>(
           `/books/${selectedBookForChapterId}/chapters/admin?publishStatus=DRAFT&page=${chapterPage}&limit=50&q=${chapterSearch}`,
+          { authRequired: true },
         );
         const data = res.data || res;
 
@@ -166,6 +167,7 @@ export default function ScheduledPublicationsPage() {
         const statusFilter = isBookForChapter ? 'published' : 'draft';
         const res = await apiClient.get<BookData>(
           `/books/allBooks?status=${statusFilter}&page=${bookPage}&limit=${limit}&q=${bookSearch}`,
+          { authRequired: true },
         );
 
         setDraftBooks(res.books);
@@ -186,7 +188,9 @@ export default function ScheduledPublicationsPage() {
   const load = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get<{ data: Schedule[] }>('/scheduled-publications');
+      const res = await apiClient.get<{ data: Schedule[] }>('/scheduled-publications', {
+        authRequired: true,
+      });
       setItems(res.data);
     } catch (e) {
       toast.error(getApiErrorMessage(e, t('Toast.LoadFailed')));
