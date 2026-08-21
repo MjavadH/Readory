@@ -39,7 +39,8 @@ services:
     working_dir: /app
     environment:
       NODE_ENV: development
-      CHOKIDAR_USEPOLLING: 'true'
+      # Uncomment below only if file watching fails (e.g., Windows without WSL2)
+      # CHOKIDAR_USEPOLLING: 'true'
     volumes:
       - .:/app
       - root-node-modules:/app/node_modules
@@ -64,7 +65,8 @@ services:
     working_dir: /app
     environment:
       NODE_ENV: development
-      WATCHPACK_POLLING: 'true'
+      # Uncomment below only if file watching fails (e.g., Windows without WSL2)
+      # WATCHPACK_POLLING: 'true'
       NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-http://localhost:3000}
       NEXT_PUBLIC_S3_PUBLIC_BASE_URL: ${NEXT_PUBLIC_S3_PUBLIC_BASE_URL:-http://localhost:9000/readory-book}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}

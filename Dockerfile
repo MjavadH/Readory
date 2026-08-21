@@ -48,11 +48,11 @@ COPY server/package.json ./server/package.json
 COPY shared/package.json ./shared/package.json
 RUN npm ci --omit=dev --workspace server --workspace @readory/shared --include-workspace-root=false \
   && npm cache clean --force
-COPY --from=server-build /app/shared/dist ./shared/dist
-COPY --from=server-build /app/server/dist ./server/dist
-COPY --from=server-build /app/server/prisma ./server/prisma
-COPY --from=server-build /app/server/generated ./server/generated
-COPY --from=server-build /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=server-build --chown=node:node /app/shared/dist ./shared/dist
+COPY --from=server-build --chown=node:node /app/server/dist ./server/dist
+COPY --from=server-build --chown=node:node /app/server/prisma ./server/prisma
+COPY --from=server-build --chown=node:node /app/server/generated ./server/generated
+COPY --from=server-build --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 USER node
 WORKDIR /app/server
 EXPOSE 3000
@@ -61,9 +61,9 @@ CMD ["node", "dist/main.js"]
 FROM base AS frontend
 ENV NODE_ENV=production
 ENV PORT=3001
-COPY --from=frontend-build /app/frontend/.next/standalone ./
-COPY --from=frontend-build /app/frontend/.next/static ./frontend/.next/static
-COPY --from=frontend-build /app/frontend/public ./frontend/public
+COPY --from=frontend-build --chown=node:node /app/frontend/.next/standalone ./
+COPY --from=frontend-build --chown=node:node /app/frontend/.next/static ./frontend/.next/static
+COPY --from=frontend-build --chown=node:node /app/frontend/public ./frontend/public
 USER node
 WORKDIR /app/frontend
 EXPOSE 3001
