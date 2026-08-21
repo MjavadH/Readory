@@ -19,6 +19,7 @@ import {
 } from '@prisma/client';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { OutboxService } from '../outbox/outbox.service';
+import { ChapterCache } from '../cache/chapter-cache.service';
 
 const QUEUE_NAME = 'scheduled-publications';
 const ACTIVE_STATUSES = [ScheduledPublicationStatus.Pending, ScheduledPublicationStatus.Processing];
@@ -40,6 +41,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
     private publicService: PublicService,
     private auditLog: AuditLogService,
     private outbox: OutboxService,
+    private chapterCache: ChapterCache,
   ) {}
 
   async onModuleInit() {
@@ -115,7 +117,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
     });
     await this.enqueueSchedule(schedule);
     this.audit('SCHEDULE_CREATED', schedule, actorId, undefined, schedule);
-    await this.invalidate();
+    await this.invalidate(schedule);
     return this.withTargetName(schedule);
   }
 
@@ -158,7 +160,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
       return updated;
     });
     this.audit('SCHEDULE_CANCELLED', schedule, actorId, before, schedule);
-    await this.invalidate();
+    await this.invalidate(schedule);
     return this.withTargetName(schedule);
   }
 
@@ -225,7 +227,7 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
           status: ScheduledPublicationStatus.Published,
         },
       );
-      await this.invalidate();
+      await this.invalidate(schedule);
     } catch (error: any) {
       const retryCount = schedule.retryCount + 1;
       const nextStatus =
@@ -326,7 +328,10 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
       });
       const book = await tx.book.update({
         where: { id: chapter.bookId },
-        data: { lastContentUpdate: now },
+        data: {
+          lastContentUpdate: now,
+          chapterCount: { increment: 1 },
+        },
         select: { title: true, coverImage: true, type: { select: { slug: true } } },
       });
       if (before?.publishStatus !== PublicationStatus.PUBLISHED)
@@ -349,13 +354,24 @@ export class ScheduledPublishingService implements OnModuleInit, OnModuleDestroy
     } else throw new BadRequestException('Unsupported scheduled target type');
   }
 
-  private async invalidate() {
+  private async invalidate(schedule?: ScheduledPublication) {
     await Promise.all([
       this.publicService.clearHomeCache(),
       this.cache.del('books:browse:default'),
       this.cache.del('stats:books'),
       this.cache.del('stats:chapters:count'),
     ]);
+
+    if (schedule?.targetType === ScheduledTargetType.Chapter) {
+      const chapter = await this.prisma.chapter.findUnique({
+        where: { id: schedule.targetId },
+        select: { bookId: true },
+      });
+
+      if (chapter) {
+        await this.chapterCache.bumpListVersion(chapter.bookId);
+      }
+    }
   }
 
   private audit(
