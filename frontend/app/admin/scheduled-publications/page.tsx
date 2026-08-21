@@ -86,6 +86,12 @@ const statusBadgeVariant = (
 export default function ScheduledPublicationsPage() {
   const t = useTranslations('AdminPage.ScheduledPublications');
   const toast = useToast();
+  const minDate = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   const [items, setItems] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -360,6 +366,7 @@ export default function ScheduledPublicationsPage() {
                     onChange={(e) => setForm({ ...form, publishAt: e.toString() })}
                     showTime={true}
                     placeholder={'Pick a date & time'}
+                    min={minDate}
                   />
                 </div>
 
