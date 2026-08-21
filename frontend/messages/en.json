@@ -933,7 +933,10 @@
     "TextDirection": "Text direction",
     "TextDirectionLtr": "LTR",
     "TextDirectionRtl": "RTL",
-    "ChapterMetadata": "Chapter Metadata"
+    "ChapterMetadata": "Chapter Metadata",
+    "Schedule": "Schedule",
+    "ScheduleCreated": "Schedule created successfully",
+    "ScheduleCreationFailed": "Failed to create schedule"
   },
   "Contributors": {
     "Title": "Contributors",

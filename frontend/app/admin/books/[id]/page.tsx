@@ -1,7 +1,7 @@
 'use client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Edit, Trash, X, AlertCircle, Unlock, Eye } from 'lucide-react';
+import { ArrowLeft, Check, Edit, Trash, X, AlertCircle, Unlock, Eye, Calendar } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,7 @@ import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapt
 import { ContributorRole } from '@shared/contributor-metadata';
 import type { BookContributorEntry } from '@/components/admin/contributors/contributors-field';
 import { PublicationStatus } from '@readory/shared';
+import DateTimePicker from '@/components/admin/date-time-picker';
 
 function hydrateContributors(
   raw: BookDetailsData['contributors'] | undefined,
@@ -104,12 +105,20 @@ export default function AdminBookDetail() {
     chapter?: ChaptersSectionChapter;
   } | null>(null);
 
-  const [chapterForm, setChapterForm] = useState({
+  const [chapterForm, setChapterForm] = useState<{
+    title: string;
+    index: number;
+    price: number;
+    isFree: boolean;
+    publishStatus: PublicationStatus;
+    publishAt?: Date;
+  }>({
     title: '',
     index: 0,
     price: 0,
     isFree: true,
     publishStatus: PublicationStatus.DRAFT,
+    publishAt: undefined,
   });
 
   const loadOptions = useCallback(async () => {
@@ -251,19 +260,36 @@ export default function AdminBookDetail() {
     if (!book) return;
 
     try {
+      let chapterId = chapterDialog?.chapter?.id;
+      const { publishAt, ...restForm } = chapterForm;
+      const payload = {
+        ...restForm,
+        price: restForm.isFree ? undefined : (Number(restForm.price) || 0).toFixed(2),
+      };
+
       if (chapterDialog?.mode === 'add') {
-        await apiClient.post(`/books/${book.id}/chapters`, {
-          ...chapterForm,
-          price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
-        });
+        const res = await apiClient.post<{ id: number }>(`/books/${book.id}/chapters`, payload);
+        chapterId = res.id;
         toast.success(t('ChapterAdded'));
       } else if (chapterDialog?.mode === 'edit' && chapterDialog.chapter) {
-        await apiClient.patch(`/books/${book.id}/chapters/${chapterDialog.chapter.id}`, {
-          ...chapterForm,
-          price: chapterForm.isFree ? undefined : (Number(chapterForm.price) || 0).toFixed(2),
-        });
+        await apiClient.patch(`/books/${book.id}/chapters/${chapterDialog.chapter.id}`, payload);
         toast.success(t('ChapterUpdated'));
       }
+
+      if (restForm.publishStatus === PublicationStatus.SCHEDULED && publishAt && chapterId) {
+        try {
+          await apiClient.post('/scheduled-publications', {
+            targetType: 'Chapter',
+            targetId: chapterId,
+            publishAt: publishAt.toISOString(),
+          });
+          toast.success(t('ScheduleCreated'));
+        } catch (scheduleError) {
+          console.error('Schedule creation failed:', scheduleError);
+          toast.error(getApiErrorMessage(scheduleError, t('ScheduleCreationFailed')));
+        }
+      }
+
       setChapterDialog(null);
       await loadChapters();
     } catch (error) {
@@ -288,6 +314,7 @@ export default function AdminBookDetail() {
       price: 0,
       isFree: true,
       publishStatus: PublicationStatus.DRAFT,
+      publishAt: undefined,
     });
     setChapterDialog({ mode: 'add' });
   };
@@ -299,6 +326,7 @@ export default function AdminBookDetail() {
       isFree: chapter.isFree,
       price: chapter.price ?? 0,
       publishStatus: chapter.publishStatus,
+      publishAt: undefined,
     });
     setChapterDialog({ mode: 'edit', chapter });
   };
@@ -531,24 +559,56 @@ export default function AdminBookDetail() {
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card px-3 py-2.5">
-                <span className="flex items-center gap-2 text-sm">
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                  {t('Publish')}
-                </span>
-                <Switch
-                  id="publishStatus"
-                  checked={chapterForm.publishStatus === PublicationStatus.PUBLISHED}
-                  onCheckedChange={(checked) =>
-                    setChapterForm({
-                      ...chapterForm,
-                      publishStatus: checked
-                        ? PublicationStatus.PUBLISHED
-                        : PublicationStatus.DRAFT,
-                    })
-                  }
-                />
-              </label>
+              <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-card p-3">
+                <label className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm">
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                    {t('Publish')}
+                  </span>
+                  <Switch
+                    id="publishStatus"
+                    checked={chapterForm.publishStatus === PublicationStatus.PUBLISHED}
+                    onCheckedChange={(checked) =>
+                      setChapterForm({
+                        ...chapterForm,
+                        publishStatus: checked
+                          ? PublicationStatus.PUBLISHED
+                          : PublicationStatus.DRAFT,
+                        publishAt: undefined,
+                      })
+                    }
+                  />
+                </label>
+                <div className="my-1 border-t border-border/60"></div>
+                <label className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    {t('Schedule')}
+                  </span>
+                  <Switch
+                    id="scheduleStatus"
+                    checked={chapterForm.publishStatus === PublicationStatus.SCHEDULED}
+                    onCheckedChange={(checked) =>
+                      setChapterForm({
+                        ...chapterForm,
+                        publishStatus: checked
+                          ? PublicationStatus.SCHEDULED
+                          : PublicationStatus.DRAFT,
+                        publishAt: checked ? new Date() : undefined,
+                      })
+                    }
+                  />
+                </label>
+                {chapterForm.publishStatus === PublicationStatus.SCHEDULED && (
+                  <div className="mt-2 animate-in fade-in slide-in-from-top-2">
+                    <DateTimePicker
+                      value={chapterForm.publishAt}
+                      onChange={(date) => setChapterForm({ ...chapterForm, publishAt: date })}
+                      min={new Date()}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card px-3 py-2.5">

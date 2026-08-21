@@ -933,7 +933,10 @@
     "TextDirection": "جهت متن",
     "TextDirectionLtr": "چپ به راست",
     "TextDirectionRtl": "راست به چپ",
-    "ChapterMetadata": "فراداده فصل"
+    "ChapterMetadata": "فراداده فصل",
+    "Schedule": "زمان‌بندی",
+    "ScheduleCreated": "زمان‌بندی با موفقیت ایجاد شد",
+    "ScheduleCreationFailed": "ایجاد زمان‌بندی با خطا مواجه شد"
   },
   "Contributors": {
     "Title": "همکاران",
