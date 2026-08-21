@@ -26,6 +26,7 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 interface Chapter {
   id: number;
   num: number;
+  title: string;
   free: boolean;
 }
 

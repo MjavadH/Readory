@@ -256,6 +256,7 @@ export class PublicService {
             chapters: b.chapters.map((c) => ({
               id: c.id,
               num: c.index,
+              title: c.title,
               free: c.isFree,
             })),
           })),
@@ -386,6 +387,7 @@ export class PublicService {
           select: {
             id: true,
             index: true,
+            title: true,
             isFree: true,
           },
         },

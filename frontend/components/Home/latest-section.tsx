@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 interface Chapter {
   id: number;
   num: number;
+  title: string;
   free: boolean;
 }
 
@@ -196,8 +197,8 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                       className="group/ch flex items-center justify-between rounded-lg border border-border/40 bg-muted/60 px-2.5 py-1.5 text-xs transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                     >
                       <span className="inline-flex items-center gap-1.5 font-medium">
-                        <BookOpen className="h-3 w-3 opacity-60 transition-opacity group-hover/ch:opacity-100" />
-                        {t('Chapter')} {ch.num}
+                        <BookOpen className="h-3 w-3 opacity-60 line-clamp-1 transition-opacity group-hover/ch:opacity-100" />
+                        {ch.title}
                       </span>
                       <span
                         className={
