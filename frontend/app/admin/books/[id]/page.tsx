@@ -1,7 +1,7 @@
 'use client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Edit, Trash, X, AlertCircle, Unlock, Eye, Calendar } from 'lucide-react';
+import { ArrowLeft, Check, Edit, Trash, X, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,9 +12,6 @@ import {
 } from '@/components/ui/dialog';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useParams } from 'next/navigation';
 import { MediaPicker } from '@/components/admin/media-picker';
 import Link from 'next/link';
@@ -27,7 +24,7 @@ import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapt
 import { ContributorRole } from '@shared/contributor-metadata';
 import type { BookContributorEntry } from '@/components/admin/contributors/contributors-field';
 import { PublicationStatus } from '@readory/shared';
-import DateTimePicker from '@/components/admin/date-time-picker';
+import { ChapterDialog } from '@/components/admin/chapter/chapter-dialog';
 
 function hydrateContributors(
   raw: BookDetailsData['contributors'] | undefined,
@@ -522,139 +519,18 @@ export default function AdminBookDetail() {
       </Dialog>
 
       {/* Chapter add/edit dialog */}
-      <Dialog open={chapterDialog !== null} onOpenChange={() => setChapterDialog(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {chapterDialog?.mode === 'add' ? t('AddNewChapter') : t('EditChapter')}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                {t('ChapterTitle')}
-              </Label>
-              <Input
-                value={chapterForm.title}
-                onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })}
-                placeholder={t('EnterChapterTitle')}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                {t('ChapterIndex')}
-              </Label>
-              <Input
-                type="number"
-                min="1"
-                value={chapterForm.index}
-                onChange={(e) =>
-                  setChapterForm({
-                    ...chapterForm,
-                    index: parseInt(e.target.value) || 1,
-                  })
-                }
-                placeholder={t('ChapterNumber')}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex flex-col gap-2 rounded-md border border-border/60 bg-card p-3">
-                <label className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-sm">
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                    {t('Publish')}
-                  </span>
-                  <Switch
-                    id="publishStatus"
-                    checked={chapterForm.publishStatus === PublicationStatus.PUBLISHED}
-                    onCheckedChange={(checked) =>
-                      setChapterForm({
-                        ...chapterForm,
-                        publishStatus: checked
-                          ? PublicationStatus.PUBLISHED
-                          : PublicationStatus.DRAFT,
-                        publishAt: undefined,
-                      })
-                    }
-                  />
-                </label>
-                <div className="my-1 border-t border-border/60"></div>
-                <label className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    {t('Schedule')}
-                  </span>
-                  <Switch
-                    id="scheduleStatus"
-                    checked={chapterForm.publishStatus === PublicationStatus.SCHEDULED}
-                    onCheckedChange={(checked) =>
-                      setChapterForm({
-                        ...chapterForm,
-                        publishStatus: checked
-                          ? PublicationStatus.SCHEDULED
-                          : PublicationStatus.DRAFT,
-                        publishAt: checked ? new Date() : undefined,
-                      })
-                    }
-                  />
-                </label>
-                {chapterForm.publishStatus === PublicationStatus.SCHEDULED && (
-                  <div className="mt-2 animate-in fade-in slide-in-from-top-2">
-                    <DateTimePicker
-                      value={chapterForm.publishAt}
-                      onChange={(date) => setChapterForm({ ...chapterForm, publishAt: date })}
-                      min={new Date()}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <label className="flex items-center justify-between gap-3 rounded-md border border-border/60 bg-card px-3 py-2.5">
-              <span className="flex items-center gap-2 text-sm">
-                <Unlock className="h-4 w-4 text-muted-foreground" />
-                {t('FreeChapter')}
-              </span>
-              <Switch
-                id="isFree"
-                checked={chapterForm.isFree}
-                onCheckedChange={(checked) => setChapterForm({ ...chapterForm, isFree: checked })}
-              />
-            </label>
-
-            {!chapterForm.isFree && (
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  {t('Price', {
-                    CurrencySymbols: g('CurrencySymbols') + g('CurrencyName'),
-                  })}
-                </Label>
-                <Input
-                  type="text"
-                  value={chapterForm.price}
-                  onChange={(e) =>
-                    setChapterForm({
-                      ...chapterForm,
-                      price: Number(e.target.value),
-                    })
-                  }
-                  placeholder="0.00"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setChapterDialog(null)}>
-              {g('Cancel')}
-            </Button>
-            <Button onClick={handleSaveChapter}>
-              <Check className="h-4 w-4" />
-              {chapterDialog?.mode === 'add' ? t('AddChapter') : t('SaveChanges')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {chapterDialog && (
+        <ChapterDialog
+          open={true}
+          mode={chapterDialog.mode}
+          value={chapterForm}
+          onChange={setChapterForm}
+          onClose={() => setChapterDialog(null)}
+          onSubmit={handleSaveChapter}
+          t={t}
+          g={g}
+        />
+      )}
 
       <MediaPicker
         open={newCoverPickerOpen}

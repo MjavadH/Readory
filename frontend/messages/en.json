@@ -679,7 +679,7 @@
     "EditChapter": "Edit Chapter",
     "ChapterTitle": "Chapter Title",
     "EnterChapterTitle": "Enter chapter title",
-    "ChapterIndex": "Chapter Index",
+    "ChapterIndex": "Index",
     "ChapterNumber": "Chapter number",
     "FreeChapter": "Free Chapter",
     "Price": "Price ({CurrencySymbols})",
@@ -936,7 +936,18 @@
     "ChapterMetadata": "Chapter Metadata",
     "Schedule": "Schedule",
     "ScheduleCreated": "Schedule created successfully",
-    "ScheduleCreationFailed": "Failed to create schedule"
+    "ScheduleCreationFailed": "Failed to create schedule",
+    "PublishStatus": "Publication status",
+    "StatusPublished": "Published",
+    "StatusDraft": "Draft",
+    "StatusScheduled": "Scheduled",
+    "PublishAt": "Publish at",
+    "ChapterDialogDescription": "Set the chapter title, order, visibility and price.",
+    "ErrorTitleRequired": "Please enter a chapter title.",
+    "ErrorIndexRequired": "Chapter number must be 1 or greater.",
+    "ErrorPriceRequired": "Please enter a price greater than zero for a paid chapter.",
+    "ErrorScheduleDateRequired": "Please pick a publish date and time.",
+    "ErrorScheduleDateInFuture": "The scheduled time must be in the future."
   },
   "Contributors": {
     "Title": "Contributors",

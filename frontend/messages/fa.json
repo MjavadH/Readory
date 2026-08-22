@@ -936,7 +936,18 @@
     "ChapterMetadata": "فراداده فصل",
     "Schedule": "زمان‌بندی",
     "ScheduleCreated": "زمان‌بندی با موفقیت ایجاد شد",
-    "ScheduleCreationFailed": "ایجاد زمان‌بندی با خطا مواجه شد"
+    "ScheduleCreationFailed": "ایجاد زمان‌بندی با خطا مواجه شد",
+    "PublishStatus": "وضعیت انتشار",
+    "StatusPublished": "منتشرشده",
+    "StatusDraft": "پیش‌نویس",
+    "StatusScheduled": "زمان‌بندی‌شده",
+    "PublishAt": "زمان انتشار",
+    "ChapterDialogDescription": "عنوان، شماره، وضعیت نمایش و قیمت فصل را تعیین کنید.",
+    "ErrorTitleRequired": "لطفاً عنوان فصل را وارد کنید.",
+    "ErrorIndexRequired": "شماره فصل باید ۱ یا بیشتر باشد.",
+    "ErrorPriceRequired": "برای فصل پولی، مبلغی بیشتر از صفر وارد کنید.",
+    "ErrorScheduleDateRequired": "لطفاً تاریخ و ساعت انتشار را انتخاب کنید.",
+    "ErrorScheduleDateInFuture": "زمان زمان‌بندی باید در آینده باشد."
   },
   "Contributors": {
     "Title": "همکاران",

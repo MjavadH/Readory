@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/table';
 import { BookPicker } from '@/components/admin/book-picker';
 import type { BookCardData } from '@/lib/types';
-import { ChapterPicker, type ChapterItemData } from '@/components/admin/chapter-picker';
+import { ChapterPicker, type ChapterItemData } from '@/components/admin/chapter/chapter-picker';
 import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
 import DateTimePicker from '@/components/admin/date-time-picker';
