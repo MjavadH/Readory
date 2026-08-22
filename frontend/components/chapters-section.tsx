@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type RefObject } from 'react';
+import React, { useRef, type RefObject } from 'react';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -8,7 +8,6 @@ import {
   ArrowUp10,
   BookOpen,
   Check,
-  ChevronDown,
   Clock,
   Edit,
   EyeIcon,
@@ -26,6 +25,15 @@ import { AppPagination } from '@/components/app-pagination';
 import { formatUpdateTime } from '@/lib/time';
 import { cn } from '@/lib/utils';
 import { PublicationStatus } from '@readory/shared';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useLocaleInfo } from '@/hooks/use-locale-info';
 
 export type ChaptersSectionChapter = {
   id: number;
@@ -126,6 +134,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
   // Fallback ref
   const localRef = useRef<HTMLDivElement | null>(null);
   const sectionRef = (scrollRef ?? localRef) as RefObject<HTMLDivElement | null>;
+  const { isRTL } = useLocaleInfo();
 
   const isAdmin = props.mode === 'admin';
   const purchasedIds =
@@ -176,7 +185,7 @@ export function ChaptersSection(props: ChaptersSectionProps) {
                   size="sm"
                   className="h-9 rounded-xl"
                 >
-                  <Plus className="me-2 h-4 w-4" />
+                  <Plus className="sm:me-2 h-4 w-4" />
                   <span className="hidden sm:inline">{t('AddChapter')}</span>
                 </Button>
               )}
@@ -198,22 +207,27 @@ export function ChaptersSection(props: ChaptersSectionProps) {
             <div className="flex gap-2">
               {isAdmin && (
                 <div className="relative shrink-0">
-                  <select
+                  <Select
+                    dir={isRTL ? 'rtl' : 'ltr'}
                     value={(props as AdminProps).statusFilter}
-                    onChange={(e) =>
-                      (props as AdminProps).onStatusFilterChange(
-                        e.target.value as PublicationStatus | 'ALL',
-                      )
+                    onValueChange={(e) =>
+                      (props as AdminProps).onStatusFilterChange(e as PublicationStatus | 'ALL')
                     }
-                    className="h-11 w-full appearance-none rounded-xl border border-border/70 bg-background/70 py-2 pe-9 ps-4 text-sm font-medium text-foreground outline-none transition-all hover:border-primary/40 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 sm:w-36"
                     aria-label="Filter by status"
                   >
-                    <option value="ALL">{t('AllStatuses')}</option>
-                    <option value={PublicationStatus.PUBLISHED}>{t('Published')}</option>
-                    <option value={PublicationStatus.DRAFT}>{t('Draft')}</option>
-                    <option value={PublicationStatus.SCHEDULED}>{t('Scheduled')}</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ltr:right-3 rtl:left-3" />
+                    <SelectTrigger className="h-11! w-full rounded-xl border-border/70 bg-background/80 px-3 text-sm sm:w-48">
+                      <div className="flex items-center gap-2 truncate">
+                        <SelectValue />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      <SelectItem value="ALL">{t('AllStatuses')}</SelectItem>
+                      <SelectSeparator />
+                      <SelectItem value={PublicationStatus.PUBLISHED}>{t('Published')}</SelectItem>
+                      <SelectItem value={PublicationStatus.DRAFT}>{t('Draft')}</SelectItem>
+                      <SelectItem value={PublicationStatus.SCHEDULED}>{t('Scheduled')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
               <Button
