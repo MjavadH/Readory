@@ -285,10 +285,6 @@ export default function AdminBooks() {
     setNewCoverLabel('');
   };
 
-  const handleBookClick = (bookId: number) => {
-    window.location.href = `/admin/books/${bookId}`;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-linear-to-br from-muted/30 via-background to-muted/20">
@@ -474,13 +470,7 @@ export default function AdminBooks() {
             className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
           >
             {books.map((book) => (
-              <div
-                key={book.id}
-                onClick={() => handleBookClick(book.id)}
-                className="cursor-pointer"
-              >
-                <BookCard book={book} link={`/admin/books/${book.id}`} />
-              </div>
+              <BookCard key={book.id} book={book} link={`/admin/books/${book.id}`} />
             ))}
           </div>
         )}

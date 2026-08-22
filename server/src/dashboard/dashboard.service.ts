@@ -430,7 +430,7 @@ export class DashboardService {
           this.prisma.book.findMany({
             where: { ratingCount: { gte: 5 } },
             orderBy: { ratingAvg: 'desc' },
-            take: 5,
+            take: 6,
             select: { id: true, title: true, ratingAvg: true, ratingCount: true },
           }),
           this.prisma.book.findMany({
