@@ -210,9 +210,19 @@ export class CacheManager {
 
           if (this.shouldRefreshEarly(envelope.expiresAtMs, options.earlyRefreshWindowSeconds)) {
             void this.singleflight(`refresh:${safeKey}`, async () => {
-              const fresh = await loader();
-              await this.writeEnvelope(safeKey, fresh, options);
-              return fresh;
+              try {
+                const fresh = await loader();
+                await this.writeEnvelope(safeKey, fresh, options);
+                return fresh;
+              } catch (error) {
+                this.observe({
+                  operation: 'error',
+                  key: safeKey,
+                  elapsedMs: Date.now() - start,
+                  detail: `cache-background-refresh-failure:${(error as Error).message}`,
+                });
+                return null;
+              }
             });
           }
 

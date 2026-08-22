@@ -149,7 +149,7 @@ export class BooksService {
     const result = { items, nextCursor, hasMore };
 
     if (isDefaultView) {
-      await this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
+      void this.cacheManager.setString(this.CACHE_KEY_BROWSE_DEFAULT, JSON.stringify(result), 90);
     }
 
     return result;
@@ -183,7 +183,7 @@ export class BooksService {
         select: { id: true },
       });
       exists = Boolean(found);
-      await this.cacheManager.setString(existsKey, exists ? '1' : '0', 3600);
+      void this.cacheManager.setString(existsKey, exists ? '1' : '0', 3600);
     }
 
     if (!exists) throw new NotFoundException('book type not found');
@@ -226,7 +226,7 @@ export class BooksService {
     query: {
       types?: string[];
       q?: string;
-      sort?: any;
+      sort?: BrowseSort;
       limit?: number;
       cursor?: string;
     },
@@ -289,7 +289,7 @@ export class BooksService {
       };
 
       // Small TTL keeps it fresh, cuts DB load hard
-      await this.cacheManager.setString(cacheKey, JSON.stringify(response), 90);
+      void this.cacheManager.setString(cacheKey, JSON.stringify(response), 90);
       return response;
     }
 
@@ -355,7 +355,7 @@ export class BooksService {
       select: { id: true, name: true, slug: true, iconKey: true },
     });
 
-    await this.cacheManager.setString(this.CACHE_KEY_GENRES_ALL, JSON.stringify(allGenres), 3600);
+    void this.cacheManager.setString(this.CACHE_KEY_GENRES_ALL, JSON.stringify(allGenres), 3600);
     return allGenres;
   }
 
@@ -382,7 +382,7 @@ export class BooksService {
 
     if (!genre) return null;
 
-    await this.cacheManager.setString(key, JSON.stringify(genre), 3600);
+    void this.cacheManager.setString(key, JSON.stringify(genre), 3600);
     return genre;
   }
 
@@ -414,6 +414,34 @@ export class BooksService {
     const q = normalizeQ(args.q);
     const skip = (page - 1) * limit;
 
+    const bookSelect = {
+      id: true,
+      title: true,
+      originalTitle: true,
+      alternativeTitles: true,
+      contributors: {
+        select: { role: true, contributor: { select: { name: true } } },
+      },
+      coverImage: true,
+      publishStatus: true,
+      isFeatured: true,
+      status: true,
+      ageRating: true,
+      publicationYear: true,
+      chapterCount: true,
+      lastContentUpdate: true,
+      ratingAvg: true,
+      ratingCount: true,
+      updatedAt: true,
+      genres: {
+        include: { genre: { select: { id: true, name: true, slug: true } } },
+        take: 3,
+      },
+      type: { select: { name: true } },
+    } satisfies Prisma.BookSelect;
+
+    type FetchedBook = Prisma.BookGetPayload<{ select: typeof bookSelect }>;
+
     // Fetch global dashboard stats independently
     const globalStatsPromise = this.prisma.$transaction([
       this.prisma.book.count(),
@@ -422,7 +450,7 @@ export class BooksService {
       this.prisma.book.count({ where: { isFeatured: true } }),
     ]);
 
-    let books: any[] = [];
+    let books: FetchedBook[] = [];
     let filteredTotal: number;
 
     if (q) {
@@ -437,35 +465,13 @@ export class BooksService {
       if (searchResult.ids.length > 0) {
         const fetchedBooks = await this.prisma.book.findMany({
           where: { id: { in: searchResult.ids } },
-          select: {
-            id: true,
-            title: true,
-            originalTitle: true,
-            alternativeTitles: true,
-            contributors: {
-              select: { role: true, contributor: { select: { name: true } } },
-            },
-            coverImage: true,
-            publishStatus: true,
-            isFeatured: true,
-            status: true,
-            ageRating: true,
-            publicationYear: true,
-            chapterCount: true,
-            lastContentUpdate: true,
-            ratingAvg: true,
-            ratingCount: true,
-            updatedAt: true,
-            genres: {
-              include: { genre: { select: { id: true, name: true, slug: true } } },
-              take: 3,
-            },
-            type: { select: { name: true } },
-          },
+          select: bookSelect,
         });
 
         const bookMap = new Map(fetchedBooks.map((b) => [b.id, b]));
-        books = searchResult.ids.map((id) => bookMap.get(id)).filter(Boolean);
+        books = searchResult.ids
+          .map((id) => bookMap.get(id))
+          .filter((b): b is FetchedBook => b !== undefined);
       }
     } else {
       // Fallback to Prisma chronological order when no search query
@@ -481,39 +487,14 @@ export class BooksService {
         orderBy: { lastContentUpdate: 'desc' },
         skip,
         take: limit,
-        select: {
-          id: true,
-          title: true,
-          originalTitle: true,
-          alternativeTitles: true,
-          contributors: {
-            select: { role: true, contributor: { select: { name: true } } },
-          },
-          coverImage: true,
-          publishStatus: true,
-          isFeatured: true,
-          status: true,
-          ageRating: true,
-          publicationYear: true,
-          chapterCount: true,
-          lastContentUpdate: true,
-          ratingAvg: true,
-          ratingCount: true,
-          updatedAt: true,
-          genres: {
-            include: { genre: { select: { id: true, name: true, slug: true } } },
-            take: 3,
-          },
-          type: { select: { name: true } },
-        },
+        select: bookSelect,
       });
     }
 
     const [total, published, drafts, featured] = await globalStatsPromise;
 
     const formattedBooks = books.map((b) => {
-      const mainContributor =
-        b.contributors.find((a: any) => a.role === 'AUTHOR') || b.contributors[0];
+      const mainContributor = b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
       return {
         ...b,
         contributors: mainContributor ? mainContributor.contributor.name : null,
@@ -1089,8 +1070,10 @@ export class BooksService {
       await this.publicService.clearGenresPageCache();
       await this.invalidateCache();
       return updated;
-    } catch (err: any) {
-      if (err?.code === 'P2025') throw new NotFoundException('book not found');
+    } catch (err: unknown) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+        throw new NotFoundException('book not found');
+      }
       throw err;
     }
   }
@@ -1110,6 +1093,8 @@ export class BooksService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Book" WHERE id = ${bookId} FOR UPDATE`;
+
       await tx.bookRating.upsert({
         where: { userId_bookId: { userId, bookId } },
         create: { userId, bookId, rating },
@@ -1180,17 +1165,16 @@ export class BooksService {
         version: 1,
         aggregateType: 'Book',
         aggregateId: String(id),
-        payload: {
-          bookId: id,
-        },
+        payload: { bookId: id },
       });
 
       await tx.book.delete({ where: { id } });
 
-      for (const row of collectionCounts) {
-        await tx.collection.update({
-          where: { id: row.collectionId },
-          data: { bookCount: { decrement: row._count._all } },
+      const collectionIds = collectionCounts.map((row) => row.collectionId);
+      if (collectionIds.length > 0) {
+        await tx.collection.updateMany({
+          where: { id: { in: collectionIds } },
+          data: { bookCount: { decrement: 1 } },
         });
       }
     });
