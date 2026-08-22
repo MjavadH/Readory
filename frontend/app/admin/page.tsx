@@ -1,6 +1,14 @@
 'use client';
 
-import { BookMarked, DollarSign, Layers, LayoutDashboard, RefreshCw, Users } from 'lucide-react';
+import {
+  BookMarked,
+  BookOpen,
+  DollarSign,
+  Layers,
+  LayoutDashboard,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import { ContentSection, type ContentData } from '@/components/admin/dashboard/content-section';
@@ -18,6 +26,7 @@ import { usePermission } from '@/hooks/use-permission';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import AdminPageHeader from '@/components/admin/admin-page-header';
+import { EmptySection, SectionHeader } from '@/components/admin/admin-section';
 
 interface AdminOverview {
   users: { total: number; new30d: number; growthPercent: number };
@@ -206,7 +215,7 @@ export default function AdminDashboardPage() {
       {/* Finance */}
       {canFinance && (
         <section aria-label={t('Finance.SectionAria')} className="space-y-3">
-          <SectionHeader title={t('Finance.SectionTitle')} />
+          <SectionHeader title={t('Finance.SectionTitle')} Icon={DollarSign} />
           {finance.status === 'loading' || finance.status === 'idle' ? (
             <div className="grid gap-4 lg:grid-cols-3">
               <ChartCardSkeleton className="lg:col-span-2" />
@@ -225,7 +234,7 @@ export default function AdminDashboardPage() {
       {/* Content */}
       {canBooks && (
         <section aria-label={t('Content.SectionAria')} className="space-y-3">
-          <SectionHeader title={t('Content.SectionTitle')} />
+          <SectionHeader title={t('Content.SectionTitle')} Icon={BookOpen} />
           {content.status === 'loading' || content.status === 'idle' ? (
             <div className="grid gap-4 lg:grid-cols-2">
               <ListCardSkeleton />
@@ -244,7 +253,7 @@ export default function AdminDashboardPage() {
       {/* Users */}
       {canUsers && (
         <section aria-label={t('Users.SectionAria')} className="space-y-3">
-          <SectionHeader title={t('Users.SectionTitle')} />
+          <SectionHeader title={t('Users.SectionTitle')} Icon={Users} />
           {users.status === 'loading' || users.status === 'idle' ? (
             <div className="grid gap-4 lg:grid-cols-3">
               <ChartCardSkeleton className="lg:col-span-2" />
@@ -259,23 +268,6 @@ export default function AdminDashboardPage() {
           )}
         </section>
       )}
-    </div>
-  );
-}
-
-function SectionHeader({ title }: { title: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-      <div className="h-px flex-1 bg-border" />
-    </div>
-  );
-}
-
-function EmptySection({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-      {message}
     </div>
   );
 }
