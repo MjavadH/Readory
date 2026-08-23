@@ -77,17 +77,12 @@ export default function AdminMedia() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  // Reset pagination when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery]);
-
   // Fetch paged data
   useEffect(() => {
     const controller = new AbortController();
-    setIsGalleryLoading(true);
 
     const t = setTimeout(async () => {
+      setIsGalleryLoading(true);
       try {
         const q = searchQuery.trim();
         const qs = new URLSearchParams();
@@ -121,7 +116,7 @@ export default function AdminMedia() {
           setTotal(Number(data.total) || 0);
           setTotalPages(Math.max(1, Number(data.totalPages) || 1));
         }
-        if (!hasLoadedOnce) setHasLoadedOnce(true);
+        setHasLoadedOnce(true);
       } catch (err: unknown) {
         if (err instanceof Error) {
           if (err?.name !== 'AbortError') {
@@ -137,7 +132,7 @@ export default function AdminMedia() {
       controller.abort();
       clearTimeout(t);
     };
-  }, [searchQuery, page, refreshNonce, toast, hasLoadedOnce]);
+  }, [searchQuery, page, refreshNonce, toast]);
 
   const handleUpload = async () => {
     if (!selectedFiles.length) return;
@@ -352,7 +347,10 @@ export default function AdminMedia() {
               <Input
                 placeholder={t('SearchByFilename')}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
                 className="ps-9 h-11"
               />
             </div>
@@ -461,7 +459,10 @@ export default function AdminMedia() {
               totalItems={total}
               pageSize={ITEMS_PER_PAGE}
               itemLabel={t('MediaItems')}
-              onPageChange={setPage}
+              onPageChange={(nextPage) => {
+                setIsGalleryLoading(true);
+                setPage(nextPage);
+              }}
               canGoPrevious={!isGalleryLoading && page > 1}
               canGoNext={!isGalleryLoading && page < totalPages}
               scrollTarget={paginationScrollRef}

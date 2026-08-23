@@ -25,7 +25,10 @@ export default function AdminCollectionDetailPage() {
 
   const load = React.useCallback(async () => {
     if (!idParam) return;
+
     setError(null);
+    setIsLoading(true);
+
     try {
       const res = await apiClient.get<Collection>(`/collections/admin/${idParam}`);
       setCollection(res);
@@ -37,9 +40,33 @@ export default function AdminCollectionDetailPage() {
   }, [idParam, t]);
 
   React.useEffect(() => {
-    setIsLoading(true);
-    void load();
-  }, [load]);
+    if (!idParam) return;
+
+    let cancelled = false;
+
+    void apiClient
+      .get<Collection>(`/collections/admin/${idParam}`)
+      .then((res) => {
+        if (!cancelled) {
+          setCollection(res);
+          setError(null);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setError(getApiErrorMessage(error, t('Toast.LoadFailed')));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [idParam, t]);
 
   return (
     <div className="w-full pb-20 sm:pb-0">

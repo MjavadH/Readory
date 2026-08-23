@@ -27,7 +27,7 @@ export default function PublicCollectionPage() {
 
   const load = React.useCallback(async () => {
     if (!slug) return;
-    setError(null);
+
     try {
       const res = await apiClient.get<Collection>(`/collections/${slug}`);
       setCollection(res);
@@ -39,9 +39,37 @@ export default function PublicCollectionPage() {
   }, [slug, t]);
 
   React.useEffect(() => {
+    if (!slug) return;
+
+    let cancelled = false;
+
+    void apiClient
+      .get<Collection>(`/collections/${slug}`)
+      .then((res) => {
+        if (cancelled) return;
+        setCollection(res);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+
+        setError(getApiErrorMessage(error, t('Toast.LoadFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, t]);
+
+  const handleRetry = async () => {
+    setError(null);
     setIsLoading(true);
-    void load();
-  }, [load]);
+    await load();
+  };
 
   if (isLoading) return <CollectionDetailSkeleton />;
 
@@ -52,7 +80,7 @@ export default function PublicCollectionPage() {
           <AlertCircle className="h-5 w-5 text-destructive" />
         </div>
         <p className="text-sm font-medium">{error ?? t('NotFound')}</p>
-        <Button variant="outline" size="sm" onClick={() => void load()}>
+        <Button variant="outline" size="sm" onClick={() => void handleRetry()}>
           {t('Actions.Retry')}
         </Button>
       </div>

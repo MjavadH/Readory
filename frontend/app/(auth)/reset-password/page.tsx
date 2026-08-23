@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -83,7 +83,11 @@ export default function ResetPasswordPage() {
     defaultValues: { newPassword: '', confirmPassword: '' },
   });
 
-  const password = form.watch('newPassword');
+  const password = useWatch({
+    control: form.control,
+    name: 'newPassword',
+  });
+
   const strength = useMemo(() => scorePassword(password), [password]);
   const strengthLabels = [
     t('StrengthWeak'),

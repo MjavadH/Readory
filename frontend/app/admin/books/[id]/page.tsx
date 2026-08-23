@@ -76,7 +76,7 @@ export default function AdminBookDetail() {
   const chaptersPaginationScrollRef = useRef<HTMLDivElement>(null);
   const [chaptersTotal, setChaptersTotal] = useState(0);
   const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
-  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [chaptersLoading, setChaptersLoading] = useState(true);
 
   const [chaptersSearchInput, setChaptersSearchInput] = useState('');
   const [chaptersQuery, setChaptersQuery] = useState('');
@@ -117,19 +117,6 @@ export default function AdminBookDetail() {
     publishStatus: PublicationStatus.DRAFT,
     publishAt: undefined,
   });
-
-  const loadOptions = useCallback(async () => {
-    try {
-      const [typesRes, genresRes] = await Promise.all([
-        apiClient.get<OptionItem[]>('/book-types'),
-        apiClient.get<OptionItem[]>('/genres'),
-      ]);
-      setTypes(typesRes);
-      setGenres(genresRes);
-    } catch (error) {
-      console.error('Failed to load metadata options', error);
-    }
-  }, []);
 
   const loadBook = useCallback(async () => {
     if (!Number.isInteger(bookId) || bookId <= 0) {
@@ -187,13 +174,83 @@ export default function AdminBookDetail() {
   }, [bookId, chaptersPage, chaptersQuery, chaptersOrder, chaptersStatusFilter, t, toast]);
 
   useEffect(() => {
-    void loadBook();
-    void loadOptions();
-  }, [loadBook, loadOptions]);
+    let cancelled = false;
+
+    void Promise.all([
+      apiClient.get<BookDetailsData>(`/books/admin/${bookId}`),
+      Promise.all([
+        apiClient.get<OptionItem[]>('/book-types'),
+        apiClient.get<OptionItem[]>('/genres'),
+      ]),
+    ])
+      .then(([bookData, [typesData, genresData]]) => {
+        if (cancelled) return;
+
+        setBook(bookData);
+
+        setEditedBook({
+          ...bookData,
+          typeId: bookData.type?.id,
+          genreIds: bookData.genres?.map((genre: { id: number }) => genre.id) ?? [],
+          contributors: hydrateContributors(bookData.contributors),
+        });
+
+        setTypes(typesData);
+        setGenres(genresData);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, t('FailedLoadDetails')));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId, t, toast]);
 
   useEffect(() => {
-    void loadChapters();
-  }, [loadChapters]);
+    if (!bookId) return;
+
+    let cancelled = false;
+
+    void apiClient
+      .get<ChaptersResponse>(
+        `/books/${bookId}/chapters/admin?${new URLSearchParams({
+          page: chaptersPage.toString(),
+          limit: CHAPTERS_PER_PAGE.toString(),
+          order: chaptersOrder,
+          ...(chaptersQuery ? { q: chaptersQuery } : {}),
+          ...(chaptersStatusFilter !== 'ALL' ? { publishStatus: chaptersStatusFilter } : {}),
+        }).toString()}`,
+      )
+      .then((data) => {
+        if (cancelled) return;
+
+        setChapters(data.items);
+        setChaptersTotal(data.pagination.total);
+        setChaptersTotalPages(data.pagination.totalPages);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, t('FailedLoadChapters')));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setChaptersLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId, chaptersPage, chaptersQuery, chaptersOrder, chaptersStatusFilter, t, toast]);
 
   const handleSaveBook = async () => {
     if (!book) return;
@@ -295,11 +352,13 @@ export default function AdminBookDetail() {
   };
 
   const handleSearchSubmit = useCallback(() => {
+    setChaptersLoading(true);
     setChaptersQuery(chaptersSearchInput);
     setChaptersPage(1);
   }, [chaptersSearchInput]);
 
   const handleToggleOrder = useCallback(() => {
+    setChaptersLoading(true);
     setChaptersOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     setChaptersPage(1);
   }, []);
@@ -453,7 +512,10 @@ export default function AdminBookDetail() {
           chaptersTotalPages={chaptersTotalPages}
           chaptersPage={chaptersPage}
           pageSize={CHAPTERS_PER_PAGE}
-          onPageChange={setChaptersPage}
+          onPageChange={(page) => {
+            setChaptersLoading(true);
+            setChaptersPage(page);
+          }}
           scrollRef={chaptersPaginationScrollRef}
           searchInput={chaptersSearchInput}
           onSearchInputChange={setChaptersSearchInput}

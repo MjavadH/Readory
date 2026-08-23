@@ -212,21 +212,39 @@ export default function AdminGenres() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const normalizeGenres = (data: Genre[]): Genre[] =>
+    data.map((genre) => ({
+      ...genre,
+      isFeatured: Boolean(genre.isFeatured),
+      featuredOrder: Number(genre.featuredOrder) || 0,
+    }));
+
   const load = async () => {
     const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
     if (Array.isArray(data)) {
-      setGenres(
-        data.map((g: Genre) => ({
-          ...g,
-          isFeatured: Boolean(g.isFeatured),
-          featuredOrder: Number(g.featuredOrder) || 0,
-        })),
-      );
+      setGenres(normalizeGenres(data));
     }
   };
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+
+    void apiClient
+      .get<Genre[]>('/genres')
+      .then((data) => {
+        if (!cancelled && Array.isArray(data)) {
+          setGenres(normalizeGenres(data));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGenres([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const create = async () => {

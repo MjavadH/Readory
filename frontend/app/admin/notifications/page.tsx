@@ -125,9 +125,29 @@ export default function AdminNotificationsPage() {
   };
 
   useEffect(() => {
-    void load(page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+    let cancelled = false;
+
+    void apiClient
+      .get<BroadcastListResponse>(`/notifications/admin/broadcasts?page=${page}&limit=${limit}`, {
+        cache: 'no-store',
+      })
+      .then((res) => {
+        if (cancelled) return;
+        setItems(res.data ?? []);
+        setLastPage(res.lastPage ?? 1);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        toast.error(getApiErrorMessage(error, t('Toast.LoadFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, t, toast]);
 
   const reset = () =>
     setForm({

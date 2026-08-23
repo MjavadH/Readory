@@ -200,8 +200,28 @@ export default function ScheduledPublicationsPage() {
   }, [t, toast]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+
+    void apiClient
+      .get<{ data: Schedule[] }>('/scheduled-publications', {
+        authRequired: true,
+      })
+      .then((res) => {
+        if (cancelled) return;
+        setItems(res.data ?? []);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        toast.error(getApiErrorMessage(error, t('Toast.LoadFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t, toast]);
 
   const reset = () => {
     setEditingId(null);

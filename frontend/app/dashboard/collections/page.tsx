@@ -81,8 +81,26 @@ export default function DashboardCollectionsPage() {
   }, [t]);
 
   React.useEffect(() => {
-    void loadCollections();
-  }, [loadCollections]);
+    let cancelled = false;
+
+    void apiClient
+      .get<{ items: Collection[] }>('/collections/mine?limit=48')
+      .then((res) => {
+        if (cancelled) return;
+        setCollections(res.items ?? []);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setError(getApiErrorMessage(error, t('Toast.LoadFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   const collectionHref = React.useCallback(
     (collection: Collection) =>

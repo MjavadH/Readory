@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { DashboardOverview } from '@/lib/types';
 import {
@@ -29,21 +29,25 @@ export default function OverviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const res = await apiClient.get<DashboardOverview>('/dashboard');
-      setData(res);
-    } catch {
-      setError(t('FailedLoadDashboard'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
   useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+
+    void apiClient
+      .get<DashboardOverview>('/dashboard')
+      .then((res) => {
+        if (!cancelled) setData(res);
+      })
+      .catch(() => {
+        if (!cancelled) setError(t('FailedLoadDashboard'));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   if (loading) {
     return (

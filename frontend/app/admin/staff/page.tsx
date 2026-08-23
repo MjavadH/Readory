@@ -245,10 +245,41 @@ export default function AdminStaff() {
   const isSuperAdmin = (staffMember: StaffMember) => staffMember.id === 1;
 
   useEffect(() => {
-    void fetchStaff();
-    apiClient
+    let cancelled = false;
+
+    void apiClient
+      .get<{ data: StaffMember[] }>('/users', {
+        query: { role: 'ADMIN', page: 1, limit: 50 },
+      })
+      .then((data) => {
+        if (cancelled) return;
+        if (Array.isArray(data.data)) {
+          setStaff(data.data);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Error fetching staff', error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    void apiClient
       .get<{ id?: number; userId?: number }>('/auth/profile')
-      .then((data) => setCurrentUserId(data.id || data.userId || null));
+      .then((data) => {
+        if (!cancelled) {
+          setCurrentUserId(data.id || data.userId || null);
+        }
+      })
+      .catch(() => {
+        // Profile lookup is optional for rendering the staff list.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

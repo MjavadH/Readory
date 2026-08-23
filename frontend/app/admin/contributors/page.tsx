@@ -108,42 +108,80 @@ export default function AdminContributorsPage() {
     const id = setTimeout(() => {
       setDebouncedQ(q.trim());
       setPage(1);
+      setLoading(true);
     }, 300);
     return () => clearTimeout(id);
   }, [q]);
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const fetchList = useCallback(async () => {
-    abortRef.current?.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    setLoading(true);
-    setListError(null);
-    try {
+  const fetchListData = useCallback(
+    async (signal: AbortSignal): Promise<ListEnvelope> => {
       const params = new URLSearchParams();
       if (debouncedQ) params.set('q', debouncedQ);
       params.set('page', String(page));
       params.set('limit', String(PAGE_SIZE));
-      const res = await apiClient.get<ListEnvelope>(`/contributor?${params.toString()}`, {
-        signal: ctrl.signal,
+
+      return apiClient.get<ListEnvelope>(`/contributor?${params.toString()}`, {
+        signal,
       });
+    },
+    [debouncedQ, page],
+  );
+
+  const fetchList = useCallback(async () => {
+    abortRef.current?.abort();
+
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    setLoading(true);
+    setListError(null);
+
+    try {
+      const res = await fetchListData(ctrl.signal);
+      if (ctrl.signal.aborted) return;
+
       setRows(res.data);
       setMeta(res.meta);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err?.name === 'AbortError') return;
-        setListError(err?.message || t('LoadFailed'));
-      }
+      if (err instanceof Error && err.name === 'AbortError') return;
+
+      setListError(err instanceof Error ? err.message : t('LoadFailed'));
     } finally {
-      if (!ctrl.signal.aborted) setLoading(false);
+      if (!ctrl.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }, [debouncedQ, page, t]);
+  }, [fetchListData, t]);
 
   useEffect(() => {
-    fetchList();
-    return () => abortRef.current?.abort();
-  }, [fetchList]);
+    abortRef.current?.abort();
+
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    void fetchListData(ctrl.signal)
+      .then((res) => {
+        if (ctrl.signal.aborted) return;
+        setRows(res.data);
+        setMeta(res.meta);
+        setListError(null);
+      })
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return;
+        setListError(err instanceof Error ? err.message : t('LoadFailed'));
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      ctrl.abort();
+    };
+  }, [fetchListData, t]);
 
   const openCreate = () => {
     setEditorMode('create');

@@ -260,7 +260,7 @@ export default function ChapterContentManager() {
   const [adminPreviewToken, setAdminPreviewToken] = useState<string | null>(null);
   const [textPage, setTextPage] = useState(1);
   const [currentTextHtml, setCurrentTextHtml] = useState<string | null>(null);
-  const [isLoadingText, setIsLoadingText] = useState(false);
+  const [isLoadingText, setIsLoadingText] = useState(true);
   const textContainerRef = useRef<HTMLDivElement>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
@@ -288,6 +288,7 @@ export default function ChapterContentManager() {
         setSelectedImagePages([]);
         setTextPage(1);
         setCurrentTextHtml(null);
+        setIsLoadingText(response.manifest?.format === 'text');
 
         if (response.manifest && response.manifest.pageCount > 0) {
           try {
@@ -318,8 +319,68 @@ export default function ChapterContentManager() {
   );
 
   useEffect(() => {
-    void loadContent();
-  }, [loadContent]);
+    if (!canLoad) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const response = await apiClient.get<ChapterContentResponse>(
+          `/admin/books/${bookId}/chapters/${chapterIndex}/content`,
+          { authRequired: true },
+        );
+
+        if (cancelled) return;
+
+        setData(response);
+        setLoadError(null);
+        setDeleteMode(false);
+        setSelectedImagePages([]);
+        setTextPage(1);
+        setCurrentTextHtml(null);
+
+        if (response.manifest && response.manifest.pageCount > 0) {
+          try {
+            const preview = await apiClient.post<AdminPreviewSessionResponse>(
+              '/reader/admin/session',
+              { bookId, chapterIndex },
+            );
+
+            if (!cancelled) {
+              setAdminPreviewToken(preview.sessionToken);
+            }
+          } catch (error) {
+            if (!cancelled) {
+              setAdminPreviewToken(null);
+              toast.error(
+                getApiErrorMessage(error, t('UnableCreatePreview')),
+                t('PreviewUnavailable'),
+              );
+            }
+          }
+        } else {
+          setAdminPreviewToken(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = getApiErrorMessage(error, t('UnableFetchChapterContent'));
+
+          setLoadError(message);
+          toast.error(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canLoad, bookId, chapterIndex, toast, t]);
 
   const chapter = data?.chapter ?? null;
   const isPdfProcessing = Boolean(chapter && !chapter.contentType && chapter.pdfKey);
@@ -339,38 +400,45 @@ export default function ChapterContentManager() {
     [data],
   );
   const totalImagePages = Math.max(1, Math.ceil(imagePages.length / PAGE_SIZE));
-  const pagedImages = imagePages.slice((imagePage - 1) * PAGE_SIZE, imagePage * PAGE_SIZE);
+
+  const safeImagePage = Math.min(Math.max(imagePage, 1), totalImagePages);
+
+  const pagedImages = imagePages.slice((safeImagePage - 1) * PAGE_SIZE, safeImagePage * PAGE_SIZE);
 
   useEffect(() => {
-    if (imagePage > totalImagePages) setImagePage(totalImagePages);
-  }, [imagePage, totalImagePages]);
-
-  useEffect(() => {
-    if (data?.manifest?.format !== 'text' || !adminPreviewToken) return;
+    if (data?.manifest?.format !== 'text' || !adminPreviewToken) {
+      return;
+    }
 
     let isMounted = true;
-    setIsLoadingText(true);
 
-    apiClient
+    void apiClient
       .get<{ html: string }>('/reader/text', {
-        query: { token: adminPreviewToken, p: textPage },
+        query: {
+          token: adminPreviewToken,
+          p: textPage,
+        },
       })
       .then((res) => {
-        if (isMounted) setCurrentTextHtml(res.html);
-      })
-      .catch((err) => {
         if (isMounted) {
-          toast.error(getApiErrorMessage(err, t('UnableFetchChapterContent')));
+          setCurrentTextHtml(res.html);
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          toast.error(getApiErrorMessage(error, t('UnableFetchChapterContent')));
         }
       })
       .finally(() => {
-        if (isMounted) setIsLoadingText(false);
+        if (isMounted) {
+          setIsLoadingText(false);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [adminPreviewToken, textPage, data?.manifest?.format, toast, t]);
+  }, [adminPreviewToken, data, textPage, toast, t]);
 
   const uploadWithXhr = useCallback(
     (url: string, formData: FormData): Promise<void> =>
@@ -544,7 +612,7 @@ export default function ChapterContentManager() {
     `${apiBase}/reader/page?token=${encodeURIComponent(adminPreviewToken ?? '')}&p=${pageNumber}`;
 
   const absolutePageNumber = (pageIndexInCurrentPage: number) =>
-    (imagePage - 1) * PAGE_SIZE + pageIndexInCurrentPage + 1;
+    (safeImagePage - 1) * PAGE_SIZE + pageIndexInCurrentPage + 1;
 
   const selectedImagePageSet = useMemo(() => new Set(selectedImagePages), [selectedImagePages]);
 
@@ -557,8 +625,8 @@ export default function ChapterContentManager() {
   };
 
   const currentPagedPageNumbers = useMemo(
-    () => pagedImages.map((_, idx) => (imagePage - 1) * PAGE_SIZE + idx + 1),
-    [pagedImages, imagePage],
+    () => pagedImages.map((_, idx) => (safeImagePage - 1) * PAGE_SIZE + idx + 1),
+    [pagedImages, safeImagePage],
   );
 
   const selectedCountOnCurrentPage = useMemo(
@@ -1202,7 +1270,10 @@ export default function ChapterContentManager() {
                   totalItems={data.manifest.pageCount}
                   itemLabel={t('Text')}
                   totalPages={data.manifest.pageCount}
-                  onPageChange={setTextPage}
+                  onPageChange={(page) => {
+                    setIsLoadingText(true);
+                    setTextPage(page);
+                  }}
                   scrollTarget={textContainerRef}
                 />
               )}
@@ -1291,7 +1362,7 @@ export default function ChapterContentManager() {
 
               {totalImagePages > 1 && (
                 <AppPagination
-                  currentPage={imagePage}
+                  currentPage={safeImagePage}
                   pageSize={PAGE_SIZE}
                   totalItems={imagePages.length}
                   itemLabel={t('images')}

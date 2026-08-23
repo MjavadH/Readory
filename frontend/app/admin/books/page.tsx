@@ -122,42 +122,56 @@ export default function AdminBooks() {
     publicationYear: null as number | null,
   });
 
-  const fetchGenres = useCallback(async () => {
+  const fetchGenres = useCallback(async (): Promise<Genre[]> => {
     try {
-      const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
-      setGenres(Array.isArray(data) ? data : []);
+      const data = await apiClient.get<Genre[]>('/genres');
+      return Array.isArray(data) ? data : [];
     } catch {
       toast.error(t('ErrorFetchingGenres'));
-      setGenres([]);
+      return [];
     }
   }, [toast, t]);
 
-  const fetchTypes = useCallback(async () => {
+  const fetchTypes = useCallback(async (): Promise<BookType[]> => {
     try {
-      const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
-      const list = Array.isArray(data) ? data : [];
-      setBookTypes(list);
-      if (list.length > 0) {
-        setNewBook((prev) => ({ ...prev, typeId: prev.typeId ?? list[0].id }));
-      }
+      const data = await apiClient.get<BookType[]>('/book-types');
+      return Array.isArray(data) ? data : [];
     } catch {
       toast.error(t('ErrorFetchingTypes'));
-      setBookTypes([]);
-    } finally {
-      setIsLoadingTypes(false);
+      return [];
     }
   }, [toast, t]);
 
   useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      try {
-        await Promise.all([fetchGenres(), fetchTypes()]);
-      } finally {
-        setLoading(false);
-      }
+    let cancelled = false;
+
+    void Promise.all([fetchGenres(), fetchTypes()])
+      .then(([genresData, typesData]) => {
+        if (cancelled) return;
+
+        setGenres(genresData);
+        setBookTypes(typesData);
+        setNewBook((prev) => ({
+          ...prev,
+          typeId: prev.typeId ?? typesData[0]?.id,
+        }));
+        setIsLoadingTypes(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setGenres([]);
+        setBookTypes([]);
+        setIsLoadingTypes(false);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
     };
-    void init();
   }, [fetchGenres, fetchTypes]);
 
   useEffect(() => {
@@ -165,67 +179,85 @@ export default function AdminBooks() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchBooks = useCallback(async () => {
-    try {
-      const qs = new URLSearchParams({
-        page: String(page),
-        limit: String(ITEMS_PER_PAGE),
-        status: statusFilter,
-      });
-      if (debouncedQ.length >= 2) qs.set('q', debouncedQ);
+  const requestBooks = useCallback(async () => {
+    const qs = new URLSearchParams({
+      page: String(page),
+      limit: String(ITEMS_PER_PAGE),
+      status: statusFilter,
+    });
 
-      const data = await apiClient.get<{ books: AdminApiBook[]; stats?: BookStats }>(
-        `/books/allBooks?${qs.toString()}`,
-      );
-
-      const transformedBooks: BookCardData[] = (data.books || []).map((book) => ({
-        id: book.id,
-        title: book.title,
-        originalTitle: book.originalTitle,
-        alternativeTitles: book.alternativeTitles,
-        coverImage: book.coverImage || '',
-        type: book.type as BookType,
-        contributors: book.contributors ?? undefined,
-        ratingAvg: book.ratingAvg,
-        ratingCount: book.ratingCount,
-        genres: book.genres?.map((g) => g.genre) || [],
-        isFeatured: book.isFeatured,
-        publishStatus: book.publishStatus,
-        status: book.status,
-        ageRating: book.ageRating,
-        publicationYear: book.publicationYear,
-        chapterCount: book.chapterCount || 0,
-        lastContentUpdate: book.lastContentUpdate,
-        updatedAt: book.updatedAt,
-      }));
-
-      setBooks(transformedBooks);
-      if (data.stats) setStats(data.stats);
-    } catch {
-      toast.error(t('ErrorFetchingBooks'));
-      setBooks([]);
+    if (debouncedQ.length >= 2) {
+      qs.set('q', debouncedQ);
     }
-  }, [page, statusFilter, debouncedQ, toast, t]);
+
+    return apiClient.get<{
+      books: AdminApiBook[];
+      stats?: BookStats;
+    }>(`/books/allBooks?${qs.toString()}`);
+  }, [page, statusFilter, debouncedQ]);
+
+  const transformBooks = (items: AdminApiBook[]): BookCardData[] =>
+    items.map((book) => ({
+      id: book.id,
+      title: book.title,
+      originalTitle: book.originalTitle,
+      alternativeTitles: book.alternativeTitles,
+      coverImage: book.coverImage || '',
+      type: book.type as BookType,
+      contributors: book.contributors ?? undefined,
+      ratingAvg: book.ratingAvg,
+      ratingCount: book.ratingCount,
+      genres: book.genres?.map((g) => g.genre) || [],
+      isFeatured: book.isFeatured,
+      publishStatus: book.publishStatus,
+      status: book.status,
+      ageRating: book.ageRating,
+      publicationYear: book.publicationYear,
+      chapterCount: book.chapterCount || 0,
+      lastContentUpdate: book.lastContentUpdate,
+      updatedAt: book.updatedAt,
+    }));
 
   useEffect(() => {
-    void fetchBooks();
-  }, [fetchBooks]);
+    let cancelled = false;
 
-  useEffect(() => {
-    setPage(1);
-  }, [statusFilter, debouncedQ]);
+    void requestBooks()
+      .then((data) => {
+        if (cancelled) return;
+
+        setBooks(transformBooks(data.books ?? []));
+
+        if (data.stats) {
+          setStats(data.stats);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+
+        toast.error(t('ErrorFetchingBooks'));
+        setBooks([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestBooks, toast, t]);
 
   const handleAddBook = async () => {
     if (!newBook.title.trim()) {
       return toast.error(t('TitleRequired'), t('Validation Error'));
     }
+
     if (newBook.genreIds.length === 0) {
       return toast.error(t('SelectOneGenre'), t('Validation Error'));
     }
+
     if (newBook.typeId == null) {
       return toast.error(t('BookTypeRequired'), t('Validation Error'));
     }
+
     setIsSubmitting(true);
+
     try {
       await apiClient.post('/books', {
         ...newBook,
@@ -237,13 +269,21 @@ export default function AdminBooks() {
         })),
       });
 
-      await fetchBooks();
+      const data = await requestBooks();
+
+      setBooks(transformBooks(data.books ?? []));
+
+      if (data.stats) {
+        setStats(data.stats);
+      }
+
       setShowAddCard(false);
+
       setNewBook({
         title: '',
         originalTitle: '',
-        alternativeTitles: [] as string[],
-        contributors: [] as BookContributorEntry[],
+        alternativeTitles: [],
+        contributors: [],
         typeId: bookTypes[0]?.id,
         description: '',
         coverImage: '',
@@ -252,14 +292,13 @@ export default function AdminBooks() {
         isFeatured: false,
         status: BookStatus.Upcoming,
         ageRating: undefined,
-        publicationYear: null as number | null,
+        publicationYear: null,
       });
+
       setNewCoverLabel('');
       toast.success(t('BookCreatedSuccessfully'));
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(getApiErrorMessage(err));
-      }
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, t('ErrorFetchingBooks')));
     } finally {
       setIsSubmitting(false);
     }
@@ -426,13 +465,20 @@ export default function AdminBooks() {
             <Input
               placeholder={t('SearchByTitle')}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+                setLoading(true);
+              }}
               className="ps-10 h-11 shadow-sm"
             />
           </div>
           <Select
             value={statusFilter}
-            onValueChange={(value: StatusFilter) => setStatusFilter(value)}
+            onValueChange={(value: StatusFilter) => {
+              setStatusFilter(value);
+              setPage(1);
+            }}
           >
             <SelectTrigger className="w-full sm:w-50 h-11 shadow-sm">
               <SelectValue placeholder={t('FilterByStatus')} />

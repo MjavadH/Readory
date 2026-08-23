@@ -80,7 +80,7 @@ export default function BookDetailsPage() {
   const [chapterSearch, setChapterSearch] = useState('');
   const [chapterSearchInput, setChapterSearchInput] = useState('');
   const [chaptersOrder, setChaptersOrder] = useState<'asc' | 'desc'>('asc');
-  const [chaptersLoading, setChaptersLoading] = useState(false);
+  const [chaptersLoading, setChaptersLoading] = useState(true);
 
   const [relatedBooks, setRelatedBooks] = useState<BookCardData[]>([]);
   const [actionChapter, setActionChapter] = useState<ActionChapter | null>(null);
@@ -90,74 +90,103 @@ export default function BookDetailsPage() {
     [viewer?.purchasedChapterIds],
   );
 
-  const loadBase = useCallback(async () => {
+  useEffect(() => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    let cancelled = false;
 
-    try {
-      const [bookData, profile] = await Promise.all([
-        apiClient.get<BookDetailsData>(`/books/${bookId}`),
-        apiClient.get('/auth/profile').catch(() => null),
-      ]);
+    void (async () => {
+      try {
+        const [bookData, profile] = await Promise.all([
+          apiClient.get<BookDetailsData>(`/books/${bookId}`),
+          apiClient.get('/auth/profile').catch(() => null),
+        ]);
 
-      if (!bookData || bookData.type.slug !== typeSlug) {
-        return;
+        if (cancelled) return;
+
+        if (!bookData || bookData.type.slug !== typeSlug) {
+          setIsLoading(false);
+          return;
+        }
+
+        setBook(bookData);
+
+        if (profile) {
+          setIsAuthenticated(true);
+
+          const viewerState = await apiClient.get<ViewerState>(`/books/${bookId}/viewer-state`);
+
+          if (cancelled) return;
+
+          setViewer(viewerState);
+          setSelectedRating(viewerState.myRating ?? 0);
+          setIsFavorited(viewerState.isFavorited);
+        } else {
+          setIsAuthenticated(false);
+          setViewer(null);
+          setSelectedRating(0);
+        }
+
+        const relatedResponse = await apiClient.get<{
+          items: BookCardData[];
+        }>(`/books/${bookId}/related?limit=12`);
+
+        if (cancelled) return;
+
+        setRelatedBooks(relatedResponse.items ?? []);
+      } catch (loadError) {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(loadError, t('FailedLoadDetails')));
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
+    })();
 
-      setBook(bookData);
-
-      if (profile) {
-        setIsAuthenticated(true);
-        const viewerState = await apiClient.get<ViewerState>(`/books/${bookId}/viewer-state`);
-        setViewer(viewerState);
-        setSelectedRating(viewerState.myRating ?? 0);
-        setIsFavorited(viewerState.isFavorited);
-      } else {
-        setIsAuthenticated(false);
-        setViewer(null);
-        setSelectedRating(0);
-      }
-
-      const relatedResponse = await apiClient.get<{ items: BookCardData[] }>(
-        `/books/${bookId}/related?limit=12`,
-      );
-      setRelatedBooks(relatedResponse.items ?? []);
-    } catch (loadError) {
-      toast.error(getApiErrorMessage(loadError, t('FailedLoadDetails')));
-    } finally {
-      setIsLoading(false);
-    }
+    return () => {
+      cancelled = true;
+    };
   }, [bookId, typeSlug, t, toast]);
 
-  const loadChapters = useCallback(async () => {
-    if (!Number.isInteger(bookId) || bookId <= 0) return;
-
-    setChaptersLoading(true);
-    try {
-      const data = await apiClient.get<ChaptersResponse>(
-        `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(chapterSearch)}&order=${chaptersOrder}&publishStatus=PUBLISHED`,
-      );
-      setChapters(data.items);
-      setChaptersTotal(data.pagination.total);
-      setChaptersTotalPages(data.pagination.totalPages);
-    } catch (chapterError) {
-      toast.error(getApiErrorMessage(chapterError, t('FailedLoadChapters')));
-    } finally {
-      setChaptersLoading(false);
+  useEffect(() => {
+    if (!Number.isInteger(bookId) || bookId <= 0) {
+      return;
     }
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const data = await apiClient.get<ChaptersResponse>(
+          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(
+            chapterSearch,
+          )}&order=${chaptersOrder}&publishStatus=PUBLISHED`,
+        );
+
+        if (cancelled) return;
+
+        setChapters(data.items);
+        setChaptersTotal(data.pagination.total);
+        setChaptersTotalPages(data.pagination.totalPages);
+      } catch (chapterError) {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(chapterError, t('FailedLoadChapters')));
+        }
+      } finally {
+        if (!cancelled) {
+          setChaptersLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [bookId, chapterSearch, chaptersPage, chaptersOrder, t, toast]);
-
-  useEffect(() => {
-    void loadBase();
-  }, [loadBase]);
-
-  useEffect(() => {
-    void loadChapters();
-  }, [loadChapters]);
 
   const handleSelectRating = (rating: number) => setSelectedRating(rating);
 
@@ -281,11 +310,13 @@ export default function BookDetailsPage() {
   }, []);
 
   const handleSearch = () => {
+    setChaptersLoading(true);
     setChaptersPage(1);
     setChapterSearch(chapterSearchInput.trim());
   };
 
   const toggleOrder = () => {
+    setChaptersLoading(true);
     setChaptersOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     setChaptersPage(1);
   };
@@ -336,7 +367,10 @@ export default function BookDetailsPage() {
         chaptersTotalPages={chaptersTotalPages}
         chaptersPage={chaptersPage}
         pageSize={CHAPTERS_PER_PAGE}
-        onPageChange={setChaptersPage}
+        onPageChange={(page) => {
+          setChaptersLoading(true);
+          setChaptersPage(page);
+        }}
         scrollRef={chaptersPaginationScrollRef}
         t={t}
         ti={ti}

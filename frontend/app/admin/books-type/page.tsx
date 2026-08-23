@@ -195,22 +195,40 @@ export default function AdminBookTypesPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const normalizeBookTypes = (data: BookType[]): BookType[] =>
+    data.map((type) => ({
+      ...type,
+      isActive: Boolean(type.isActive),
+      sortOrder: Number(type.sortOrder) || 0,
+      iconKey: (type.iconKey ?? null) as IconKey | null,
+    }));
+
   const load = async () => {
     const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
+
     if (Array.isArray(data)) {
-      setTypes(
-        data.map((t) => ({
-          ...t,
-          isActive: Boolean(t.isActive),
-          sortOrder: Number(t.sortOrder) || 0,
-          iconKey: (t.iconKey ?? null) as IconKey | null,
-        })),
-      );
+      setTypes(normalizeBookTypes(data));
     }
   };
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+
+    void apiClient
+      .get<BookType[]>('/book-types')
+      .then((data) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setTypes(normalizeBookTypes(data));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTypes([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const activeTypes = useMemo(

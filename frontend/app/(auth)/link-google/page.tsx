@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Lock, Mail } from 'lucide-react';
@@ -11,40 +11,112 @@ import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
 import { safeRedirect } from '@/lib/auth/safe-redirect';
 
-type PendingGoogleLink = { credential: string; nonce: string; email?: string; next?: string };
+type PendingGoogleLink = {
+  credential: string;
+  nonce: string;
+  email?: string;
+  next?: string;
+};
+
+const GOOGLE_LINK_STORAGE_KEY = 'readory_google_link';
+
+let cachedRaw: string | null | undefined;
+let cachedPending: PendingGoogleLink | null = null;
+
+function isPendingGoogleLink(value: unknown): value is PendingGoogleLink {
+  if (!value || typeof value !== 'object') return false;
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.credential === 'string' &&
+    candidate.credential.length > 0 &&
+    typeof candidate.nonce === 'string' &&
+    candidate.nonce.length > 0 &&
+    (candidate.email === undefined || typeof candidate.email === 'string') &&
+    (candidate.next === undefined || typeof candidate.next === 'string')
+  );
+}
+
+function getPendingGoogleLinkSnapshot(): PendingGoogleLink | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  let raw: string | null;
+
+  try {
+    raw = window.sessionStorage.getItem(GOOGLE_LINK_STORAGE_KEY);
+  } catch {
+    raw = null;
+  }
+
+  if (raw === cachedRaw) {
+    return cachedPending;
+  }
+
+  cachedRaw = raw;
+
+  if (!raw) {
+    cachedPending = null;
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    cachedPending = isPendingGoogleLink(parsed) ? parsed : null;
+  } catch {
+    cachedPending = null;
+  }
+
+  return cachedPending;
+}
+
+function getServerPendingGoogleLinkSnapshot(): PendingGoogleLink | null {
+  return null;
+}
+
+function subscribeToPendingGoogleLink(): () => void {
+  return () => {};
+}
 
 export default function LinkGooglePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const toast = useToast();
-  const [pending, setPending] = useState<PendingGoogleLink | null>(null);
+
+  const pending = useSyncExternalStore(
+    subscribeToPendingGoogleLink,
+    getPendingGoogleLinkSnapshot,
+    getServerPendingGoogleLinkSnapshot,
+  );
+
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('readory_google_link');
-      if (!raw) return router.replace('/login');
-      setPending(JSON.parse(raw));
-    } catch {
+    if (!pending) {
       router.replace('/login');
     }
-  }, [router]);
+  }, [pending, router]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!pending || loading) return;
     setLoading(true);
     try {
-      const data = await apiClient.post<{ user?: { roleName?: 'ADMIN' | 'USER' } }>(
-        '/auth/google/link',
-        {
-          credential: pending.credential,
-          nonce: pending.nonce,
-          password,
-        },
-      );
-      sessionStorage.removeItem('readory_google_link');
+      const data = await apiClient.post<{
+        user?: {
+          roleName?: 'ADMIN' | 'USER';
+        };
+      }>('/auth/google/link', {
+        credential: pending.credential,
+        nonce: pending.nonce,
+        password,
+      });
+
+      sessionStorage.removeItem(GOOGLE_LINK_STORAGE_KEY);
+
       toast.success('You can use Google to sign in from now on.', 'Google connected');
       router.push(
         safeRedirect(

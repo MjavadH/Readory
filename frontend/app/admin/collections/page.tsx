@@ -69,13 +69,19 @@ export default function AdminCollectionsPage() {
   const [editing, setEditing] = React.useState<Collection | null>(null);
   const [form, setForm] = React.useState<CollectionFormState>(emptyCollectionForm);
 
+  const requestCollections = React.useCallback(async () => {
+    return apiClient.get<{
+      items: Collection[];
+      nextCursor?: string;
+      hasMore?: boolean;
+    }>('/collections/admin?limit=24', { authRequired: true });
+  }, []);
+
   const load = React.useCallback(async () => {
+    setIsLoading(true);
+
     try {
-      const res = await apiClient.get<{
-        items: Collection[];
-        nextCursor?: string;
-        hasMore?: boolean;
-      }>('/collections/admin?limit=24', { authRequired: true });
+      const res = await requestCollections();
       setCollections(res.items ?? []);
       setNextCursor(res.nextCursor);
       setHasMore(Boolean(res.hasMore));
@@ -84,11 +90,33 @@ export default function AdminCollectionsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [t, toast]);
+  }, [requestCollections, t, toast]);
 
   React.useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+
+    void requestCollections()
+      .then((res) => {
+        if (cancelled) return;
+        setCollections(res.items ?? []);
+        setNextCursor(res.nextCursor);
+        setHasMore(Boolean(res.hasMore));
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          toast.error(getApiErrorMessage(error, t('Toast.LoadFailed')));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [requestCollections, t, toast]);
 
   const loadMore = React.useCallback(async () => {
     if (!nextCursor || isLoadingMore) return;
