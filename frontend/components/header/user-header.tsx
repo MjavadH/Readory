@@ -219,12 +219,6 @@ export function UserHeader() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* close on navigate */
-  useEffect(() => {
-    setMobileOpen(false);
-    setMobileSearchOpen(false);
-  }, [pathname]);
-
   /* lock body scroll when mobile menu is open */
   useEffect(() => {
     if (mobileOpen) {

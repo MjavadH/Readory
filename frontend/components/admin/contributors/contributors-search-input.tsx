@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -61,8 +63,6 @@ export function ContributorsSearchInput({
     if (value) return; // selected mode, no search
     const q = query.trim();
     if (q.length < 3) {
-      setResults([]);
-      setLoading(false);
       abortRef.current?.abort();
       return;
     }
@@ -164,8 +164,18 @@ export function ContributorsSearchInput({
           ref={inputRef}
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            const nextQuery = e.target.value;
+            const trimmed = nextQuery.trim();
+
+            setQuery(nextQuery);
             setOpen(true);
+
+            if (trimmed.length < 3) {
+              abortRef.current?.abort();
+              setResults([]);
+              setLoading(false);
+              setHighlight(0);
+            }
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}

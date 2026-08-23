@@ -199,14 +199,14 @@ export function DateTimePicker({
   const [draft, setDraft] = React.useState<Draft>(() => makeDraft(current ?? new Date()));
   const [cursor, setCursor] = React.useState<Date>(current ?? new Date());
 
-  // Reset draft each time the popover/drawer opens.
-  React.useEffect(() => {
-    if (open) {
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
       const base = current ?? clampToBounds(new Date(), min, max);
       setDraft(makeDraft(base));
       setCursor(base);
     }
-  }, [open, current, max, min]);
+    setOpen(nextOpen);
+  };
 
   const weekdays = React.useMemo(() => getWeekdays(locale), [locale]);
   const grid = React.useMemo(
@@ -412,7 +412,7 @@ export function DateTimePicker({
 
   if (isMobile) {
     return (
-      <Drawer open={open} onOpenChange={setOpen}>
+      <Drawer open={open} onOpenChange={handleOpenChange}>
         <DrawerTrigger asChild>{trigger}</DrawerTrigger>
         <DrawerContent className="pointer-events-auto">
           <DrawerHeader className="pb-0">
@@ -427,7 +427,7 @@ export function DateTimePicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         align="start"

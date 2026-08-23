@@ -71,14 +71,17 @@ export function MediaPicker({
   // tiny in-memory cache to reduce pressure when navigating pages back/forth
   const cacheRef = useRef(new Map<string, PagedMediaResponse>());
 
-  useEffect(() => {
-    if (!open) return;
-    setPage(1);
-  }, [open]);
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) {
+      setPage(1);
+    }
+    onOpenChangeAction(nextOpen);
+  };
 
-  useEffect(() => {
+  const handleSearchChange = (nextQuery: string) => {
+    setQ(nextQuery);
     setPage(1);
-  }, [q]);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -142,7 +145,7 @@ export function MediaPicker({
   }, [open, q, page, itemsPerPage, toast]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChangeAction}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="w-[calc(100vw-2rem)] sm:w-full sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">{t('SelectCover')}</DialogTitle>
@@ -156,7 +159,7 @@ export function MediaPicker({
           <Search className="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder={t('SearchByFilename')}
             className="ps-9 h-11"
           />

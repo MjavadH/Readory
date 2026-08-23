@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CornerDownLeft, Hash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -27,12 +27,15 @@ export function NavigationGroup({
   onCloseJump: () => void;
 }) {
   const t = useTranslations('Books');
-  const [pageDraft, setPageDraft] = useState(String(currentPage));
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    setPageDraft(String(currentPage));
-  }, [currentPage]);
+  const getDraftPage = () => inputRef.current?.value ?? String(currentPage);
+
+  const setDraftPage = (value: string) => {
+    if (inputRef.current) {
+      inputRef.current.value = value;
+    }
+  };
 
   const clampPage = useCallback(
     (n: number) => Math.min(totalPages, Math.max(1, Math.round(n))),
@@ -40,13 +43,13 @@ export function NavigationGroup({
   );
 
   const commitJump = () => {
-    const parsed = Number(pageDraft.replace(/\D/g, ''));
+    const parsed = Number(getDraftPage().replace(/\D/g, ''));
     if (!parsed || Number.isNaN(parsed)) {
-      setPageDraft(String(currentPage));
+      setDraftPage(String(currentPage));
       return;
     }
     const target = clampPage(parsed);
-    setPageDraft(String(target));
+    setDraftPage(String(target));
     onPageChange(target);
     onCloseJump();
   };
@@ -90,7 +93,7 @@ export function NavigationGroup({
                 type="button"
                 aria-label={t('PreviousPage')}
                 onClick={() =>
-                  setPageDraft(String(clampPage(Number(pageDraft || currentPage) - 1)))
+                  setDraftPage(String(clampPage(Number(getDraftPage() || currentPage) - 1)))
                 }
                 className="inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background/70 text-foreground/70 transition hover:bg-secondary sm:hidden"
               >
@@ -105,14 +108,17 @@ export function NavigationGroup({
                   inputMode="numeric"
                   pattern="[0-9]*"
                   enterKeyHint="go"
-                  value={pageDraft}
-                  onChange={(e) => setPageDraft(e.target.value.replace(/\D/g, ''))}
+                  defaultValue={String(currentPage)}
+                  key={currentPage}
+                  onChange={(e) => {
+                    e.currentTarget.value = e.currentTarget.value.replace(/\D/g, '');
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') commitJump();
                     if (e.key === 'ArrowUp')
-                      setPageDraft(String(clampPage(Number(pageDraft || 0) + 1)));
+                      setDraftPage(String(clampPage(Number(getDraftPage() || 0) + 1)));
                     if (e.key === 'ArrowDown')
-                      setPageDraft(String(clampPage(Number(pageDraft || 0) - 1)));
+                      setDraftPage(String(clampPage(Number(getDraftPage() || 0) - 1)));
                   }}
                   aria-label={t('GoToPage')}
                   className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none h-10 w-full rounded-xl border border-border bg-background/70 px-2 text-center text-sm font-semibold tabular-nums text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/30 sm:h-11 sm:ps-9 sm:pe-3"
@@ -123,7 +129,7 @@ export function NavigationGroup({
                 type="button"
                 aria-label={t('NextPage')}
                 onClick={() =>
-                  setPageDraft(String(clampPage(Number(pageDraft || currentPage) + 1)))
+                  setDraftPage(String(clampPage(Number(getDraftPage() || currentPage) + 1)))
                 }
                 className="inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-background/70 text-foreground/70 transition hover:bg-secondary sm:hidden"
               >

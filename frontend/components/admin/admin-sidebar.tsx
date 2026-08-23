@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePermission } from '@/hooks/use-permission';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -57,6 +57,39 @@ import { useLocaleInfo } from '@/hooks/use-locale-info';
 import { getAvatarUrl } from '@/lib/media';
 
 const COLLAPSED_KEY = 'admin-sidebar-collapsed';
+const COLLAPSED_EVENT = 'readory:admin-sidebar-collapsed';
+
+function getCollapsedSnapshot(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    return window.localStorage.getItem(COLLAPSED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function getServerCollapsedSnapshot(): boolean {
+  return false;
+}
+
+function subscribeCollapsed(onStoreChange: () => void): () => void {
+  if (typeof window === 'undefined') return () => {};
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === COLLAPSED_KEY) onStoreChange();
+  };
+
+  const handleCustomEvent = () => onStoreChange();
+
+  window.addEventListener('storage', handleStorage);
+  window.addEventListener(COLLAPSED_EVENT, handleCustomEvent);
+
+  return () => {
+    window.removeEventListener('storage', handleStorage);
+    window.removeEventListener(COLLAPSED_EVENT, handleCustomEvent);
+  };
+}
 
 interface CurrentUser {
   userId: number;
@@ -72,27 +105,23 @@ export function AdminSidebar() {
   const router = useRouter();
   const { isRTL } = useLocaleInfo();
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [collapsedReady, setCollapsedReady] = useState(false);
+  const isCollapsed = useSyncExternalStore(
+    subscribeCollapsed,
+    getCollapsedSnapshot,
+    getServerCollapsedSnapshot,
+  );
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   const { has, loading, isSuperAdmin } = usePermission();
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(COLLAPSED_KEY);
-      if (stored !== null) setIsCollapsed(stored === 'true');
-    } catch {}
-    setCollapsedReady(true);
-  }, []);
-
   const handleToggleCollapse = () => {
     const next = !isCollapsed;
-    setIsCollapsed(next);
+
     try {
-      localStorage.setItem(COLLAPSED_KEY, String(next));
+      window.localStorage.setItem(COLLAPSED_KEY, String(next));
+      window.dispatchEvent(new Event(COLLAPSED_EVENT));
     } catch {}
   };
 
@@ -615,7 +644,7 @@ export function AdminSidebar() {
         className={cn(
           'sticky top-0 hidden h-screen flex-col bg-sidebar border-e border-sidebar-border md:flex overflow-hidden',
           'transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
-          collapsedReady ? (isCollapsed ? 'w-17' : 'w-64') : 'w-64',
+          isCollapsed ? 'w-17' : 'w-64',
         )}
       >
         {renderSidebarBrand(isCollapsed)}

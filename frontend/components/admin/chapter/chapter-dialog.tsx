@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Hash, Type, AlertCircle, Coins, Unlock } from 'lucide-react';
 import {
@@ -73,17 +73,8 @@ export function ChapterDialog({
   t,
   g,
 }: ChapterDialogProps) {
-  const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
   const [touched, setTouched] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setErrors({});
-      setTouched(false);
-      setSubmitting(false);
-    }
-  }, [open]);
 
   const validate = useMemo(
     () =>
@@ -110,9 +101,7 @@ export function ChapterDialog({
   );
 
   const update = (patch: Partial<ChapterFormValue>) => {
-    const next = { ...value, ...patch };
-    onChange(next);
-    if (touched) setErrors(validate(next));
+    onChange({ ...value, ...patch });
   };
 
   const handleStatusChange = (status: PublicationStatus) => {
@@ -128,7 +117,6 @@ export function ChapterDialog({
   const handleSubmit = async () => {
     setTouched(true);
     const next = validate(value);
-    setErrors(next);
     if (Object.keys(next).length > 0) return;
 
     setSubmitting(true);
@@ -139,10 +127,19 @@ export function ChapterDialog({
     }
   };
 
+  const errors = touched ? validate(value) : {};
   const hasErrors = Object.keys(errors).length > 0;
 
+  const handleDialogOpenChange = (nextOpen: boolean) => {
+    if (nextOpen) return;
+
+    setTouched(false);
+    setSubmitting(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="max-h-[92vh] w-[calc(100vw-1.5rem)] overflow-y-auto rounded-2xl p-4 sm:max-w-lg sm:p-6">
         <DialogHeader className="text-start">
           <DialogTitle className="text-lg sm:text-xl">

@@ -20,13 +20,16 @@ interface ThemeSwitcherProps {
   variant?: ThemeVariant;
 }
 
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
 export function ThemeSwitcher({ variant = 'desktop' }: ThemeSwitcherProps) {
   const t = useTranslations('General');
   const { theme, setTheme } = useTheme();
   const { isRTL } = useLocaleInfo();
-  const [mounted, setMounted] = React.useState(false);
+  const mounted = React.useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot);
 
-  React.useEffect(() => setMounted(true), []);
   if (!mounted) return null;
 
   const options = [

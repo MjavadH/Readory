@@ -15,26 +15,25 @@ export function useLiveSearch(query: string, { minLength = 2, delay = 300 } = {}
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const q = query.trim();
+  const normalizedQuery = query.trim();
+  const isSearchable = normalizedQuery.length >= minLength;
 
-    if (q.length < minLength) {
-      setResults([]);
-      setIsLoading(false);
-      setError(false);
-      return;
-    }
+  useEffect(() => {
+    if (!isSearchable) return;
 
     const ac = new AbortController();
-    setIsLoading(true);
-    setError(false);
 
     const timer = setTimeout(async () => {
+      setIsLoading(true);
+      setError(false);
+
       try {
         const data = await apiClient.get<LiveSearchHit[]>(
-          `/search/live?q=${encodeURIComponent(q)}`,
+          `/search/live?q=${encodeURIComponent(normalizedQuery)}`,
           { signal: ac.signal },
         );
+
+        if (ac.signal.aborted) return;
         setResults(Array.isArray(data) ? data : []);
       } catch {
         if (!ac.signal.aborted) {
@@ -42,7 +41,9 @@ export function useLiveSearch(query: string, { minLength = 2, delay = 300 } = {}
           setError(true);
         }
       } finally {
-        if (!ac.signal.aborted) setIsLoading(false);
+        if (!ac.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }, delay);
 
@@ -50,7 +51,11 @@ export function useLiveSearch(query: string, { minLength = 2, delay = 300 } = {}
       clearTimeout(timer);
       ac.abort();
     };
-  }, [query, minLength, delay]);
+  }, [delay, isSearchable, normalizedQuery]);
 
-  return { results, isLoading, error };
+  return {
+    results: isSearchable ? results : [],
+    isLoading: isSearchable && isLoading,
+    error: isSearchable && error,
+  };
 }

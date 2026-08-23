@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   MonitorSmartphone,
@@ -42,6 +43,7 @@ export default function ConnectedDevices() {
   const t = useTranslations('UserDashboard');
   const ti = useTranslations('Time');
   const toast = useToast();
+  const router = useRouter();
 
   const [sessions, setSessions] = useState<DeviceSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,8 +64,29 @@ export default function ConnectedDevices() {
   }, [t]);
 
   useEffect(() => {
-    void loadSessions();
-  }, [loadSessions]);
+    let cancelled = false;
+
+    void apiClient
+      .get<DeviceSession[]>('/auth/sessions')
+      .then((res) => {
+        if (cancelled) return;
+        setError(null);
+        setSessions(res);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getApiErrorMessage(err, t('Devices.LoadFailed')));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
 
   const handleRevoke = async (session: DeviceSession) => {
     if (revokingId || revokingAll) return;
@@ -72,7 +95,7 @@ export default function ConnectedDevices() {
       await apiClient.delete(`/auth/sessions/${encodeURIComponent(session.id)}`);
       setSessions((current) => current.filter((item) => item.id !== session.id));
       toast.success(t('Devices.RevokedOne'));
-      if (session.isCurrentDevice) window.location.href = '/';
+      if (session.isCurrentDevice) router.replace('/');
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('Devices.RevokeFailed')));
     } finally {
