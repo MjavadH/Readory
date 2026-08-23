@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { BookBrowserApi, SortOption } from '@/lib/types';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { BookBrowserApi, SortOption } from '@/lib/types';
 
 const normalizeListParam = (v: string | null) =>
   v
@@ -172,7 +172,7 @@ export function useBookBrowser<T extends BookBrowserApi>({
     observerRef.current = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && hasMore && !!nextCursor && !isLoadingMore) {
+        if (entry.isIntersecting && hasMore && nextCursor && !isLoadingMore) {
           void fetchItems(nextCursor);
         }
       },

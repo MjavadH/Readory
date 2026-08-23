@@ -1,13 +1,12 @@
 'use client';
 
 import { BookSearchIcon, DatabaseZap, Settings } from 'lucide-react';
-
-import AdminPageHeader from '@/components/admin/admin-page-header';
-import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import React, { useState } from 'react';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import { Button } from '@/components/ui/button';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
-import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   const t = useTranslations('AdminPage.Settings');

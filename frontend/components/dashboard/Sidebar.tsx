@@ -1,24 +1,24 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Library,
-  History,
-  Settings,
-  LogOut,
   BookHeart,
   BookOpenText,
-  LucideHome,
   Grid2X2,
+  History,
+  LayoutDashboard,
+  Library,
+  LogOut,
+  LucideHome,
+  Settings,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
-import { apiClient } from '@/lib/api-client';
-import { BrandLogo } from '@/components/brand-logo';
-import React from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import React from 'react';
+import { BrandLogo } from '@/components/brand-logo';
+import { apiClient } from '@/lib/api-client';
+import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const t = useTranslations('UserDashboard');

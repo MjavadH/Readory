@@ -1,34 +1,45 @@
 'use client';
 
-import type React from 'react';
-
-import { useEffect, useState, useMemo } from 'react';
 import {
-  DndContext,
   closestCorners,
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  defaultDropAnimationSideEffects,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
-  DragOverlay,
-  defaultDropAnimationSideEffects,
-  type DragStartEvent,
-  type DragOverEvent,
-  type DragEndEvent,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
   useSortable,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import type { IconKey } from '@readory/shared';
+import {
+  Book,
+  GripVertical,
+  Loader2,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Tag,
+  Trash2,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import { IconPicker } from '@/components/admin/icon-picker';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,24 +50,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  Trash2,
-  Plus,
-  Search,
-  Sparkles,
-  GripVertical,
-  Book,
-  Loader2,
-  Tag,
-  Pencil,
-} from 'lucide-react';
-import { AppIcon } from '@/components/AppIcon';
-import type { IconKey } from '@readory/shared';
-import { IconPicker } from '@/components/admin/icon-picker';
+import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api-client';
-import { useTranslations } from 'next-intl';
-import AdminPageHeader from '@/components/admin/admin-page-header';
 
 type Genre = {
   id: number;

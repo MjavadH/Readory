@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, KeyRound, Loader2, Lock, Mail, MailCheck, User } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Loader2, ArrowLeft, Mail, Lock, User, KeyRound, MailCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -18,14 +21,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
-import { BrandLogo } from '@/components/brand-logo';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { GoogleSignInButton } from '@/components/auth/google-sign-in-button';
 import { safeRedirect } from '@/lib/auth/safe-redirect';
+import { useToast } from '@/providers/toast-provider';
 
 type RoleName = 'ADMIN' | 'USER';
 

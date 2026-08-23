@@ -1,5 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Readable } from 'node:stream';
 import {
   CreateBucketCommand,
   DeleteObjectsCommand,
@@ -9,9 +8,10 @@ import {
   ListObjectsV2Command,
   PutBucketPolicyCommand,
   PutObjectCommand,
-  S3Client,
+  type S3Client,
 } from '@aws-sdk/client-s3';
-import { Readable } from 'node:stream';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 
 type PutParams = {
   key: string;

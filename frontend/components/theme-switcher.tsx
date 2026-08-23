@@ -1,18 +1,18 @@
 'use client';
 
-import * as React from 'react';
+import { Monitor, Moon, Sun } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { cn } from '@/lib/utils';
 
 type ThemeVariant = 'desktop' | 'mobile' | 'sidebar';
 

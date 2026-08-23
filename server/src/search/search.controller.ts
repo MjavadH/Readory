@@ -1,14 +1,14 @@
 import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { SearchService } from './search.service';
-import { SearchQueryDto } from './dto/search-query.dto';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
-import { LiveSearchDto } from './dto/live_search_dto';
-import { Throttle } from '@nestjs/throttler';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { LiveSearchDto } from './dto/live_search_dto';
+import type { SearchQueryDto } from './dto/search-query.dto';
+import type { SearchService } from './search.service';
 
 @Controller('search')
 export class SearchController {

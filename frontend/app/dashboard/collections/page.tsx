@@ -1,7 +1,5 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
@@ -14,10 +12,13 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import * as React from 'react';
+import { CollectionCover } from '@/components/collections/collection-cover';
+import { CollectionFormFields } from '@/components/collections/collection-form-fields';
+import { CollectionVisibilityBadge } from '@/components/collections/collection-visibility-badge';
+import { ResponsiveModal } from '@/components/responsive-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,20 +29,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { CollectionFormFields } from '@/components/collections/collection-form-fields';
-import { CollectionCover } from '@/components/collections/collection-cover';
-import { CollectionVisibilityBadge } from '@/components/collections/collection-visibility-badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import {
+  COLLECTION_SLUG_REGEX,
+  type Collection,
+  type CollectionFormState,
   collectionToForm,
   emptyCollectionForm,
-  type Collection,
-  COLLECTION_SLUG_REGEX,
-  type CollectionFormState,
 } from '@/lib/collection-types';
-import { useCurrentUser } from '@/hooks/use-current-user';
 import { useToast } from '@/providers/toast-provider';
-import { ResponsiveModal } from '@/components/responsive-modal';
 
 /** User collections are never indexable — visibility is the only switch. */
 const userDefaults: CollectionFormState = {

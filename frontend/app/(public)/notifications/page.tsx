@@ -1,10 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import { type NotificationApiItem, NotificationType } from '@readory/shared';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import {
   BellRing,
   BookOpen,
@@ -15,13 +12,15 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-
+import Image from 'next/image';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { formatUpdateTime } from '@/lib/time';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { NotificationType, type NotificationApiItem } from '@readory/shared';
 
 type Filter = 'all' | 'unread';
 

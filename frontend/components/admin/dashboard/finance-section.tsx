@@ -7,10 +7,10 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } fro
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from '@/components/ui/chart';
 
 export interface FinanceData {

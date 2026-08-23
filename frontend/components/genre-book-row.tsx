@@ -1,14 +1,14 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import Link from 'next/link';
+import type { IconKey } from '@readory/shared';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
 import { BookCard } from '@/components/book-card';
 import type { BookCardData, BookType } from '@/lib/types';
-import { AppIcon } from '@/components/AppIcon';
-import type { IconKey } from '@readory/shared';
-import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 interface GenreBook {
   id: number;

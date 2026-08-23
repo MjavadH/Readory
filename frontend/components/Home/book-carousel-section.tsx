@@ -1,8 +1,8 @@
 'use client';
 
-import { type LucideIcon } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { BookCard, BookCardSkeleton } from '@/components/book-card';
 import type { BookCardData } from '@/lib/types';
 import { cn } from '@/lib/utils';

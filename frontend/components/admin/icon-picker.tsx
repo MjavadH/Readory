@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { iconRegistry } from '@/lib/iconRegistry';
 import type { IconKey } from '@readory/shared';
+import { Palette, Search } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Palette, Search } from 'lucide-react';
+import { iconRegistry } from '@/lib/iconRegistry';
 
 interface IconPickerProps {
   value?: IconKey | null;

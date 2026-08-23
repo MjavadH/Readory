@@ -4,14 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import { PaymentStatus } from '@prisma/client';
 import type { Request } from 'express';
-import { PrismaService } from '../prisma/prisma.service';
-import { WalletsService } from '../wallets/wallets.service';
-import { PaymentFactory } from './payment.factory';
-import { RateLimitService } from '../rate-limit/rate-limit.service';
+import type { PrismaService } from '../prisma/prisma.service';
 import { RATE_LIMITS } from '../rate-limit/rate-limit.constants';
+import type { RateLimitService } from '../rate-limit/rate-limit.service';
+import type { WalletsService } from '../wallets/wallets.service';
+import type { PaymentFactory } from './payment.factory';
 
 type InitializePaymentInput = {
   userId: number;

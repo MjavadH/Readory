@@ -1,8 +1,8 @@
-import { Module } from '@nestjs/common';
-import { StorageService } from './storage.service';
-import { StorageController } from './storage.controller';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { S3Client } from '@aws-sdk/client-s3';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { StorageController } from './storage.controller';
+import { StorageService } from './storage.service';
 
 @Module({
   imports: [ConfigModule],

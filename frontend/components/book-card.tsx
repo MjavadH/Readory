@@ -1,16 +1,16 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { useState } from 'react';
+import { Clock, Star, StickyNote } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, Clock, StickyNote } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { formatUpdateTime } from '@/lib/time';
 import type { BookCardData } from '@/lib/types';
 import { getBookUrl } from '@/lib/types';
-import { formatUpdateTime } from '@/lib/time';
-import { useTranslations } from 'next-intl';
+import { cn } from '@/lib/utils';
 
 interface BookCardProps {
   book: BookCardData;

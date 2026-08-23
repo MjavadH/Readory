@@ -1,7 +1,7 @@
-import React from 'react';
-import { Plus, Trash2, Users } from 'lucide-react';
+import { CONTRIBUTOR_ROLE_VALUES, ContributorRole } from '@shared/contributor-metadata';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ContributorRole, CONTRIBUTOR_ROLE_VALUES } from '@shared/contributor-metadata';
+import { Plus, Trash2, Users } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,

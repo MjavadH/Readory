@@ -1,33 +1,33 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
-  Param,
-  BadRequestException,
-  DefaultValuePipe,
-  ParseIntPipe,
-  UploadedFiles,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/roles.decorator';
-import { RoleName } from '@prisma/client';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { v4 as uuidv4 } from 'uuid';
-import { MediaService } from './media.service';
+import { Throttle } from '@nestjs/throttler';
+import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory } from '@readory/shared';
 import { fileTypeFromBuffer } from 'file-type';
+import { v4 as uuidv4 } from 'uuid';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
+import type { MediaService } from './media.service';
 
 type RenameMediaBody = { filename: string };
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9 _-]{3,80}$/;

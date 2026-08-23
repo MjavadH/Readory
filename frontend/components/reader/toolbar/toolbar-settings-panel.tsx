@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, Layers, Maximize, RotateCcw, Settings2, Sun, Type, ZoomIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Popover, SettingRow, ToolbarButton } from './primitives';
-import { spring, type ReaderContentMode, type ToolbarPrefs } from './types';
+import { type ReaderContentMode, spring, type ToolbarPrefs } from './types';
 
 /** Which controls the reader may show/hide, per content mode. */
 export function ToolbarSettingsPanel({

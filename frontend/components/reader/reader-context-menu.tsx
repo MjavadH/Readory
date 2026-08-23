@@ -1,6 +1,10 @@
 'use client';
 
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { Check, Contrast, Maximize, RefreshCcw, RotateCcw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useId,
@@ -8,11 +12,7 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Check, Contrast, Maximize, RefreshCcw, RotateCcw } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 
 interface ContextMenuProps {
   x: number;

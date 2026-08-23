@@ -1,59 +1,59 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
+  Activity,
+  Ban,
+  BookOpen,
+  CheckCircle2,
+  Clock,
+  Minus,
+  MoreVertical,
+  Plus,
+  Search,
+  Shield,
+  TrendingDown,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Wallet,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import { StatCard } from '@/components/admin/stat-card';
+import { AppPagination } from '@/components/app-pagination';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { AppPagination } from '@/components/app-pagination';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import {
-  Search,
-  Users,
-  UserPlus,
-  Activity,
-  MoreVertical,
-  Wallet,
-  BookOpen,
-  Clock,
-  TrendingUp,
-  TrendingDown,
-  Plus,
-  Minus,
-  Shield,
-  Ban,
-  CheckCircle2,
-} from 'lucide-react';
-import { useToast } from '@/providers/toast-provider';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { StatCard } from '@/components/admin/stat-card';
-import { usePermission } from '@/hooks/use-permission';
-import { useTranslations } from 'next-intl';
-import { getAvatarUrl } from '@/lib/media';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import AdminPageHeader from '@/components/admin/admin-page-header';
+import { usePermission } from '@/hooks/use-permission';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { getAvatarUrl } from '@/lib/media';
+import { useToast } from '@/providers/toast-provider';
 
 interface Transaction {
   id: number;

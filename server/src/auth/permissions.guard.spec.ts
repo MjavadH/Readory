@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ConfigService } from '@nestjs/config';
-import { PermissionsGuard } from './permissions.guard';
+import type { ConfigService } from '@nestjs/config';
+import type { Reflector } from '@nestjs/core';
 import { AdminPermissions } from './permissions.enum';
+import { PermissionsGuard } from './permissions.guard';
 
 const executionContext = (user?: unknown) =>
   ({

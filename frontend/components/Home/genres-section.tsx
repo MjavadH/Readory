@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { AppIcon } from '@/components/AppIcon';
 import type { IconKey } from '@readory/shared';
-import { BookGenre } from '@/lib/types';
+import { motion } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { AppIcon } from '@/components/AppIcon';
+import type { BookGenre } from '@/lib/types';
 
 const genrePalette = [
   {

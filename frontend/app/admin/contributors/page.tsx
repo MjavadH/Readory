@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { ContributorGender } from '@shared/contributor-metadata';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Plus, Search, UserRoundPen, UserX } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useTranslations } from 'next-intl';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  type ContributorEditorValue,
+  type ContributorFieldErrors,
+  ContributorsEditor,
+} from '@/components/admin/contributors/contributors-editor';
+import {
+  type ContributorRow,
+  ContributorsGrid,
+  ContributorsGridSkeleton,
+} from '@/components/admin/contributors/contributors-grid';
+import { AppPagination } from '@/components/app-pagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,21 +27,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { apiClient, ApiError } from '@/lib/api-client';
+import { Button } from '@/components/ui/button';
 import {
-  ContributorsEditor,
-  type ContributorEditorValue,
-  type ContributorFieldErrors,
-} from '@/components/admin/contributors/contributors-editor';
-import {
-  type ContributorRow,
-  ContributorsGrid,
-  ContributorsGridSkeleton,
-} from '@/components/admin/contributors/contributors-grid';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { ApiError, apiClient } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
-import { ContributorGender } from '@shared/contributor-metadata';
-import { AppPagination } from '@/components/app-pagination';
-import AdminPageHeader from '@/components/admin/admin-page-header';
 
 const PAGE_SIZE = 24;
 

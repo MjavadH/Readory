@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
-import { ChaptersService } from './chapters.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { WalletsService } from '../wallets/wallets.service';
-import { PublicService } from '../public/public.service';
 import { CacheManager } from '../cache/cache.manager';
 import { ChapterCache } from '../cache/chapter-cache.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicService } from '../public/public.service';
+import { WalletsService } from '../wallets/wallets.service';
+import { ChaptersService } from './chapters.service';
 
 describe('ChaptersService', () => {
   let service: ChaptersService;

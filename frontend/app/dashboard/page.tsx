@@ -1,8 +1,18 @@
 'use client';
 
+import { motion } from 'framer-motion';
+import {
+  AlertCircle,
+  ArrowRight,
+  BookDashedIcon,
+  BookMarked,
+  History,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { DashboardOverview } from '@/lib/types';
 import {
   ContinueReadingCard,
   ContinueReadingCardSkeleton,
@@ -10,18 +20,8 @@ import {
 import { LibraryCard, LibraryCardSkeleton } from '@/components/dashboard/LibraryCard';
 import { TransactionList, TransactionListSkeleton } from '@/components/dashboard/TransactionList';
 import { WalletSummaryCard } from '@/components/dashboard/wallet-summary-card';
-import {
-  ArrowRight,
-  BookMarked,
-  History,
-  TrendingUp,
-  Wallet,
-  AlertCircle,
-  BookDashedIcon,
-} from 'lucide-react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { apiClient } from '@/lib/api-client';
+import type { DashboardOverview } from '@/lib/types';
 
 export default function OverviewPage() {
   const t = useTranslations('UserDashboard');

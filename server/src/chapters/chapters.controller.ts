@@ -12,19 +12,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ChaptersService } from './chapters.service';
-import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory, PublicationStatus } from '@readory/shared';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateChapterDto } from './dto/create-chapter.dto';
-import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { ListChaptersDto } from './dto/list-chapters.dto';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory, PublicationStatus } from '@readory/shared';
+import type { ChaptersService } from './chapters.service';
+import type { CreateChapterDto } from './dto/create-chapter.dto';
+import type { ListChaptersDto } from './dto/list-chapters.dto';
+import type { UpdateChapterDto } from './dto/update-chapter.dto';
 
 @Controller('books/:bookId/chapters')
 export class ChaptersController {

@@ -1,16 +1,16 @@
+import { NotificationAudienceType } from '@readory/shared';
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsEnum,
+  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
   MaxLength,
-  ArrayMaxSize,
-  IsInt,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { NotificationAudienceType } from '@readory/shared';
 
 export class CreateBroadcastDto {
   @IsString() @MaxLength(120) title!: string;

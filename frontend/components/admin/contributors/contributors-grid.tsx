@@ -1,13 +1,13 @@
-import React from 'react';
-import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
+import type { ContributorGender } from '@shared/contributor-metadata';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
-import { ContributorGender } from '@shared/contributor-metadata';
 
 export type ContributorRow = {
   id: string;

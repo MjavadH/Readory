@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { createGoogleNonce } from '@/lib/auth/safe-redirect';
+import { useToast } from '@/providers/toast-provider';
 
 type GoogleAuthResponse = {
   created?: boolean;

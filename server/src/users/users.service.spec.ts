@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
-import { UsersService } from './users.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheManager } from '../cache/cache.manager';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import * as argon2 from 'argon2';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   let service: UsersService;

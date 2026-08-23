@@ -1,12 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Library } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { BookCardData } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type CollectionCoverProps = {
   books: BookCardData[];

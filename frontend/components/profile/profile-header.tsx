@@ -1,12 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { CalendarDays, UserRound } from 'lucide-react';
+import Image from 'next/image';
 import { useFormatter, useTranslations } from 'next-intl';
-
-import { cn } from '@/lib/utils';
 import { getAvatarUrl } from '@/lib/media';
+import { cn } from '@/lib/utils';
 
 type ProfileHeaderProps = {
   username: string;

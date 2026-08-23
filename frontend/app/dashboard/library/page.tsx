@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { LibraryResponse } from '@/lib/types';
-import { LibraryCard, LibraryCardSkeleton } from '@/components/dashboard/LibraryCard';
-import { Library, AlertCircle, BookDashedIcon } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { AppPagination } from '@/components/app-pagination';
+import { AlertCircle, BookDashedIcon, Library } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { AppPagination } from '@/components/app-pagination';
+import { LibraryCard, LibraryCardSkeleton } from '@/components/dashboard/LibraryCard';
+import { apiClient } from '@/lib/api-client';
+import type { LibraryResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 24;
 

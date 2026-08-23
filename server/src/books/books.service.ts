@@ -1,11 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CollectionType, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheManager } from '../cache/cache.manager';
-import { PublicService } from '../public/public.service';
+import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { createHash } from 'crypto';
+import type { CacheManager } from '../cache/cache.manager';
+import type { CollectionsService } from '../collections/collections.service';
 import { clamp, normalizeQ, normalizeSlug, slugify, toNumber } from '../common';
-import { CollectionsService } from '../collections/collections.service';
+import type { OutboxService } from '../outbox/outbox.service';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { PublicService } from '../public/public.service';
+import type { SearchService } from '../search/search.service';
+import type { BrowseSort } from './dto/base-browse.dto';
+import type { BrowseBooksDto } from './dto/browse-books.dto';
+import type { CreateBookDto } from './dto/create-book.dto';
+import type { UpdateBookDto } from './dto/update-book.dto';
 import {
   RELATED_EXPONENTIAL_DECAY_LAMBDA,
   RELATED_FRESHNESS_WEIGHT,
@@ -13,13 +20,6 @@ import {
   RELATED_POPULARITY_WEIGHT,
   RELATED_TYPE_WEIGHT,
 } from './recommendation/recommendation.constants';
-import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
-import { DomainEventType, PublicationStatus } from '@readory/shared';
-import { OutboxService } from '../outbox/outbox.service';
-import { BrowseSort } from './dto/base-browse.dto';
-import { SearchService } from '../search/search.service';
-import { BrowseBooksDto } from './dto/browse-books.dto';
 
 const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';

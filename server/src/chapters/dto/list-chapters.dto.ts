@@ -1,6 +1,6 @@
+import { PublicationStatus } from '@readory/shared';
 import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { PublicationStatus } from '@readory/shared';
 
 export class ListChaptersDto {
   @IsOptional()

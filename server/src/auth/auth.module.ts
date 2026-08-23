@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { UsersModule } from '../users/users.module';
-import { PassportModule } from '@nestjs/passport';
-import { JwtModule } from '@nestjs/jwt';
-import { LocalStrategy } from './local.strategy';
-import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { MailModule } from '../mail/mail.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RateLimitModule } from '../rate-limit/rate-limit.module';
-import { AuthSecurityService } from './security/auth-security.service';
-import { GoogleOriginGuard } from './google-origin.guard';
+import { UsersModule } from '../users/users.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 import { GoogleAvatarService } from './google-avatar.service';
-import { MailModule } from '../mail/mail.module';
+import { GoogleOriginGuard } from './google-origin.guard';
+import { JwtStrategy } from './jwt.strategy';
+import { LocalStrategy } from './local.strategy';
+import { AuthSecurityService } from './security/auth-security.service';
 import { SessionService } from './sessions/session.service';
 
 @Module({

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { spring } from './types';
 
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;

@@ -1,7 +1,18 @@
 'use client';
-import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { PublicationStatus } from '@readory/shared';
+import type { ContributorRole } from '@shared/contributor-metadata';
+import { AlertCircle, ArrowLeft, Check, Edit, Trash, X } from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Edit, Trash, X, AlertCircle } from 'lucide-react';
+import { BookEditor } from '@/components/admin/book-editor';
+import { ChapterDialog } from '@/components/admin/chapter/chapter-dialog';
+import type { BookContributorEntry } from '@/components/admin/contributors/contributors-field';
+import { MediaPicker } from '@/components/admin/media-picker';
+import { BookDetails, type BookDetailsData, BookDetailsSkeleton } from '@/components/book-details';
+import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -10,21 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { Button } from '@/components/ui/button';
-import { useParams } from 'next/navigation';
-import { MediaPicker } from '@/components/admin/media-picker';
-import Link from 'next/link';
-import { useToast } from '@/providers/toast-provider';
-import { useTranslations } from 'next-intl';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
-import { BookDetails, BookDetailsData, BookDetailsSkeleton } from '@/components/book-details';
-import { BookEditor } from '@/components/admin/book-editor';
-import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
-import { ContributorRole } from '@shared/contributor-metadata';
-import type { BookContributorEntry } from '@/components/admin/contributors/contributors-field';
-import { PublicationStatus } from '@readory/shared';
-import { ChapterDialog } from '@/components/admin/chapter/chapter-dialog';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { useToast } from '@/providers/toast-provider';
 
 function hydrateContributors(
   raw: BookDetailsData['contributors'] | undefined,

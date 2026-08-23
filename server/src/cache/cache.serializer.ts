@@ -5,9 +5,9 @@ const DECIMAL_TAG = '__cache_decimal__';
 function isDecimalLike(value: unknown): value is { toString(): string } {
   return Boolean(
     value &&
-    typeof value === 'object' &&
-    typeof (value as { toString?: unknown }).toString === 'function' &&
-    (value as { constructor?: { name?: string } }).constructor?.name === 'Decimal',
+      typeof value === 'object' &&
+      typeof (value as { toString?: unknown }).toString === 'function' &&
+      (value as { constructor?: { name?: string } }).constructor?.name === 'Decimal',
   );
 }
 

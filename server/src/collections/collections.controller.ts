@@ -12,25 +12,25 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { RoleName } from '@prisma/client';
 import { Throttle } from '@nestjs/throttler';
+import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory } from '@readory/shared';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Roles } from '../auth/roles.decorator';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
-import { CollectionsService } from './collections.service';
-import { CreateCollectionDto } from './dto/create-collection.dto';
-import { UpdateCollectionDto } from './dto/update-collection.dto';
-import {
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { CollectionsService } from './collections.service';
+import type {
   AddCollectionItemDto,
   ReorderCollectionItemsDto,
   UpdateCollectionItemDto,
 } from './dto/collection-items.dto';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
+import type { CreateCollectionDto } from './dto/create-collection.dto';
+import type { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Controller('collections')
 export class CollectionsController {

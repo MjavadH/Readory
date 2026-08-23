@@ -1,9 +1,9 @@
+import { truncateAllTables } from './utils/db-cleanup';
 import {
-  createPrismaTestClient,
   connectPrisma,
+  createPrismaTestClient,
   disconnectPrisma,
 } from './utils/prisma-test-client';
-import { truncateAllTables } from './utils/db-cleanup';
 
 const prisma = createPrismaTestClient();
 

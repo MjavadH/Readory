@@ -1,23 +1,23 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
   Inject,
   Injectable,
   Logger,
   NotFoundException,
-  HttpException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ChapterContentType } from '@prisma/client';
-import { Request } from 'express';
-import Redis from 'ioredis';
-import sharp from 'sharp';
-import { CacheManager } from '../cache/cache.manager';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { createHash } from 'crypto';
+import type { JwtService } from '@nestjs/jwt';
+import type { ChapterContentType } from '@prisma/client';
 import { PublicationStatus } from '@readory/shared';
+import { createHash } from 'crypto';
+import type { Request } from 'express';
+import type Redis from 'ioredis';
+import sharp from 'sharp';
+import type { CacheManager } from '../cache/cache.manager';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { StorageService } from '../storage/storage.service';
 
 type ReaderTokenPayload = {
   userId: number;

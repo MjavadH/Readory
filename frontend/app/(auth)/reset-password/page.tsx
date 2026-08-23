@@ -1,25 +1,25 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { AnimatePresence, motion } from 'framer-motion';
-import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 import {
-  Loader2,
-  Lock,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  ShieldAlert,
   ArrowLeft,
   CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import * as z from 'zod';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -29,9 +29,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { useToast } from '@/providers/toast-provider';
-import { BrandLogo } from '@/components/brand-logo';
 
 const resetSchema = z
   .object({

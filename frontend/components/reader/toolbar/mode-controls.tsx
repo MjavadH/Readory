@@ -4,11 +4,11 @@ import { AnimatePresence } from 'framer-motion';
 import { Layers, Maximize, Minimize, ScrollText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReaderZoomApi } from '@/components/reader/reader-zoom';
-import { ControlSlot, Divider, ToolbarButton } from './primitives';
 import { BrightnessControl } from './brightness-control';
+import { ControlSlot, Divider, ToolbarButton } from './primitives';
+import type { PanelKey, ReaderTypographySettings, ToolbarPrefs } from './types';
 import { TypographyControl } from './typography-panel';
 import { ZoomControls } from './zoom-controls';
-import type { PanelKey, ReaderTypographySettings, ToolbarPrefs } from './types';
 
 export function ModeStartControls({
   contentMode,

@@ -1,34 +1,34 @@
 import {
+  Body,
   Controller,
+  DefaultValuePipe,
   Delete,
   Get,
-  Post,
-  Patch,
   Param,
-  Body,
-  UseGuards,
-  Request,
-  Put,
   ParseIntPipe,
+  Patch,
+  Post,
+  Put,
   Query,
-  DefaultValuePipe,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { BooksService } from './books.service';
-import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory } from '@readory/shared';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { RateBookDto } from './dto/rate-book.dto';
-import { BrowseBooksDto } from './dto/browse-books.dto';
-import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
+import type { BooksService } from './books.service';
+import type { BrowseBooksDto } from './dto/browse-books.dto';
+import type { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
+import type { CreateBookDto } from './dto/create-book.dto';
+import type { RateBookDto } from './dto/rate-book.dto';
+import type { UpdateBookDto } from './dto/update-book.dto';
 
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 

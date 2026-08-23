@@ -2,12 +2,12 @@ import { Controller, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { RoleName } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Roles } from '../auth/roles.decorator';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
-import { BookChapterCountSyncService } from './book-chapter-count-sync.service';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { BookChapterCountSyncService } from './book-chapter-count-sync.service';
 
 @Controller('admin/maintenance')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)

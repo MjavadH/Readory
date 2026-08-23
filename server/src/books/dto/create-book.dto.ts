@@ -1,6 +1,6 @@
-import { Transform, Type } from 'class-transformer';
-import { AgeRating, BookStatus, PublicationStatus } from '@readory/shared';
 import { ContributorRole } from '@prisma/client';
+import { AgeRating, BookStatus, PublicationStatus } from '@readory/shared';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,

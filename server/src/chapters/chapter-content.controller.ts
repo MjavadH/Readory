@@ -12,8 +12,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import multer from 'multer';
 import { RoleName } from '@prisma/client';
+import multer from 'multer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
@@ -21,11 +21,11 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import {
-  ChapterContentService,
+  type ChapterContentService,
   IMAGE_UPLOAD_MAX_FILE_BYTES,
   IMAGE_UPLOAD_MAX_FILES,
-  TEXT_UPLOAD_MAX_FILE_BYTES,
   PDF_UPLOAD_MAX_FILE_BYTES,
+  TEXT_UPLOAD_MAX_FILE_BYTES,
 } from './chapter-content.service';
 
 const IMAGE_UPLOAD_MULTER = {

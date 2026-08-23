@@ -1,6 +1,11 @@
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import Image from 'next/image';
-import React, { useCallback, useRef, useState } from 'react';
+import {
+  AGE_RATING_VALUES,
+  type AgeRating,
+  BOOK_STATUS_VALUES,
+  BookStatus,
+  PublicationStatus,
+} from '@readory/shared';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   BookOpen,
   BookText,
@@ -16,13 +21,14 @@ import {
   Type,
   X,
 } from 'lucide-react';
+import Image from 'next/image';
+import type React from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
-  AGE_RATING_VALUES,
-  BOOK_STATUS_VALUES,
-  PublicationStatus,
-  BookStatus,
-  type AgeRating,
-} from '@readory/shared';
+  type BookContributorEntry,
+  ContributorsField,
+} from '@/components/admin/contributors/contributors-field';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,13 +43,8 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ContributorsField,
-  BookContributorEntry,
-} from '@/components/admin/contributors/contributors-field';
 
 type OptionItem = { id: number; name: string };
 

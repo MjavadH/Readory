@@ -1,25 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  MonitorSmartphone,
-  Smartphone,
-  Laptop,
-  Monitor,
+  AlertCircle,
   Globe,
+  Laptop,
   Loader2,
   LogOut,
-  ShieldCheck,
-  Trash2,
+  Monitor,
+  MonitorSmartphone,
   RefreshCw,
-  AlertCircle,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
 import { formatUpdateTime } from '@/lib/time';
+import { useToast } from '@/providers/toast-provider';
 
 export type DeviceSession = {
   id: string;

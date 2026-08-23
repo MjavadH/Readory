@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { ArrowLeft, BookOpen, Home, Search } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, BookOpen, Home, Search } from 'lucide-react';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 16 },

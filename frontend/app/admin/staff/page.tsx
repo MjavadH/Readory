@@ -1,29 +1,23 @@
 'use client';
 
+import {
+  BookOpen,
+  Check,
+  Crown,
+  DollarSign,
+  Edit,
+  Lock,
+  Search,
+  Shield,
+  Trash2,
+  UserCog,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
-
 import { useEffect, useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
+import AdminPageHeader from '@/components/admin/admin-page-header';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,27 +28,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Shield,
-  UserPlus,
-  Edit,
-  Trash2,
-  Search,
-  BookOpen,
-  Users,
-  DollarSign,
-  UserCog,
-  Crown,
-  Check,
-  Lock,
-} from 'lucide-react';
-import { useToast } from '@/providers/toast-provider';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useTranslations } from 'next-intl';
-import AdminPageHeader from '@/components/admin/admin-page-header';
+import { useToast } from '@/providers/toast-provider';
 
 type Permission =
-  'MANAGE_BOOKS' | 'MANAGE_USERS' | 'MANAGE_FINANCE' | 'MANAGE_STAFF' | 'MANAGE_NOTIFICATIONS';
+  | 'MANAGE_BOOKS'
+  | 'MANAGE_USERS'
+  | 'MANAGE_FINANCE'
+  | 'MANAGE_STAFF'
+  | 'MANAGE_NOTIFICATIONS';
 
 interface StaffMember {
   id: number;

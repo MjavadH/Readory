@@ -1,5 +1,5 @@
-import { Transform } from 'class-transformer';
 import { CollectionVisibility } from '@prisma/client';
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,

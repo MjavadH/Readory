@@ -11,22 +11,22 @@ import {
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
-import { ContentSection, type ContentData } from '@/components/admin/dashboard/content-section';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import { EmptySection, SectionHeader } from '@/components/admin/admin-section';
+import { type ContentData, ContentSection } from '@/components/admin/dashboard/content-section';
 import {
-  DashboardSkeleton,
   ChartCardSkeleton,
+  DashboardSkeleton,
   ListCardSkeleton,
 } from '@/components/admin/dashboard/dashboard-skeleton';
 import { ErrorState, SectionError } from '@/components/admin/dashboard/error-state';
-import { FinanceSection, type FinanceData } from '@/components/admin/dashboard/finance-section';
+import { type FinanceData, FinanceSection } from '@/components/admin/dashboard/finance-section';
+import { type UsersData, UsersSection } from '@/components/admin/dashboard/users-section';
 import { StatCard } from '@/components/admin/stat-card';
-import { UsersSection, type UsersData } from '@/components/admin/dashboard/users-section';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/hooks/use-permission';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import AdminPageHeader from '@/components/admin/admin-page-header';
-import { EmptySection, SectionHeader } from '@/components/admin/admin-section';
 
 interface AdminOverview {
   users: { total: number; new30d: number; growthPercent: number };

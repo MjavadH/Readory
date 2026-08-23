@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 import { CollectionCard } from '@/components/collections/collection-card';
 import { Skeleton } from '@/components/ui/skeleton';

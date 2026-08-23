@@ -1,8 +1,8 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, FileText, CalendarClock } from 'lucide-react';
 import { PublicationStatus } from '@readory/shared';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CalendarClock, Eye, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type Option = {

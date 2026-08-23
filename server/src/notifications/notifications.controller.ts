@@ -1,8 +1,8 @@
 import {
   Body,
   Controller,
-  Delete,
   DefaultValuePipe,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -15,13 +15,13 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { RoleName } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Roles } from '../auth/roles.decorator';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
-import { NotificationsService } from './notifications.service';
-import { CreateBroadcastDto } from './dto/create-broadcast.dto';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { CreateBroadcastDto } from './dto/create-broadcast.dto';
+import type { NotificationsService } from './notifications.service';
 
 type AuthenticatedRequest = { user: { userId?: number | string; id?: number | string } };
 

@@ -1,15 +1,15 @@
 import {
-  INestApplication,
+  type CanActivate,
+  type ExecutionContext,
+  type INestApplication,
   UnauthorizedException,
-  CanActivate,
-  ExecutionContext,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
 
 class AllowLocalGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

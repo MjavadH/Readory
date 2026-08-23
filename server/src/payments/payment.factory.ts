@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { MockPaymentDriver } from './drivers/mock-payment.driver';
-import { PaymentDriver } from './payment-driver.interface';
+import type { MockPaymentDriver } from './drivers/mock-payment.driver';
+import type { PaymentDriver } from './payment-driver.interface';
 
 @Injectable()
 export class PaymentFactory {

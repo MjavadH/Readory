@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Star } from 'lucide-react';
-
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { AppIcon } from '@/components/AppIcon';
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import type { BookCardData } from '@/lib/types';
-import { useLocaleInfo } from '@/hooks/use-locale-info';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import type { BookCardData } from '@/lib/types';
 
 export function HeroSkeleton() {
   return (

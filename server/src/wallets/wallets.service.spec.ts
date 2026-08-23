@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { WalletsService } from './wallets.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
+import { WalletsService } from './wallets.service';
 
 describe('WalletsService', () => {
   let service: WalletsService;

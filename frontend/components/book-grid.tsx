@@ -1,7 +1,7 @@
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 import { BookCard, BookCardSkeleton } from '@/components/book-card';
 import type { BookCardData } from '@/lib/types';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface BookGridProps {
   books: BookCardData[];

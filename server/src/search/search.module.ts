@@ -1,11 +1,11 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import meilisearchConfig from './config/meilisearch.config';
-import { SearchService } from './search.service';
 import { Meilisearch } from 'meilisearch';
-import { SearchSyncProcessor } from './search-sync.processor';
 import { PrismaModule } from '../prisma/prisma.module';
+import meilisearchConfig from './config/meilisearch.config';
 import { SearchController } from './search.controller';
+import { SearchService } from './search.service';
+import { SearchSyncProcessor } from './search-sync.processor';
 
 @Module({
   imports: [ConfigModule.forFeature(meilisearchConfig), PrismaModule],

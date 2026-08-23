@@ -1,5 +1,5 @@
-import { iconRegistry } from '@/lib/iconRegistry';
 import type { IconKey } from '@readory/shared';
+import { iconRegistry } from '@/lib/iconRegistry';
 
 type Props = {
   name?: IconKey | null;

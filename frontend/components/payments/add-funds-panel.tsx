@@ -1,23 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, CreditCard, Loader2, ShieldCheck } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, CreditCard, Loader2, ShieldCheck } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import {
   formatAmount,
   getEnabledProviders,
   initializePayment,
+  type PaymentProvider,
   parseAmount,
   paymentErrorKey,
   paymentErrorMessage,
-  type PaymentProvider,
 } from '@/lib/payments';
+import { cn } from '@/lib/utils';
 
 const QUICK_AMOUNTS = [50_000, 100_000, 200_000, 500_000] as const;
 

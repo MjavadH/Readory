@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CacheManager } from './cache.manager';
+import type { CacheManager } from './cache.manager';
 
 @Injectable()
 export class UserAccessCache {

@@ -1,4 +1,4 @@
-import { DomainEventType } from '@readory/shared';
+import type { DomainEventType } from '@readory/shared';
 
 export type BookPublishedEvent = {
   bookId: number;

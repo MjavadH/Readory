@@ -1,3 +1,4 @@
+import { PublicationStatus } from '@readory/shared';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
@@ -9,7 +10,6 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { PublicationStatus } from '@readory/shared';
 
 export class UpdateChapterDto {
   @IsOptional()

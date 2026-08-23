@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext } from 'react';
-import { CurrentUser, Permission, useCurrentUser } from '@/hooks/use-current-user';
+import { type CurrentUser, type Permission, useCurrentUser } from '@/hooks/use-current-user';
 
 interface AuthContextType {
   user: CurrentUser | null;

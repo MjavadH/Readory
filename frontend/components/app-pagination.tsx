@@ -1,5 +1,5 @@
+import { useTranslations } from 'next-intl';
 import type { MouseEvent, RefObject } from 'react';
-
 import {
   Pagination,
   PaginationContent,
@@ -9,7 +9,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { useTranslations } from 'next-intl';
 
 type PaginationScrollTarget = RefObject<HTMLElement | null> | string;
 

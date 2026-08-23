@@ -1,15 +1,14 @@
 'use client';
 
-import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
-
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import type { CollectionSummary } from '@/lib/types';
+import { getBookUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CollectionCover } from './collection-cover';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { getBookUrl } from '@/lib/types';
-import type { CollectionSummary } from '@/lib/types';
 
 export type CollectionCardVariant = 'default' | 'hero' | 'wide' | 'tall';
 

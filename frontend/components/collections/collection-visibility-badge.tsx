@@ -2,9 +2,8 @@
 
 import { Globe, Link2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
-import { cn } from '@/lib/utils';
 import type { CollectionVisibility } from '@/lib/collection-types';
+import { cn } from '@/lib/utils';
 
 const config: Record<CollectionVisibility, { icon: typeof Globe; className: string }> = {
   PUBLIC: {

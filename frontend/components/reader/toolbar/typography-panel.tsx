@@ -1,15 +1,15 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import {
-  Minus,
-  Plus,
-  Type,
-  RotateCcw,
   AlignJustify,
+  Minus,
   PilcrowLeft,
   PilcrowRight,
+  Plus,
+  RotateCcw,
+  Type,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
 import { Popover, ToolbarButton } from './primitives';
@@ -17,9 +17,9 @@ import {
   FONT_FAMILIES,
   FONT_SIZE_RANGE,
   LINE_HEIGHT_RANGE,
-  TEXT_DIRECTIONS,
-  spring,
   type ReaderTypographySettings,
+  spring,
+  TEXT_DIRECTIONS,
 } from './types';
 
 export const DEFAULT_TYPOGRAPHY: ReaderTypographySettings = {

@@ -3,7 +3,11 @@ import * as React from 'react';
 import { apiClient } from '@/lib/api-client';
 
 export type Permission =
-  'MANAGE_BOOKS' | 'MANAGE_USERS' | 'MANAGE_FINANCE' | 'MANAGE_STAFF' | 'MANAGE_NOTIFICATIONS';
+  | 'MANAGE_BOOKS'
+  | 'MANAGE_USERS'
+  | 'MANAGE_FINANCE'
+  | 'MANAGE_STAFF'
+  | 'MANAGE_NOTIFICATIONS';
 
 export type CurrentUser = {
   id: number;

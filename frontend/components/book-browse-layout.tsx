@@ -1,10 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import {
+  ArrowUpDown,
+  BookOpen,
+  CheckIcon,
+  ChevronDown,
+  Layers,
+  Search,
+  SlidersHorizontal,
+  Tag,
+  X,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
 import { BookGrid, BookGridSkeleton } from '@/components/book-grid';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -12,38 +36,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Search,
-  X,
-  SlidersHorizontal,
-  BookOpen,
-  Tag,
-  Layers,
-  ArrowUpDown,
-  CheckIcon,
-  ChevronDown,
-} from 'lucide-react';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-  DrawerFooter,
-} from '@/components/ui/drawer';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import {
+  type BookCardData,
+  type BookGenre,
   bookTypeLabel,
+  type PublicBookType,
   SORT_OPTIONS,
-  BookGenre,
-  SortOption,
-  BookCardData,
-  PublicBookType,
+  type SortOption,
 } from '@/lib/types';
-import { useTranslations } from 'next-intl';
-import { AppIcon } from '@/components/AppIcon';
 import { cn } from '@/lib/utils';
 
 interface BookBrowseLayoutProps {

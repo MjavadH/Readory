@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { BooksService } from './books.service';
-import { BooksController } from './books.controller';
-import { PrismaModule } from '../prisma/prisma.module';
-import { WalletsModule } from '../wallets/wallets.module';
-import { PublicModule } from '../public/public.module';
-import { RecommendationService } from './recommendation/recommendation.service';
 import { CollectionsModule } from '../collections/collections.module';
 import { OutboxModule } from '../outbox/outbox.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PublicModule } from '../public/public.module';
 import { SearchModule } from '../search/search.module';
+import { WalletsModule } from '../wallets/wallets.module';
+import { BooksController } from './books.controller';
+import { BooksService } from './books.service';
+import { RecommendationService } from './recommendation/recommendation.service';
 
 @Module({
   imports: [

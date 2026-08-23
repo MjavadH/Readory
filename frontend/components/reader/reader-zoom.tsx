@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
-  TransformWrapper,
-  TransformComponent,
   type ReactZoomPanPinchRef,
+  TransformComponent,
+  TransformWrapper,
 } from 'react-zoom-pan-pinch';
 
 export const READER_MIN_ZOOM = 1;

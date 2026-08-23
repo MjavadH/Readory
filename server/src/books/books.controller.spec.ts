@@ -1,11 +1,16 @@
-import { CanActivate, ExecutionContext, INestApplication, NotFoundException } from '@nestjs/common';
+import {
+  type CanActivate,
+  type ExecutionContext,
+  type INestApplication,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RolesGuard } from '../auth/roles.guard';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
 
 class AllowGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {

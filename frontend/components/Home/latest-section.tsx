@@ -1,15 +1,15 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { motion } from 'framer-motion';
+import { ArrowUpRight, BookOpen, Clock, Lock, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, Sparkles, BookOpen, ArrowUpRight, Lock } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { BookType } from '@/lib/types';
-import { formatUpdateTime } from '@/lib/time';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import { Badge } from '@/components/ui/badge';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { formatUpdateTime } from '@/lib/time';
+import type { BookType } from '@/lib/types';
 
 interface Chapter {
   id: number;

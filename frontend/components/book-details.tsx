@@ -1,4 +1,11 @@
-import Image from 'next/image';
+import {
+  type AgeRating,
+  type BookStatus,
+  CONTRIBUTOR_ROLE_ICONS,
+  type ContributorRole,
+  type IconKey,
+  PublicationStatus,
+} from '@readory/shared';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
@@ -13,22 +20,15 @@ import {
   Star,
   User,
 } from 'lucide-react';
-import { useEffect, useState, type ReactNode, type RefObject } from 'react';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import Image from 'next/image';
+import Link from 'next/link';
+import { type ReactNode, type RefObject, useEffect, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AppIcon } from '@/components/AppIcon';
-import { formatUpdateTime } from '@/lib/time';
-import {
-  ContributorRole,
-  CONTRIBUTOR_ROLE_ICONS,
-  PublicationStatus,
-  type AgeRating,
-  type BookStatus,
-  type IconKey,
-} from '@readory/shared';
-import Link from 'next/link';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiClient } from '@/lib/api-client';
+import { formatUpdateTime } from '@/lib/time';
 
 export type BookDetailsData = {
   id: number;

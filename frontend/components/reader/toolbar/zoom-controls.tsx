@@ -1,7 +1,7 @@
 'use client';
 
-import { ZoomIn, ZoomOut } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ZoomIn, ZoomOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReaderZoomApi } from '@/components/reader/reader-zoom';
 import { ToolbarButton } from './primitives';

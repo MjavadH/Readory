@@ -1,13 +1,6 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { apiClient, getApiErrorMessage, ApiError } from '@/lib/api-client';
-import { ReaderToolbar } from '@/components/reader/reader-toolbar';
 import {
   AlertCircle,
   ArrowLeft,
@@ -19,18 +12,25 @@ import {
   ShoppingCart,
   Unlock,
 } from 'lucide-react';
-import { useToast } from '@/providers/toast-provider';
-import { ReaderContextMenu } from '@/components/reader/reader-context-menu';
-import { ReaderZoomViewport, useReaderZoom } from '@/components/reader/reader-zoom';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import {
   ChapterPurchaseDialog,
   type PurchaseDialogBook,
   type PurchaseDialogChapter,
 } from '@/components/chapter-purchase-dialog';
+import { ReaderContextMenu } from '@/components/reader/reader-context-menu';
+import { ReaderToolbar } from '@/components/reader/reader-toolbar';
+import { ReaderZoomViewport, useReaderZoom } from '@/components/reader/reader-zoom';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { useToast } from '@/providers/toast-provider';
 
 type SessionResponse = {
   chapterId: number;

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Toast, ToastType } from '@/components/toast';
+import type React from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { Toast, type ToastType } from '@/components/toast';
 
 type ToastItem = {
   id: number;

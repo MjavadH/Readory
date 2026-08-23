@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
 
 export async function truncateAllTables(prisma: PrismaClient): Promise<void> {
   const tables = await prisma.$queryRaw<Array<{ tablename: string }>>`

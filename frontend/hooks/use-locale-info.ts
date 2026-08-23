@@ -3,10 +3,10 @@
 import { useLocale } from 'next-intl';
 import {
   getDirection,
-  getLocaleConfig,
   isRTL as getIsRTL,
-  type LocaleDirection,
+  getLocaleConfig,
   type LocaleConfig,
+  type LocaleDirection,
   type SupportedLocale,
 } from '@/i18n/locales';
 

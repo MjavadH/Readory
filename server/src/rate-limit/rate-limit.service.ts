@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
 import { createHash } from 'crypto';
 import type { Request } from 'express';
+import type Redis from 'ioredis';
 
 type LimitOptions = {
   key: string;

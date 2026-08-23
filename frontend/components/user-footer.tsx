@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { Github, Send } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
+import { Github, Send } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { BrandLogo } from '@/components/brand-logo';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
-import Image from 'next/image';
 
 type FooterCertificate = {
   href: string;

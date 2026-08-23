@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
 import { createHash } from 'crypto';
-import { CacheEnvelope, CacheGetOrSetOptions, CacheObserveContext } from './cache.types';
+import type Redis from 'ioredis';
 import { CacheSerializer } from './cache.serializer';
+import type { CacheEnvelope, CacheGetOrSetOptions, CacheObserveContext } from './cache.types';
 
 @Injectable()
 export class CacheManager {
@@ -14,7 +14,7 @@ export class CacheManager {
   sanitizeSegment(segment: string | number | boolean): string {
     return String(segment)
       .trim()
-      .replace(/[^a-zA-Z0-9:_\-]/g, '_')
+      .replace(/[^a-zA-Z0-9:_-]/g, '_')
       .slice(0, 120);
   }
 

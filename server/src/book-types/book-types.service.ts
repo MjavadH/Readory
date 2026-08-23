@@ -1,7 +1,7 @@
-import { IconKey, PublicationStatus } from '@readory/shared';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { type IconKey, PublicationStatus } from '@readory/shared';
 import { slugify } from '../common';
+import type { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class BookTypesService {

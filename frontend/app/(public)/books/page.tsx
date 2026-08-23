@@ -1,5 +1,5 @@
-import { getInitialBooksData } from './books-api';
 import BooksClient from './BooksClient';
+import { getInitialBooksData } from './books-api';
 
 export default async function Page({
   searchParams,

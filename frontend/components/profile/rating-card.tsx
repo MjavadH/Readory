@@ -1,16 +1,15 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Star } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-
-import { cn } from '@/lib/utils';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { getBookUrl } from '@/lib/types';
-import type { BookCardData } from '@/lib/types';
 import { formatUpdateTime } from '@/lib/time';
+import type { BookCardData } from '@/lib/types';
+import { getBookUrl } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type RatingCardProps = {
   book: BookCardData;

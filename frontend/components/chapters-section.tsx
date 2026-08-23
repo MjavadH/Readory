@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useRef, type RefObject } from 'react';
-import Link from 'next/link';
+import { PublicationStatus } from '@readory/shared';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowDown10,
@@ -17,14 +16,12 @@ import {
   Sparkles,
   Trash,
 } from 'lucide-react';
-
+import Link from 'next/link';
+import React, { type RefObject, useRef } from 'react';
+import { AppPagination } from '@/components/app-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AppPagination } from '@/components/app-pagination';
-import { formatUpdateTime } from '@/lib/time';
-import { cn } from '@/lib/utils';
-import { PublicationStatus } from '@readory/shared';
 import {
   Select,
   SelectContent,
@@ -34,6 +31,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { formatUpdateTime } from '@/lib/time';
+import { cn } from '@/lib/utils';
 
 export type ChaptersSectionChapter = {
   id: number;

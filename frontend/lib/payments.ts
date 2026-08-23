@@ -1,5 +1,5 @@
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { IconKey } from '@readory/shared';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 
 /* -------------------------------------------------------------------------- */
 /*  Provider registry — add a new gateway by appending one entry here.         */

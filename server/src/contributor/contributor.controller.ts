@@ -1,28 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Query,
+  Controller,
   DefaultValuePipe,
+  Delete,
+  Get,
+  Param,
   ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ContributorService } from './contributor.service';
-import { CreateContributorDto } from './dto/create-contributor.dto';
-import { UpdateContributorDto } from './dto/update-contributor.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { PermissionsGuard } from '../auth/permissions.guard';
-import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory } from '@readory/shared';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { ContributorService } from './contributor.service';
+import type { CreateContributorDto } from './dto/create-contributor.dto';
+import type { UpdateContributorDto } from './dto/update-contributor.dto';
 
 @Controller('contributor')
 export class ContributorController {

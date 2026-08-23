@@ -1,10 +1,10 @@
-import { INestApplication, NotFoundException } from '@nestjs/common';
+import { type INestApplication, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
-import { PublicController } from './public.controller';
-import { PublicService } from './public.service';
 import { BookTypesService } from '../book-types/book-types.service';
 import { BooksService } from '../books/books.service';
+import { PublicController } from './public.controller';
+import { PublicService } from './public.service';
 
 describe('PublicController (http)', () => {
   let app: INestApplication;

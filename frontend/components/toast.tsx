@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from 'lucide-react';
+import { useEffect } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 

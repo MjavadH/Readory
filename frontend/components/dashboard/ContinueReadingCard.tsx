@@ -1,14 +1,14 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { ReadingProgress } from '@/lib/types';
-import { BookOpen, Clock, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { formatUpdateTime } from '@/lib/time';
-import Link from 'next/link';
+import { BookOpen, ChevronRight, Clock } from 'lucide-react';
 import Image from 'next/image';
-import { AppIcon } from '@/components/AppIcon';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { AppIcon } from '@/components/AppIcon';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { formatUpdateTime } from '@/lib/time';
+import type { ReadingProgress } from '@/lib/types';
 
 interface Props {
   progress: ReadingProgress;

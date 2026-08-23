@@ -1,8 +1,8 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { motion } from 'framer-motion';
 import { BookOpen, Flame, Star } from 'lucide-react';
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import {
   Bar,
@@ -17,12 +17,12 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from '@/components/ui/chart';
-import Image from 'next/image';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
 
 export interface ContentData {
   trendingBooks?: Array<{

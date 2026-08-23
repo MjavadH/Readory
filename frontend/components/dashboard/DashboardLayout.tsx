@@ -1,17 +1,16 @@
 'use client';
 
-import { Sidebar } from './Sidebar';
-import React, { ReactNode } from 'react';
 import { Loader2, Menu } from 'lucide-react';
-import { useState } from 'react';
-import { ThemeSwitcher } from '@/components/theme-switcher';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import React, { type ReactNode, useState } from 'react';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { useAuth } from '@/providers/auth-provider';
-import { redirect } from 'next/navigation';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getAvatarUrl } from '@/lib/media';
-import Link from 'next/link';
+import { useAuth } from '@/providers/auth-provider';
+import { Sidebar } from './Sidebar';
 
 interface DashboardLayoutProps {
   children: ReactNode;

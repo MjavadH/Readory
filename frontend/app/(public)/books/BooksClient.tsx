@@ -1,11 +1,11 @@
 'use client';
 
-import { useBookBrowser } from '@/hooks/use-book-browser';
-import { BookBrowseLayout } from '@/components/book-browse-layout';
-import { apiClient } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
 import React from 'react';
-import { BookBrowserApi, BooksPageData } from '@/lib/types';
+import { BookBrowseLayout } from '@/components/book-browse-layout';
+import { useBookBrowser } from '@/hooks/use-book-browser';
+import { apiClient } from '@/lib/api-client';
+import type { BookBrowserApi, BooksPageData } from '@/lib/types';
 
 export default function BooksClient({ initialData }: { initialData: BooksPageData }) {
   const t = useTranslations('Books');

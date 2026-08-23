@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, useState } from 'react';
+import { Loader2, Lock, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Lock, Mail } from 'lucide-react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
 import { safeRedirect } from '@/lib/auth/safe-redirect';
+import { useToast } from '@/providers/toast-provider';
 
 type PendingGoogleLink = {
   credential: string;

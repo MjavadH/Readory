@@ -1,13 +1,13 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { getBookUrl, LibraryItem } from '@/lib/types';
-import { CheckCircle2, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { CheckCircle2, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { getBookUrl, type LibraryItem } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface Props {
   item: LibraryItem;

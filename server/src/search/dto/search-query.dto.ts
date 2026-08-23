@@ -1,5 +1,5 @@
-import { BaseBrowseDto, TransformCsvToArray } from '../../books/dto/base-browse.dto';
 import { ArrayMaxSize, IsArray, IsOptional } from 'class-validator';
+import { BaseBrowseDto, TransformCsvToArray } from '../../books/dto/base-browse.dto';
 
 export class SearchQueryDto extends BaseBrowseDto {
   @IsOptional()

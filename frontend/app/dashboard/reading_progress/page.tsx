@@ -1,16 +1,16 @@
 'use client';
 
+import { AnimatePresence } from 'framer-motion';
+import { AlertCircle, BookDashedIcon, BookOpenText } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { ReadingProgressResponse } from '@/lib/types';
+import { AppPagination } from '@/components/app-pagination';
 import {
   ContinueReadingCard,
   ContinueReadingCardSkeleton,
 } from '@/components/dashboard/ContinueReadingCard';
-import { AlertCircle, BookDashedIcon, BookOpenText } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
-import { AppPagination } from '@/components/app-pagination';
-import { useTranslations } from 'next-intl';
+import { apiClient } from '@/lib/api-client';
+import type { ReadingProgressResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 24;
 

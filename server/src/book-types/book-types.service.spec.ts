@@ -1,7 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { BookTypesService } from './book-types.service';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
+import { BookTypesService } from './book-types.service';
 
 describe('BookTypesService', () => {
   let service: BookTypesService;

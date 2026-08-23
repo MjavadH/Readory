@@ -1,7 +1,7 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'node:stream';
+import { S3Client } from '@aws-sdk/client-s3';
+import { ConfigService } from '@nestjs/config';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
 
 describe('StorageService', () => {

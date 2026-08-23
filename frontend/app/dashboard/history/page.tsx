@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { HistoryResponse } from '@/lib/types';
-import { TransactionList, TransactionListSkeleton } from '@/components/dashboard/TransactionList';
+import { motion } from 'framer-motion';
 import {
-  History,
-  Wallet,
-  Download,
   AlertCircle,
   ArrowDownLeft,
   ArrowUpRight,
-  TrendingUp,
   CreditCard,
+  Download,
+  History,
+  TrendingUp,
+  Wallet,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { AppPagination } from '@/components/app-pagination';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { AppPagination } from '@/components/app-pagination';
+import { TransactionList, TransactionListSkeleton } from '@/components/dashboard/TransactionList';
+import { apiClient } from '@/lib/api-client';
+import type { HistoryResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 30;
 

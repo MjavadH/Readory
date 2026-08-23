@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Loader2, Search, X } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
-import { AnimatePresence, motion } from 'framer-motion';
 
 type ContributorResult = {
   id: number;

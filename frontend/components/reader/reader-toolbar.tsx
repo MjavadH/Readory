@@ -1,27 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, MoreHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import {
   ChapterPurchaseDialog,
   type PurchaseDialogChapter,
 } from '@/components/chapter-purchase-dialog';
-import { ControlSlot, ToolbarButton } from './toolbar/primitives';
-import { NavigationGroup } from './toolbar/navigation-group';
 import { ChaptersDrawer } from './toolbar/chapters-drawer';
 import { MobileMoreSheet } from './toolbar/mobile-more-sheet';
 import { ModeEndControls, ModeStartControls } from './toolbar/mode-controls';
+import { NavigationGroup } from './toolbar/navigation-group';
+import { ControlSlot, ToolbarButton } from './toolbar/primitives';
 import { ToolbarSettingsButton, ToolbarSettingsPanel } from './toolbar/toolbar-settings-panel';
-import { useToolbarPrefs } from './toolbar/use-toolbar-prefs';
-import { useFullscreen } from './toolbar/use-fullscreen';
 import {
-  spring,
   type PanelKey,
   type ReaderChapterItem,
   type ReaderToolbarProps,
+  spring,
 } from './toolbar/types';
+import { useFullscreen } from './toolbar/use-fullscreen';
+import { useToolbarPrefs } from './toolbar/use-toolbar-prefs';
 
 export type { ReaderChapterItem, ReaderToolbarProps } from './toolbar/types';
 

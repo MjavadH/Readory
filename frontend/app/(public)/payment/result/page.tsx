@@ -1,29 +1,29 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
+  Check,
   CheckCircle2,
   Copy,
-  Check,
   Loader2,
   Receipt,
   RotateCcw,
   Wallet,
   XCircle,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import {
   getPaymentResult,
+  type PaymentResult,
   paymentErrorKey,
   paymentErrorMessage,
-  type PaymentResult,
 } from '@/lib/payments';
+import { cn } from '@/lib/utils';
 
 type Status = 'loading' | 'success' | 'failed' | 'error';
 

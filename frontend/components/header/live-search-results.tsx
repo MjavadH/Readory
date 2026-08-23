@@ -1,14 +1,13 @@
 'use client';
 
+import { motion } from 'framer-motion';
+import { Loader2, Search } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-
-import { cn } from '@/lib/utils';
-import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { LiveSearchHit } from '@/hooks/use-live-search';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { cn } from '@/lib/utils';
 
 interface LiveSearchResultsProps {
   query: string;

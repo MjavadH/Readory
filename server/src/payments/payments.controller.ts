@@ -2,22 +2,22 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   Post,
   Query,
   Request,
   Res,
   UseGuards,
-  NotFoundException,
 } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
-import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import type { Request as ExpressRequest, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { InitializePaymentDto } from './dto/initialize-payment.dto';
-import { PaymentsService } from './payments.service';
-import { randomUUID } from 'crypto';
-import { CacheManager } from '../cache/cache.manager';
+import type { CacheManager } from '../cache/cache.manager';
+import type { InitializePaymentDto } from './dto/initialize-payment.dto';
+import type { PaymentsService } from './payments.service';
 
 @Controller('wallet/payment')
 export class PaymentsController {

@@ -1,32 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { UserProfile } from '@/lib/types';
+import { motion } from 'framer-motion';
 import {
-  Settings,
-  User,
-  Mail,
-  Lock,
-  Shield,
-  Check,
+  AlertCircle,
   AlertTriangle,
-  Loader2,
-  Save,
-  KeyRound,
+  Check,
+  ExternalLink,
   Eye,
   EyeOff,
-  AlertCircle,
-  ExternalLink,
+  KeyRound,
+  Loader2,
+  Lock,
+  Mail,
+  Save,
+  Settings,
+  Shield,
+  User,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useToast } from '@/providers/toast-provider';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '@/providers/auth-provider';
+import { useEffect, useState } from 'react';
+import ConnectedDevices from '@/components/dashboard/ConnectedDevices';
 import ProfileCard from '@/components/dashboard/ProfileCard';
 import { Switch } from '@/components/ui/switch';
-import ConnectedDevices from '@/components/dashboard/ConnectedDevices';
-import Link from 'next/link';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import type { UserProfile } from '@/lib/types';
+import { useAuth } from '@/providers/auth-provider';
+import { useToast } from '@/providers/toast-provider';
 
 type ProfileVisibilitySettings = {
   showMemberSince: boolean;
@@ -159,12 +159,15 @@ export default function SettingsPage() {
   };
 
   const handleUpdateVisibility = async () => {
-    const changedSettings = Object.entries(visibilitySettings).reduce((acc, [key, value]) => {
-      if (value !== initialVisibilitySettings[key as keyof ProfileVisibilitySettings]) {
-        acc[key as keyof ProfileVisibilitySettings] = value;
-      }
-      return acc;
-    }, {} as Partial<ProfileVisibilitySettings>);
+    const changedSettings = Object.entries(visibilitySettings).reduce(
+      (acc, [key, value]) => {
+        if (value !== initialVisibilitySettings[key as keyof ProfileVisibilitySettings]) {
+          acc[key as keyof ProfileVisibilitySettings] = value;
+        }
+        return acc;
+      },
+      {} as Partial<ProfileVisibilitySettings>,
+    );
 
     if (Object.keys(changedSettings).length === 0) {
       toast.success(t('ProfileVisibilityUpdated'));

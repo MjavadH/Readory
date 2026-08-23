@@ -1,9 +1,6 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import {
   BookOpen,
   Eye,
@@ -18,13 +15,14 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
-import { cn } from '@/lib/utils';
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import * as React from 'react';
+import AdminPageHeader from '@/components/admin/admin-page-header';
+import { StatCard } from '@/components/admin/stat-card';
+import { CollectionFormFields } from '@/components/collections/collection-form-fields';
+import { ResponsiveModal } from '@/components/responsive-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,20 +33,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { StatCard } from '@/components/admin/stat-card';
-import { ResponsiveModal } from '@/components/responsive-modal';
-import { CollectionFormFields } from '@/components/collections/collection-form-fields';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import {
+  COLLECTION_SLUG_REGEX,
+  type Collection,
+  type CollectionFormState,
   collectionToForm,
   emptyCollectionForm,
-  type Collection,
-  COLLECTION_SLUG_REGEX,
-  type CollectionFormState,
 } from '@/lib/collection-types';
-import Image from 'next/image';
-import AdminPageHeader from '@/components/admin/admin-page-header';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/providers/toast-provider';
 
 export default function AdminCollectionsPage() {
   const t = useTranslations('Collections');

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { DomainEvent } from './domain-events';
+import type { Prisma } from '@prisma/client';
 import { notificationConfig } from '../notifications/notification.config';
 import { searchSyncConfig } from '../search/config/search-sync.config';
+import type { DomainEvent } from './domain-events';
 
 @Injectable()
 export class OutboxService {

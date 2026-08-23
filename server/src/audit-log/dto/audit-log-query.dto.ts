@@ -1,6 +1,6 @@
 import { AuditAction, AuditCategory, AuditSeverity } from '@readory/shared';
-import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class AuditLogQueryDto {
   @IsOptional()

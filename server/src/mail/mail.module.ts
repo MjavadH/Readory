@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { EjsAdapter } from '@nestjs-modules/mailer/adapters/ejs.adapter';
-import { MailService } from './mail.service';
-import { join } from 'path';
 import * as fs from 'fs';
+import { join } from 'path';
+import { MailService } from './mail.service';
 
 @Module({
   imports: [

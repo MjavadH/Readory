@@ -1,43 +1,42 @@
 'use client';
 
-import type React from 'react';
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { type IconKey, isIconKey } from '@readory/shared';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, ChevronRight, LayoutDashboard, LogOut, Search, User, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, User, LayoutDashboard, LogOut, ChevronRight, ChevronDown, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
+import { BrandLogo } from '@/components/brand-logo';
+import { GenreCarousel } from '@/components/header/genre-carousel';
+import { LiveSearchResults } from '@/components/header/live-search-results';
+import { TypeCarousel } from '@/components/header/type-carousel';
+import { WalletCard } from '@/components/header/wallet-card';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { NotificationBell } from '@/components/notifications/notification-bell';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { AppIcon } from '@/components/AppIcon';
-import { isIconKey, type IconKey } from '@readory/shared';
-import { apiClient } from '@/lib/api-client';
-import { BrandLogo } from '@/components/brand-logo';
-import type { BookGenre } from '@/lib/types';
-import { WalletCard } from '@/components/header/wallet-card';
-import { TypeCarousel } from '@/components/header/type-carousel';
-import { GenreCarousel } from '@/components/header/genre-carousel';
-import { ThemeSwitcher } from '@/components/theme-switcher';
-import { useTranslations } from 'next-intl';
-import { LanguageSwitcher } from '@/components/language-switcher';
 import { useCurrentUser } from '@/hooks/use-current-user';
-import { getAvatarUrl } from '@/lib/media';
-import { NotificationBell } from '@/components/notifications/notification-bell';
-import { useLocaleInfo } from '@/hooks/use-locale-info';
 import { useLiveSearch } from '@/hooks/use-live-search';
-import { LiveSearchResults } from '@/components/header/live-search-results';
+import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { apiClient } from '@/lib/api-client';
+import { getAvatarUrl } from '@/lib/media';
+import type { BookGenre } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type BookType = { name: string; slug: string; iconKey: IconKey };
 

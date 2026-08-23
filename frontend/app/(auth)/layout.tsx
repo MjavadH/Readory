@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { Vazirmatn } from 'next/font/google';
 import '@/styles/globals.css';
-import { ToastProvider } from '@/providers/toast-provider';
 import { NextIntlClientProvider } from 'next-intl';
-import { ThemeProvider } from 'next-themes';
 import { getLocale, getMessages } from 'next-intl/server';
+import { ThemeProvider } from 'next-themes';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
 import { GoogleAuthProvider } from '@/providers/google-auth-provider';
+import { ToastProvider } from '@/providers/toast-provider';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],

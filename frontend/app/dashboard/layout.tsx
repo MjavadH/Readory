@@ -1,11 +1,11 @@
+import { Vazirmatn } from 'next/font/google';
+import type { ReactNode } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { ReactNode } from 'react';
 import { ThemeProvider } from '@/providers/theme-provider';
 import { ToastProvider } from '@/providers/toast-provider';
-import { Vazirmatn } from 'next/font/google';
 import '@/styles/globals.css';
-import { getLocale, getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
 import { AuthProvider } from '@/providers/auth-provider';
 

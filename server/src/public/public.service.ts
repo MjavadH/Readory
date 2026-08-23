@@ -1,10 +1,10 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheManager } from '../cache/cache.manager';
-import { DashboardService } from '../dashboard/dashboard.service';
-import { PublicationStatus } from '@readory/shared';
 import { CollectionType, CollectionVisibility } from '@prisma/client';
+import { PublicationStatus } from '@readory/shared';
 import { BooksService } from '../books/books.service';
+import type { CacheManager } from '../cache/cache.manager';
+import type { DashboardService } from '../dashboard/dashboard.service';
+import type { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PublicService {

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
+import { AuditLogModule } from '../audit-log/audit-log.module';
+import { CacheModule } from '../cache/cache.module';
+import { OutboxModule } from '../outbox/outbox.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PublicModule } from '../public/public.module';
 import { ScheduledPublishingController } from './scheduled-publishing.controller';
 import { ScheduledPublishingService } from './scheduled-publishing.service';
-import { PrismaModule } from '../prisma/prisma.module';
-import { CacheModule } from '../cache/cache.module';
-import { PublicModule } from '../public/public.module';
-import { AuditLogModule } from '../audit-log/audit-log.module';
-import { OutboxModule } from '../outbox/outbox.module';
 
 @Module({
   imports: [OutboxModule, PrismaModule, CacheModule, PublicModule, AuditLogModule],

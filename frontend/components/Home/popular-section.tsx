@@ -2,8 +2,8 @@
 
 import { Crown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { BookCardData } from '@/lib/types';
 import { BookCarouselSection, BookCarouselSkeleton } from '@/components/Home/book-carousel-section';
+import type { BookCardData } from '@/lib/types';
 
 export function PopularSection({ books }: { books: BookCardData[] }) {
   const t = useTranslations('HomePage');

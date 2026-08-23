@@ -1,9 +1,6 @@
-import * as React from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
-
-import { cn } from '@/lib/utils';
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Drawer,
   DrawerContent,
@@ -11,6 +8,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -19,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export type DateTimePickerProps = {
   value?: Date;

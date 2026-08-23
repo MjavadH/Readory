@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useTransition } from 'react';
 import { Check, ChevronDown, Languages } from 'lucide-react';
+import Image from 'next/image';
+import * as React from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,11 +11,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
-import Image from 'next/image';
-import { getSupportedLocales, type SupportedLocale } from '@/i18n/locales';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
-import * as React from 'react';
+import { getSupportedLocales, type SupportedLocale } from '@/i18n/locales';
+import { cn } from '@/lib/utils';
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'mobile' | 'sidebar';

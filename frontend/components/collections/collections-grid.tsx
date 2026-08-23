@@ -1,8 +1,8 @@
 'use client';
 
+import type { CollectionSummary } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CollectionCard, type CollectionCardVariant } from './collection-card';
-import type { CollectionSummary } from '@/lib/types';
 
 type CollectionsGridProps = {
   collections: CollectionSummary[];

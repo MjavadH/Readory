@@ -1,11 +1,17 @@
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { tap } from 'rxjs/operators';
+import {
+  type CallHandler,
+  type ExecutionContext,
+  Injectable,
+  Logger,
+  type NestInterceptor,
+} from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 import { AuditAction } from '@readory/shared';
+import { tap } from 'rxjs/operators';
+import type { PrismaService } from '../../prisma/prisma.service';
+import type { AuditLogService } from '../audit-log.service';
 import { AUDIT_LOG_METADATA_KEY } from '../constants/audit-log.constants';
-import { AuditLogService } from '../audit-log.service';
-import { AuditLogDecoratorOptions } from '../interfaces/audit-log.interface';
-import { PrismaService } from '../../prisma/prisma.service';
+import type { AuditLogDecoratorOptions } from '../interfaces/audit-log.interface';
 import { ensureAuditRequestMetadata } from '../utils/audit-request.util';
 import {
   getTargetIdFromRequest,

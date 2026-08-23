@@ -1,27 +1,27 @@
 'use client';
 
-import useSWR from 'swr';
-import { TrendingSection, TrendingSkeleton } from '@/components/Home/trending-section';
-import { LatestSection, LatestSectionSkeleton } from '@/components/Home/latest-section';
-import { GenresSection, GenresSectionSkeleton } from '@/components/Home/genres-section';
-import { HeroCarousel, HeroSkeleton } from '@/components/Home/hero-carousel';
-import {
-  BookType,
-  BookGenre,
-  BookCardData,
-  ReadingProgress,
-  type CollectionSummary,
-} from '@/lib/types';
-import { apiClient } from '@/lib/api-client';
-import { PopularSection, PopularSkeleton } from '@/components/Home/popular-section';
-import { ContinueReadingCard } from '@/components/dashboard/ContinueReadingCard';
 import { BookMarked } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import useSWR from 'swr';
+import { ContinueReadingCard } from '@/components/dashboard/ContinueReadingCard';
 import {
   FeaturedCollectionsSection,
   FeaturedCollectionsSkeleton,
 } from '@/components/Home/featured-collections-section';
+import { GenresSection, GenresSectionSkeleton } from '@/components/Home/genres-section';
+import { HeroCarousel, HeroSkeleton } from '@/components/Home/hero-carousel';
+import { LatestSection, LatestSectionSkeleton } from '@/components/Home/latest-section';
+import { PopularSection, PopularSkeleton } from '@/components/Home/popular-section';
+import { TrendingSection, TrendingSkeleton } from '@/components/Home/trending-section';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { apiClient } from '@/lib/api-client';
+import type {
+  BookCardData,
+  BookGenre,
+  BookType,
+  CollectionSummary,
+  ReadingProgress,
+} from '@/lib/types';
 
 interface Chapter {
   id: number;

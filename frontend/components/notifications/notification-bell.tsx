@@ -1,21 +1,20 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { NotificationType } from '@readory/shared';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowRight, Bell, CheckCheck, Inbox } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bell, CheckCheck, Inbox, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-
+import { useCallback, useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
 import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
-import { NotificationType } from '@readory/shared';
 
 type NotificationItem = {
   id: string;

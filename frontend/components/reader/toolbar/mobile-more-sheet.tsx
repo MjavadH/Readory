@@ -4,15 +4,15 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Layers, Maximize, Minimize, ScrollText, ZoomIn, ZoomOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReaderZoomApi } from '@/components/reader/reader-zoom';
-import { SheetAction } from './primitives';
 import { BrightnessSlider } from './brightness-control';
-import { TypographyPanel } from './typography-panel';
+import { SheetAction } from './primitives';
 import {
-  spring,
   type ReaderContentMode,
   type ReaderTypographySettings,
+  spring,
   type ToolbarPrefs,
 } from './types';
+import { TypographyPanel } from './typography-panel';
 
 /**
  * Mobile overflow sheet. Holds every secondary control for the active content

@@ -1,7 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   BookOpen,
@@ -23,11 +22,10 @@ import {
 } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AdminPageHeader } from '@/components/admin/admin-page-header';
+import { UploadPanel } from '@/components/admin/upload-panel';
+import { AppPagination } from '@/components/app-pagination';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +37,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { AppPagination } from '@/components/app-pagination';
-import { UploadPanel } from '@/components/admin/upload-panel';
-import { AdminPageHeader } from '@/components/admin/admin-page-header';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/providers/toast-provider';
 
 type ChapterMeta = {
   id: number;

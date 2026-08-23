@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CornerDownLeft, Hash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useCallback, useRef } from 'react';
 import { Popover, ToolbarButton } from './primitives';
 
 /** Prev / page counter (with go-to-page popover) / next. Always visible in both modes. */

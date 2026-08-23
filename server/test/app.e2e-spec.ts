@@ -1,12 +1,12 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import request from 'supertest';
-import cookieParser from 'cookie-parser';
 import { S3Client } from '@aws-sdk/client-s3';
+import type { INestApplication } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { PublicationStatus } from '@readory/shared';
+import cookieParser from 'cookie-parser';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
-import { PublicationStatus } from '@readory/shared';
 
 describe('AppModule (e2e)', () => {
   let app: INestApplication;

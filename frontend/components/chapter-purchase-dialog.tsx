@@ -1,17 +1,17 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import type { IconKey } from '@readory/shared';
 import { AlertCircle, BookOpen, Check, ShoppingCart, Unlock, X } from 'lucide-react';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AppIcon } from '@/components/AppIcon';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { useToast } from '@/providers/toast-provider';
-import { useTranslations } from 'next-intl';
-import type { IconKey } from '@readory/shared';
 
 export interface PurchaseDialogBook {
   id: number;

@@ -1,13 +1,13 @@
 'use client';
 
-import useSWR from 'swr';
-import { GenreBookRow } from '@/components/genre-book-row';
-import { AllGenresSection } from '@/components/all-genres-section';
-import { GenresPageSkeleton } from '@/components/genres-page-skeleton';
-import { apiClient } from '@/lib/api-client';
-import { BookType } from '@/lib/types';
 import type { IconKey } from '@readory/shared';
 import { useTranslations } from 'next-intl';
+import useSWR from 'swr';
+import { AllGenresSection } from '@/components/all-genres-section';
+import { GenreBookRow } from '@/components/genre-book-row';
+import { GenresPageSkeleton } from '@/components/genres-page-skeleton';
+import { apiClient } from '@/lib/api-client';
+import type { BookType } from '@/lib/types';
 
 interface ApiFeaturedGenre {
   id: number;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { PaymentDriver } from '../payment-driver.interface';
+import type { PaymentDriver } from '../payment-driver.interface';
 
 @Injectable()
 export class MockPaymentDriver implements PaymentDriver {

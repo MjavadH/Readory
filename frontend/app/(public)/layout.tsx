@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import { Vazirmatn } from 'next/font/google';
 import '@/styles/globals.css';
-import { UserHeader } from '@/components/header/user-header';
-import { UserFooter } from '@/components/user-footer';
-import { ThemeProvider } from '@/providers/theme-provider';
-import { ToastProvider } from '@/providers/toast-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
+import { GoogleOneTap } from '@/components/auth/google-one-tap';
+import { UserHeader } from '@/components/header/user-header';
+import { UserFooter } from '@/components/user-footer';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
 import { GoogleAuthProvider } from '@/providers/google-auth-provider';
-import { GoogleOneTap } from '@/components/auth/google-one-tap';
+import { ThemeProvider } from '@/providers/theme-provider';
+import { ToastProvider } from '@/providers/toast-provider';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],

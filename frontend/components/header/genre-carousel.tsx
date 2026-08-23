@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { useRef, useState, useEffect } from 'react';
-import { AppIcon } from '@/components/AppIcon';
-import { cn } from '@/lib/utils';
 import type { IconKey } from '@readory/shared';
 import { ChevronDown } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
+import { cn } from '@/lib/utils';
 
 interface BookGenre {
   name: string;

@@ -1,22 +1,22 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import type { ContributorGender } from '@readory/shared';
+import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, Calendar, ChevronDown, Library, UserIcon } from 'lucide-react';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { cn } from '@/lib/utils';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AppPagination } from '@/components/app-pagination';
+import { BookCard, BookCardSkeleton } from '@/components/book-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
-import { BookCard, BookCardSkeleton } from '@/components/book-card';
-import { AppPagination } from '@/components/app-pagination';
-import type { BookCardData } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { formatUpdateTime } from '@/lib/time';
-import { ContributorGender } from '@readory/shared';
+import type { BookCardData } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 type ContributorPublic = {
   id: number;

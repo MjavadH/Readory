@@ -1,7 +1,7 @@
-import { IsString, IsOptional, IsNotEmpty, MaxLength, Matches, IsEnum } from 'class-validator';
-import { Transform } from 'class-transformer';
-import { normalizeSlug } from '../../common';
 import { ContributorGender } from '@readory/shared';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { normalizeSlug } from '../../common';
 
 export class CreateContributorDto {
   @IsString({ message: "The contributor's name must be a text string." })

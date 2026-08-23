@@ -1,11 +1,11 @@
-import { Controller, Get, UseGuards, Request, Query, Res } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { Controller, Get, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { RoleName } from '@prisma/client';
-import { DashboardService } from './dashboard.service';
-import { WalletsService } from '../wallets/wallets.service';
-import express from 'express';
+import type express from 'express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import type { WalletsService } from '../wallets/wallets.service';
+import type { DashboardService } from './dashboard.service';
 
 @Controller('dashboard')
 @UseGuards(JwtAuthGuard)

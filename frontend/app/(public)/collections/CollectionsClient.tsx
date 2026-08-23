@@ -1,13 +1,13 @@
 'use client';
 
-import * as React from 'react';
 import { Library } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import * as React from 'react';
 
 import { CollectionsGrid } from '@/components/collections/collections-grid';
+import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
 import type { CollectionSummary } from '@/lib/types';
-import { Skeleton } from '@/components/ui/skeleton';
 
 type CollectionsResponse = {
   items: CollectionSummary[];

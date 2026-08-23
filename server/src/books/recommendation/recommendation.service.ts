@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PublicationStatus } from '@prisma/client';
 import { Cron, CronExpression } from '@nestjs/schedule';
-
+import { PublicationStatus } from '@prisma/client';
+import type { PrismaService } from '../../prisma/prisma.service';
 import {
   POPULARITY_GLOBAL_MEAN,
   POPULARITY_MIN_VOTES,
   RELATED_MAX_FRESHNESS_DAYS,
   TREND_RECENT_PURCHASE_DAYS,
 } from './recommendation.constants';
-import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class RecommendationService {

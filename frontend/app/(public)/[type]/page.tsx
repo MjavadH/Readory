@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
-import { BookBrowserApi, BookGenre } from '@/lib/types';
-import { useBookBrowser } from '@/hooks/use-book-browser';
-import { BookBrowseLayout } from '@/components/book-browse-layout';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import React, { useEffect, useState } from 'react';
+import { BookBrowseLayout } from '@/components/book-browse-layout';
+import { useBookBrowser } from '@/hooks/use-book-browser';
+import { apiClient } from '@/lib/api-client';
+import type { BookBrowserApi, BookGenre } from '@/lib/types';
 
 // Format slug to Title Case
 const formatTypeTitle = (slug: string) =>

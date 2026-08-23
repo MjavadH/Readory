@@ -1,20 +1,19 @@
 'use client';
 
-import * as React from 'react';
 import { useParams } from 'next/navigation';
-import useSWR from 'swr';
 import { useTranslations } from 'next-intl';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import * as React from 'react';
+import useSWR from 'swr';
 import { BookCard } from '@/components/book-card';
 import { CollectionsGrid } from '@/components/collections/collections-grid';
+import { ProfileError } from '@/components/profile/profile-error';
 import { ProfileHeader } from '@/components/profile/profile-header';
 import { ProfileSection } from '@/components/profile/profile-section';
 import { ProfileSkeleton } from '@/components/profile/profile-skeleton';
-import { ProfileError } from '@/components/profile/profile-error';
 import { RatingCard } from '@/components/profile/rating-card';
 import { ReadingCard } from '@/components/profile/reading-card';
-import { toCollectionSummary, type PublicProfile } from '@/lib/public-profile';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { type PublicProfile, toCollectionSummary } from '@/lib/public-profile';
 
 export default function UserProfilePage() {
   const params = useParams<{ username: string }>();

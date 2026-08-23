@@ -1,4 +1,4 @@
-import { AuditAction, AuditCategory, AuditSeverity } from '@readory/shared';
+import type { AuditAction, AuditCategory, AuditSeverity } from '@readory/shared';
 
 export interface AuditActorSnapshot {
   id?: number | string | null;

@@ -1,3 +1,4 @@
+import { ICON_KEYS, type IconKey } from '@readory/shared';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
@@ -12,7 +13,6 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ICON_KEYS, type IconKey } from '@readory/shared';
 
 export class CreateGenreDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

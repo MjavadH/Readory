@@ -1,8 +1,12 @@
 'use client';
 
-import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notFound, useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BookCard } from '@/components/book-card';
+import { BookDetails, type BookDetailsData, BookDetailsSkeleton } from '@/components/book-details';
+import { ChapterPurchaseDialog } from '@/components/chapter-purchase-dialog';
+import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -13,14 +17,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { BookCard } from '@/components/book-card';
-import type { BookCardData } from '@/lib/types';
 import type { Collection } from '@/lib/collection-types';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import type { BookCardData } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
-import { useTranslations } from 'next-intl';
-import { ChapterPurchaseDialog } from '@/components/chapter-purchase-dialog';
-import { BookDetails, BookDetailsData, BookDetailsSkeleton } from '@/components/book-details';
-import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
 
 type ChaptersResponse = {
   items: ChaptersSectionChapter[];

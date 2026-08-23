@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { BookTypesService } from './book-types.service';
-import { BookTypesController } from './book-types.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { BookTypesController } from './book-types.controller';
+import { BookTypesService } from './book-types.service';
 
 @Module({
   imports: [PrismaModule],

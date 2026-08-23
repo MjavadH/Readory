@@ -1,11 +1,11 @@
 'use client';
 
-import { Transaction } from '@/lib/types';
-import { ArrowDownLeft, ArrowUpRight, Clock, Hash } from 'lucide-react';
-import { formatUpdateTime } from '@/lib/time';
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { ArrowDownLeft, ArrowUpRight, Clock, Hash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { formatUpdateTime } from '@/lib/time';
+import type { Transaction } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface Props {
   transactions: Transaction[];

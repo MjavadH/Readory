@@ -1,49 +1,28 @@
 'use client';
 
-import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
 import {
+  closestCorners,
   DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
   DragOverlay,
+  type DragStartEvent,
+  defaultDropAnimationSideEffects,
   KeyboardSensor,
   PointerSensor,
-  closestCorners,
-  defaultDropAnimationSideEffects,
   useDroppable,
   useSensor,
   useSensors,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { apiClient } from '@/lib/api-client';
-import type { BookType } from '@/lib/types';
 import type { IconKey } from '@readory/shared';
-import { AppIcon } from '@/components/AppIcon';
-import { IconPicker } from '@/components/admin/icon-picker';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   GripVertical,
   Loader2,
@@ -55,7 +34,28 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { AppIcon } from '@/components/AppIcon';
 import AdminPageHeader from '@/components/admin/admin-page-header';
+import { IconPicker } from '@/components/admin/icon-picker';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { apiClient } from '@/lib/api-client';
+import type { BookType } from '@/lib/types';
 
 function SortableTypeItem({
   item,

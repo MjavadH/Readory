@@ -1,13 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Plus, Wallet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-
-import { cn } from '@/lib/utils';
-import { formatAmount } from '@/lib/payments';
+import { useState } from 'react';
 import { AddFundsPanel } from '@/components/payments/add-funds-panel';
+import { formatAmount } from '@/lib/payments';
+import { cn } from '@/lib/utils';
 
 interface WalletSummaryCardProps {
   balance: number;

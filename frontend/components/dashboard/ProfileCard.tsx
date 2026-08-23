@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { Camera, Loader2, Upload, X, AlertCircle, ShieldCheck } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslations } from 'next-intl';
-import { UserProfile } from '@/lib/types';
-import { getAvatarUrl } from '@/lib/media';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, Camera, Loader2, ShieldCheck, Upload, X } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { getAvatarUrl } from '@/lib/media';
+import type { UserProfile } from '@/lib/types';
 
 const ACCEPTED = ['image/jpeg', 'image/webp'];
 

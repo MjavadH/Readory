@@ -1,17 +1,16 @@
 'use client';
 
-import * as React from 'react';
-import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import { AlertCircle } from 'lucide-react';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import * as React from 'react';
+import { CollectionDetail } from '@/components/collections/collection-detail';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CollectionDetail } from '@/components/collections/collection-detail';
-import type { Collection } from '@/lib/collection-types';
 import { useCurrentUser } from '@/hooks/use-current-user';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import type { Collection } from '@/lib/collection-types';
 
 export default function PublicCollectionPage() {
   const params = useParams<{ slug: string }>();

@@ -1,16 +1,14 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import * as React from 'react';
+import { CollectionDetail } from '@/components/collections/collection-detail';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CollectionDetail } from '@/components/collections/collection-detail';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
 
 export default function AdminCollectionDetailPage() {

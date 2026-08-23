@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateContributorDto } from './dto/create-contributor.dto';
-import { UpdateContributorDto } from './dto/update-contributor.dto';
-import { CacheManager } from '../cache/cache.manager';
-import { PrismaService } from '../prisma/prisma.service';
-import { normalizeQ, normalizePagination, paginationMeta, normalizeSlug } from '../common';
 import { PublicationStatus } from '@readory/shared';
+import type { CacheManager } from '../cache/cache.manager';
+import { normalizePagination, normalizeQ, normalizeSlug, paginationMeta } from '../common';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { CreateContributorDto } from './dto/create-contributor.dto';
+import type { UpdateContributorDto } from './dto/update-contributor.dto';
 
 @Injectable()
 export class ContributorService {

@@ -1,8 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
+import type { CacheManager } from '../cache/cache.manager';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { PublicService } from '../public/public.service';
 import { BooksService } from './books.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { CacheManager } from '../cache/cache.manager';
-import { PublicService } from '../public/public.service';
 
 describe('BooksService', () => {
   let service: BooksService;

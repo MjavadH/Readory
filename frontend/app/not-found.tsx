@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { Vazirmatn } from 'next/font/google';
 import '@/styles/globals.css';
-import { UserHeader } from '@/components/header/user-header';
-import { UserFooter } from '@/components/user-footer';
-import { ThemeProvider } from '@/providers/theme-provider';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import { getDirection, getLocaleConfig } from '@/i18n/locales';
+import { UserHeader } from '@/components/header/user-header';
 import { NotFoundContent } from '@/components/not-found-content';
+import { UserFooter } from '@/components/user-footer';
+import { getDirection, getLocaleConfig } from '@/i18n/locales';
+import { ThemeProvider } from '@/providers/theme-provider';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],

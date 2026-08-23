@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 import { RATE_LIMITS } from '../../rate-limit/rate-limit.constants';
-import { RateLimitService } from '../../rate-limit/rate-limit.service';
+import type { RateLimitService } from '../../rate-limit/rate-limit.service';
 
 @Injectable()
 export class AuthSecurityService {

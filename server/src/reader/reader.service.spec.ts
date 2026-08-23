@@ -1,9 +1,9 @@
-import { Test } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import { ReaderService } from './reader.service';
+import { Test } from '@nestjs/testing';
+import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import { CacheManager } from '../cache/cache.manager';
+import { ReaderService } from './reader.service';
 
 describe('ReaderService', () => {
   let service: ReaderService;

@@ -1,6 +1,5 @@
-import { Transform, Type } from 'class-transformer';
 import { AgeRating, BookStatus, PublicationStatus } from '@readory/shared';
-import { BookContributorDto } from './create-book.dto';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
@@ -16,6 +15,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { BookContributorDto } from './create-book.dto';
 
 export class UpdateBookDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

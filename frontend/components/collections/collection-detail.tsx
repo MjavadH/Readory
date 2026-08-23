@@ -1,6 +1,4 @@
-import * as React from 'react';
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import {
   ArrowDown,
   ArrowUp,
@@ -15,15 +13,14 @@ import {
   StickyNote,
   Trash2,
 } from 'lucide-react';
-
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
-import { useToast } from '@/providers/toast-provider';
-import { cn } from '@/lib/utils';
-import { getBookCoverThumbnailUrl } from '@/lib/media';
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
+import * as React from 'react';
+import { BookPicker } from '@/components/admin/book-picker';
 import { BookCard } from '@/components/book-card';
 import { CollectionCover } from '@/components/collections/collection-cover';
-import { formatUpdateTime } from '@/lib/time';
-import { Button } from '@/components/ui/button';
+import { CollectionFormFields } from '@/components/collections/collection-form-fields';
+import { ResponsiveModal } from '@/components/responsive-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,20 +31,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { ResponsiveModal } from '@/components/responsive-modal';
-import { CollectionFormFields } from '@/components/collections/collection-form-fields';
-import { BookPicker } from '@/components/admin/book-picker';
-import { getBookUrl, type BookCardData } from '@/lib/types';
+import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import {
-  collectionToForm,
-  type Collection,
   COLLECTION_SLUG_REGEX,
+  type Collection,
   type CollectionFormState,
   type CollectionItem,
+  collectionToForm,
 } from '@/lib/collection-types';
-import Image from 'next/image';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { formatUpdateTime } from '@/lib/time';
+import { type BookCardData, getBookUrl } from '@/lib/types';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/providers/toast-provider';
 
 const DESCRIPTION_COLLAPSED_CHARS = 320;
 const PICKER_LIMIT = 18;

@@ -1,3 +1,4 @@
+import { ICON_KEYS, type IconKey } from '@readory/shared';
 import {
   IsBoolean,
   IsIn,
@@ -10,7 +11,6 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
-import { ICON_KEYS, type IconKey } from '@readory/shared';
 
 export class UpdateBookTypeDto {
   @IsOptional()

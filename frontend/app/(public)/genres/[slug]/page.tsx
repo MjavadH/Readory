@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
-import { BookBrowserApi, BookType } from '@/lib/types';
-import { useBookBrowser } from '@/hooks/use-book-browser';
-import { BookBrowseLayout } from '@/components/book-browse-layout';
-import { AllGenresSection } from '@/components/all-genres-section';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import React, { useEffect, useState } from 'react';
+import { AllGenresSection } from '@/components/all-genres-section';
+import { BookBrowseLayout } from '@/components/book-browse-layout';
+import { useBookBrowser } from '@/hooks/use-book-browser';
+import { apiClient } from '@/lib/api-client';
+import type { BookBrowserApi, BookType } from '@/lib/types';
 
 export default function GenrePage() {
   const t = useTranslations('Books');

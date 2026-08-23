@@ -1,8 +1,8 @@
 'use client';
 
-import * as React from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle } from 'lucide-react';
+import type * as React from 'react';
 import { FileUploadPicker } from '@/components/admin/file-upload-picker';
 import { UploadProgressBar } from '@/components/admin/upload-progress-bar';
 import { cn } from '@/lib/utils';

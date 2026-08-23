@@ -1,9 +1,9 @@
-import * as React from 'react';
+import { AlertCircle, CheckCircle2, FileText, ImageIcon, Loader2, Upload, X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import type * as React from 'react';
 import { useId, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Upload, ImageIcon, FileText, X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 
 type FileUploadPickerProps = {
   kind?: 'image' | 'file';

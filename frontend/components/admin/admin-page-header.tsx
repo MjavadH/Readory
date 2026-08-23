@@ -1,10 +1,10 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import type * as React from 'react';
 
 import { cn } from '@/lib/utils';
 

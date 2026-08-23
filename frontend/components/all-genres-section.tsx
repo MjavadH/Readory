@@ -1,9 +1,9 @@
-import Link from 'next/link';
-import { BookOpen } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { AppIcon } from '@/components/AppIcon';
 import type { IconKey } from '@readory/shared';
+import { BookOpen } from 'lucide-react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { AppIcon } from '@/components/AppIcon';
+import { cn } from '@/lib/utils';
 
 interface AllGenresSectionProps {
   genres: Array<{ name: string; slug: string; iconKey?: IconKey }>;

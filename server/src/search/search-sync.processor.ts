@@ -1,9 +1,9 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { OutboxEventStatus, SearchOutboxEvent } from '@prisma/client';
+import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { OutboxEventStatus, type SearchOutboxEvent } from '@prisma/client';
 import { DomainEventType } from '@readory/shared';
-import { PrismaService } from '../prisma/prisma.service';
-import { SearchService, BookSearchDocument } from './search.service';
+import type { PrismaService } from '../prisma/prisma.service';
 import { searchSyncConfig } from './config/search-sync.config';
+import type { BookSearchDocument, SearchService } from './search.service';
 
 type ClaimedOutboxEvent = SearchOutboxEvent;
 type OutboxHandler = (event: ClaimedOutboxEvent) => Promise<void>;

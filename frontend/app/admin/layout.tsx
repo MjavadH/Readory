@@ -1,6 +1,6 @@
-import { getMessages, getLocale } from 'next-intl/server';
-import { AdminLayoutClient } from './AdminLayoutClient';
 import { Vazirmatn } from 'next/font/google';
+import { getLocale, getMessages } from 'next-intl/server';
+import { AdminLayoutClient } from './AdminLayoutClient';
 import '@/styles/globals.css';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
 

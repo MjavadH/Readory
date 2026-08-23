@@ -1,4 +1,9 @@
+import { BookOpen, Check, Loader2, Search, Star } from 'lucide-react';
+import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import * as React from 'react';
+import { AppPagination } from '@/components/app-pagination';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -7,13 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Search, Check, Loader2, Star, BookOpen } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { BookCardData } from '@/lib/types';
-import { AppPagination } from '@/components/app-pagination';
-import Image from 'next/image';
 
 export type BookPickerProps = {
   open: boolean;

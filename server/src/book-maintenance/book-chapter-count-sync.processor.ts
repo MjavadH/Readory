@@ -1,17 +1,15 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
-
-import {
-  BOOK_CHAPTER_COUNT_SYNC_JOB,
-  BOOK_CHAPTER_COUNT_SYNC_QUEUE,
-} from './book-maintenance.constants';
-
-import {
+import type { Job } from 'bullmq';
+import type {
   BookChapterCountSyncJobData,
   BookChapterCountSyncResult,
   BookChapterCountSyncService,
 } from './book-chapter-count-sync.service';
+import {
+  BOOK_CHAPTER_COUNT_SYNC_JOB,
+  BOOK_CHAPTER_COUNT_SYNC_QUEUE,
+} from './book-maintenance.constants';
 
 @Processor(BOOK_CHAPTER_COUNT_SYNC_QUEUE, {
   concurrency: 1,

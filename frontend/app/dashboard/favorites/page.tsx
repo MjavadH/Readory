@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
-import { FavoriteBooksResponse } from '@/lib/types';
-import { LucideBookHeart, AlertCircle, BookDashedIcon } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { AppPagination } from '@/components/app-pagination';
+import { AlertCircle, BookDashedIcon, LucideBookHeart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import { AppPagination } from '@/components/app-pagination';
 import { BookGrid, BookGridSkeleton } from '@/components/book-grid';
+import { apiClient } from '@/lib/api-client';
+import type { FavoriteBooksResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 24;
 

@@ -1,43 +1,35 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { usePermission } from '@/hooks/use-permission';
+import {
+  Banknote,
+  Bell,
+  BookOpen,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Crown,
+  Grid2x2,
+  Home,
+  ImageIcon,
+  LayoutDashboard,
+  Lock,
+  LogOut,
+  Menu,
+  Settings,
+  SquareLibrary,
+  Tag,
+  UserRoundPen,
+  Users,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  Home,
-  BookOpen,
-  Tag,
-  ImageIcon,
-  Users,
-  Banknote,
-  Lock,
-  Settings,
-  LogOut,
-  ChevronLeft,
-  Menu,
-  X,
-  Crown,
-  SquareLibrary,
-  LayoutDashboard,
-  UserRoundPen,
-  ClipboardList,
-  CalendarClock,
-  ChevronRight,
-  Grid2x2,
-  Bell,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { logout } from '@/lib/logout';
-import { apiClient } from '@/lib/api-client';
+import { useTranslations } from 'next-intl';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { BrandLogo } from '@/components/brand-logo';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,13 +40,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer';
-import { BrandLogo } from '@/components/brand-logo';
-import { ThemeSwitcher } from '@/components/theme-switcher';
-import { useTranslations } from 'next-intl';
-import { LanguageSwitcher } from '@/components/language-switcher';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
+import { usePermission } from '@/hooks/use-permission';
+import { apiClient } from '@/lib/api-client';
+import { logout } from '@/lib/logout';
 import { getAvatarUrl } from '@/lib/media';
+import { cn } from '@/lib/utils';
 
 const COLLAPSED_KEY = 'admin-sidebar-collapsed';
 const COLLAPSED_EVENT = 'readory:admin-sidebar-collapsed';

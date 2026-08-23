@@ -7,16 +7,16 @@
     "shared"
   ],
   "devDependencies": {
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "^3.9.6",
+    "@biomejs/biome": "2.5.10",
     "typescript": "^5.7.0"
   },
   "scripts": {
     "build": "npm -ws run build",
     "dev:shared": "npm --workspace @readory/shared run dev",
     "build:shared": "npm --workspace @readory/shared run build",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write ."
   },
   "dependencies": {
     "framer-motion": "^12.34.3"

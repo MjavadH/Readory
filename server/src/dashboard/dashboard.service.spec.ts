@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { DashboardService } from './dashboard.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth/auth.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from '../wallets/wallets.service';
+import { DashboardService } from './dashboard.service';
 
 describe('DashboardService', () => {
   let service: DashboardService;

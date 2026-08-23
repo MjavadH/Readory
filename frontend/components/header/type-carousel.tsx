@@ -1,11 +1,11 @@
 'use client';
 
+import type { IconKey } from '@readory/shared';
 import Link from 'next/link';
-import { useRef, useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { cn } from '@/lib/utils';
-import type { IconKey } from '@readory/shared';
-import { useTranslations } from 'next-intl';
 
 interface BookType {
   name: string;

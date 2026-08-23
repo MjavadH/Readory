@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api-client';
-import { BookBrowserApi, BookGenre, PublicBookType } from '@/lib/types';
+import type { BookBrowserApi, BookGenre, PublicBookType } from '@/lib/types';
 
 export async function getInitialBooksData(
   searchParams: Record<string, string | string[] | undefined>,

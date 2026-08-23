@@ -2,37 +2,37 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
   ParseIntPipe,
   Patch,
-  Query,
-  UseGuards,
-  Request,
   Post,
-  ForbiddenException,
+  Query,
+  Request,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
-import { ConfigService } from '@nestjs/config';
-import { UsersService } from './users.service';
-import { Roles } from '../auth/roles.decorator';
 import { RoleName } from '@prisma/client';
+import { AuditAction, AuditCategory } from '@readory/shared';
+import { Audit } from '../audit-log/decorators/audit-log.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { WalletsService } from '../wallets/wallets.service';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
+import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { Audit } from '../audit-log/decorators/audit-log.decorator';
-import { AuditAction, AuditCategory } from '@readory/shared';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { AvatarService } from './avatar.service';
-import { RateLimitService } from '../rate-limit/rate-limit.service';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { PrismaService } from '../prisma/prisma.service';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { RateLimitService } from '../rate-limit/rate-limit.service';
+import type { WalletsService } from '../wallets/wallets.service';
+import type { AvatarService } from './avatar.service';
+import type { UpdateUserDto } from './dto/update-user.dto';
+import type { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {

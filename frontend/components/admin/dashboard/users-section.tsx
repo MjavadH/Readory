@@ -6,10 +6,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from '@/components/ui/chart';
 
 export interface UsersData {
