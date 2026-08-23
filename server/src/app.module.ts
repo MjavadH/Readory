@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { ConfigModule } from '@nestjs/config';
 import { WalletsModule } from './wallets/wallets.module';
 import { BooksModule } from './books/books.module';
 import { ChaptersModule } from './chapters/chapters.module';
@@ -27,6 +28,7 @@ import { CollectionsModule } from './collections/collections.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SearchModule } from './search/search.module';
+import { BookMaintenanceModule } from './book-maintenance/book-maintenance.module';
 
 @Module({
   imports: [
@@ -37,6 +39,19 @@ import { SearchModule } from './search/search.module';
         limit: Number(process.env.THROTTLE_LIMIT || 120),
       },
     ]),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST') || '127.0.0.1',
+          port: configService.get<number>('REDIS_PORT') || 6379,
+          maxRetriesPerRequest: null,
+        },
+
+        prefix: 'readory',
+      }),
+    }),
     ScheduleModule.forRoot(),
     RedisModule,
     RateLimitModule,
@@ -62,6 +77,7 @@ import { SearchModule } from './search/search.module';
     CollectionsModule,
     NotificationsModule,
     SearchModule,
+    BookMaintenanceModule,
   ],
   controllers: [],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

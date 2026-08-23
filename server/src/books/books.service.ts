@@ -717,53 +717,64 @@ export class BooksService {
 
   // Get book
   async findById(id: number) {
-    const book = await this.prisma.book.findUnique({
-      where: { id, publishStatus: PublicationStatus.PUBLISHED },
-      select: {
-        id: true,
-        title: true,
-        originalTitle: true,
-        alternativeTitles: true,
-        contributors: {
-          select: {
-            role: true,
-            contributor: { select: { id: true, name: true, slug: true } },
-          },
-        },
-        description: true,
-        coverImage: true,
-        isFeatured: true,
-        status: true,
-        ageRating: true,
-        publicationYear: true,
-        chapterCount: true,
-        lastContentUpdate: true,
-        ratingAvg: true,
-        ratingCount: true,
-        updatedAt: true,
-        genres: {
-          select: {
-            genre: {
-              select: { id: true, name: true, slug: true, iconKey: true },
-            },
-          },
-        },
-        type: { select: { name: true, slug: true, iconKey: true } },
+    const cacheKey = this.cacheManager.buildKey('books:detail:public', id);
+
+    return this.cacheManager.getOrSet(
+      cacheKey,
+      {
+        ttlSeconds: 1800,
+        earlyRefreshWindowSeconds: 300,
       },
-    });
+      async () => {
+        const book = await this.prisma.book.findUnique({
+          where: { id, publishStatus: PublicationStatus.PUBLISHED },
+          select: {
+            id: true,
+            title: true,
+            originalTitle: true,
+            alternativeTitles: true,
+            contributors: {
+              select: {
+                role: true,
+                contributor: { select: { id: true, name: true, slug: true } },
+              },
+            },
+            description: true,
+            coverImage: true,
+            isFeatured: true,
+            status: true,
+            ageRating: true,
+            publicationYear: true,
+            chapterCount: true,
+            lastContentUpdate: true,
+            ratingAvg: true,
+            ratingCount: true,
+            updatedAt: true,
+            genres: {
+              select: {
+                genre: {
+                  select: { id: true, name: true, slug: true, iconKey: true },
+                },
+              },
+            },
+            type: { select: { name: true, slug: true, iconKey: true } },
+          },
+        });
 
-    if (!book) throw new NotFoundException('book not found');
+        if (!book) throw new NotFoundException('book not found');
 
-    return {
-      ...book,
-      genres: book.genres.map((g) => g.genre),
-      contributors: book.contributors.map((a) => ({
-        id: a.contributor.id,
-        name: a.contributor.name,
-        slug: a.contributor.slug,
-        role: a.role,
-      })),
-    };
+        return {
+          ...book,
+          genres: book.genres.map((g) => g.genre),
+          contributors: book.contributors.map((a) => ({
+            id: a.contributor.id,
+            name: a.contributor.name,
+            slug: a.contributor.slug,
+            role: a.role,
+          })),
+        };
+      },
+    );
   }
 
   // Get full book details

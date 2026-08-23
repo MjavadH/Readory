@@ -372,8 +372,13 @@
     },
     "Settings": {
       "Title": "Settings",
-      "Description": "Configure system preferences",
-      "SyncAllBooks": "Sync all books"
+      "Description": "System administration settings",
+      "SyncAllBooks": "Sync all books with Meilisearch",
+      "SyncAllBooksLoading": "Synchronizing books...",
+      "SyncAllBooksSuccess": "Book synchronization started.",
+      "SyncBookChapterCounts": "Repair book chapter counts",
+      "SyncBookChapterCountsLoading": "Repair job queued...",
+      "SyncBookChapterCountsSuccess": "Chapter count repair job started."
     }
   },
   "Auth": {

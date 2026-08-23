@@ -1,0 +1,10 @@
+export const BOOK_CHAPTER_COUNT_SYNC_QUEUE = 'book-chapter-count-maintenance';
+export const BOOK_CHAPTER_COUNT_SYNC_JOB = 'sync-published-chapter-counts';
+
+export const BOOK_CHAPTER_COUNT_SYNC_BATCH_SIZE = 500;
+
+export const BOOK_CHAPTER_COUNT_SYNC_ATTEMPTS = 3;
+export const BOOK_CHAPTER_COUNT_SYNC_BACKOFF_DELAY_MS = 30_000;
+
+export const BOOK_CHAPTER_COUNT_SYNC_COMPLETED_RETENTION_SECONDS = 3 * 24 * 60 * 60;
+export const BOOK_CHAPTER_COUNT_SYNC_FAILED_RETENTION_SECONDS = 7 * 24 * 60 * 60;
