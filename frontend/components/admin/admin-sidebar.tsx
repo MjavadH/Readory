@@ -229,7 +229,7 @@ export function AdminSidebar() {
 
   if (loading) return null;
 
-  const UserCard = ({ compact = false }: { compact?: boolean }) => {
+  const renderUserCard = (compact: boolean = false) => {
     if (!currentUser) return null;
     return (
       <DropdownMenu>
@@ -307,7 +307,7 @@ export function AdminSidebar() {
     );
   };
 
-  const NavList = ({ collapsed = false }: { collapsed?: boolean }) => (
+  const renderNavList = (collapsed: boolean = false) => (
     <nav className="flex-1 overflow-y-auto px-2 py-3 [-ms-overflow-style:none] scrollbar-none [&::-webkit-scrollbar]:hidden">
       {sidebarData.map((section) => {
         const visibleItems = section.items.filter((item) => item.show !== false);
@@ -365,7 +365,7 @@ export function AdminSidebar() {
     </nav>
   );
 
-  const SidebarBrand = ({ collapsed = false }: { collapsed?: boolean }) => (
+  const renderSidebarBrand = (collapsed: boolean = false) => (
     <div
       className={cn(
         'flex h-16 shrink-0 items-center border-b border-sidebar-border/60 px-4',
@@ -618,15 +618,15 @@ export function AdminSidebar() {
           collapsedReady ? (isCollapsed ? 'w-17' : 'w-64') : 'w-64',
         )}
       >
-        <SidebarBrand collapsed={isCollapsed} />
-        <NavList collapsed={isCollapsed} />
+        {renderSidebarBrand(isCollapsed)}
+        {renderNavList(isCollapsed)}
         <div
           className={cn(
             'shrink-0 border-t border-sidebar-border/60 p-3',
             isCollapsed && 'flex items-center justify-center',
           )}
         >
-          <UserCard compact={isCollapsed} />
+          {renderUserCard(isCollapsed)}
         </div>
       </aside>
 
