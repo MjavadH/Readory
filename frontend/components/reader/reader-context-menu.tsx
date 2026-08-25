@@ -150,7 +150,7 @@ export function ReaderContextMenu({
       cancelAnimationFrame(prepare);
       cancelAnimationFrame(openFrame);
     };
-  }, [x, y, compact, reduce, canResetZoom]);
+  }, [x, y, compact, reduce]);
 
   /* keyboard */
   const items = useCallback(
@@ -258,7 +258,7 @@ export function ReaderContextMenu({
         </AnimatePresence>
       </div>
 
-      <div className="my-1.5 h-px bg-border/70" role="separator" />
+      <hr className="my-1.5 h-px border-0 bg-border/70" />
 
       {/* Contrast / filter matrix */}
       <div className="px-1 pb-0.5">
@@ -285,10 +285,12 @@ export function ReaderContextMenu({
   if (compact) {
     return (
       <>
-        <motion.div
+        <motion.button
+          type="button"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2, ease: EASE_OUT }}
+          aria-label={t('Close')}
           className="fixed inset-0 z-100 bg-foreground/25 backdrop-blur-[2px]"
           onClick={onClose}
           onContextMenu={(e) => {
@@ -325,7 +327,9 @@ export function ReaderContextMenu({
   /* pointer: floating morph card */
   return (
     <>
-      <div
+      <button
+        type="button"
+        aria-label={t('Close')}
         className="fixed inset-0 z-100"
         onClick={onClose}
         onContextMenu={(e) => {

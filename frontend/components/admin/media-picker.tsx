@@ -3,7 +3,6 @@
 import { Check, Loader2, Search, X } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { AppPagination } from '@/components/app-pagination';
 import { Button } from '@/components/ui/button';
@@ -45,6 +44,12 @@ type MediaPickerProps = {
   itemsPerPage?: number;
   allowClear?: boolean;
 };
+
+const MEDIA_PICKER_SKELETON_COUNT = 10;
+const MEDIA_PICKER_SKELETON_KEYS = Array.from(
+  { length: MEDIA_PICKER_SKELETON_COUNT },
+  (_, i) => `media-picker-skeleton-${i}`,
+);
 
 export function MediaPicker({
   open,
@@ -176,8 +181,8 @@ export function MediaPicker({
           {/* First load skeleton */}
           {isLoading && !hasLoadedOnce ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-xl border bg-card">
+              {MEDIA_PICKER_SKELETON_KEYS.map((key) => (
+                <div key={key} className="overflow-hidden rounded-xl border bg-card">
                   <div className="aspect-square bg-muted animate-pulse" />
                   <div className="p-2.5 space-y-2">
                     <div className="h-3 bg-muted animate-pulse rounded" />

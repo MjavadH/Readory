@@ -1,7 +1,6 @@
 import { CONTRIBUTOR_ROLE_VALUES, ContributorRole } from '@shared/contributor-metadata';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Trash2, Users } from 'lucide-react';
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -59,7 +58,9 @@ export function ContributorsField({
 
           return (
             <motion.div
-              key={`contributor-row-${index}`}
+              key={
+                row.contributorId > 0 ? `contributor-${row.contributorId}` : 'new-contributor-row'
+              }
               initial={{ opacity: 0, y: -6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.98 }}

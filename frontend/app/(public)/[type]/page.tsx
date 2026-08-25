@@ -2,7 +2,7 @@
 
 import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BookBrowseLayout } from '@/components/book-browse-layout';
 import { useBookBrowser } from '@/hooks/use-book-browser';
 import { apiClient } from '@/lib/api-client';

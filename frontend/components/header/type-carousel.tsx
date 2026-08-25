@@ -3,7 +3,7 @@
 import type { IconKey } from '@readory/shared';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { cn } from '@/lib/utils';
 
@@ -22,17 +22,22 @@ interface TypeCarouselProps {
 
 export function TypeCarousel({ types, isLoading, activePath, onItemClick }: TypeCarouselProps) {
   const t = useTranslations('UserHeader');
+  const SKELETON_COUNT = 4;
+  const SKELETON_KEYS = Array.from(
+    { length: SKELETON_COUNT },
+    (_, i) => `type-carousel-skeleton-${i}`,
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkScroll();
@@ -44,14 +49,14 @@ export function TypeCarousel({ types, isLoading, activePath, onItemClick }: Type
       container?.removeEventListener('scroll', checkScroll);
       window.removeEventListener('resize', checkScroll);
     };
-  }, []);
+  }, [checkScroll]);
 
   if (isLoading) {
     return (
       <div className="flex gap-2 overflow-hidden px-1">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {SKELETON_KEYS.map((key) => (
           <div
-            key={i}
+            key={key}
             className="flex h-12 w-24 shrink-0 items-center justify-center rounded-lg bg-muted animate-pulse"
           />
         ))}

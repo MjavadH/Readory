@@ -31,6 +31,12 @@ export type DeviceSession = {
   isCurrentDevice: boolean;
 };
 
+const SKELETON_COUNT = 3;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `connected-device-skeleton-${i}`,
+);
+
 function DeviceIcon({ os }: { os: string | null }) {
   const className = 'w-5 h-5 md:w-6 md:h-6 text-primary';
   if (os === 'Android' || os === 'iOS') return <Smartphone className={className} />;
@@ -158,8 +164,8 @@ export default function ConnectedDevices() {
       {/* Loading */}
       {loading && (
         <div className="space-y-4 animate-pulse">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="h-24 md:h-20 rounded-2xl bg-muted" />
+          {SKELETON_KEYS.map((key) => (
+            <div key={key} className="h-24 md:h-20 rounded-2xl bg-muted" />
           ))}
         </div>
       )}

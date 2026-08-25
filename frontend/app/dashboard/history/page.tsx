@@ -19,6 +19,8 @@ import { apiClient } from '@/lib/api-client';
 import type { HistoryResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 30;
+const SKELETON_COUNT = 3;
+const SKELETON_KEYS = Array.from({ length: SKELETON_COUNT }, (_, i) => `stats-card-${i}`);
 
 export default function HistoryPage() {
   const t = useTranslations('UserDashboard');
@@ -56,7 +58,7 @@ export default function HistoryPage() {
       if (!csvData) return;
 
       // Create client-side file download link
-      const blob = new Blob(['\ufeff' + csvData], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([`\ufeff${csvData}`], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -95,9 +97,9 @@ export default function HistoryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {Array.from({ length: 3 }).map((_, i) => (
+          {SKELETON_KEYS.map((key) => (
             <div
-              key={i}
+              key={key}
               className="bg-card border border-border rounded-[2.5rem] p-8 shadow-xl shadow-black/5 space-y-6"
             >
               <div className="flex items-center gap-3">
@@ -132,6 +134,7 @@ export default function HistoryPage() {
           <p className="text-muted-foreground">{error}</p>
         </div>
         <button
+          type="button"
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
         >
@@ -155,12 +158,13 @@ export default function HistoryPage() {
         </div>
 
         <button
+          type="button"
           onClick={handleExport}
           disabled={isExporting}
           className="flex items-center gap-2 px-6 py-3 bg-primary/5 hover:bg-primary/10 text-primary font-bold rounded-2xl transition-all border border-primary/10 group"
         >
           <Download className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
-          {isExporting ? t('ExportData') + '...' : t('ExportData')}
+          {isExporting ? `${t('ExportData')}...` : t('ExportData')}
         </button>
       </section>
 

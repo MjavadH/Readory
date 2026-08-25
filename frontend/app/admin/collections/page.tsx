@@ -49,6 +49,24 @@ import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/toast-provider';
 
+const COLLECTION_STATS_SKELETON_COUNT = 4;
+const COLLECTION_STATS_SKELETON_KEYS = Array.from(
+  { length: COLLECTION_STATS_SKELETON_COUNT },
+  (_, i) => `collection-stats-skeleton-${i}`,
+);
+
+const COLLECTION_GRID_SKELETON_COUNT = 6;
+const COLLECTION_GRID_SKELETON_KEYS = Array.from(
+  { length: COLLECTION_GRID_SKELETON_COUNT },
+  (_, i) => `collection-grid-skeleton-${i}`,
+);
+
+const COLLECTION_LOAD_MORE_SKELETON_COUNT = 3;
+const COLLECTION_LOAD_MORE_SKELETON_KEYS = Array.from(
+  { length: COLLECTION_LOAD_MORE_SKELETON_COUNT },
+  (_, i) => `collection-load-more-skeleton-${i}`,
+);
+
 export default function AdminCollectionsPage() {
   const t = useTranslations('Collections');
   const toast = useToast();
@@ -275,8 +293,8 @@ export default function AdminCollectionsPage() {
       {/* stats */}
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full rounded-xl" />
+          COLLECTION_STATS_SKELETON_KEYS.map((key) => (
+            <Skeleton key={key} className="h-28 w-full rounded-xl" />
           ))
         ) : (
           <>
@@ -329,8 +347,8 @@ export default function AdminCollectionsPage() {
       {/* list */}
       {isLoading ? (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+          {COLLECTION_GRID_SKELETON_KEYS.map((key) => (
+            <Skeleton key={key} className="h-40 w-full rounded-2xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -472,8 +490,8 @@ export default function AdminCollectionsPage() {
           {hasMore && !search.trim() && (
             <div ref={loadMoreRef} className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {isLoadingMore &&
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+                COLLECTION_LOAD_MORE_SKELETON_KEYS.map((key) => (
+                  <Skeleton key={key} className="h-40 w-full rounded-2xl" />
                 ))}
             </div>
           )}
@@ -557,7 +575,7 @@ function MiniCovers({ collection }: { collection: Collection }) {
     <div className="flex h-18 shrink-0 items-center -space-x-2 rtl:space-x-reverse">
       {covers.map((cover, index) => (
         <div
-          key={`${cover}-${index}`}
+          key={cover}
           className="h-18 w-12 overflow-hidden rounded-lg bg-muted ring-2 ring-card"
           style={{ zIndex: covers.length - index }}
         >

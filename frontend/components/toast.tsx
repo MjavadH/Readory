@@ -51,6 +51,7 @@ export function Toast({ title, message, type, onClose, duration = 3000 }: ToastP
         </div>
 
         <button
+          type="button"
           onClick={onClose}
           className="shrink-0 rounded-lg p-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5"
           aria-label="Close toast"

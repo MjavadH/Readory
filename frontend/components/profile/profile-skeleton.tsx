@@ -1,6 +1,21 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const SECTION_IDS = ['ratings', 'reading'] as const;
+
+const FAVORITE_SKELETON_COUNT = 6;
+const FAVORITE_SKELETON_KEYS = Array.from(
+  { length: FAVORITE_SKELETON_COUNT },
+  (_, i) => `favorite-skeleton-${i}`,
+);
+
+const SECTION_ITEM_SKELETON_COUNT = 3;
+const SECTION_ITEM_SKELETON_KEYS = Array.from(
+  { length: SECTION_ITEM_SKELETON_COUNT },
+  (_, i) => `section-item-skeleton-${i}`,
+);
 
 export function ProfileSkeleton() {
   return (
@@ -39,8 +54,8 @@ export function ProfileSkeleton() {
       {/* Favorites */}
       <SectionSkeleton>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="space-y-2.5">
+          {FAVORITE_SKELETON_KEYS.map((key) => (
+            <div key={key} className="space-y-2.5">
               <Skeleton className="aspect-2/3 w-full rounded-lg" />
               <Skeleton className="h-4 w-4/5" />
               <Skeleton className="h-3 w-3/5" />
@@ -50,11 +65,11 @@ export function ProfileSkeleton() {
       </SectionSkeleton>
 
       {/* Ratings + reading rows */}
-      {[0, 1].map((row) => (
-        <SectionSkeleton key={row}>
+      {SECTION_IDS.map((sectionId) => (
+        <SectionSkeleton key={sectionId}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-28 rounded-2xl" />
+            {SECTION_ITEM_SKELETON_KEYS.map((key) => (
+              <Skeleton key={key} className="h-28 rounded-2xl" />
             ))}
           </div>
         </SectionSkeleton>
@@ -63,7 +78,7 @@ export function ProfileSkeleton() {
   );
 }
 
-function SectionSkeleton({ children }: { children: React.ReactNode }) {
+function SectionSkeleton({ children }: { children: ReactNode }) {
   return (
     <section className="space-y-4 sm:space-y-5">
       <div className="flex items-center gap-2">

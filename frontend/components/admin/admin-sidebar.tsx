@@ -26,7 +26,7 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { BrandLogo } from '@/components/brand-logo';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -137,7 +137,7 @@ export function AdminSidebar() {
     const fetchCurrentUser = async () => {
       try {
         const data = await apiClient.get<CurrentUser>('/auth/profile');
-        if (data && data.userId) setCurrentUser(data);
+        if (data?.userId) setCurrentUser(data);
       } catch (err) {
         console.error('Error fetching current user', err);
       }

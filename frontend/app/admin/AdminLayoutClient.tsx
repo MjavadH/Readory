@@ -21,7 +21,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || user.roleName !== 'ADMIN') {
+  if (user?.roleName !== 'ADMIN') {
     return (
       <>
         <UserHeader />

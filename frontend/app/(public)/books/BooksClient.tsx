@@ -1,7 +1,6 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import React from 'react';
 import { BookBrowseLayout } from '@/components/book-browse-layout';
 import { useBookBrowser } from '@/hooks/use-book-browser';
 import { apiClient } from '@/lib/api-client';

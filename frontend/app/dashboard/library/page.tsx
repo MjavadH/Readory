@@ -71,6 +71,7 @@ export default function LibraryPage() {
           <p className="text-muted-foreground">{error}</p>
         </div>
         <button
+          type="button"
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
         >

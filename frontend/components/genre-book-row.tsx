@@ -4,7 +4,7 @@ import type { IconKey } from '@readory/shared';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { BookCard } from '@/components/book-card';
 import type { BookCardData, BookType } from '@/lib/types';
@@ -36,12 +36,12 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const t = useTranslations('Genres');
 
-  function checkScroll() {
+  const checkScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
     setCanScrollLeft(el.scrollLeft > 2);
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-  }
+  }, []);
 
   useEffect(() => {
     checkScroll();
@@ -53,7 +53,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
       el.removeEventListener('scroll', checkScroll);
       window.removeEventListener('resize', checkScroll);
     };
-  }, []);
+  }, [checkScroll]);
 
   function scroll(direction: 'left' | 'right') {
     const el = scrollRef.current;

@@ -77,11 +77,25 @@ interface BookBrowseLayoutProps {
   children?: React.ReactNode;
 }
 
+const FILTER_PILL_SKELETON_MAX = 8;
+const FILTER_PILL_SKELETON_KEYS = Array.from(
+  { length: FILTER_PILL_SKELETON_MAX },
+  (_, i) => `filter-pill-skeleton-${i}`,
+);
+
+const TYPE_FILTER_SKELETON_KEYS = FILTER_PILL_SKELETON_KEYS.slice(0, 4).map(
+  (_, i) => `type-filter-skeleton-${i}`,
+);
+
+const GENRE_FILTER_SKELETON_KEYS = FILTER_PILL_SKELETON_KEYS.map(
+  (_, i) => `genre-filter-skeleton-${i}`,
+);
+
 function FilterPillSkeleton({ count }: { count: number }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="h-8 w-20 animate-pulse rounded-full bg-muted" />
+      {FILTER_PILL_SKELETON_KEYS.slice(0, count).map((key) => (
+        <div key={key} className="h-8 w-20 animate-pulse rounded-full bg-muted" />
       ))}
     </div>
   );
@@ -104,8 +118,7 @@ function FilterChip({
     <button
       type="button"
       id={id}
-      role="checkbox"
-      aria-checked={checked}
+      aria-pressed={checked}
       onClick={onToggle}
       className={cn(
         'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-sm font-medium transition-all duration-150',
@@ -640,8 +653,8 @@ export function BookBrowseLayout({
                     >
                       {isLoadingTypes ? (
                         <div className="space-y-1.5 px-1">
-                          {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="h-8 animate-pulse rounded-lg bg-muted" />
+                          {TYPE_FILTER_SKELETON_KEYS.map((key) => (
+                            <div key={key} className="h-8 animate-pulse rounded-lg bg-muted" />
                           ))}
                         </div>
                       ) : (
@@ -684,8 +697,8 @@ export function BookBrowseLayout({
                     >
                       {isLoadingGenres ? (
                         <div className="space-y-1.5 px-1">
-                          {Array.from({ length: 8 }).map((_, i) => (
-                            <div key={i} className="h-8 animate-pulse rounded-lg bg-muted" />
+                          {GENRE_FILTER_SKELETON_KEYS.map((key) => (
+                            <div key={key} className="h-8 animate-pulse rounded-lg bg-muted" />
                           ))}
                         </div>
                       ) : (

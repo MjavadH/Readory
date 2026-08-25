@@ -129,8 +129,9 @@ export function BookCard({
         {book.isFeatured && (
           <div className="absolute right-2 top-2 z-10">
             <div
-              className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 shadow-sm"
+              role="img"
               aria-label="Featured book"
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 shadow-sm"
             >
               <Star className="h-3 w-3 fill-background text-background" />
             </div>
@@ -199,8 +200,9 @@ export function BookCard({
           {/* Rating */}
           {book.ratingAvg !== undefined && book.ratingAvg > 0 && (
             <div
-              className="flex items-center gap-1"
+              role="img"
               aria-label={`Rating: ${book.ratingAvg} out of 5`}
+              className="flex items-center gap-1"
             >
               <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
               <span className="text-xs font-medium text-foreground">{book.ratingAvg}</span>

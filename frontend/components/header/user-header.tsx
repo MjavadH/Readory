@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { BrandLogo } from '@/components/brand-logo';
 import { GenreCarousel } from '@/components/header/genre-carousel';
@@ -40,6 +40,17 @@ import { cn } from '@/lib/utils';
 
 type BookType = { name: string; slug: string; iconKey: IconKey };
 
+const BOOK_TYPE_SKELETON_COUNT = 8;
+const BOOK_TYPE_SKELETON_KEYS = Array.from(
+  { length: BOOK_TYPE_SKELETON_COUNT },
+  (_, i) => `book-type-skeleton-${i}`,
+);
+const GENRE_SKELETON_COUNT = 8;
+const GENRE_SKELETON_KEYS = Array.from(
+  { length: GENRE_SKELETON_COUNT },
+  (_, i) => `genre-skeleton-${i}`,
+);
+
 function initialsFromUsername(username: string) {
   const safe = (username || '').trim();
   if (!safe) return 'U';
@@ -60,25 +71,8 @@ function NavDropdown({
   children: React.ReactNode;
   isActive?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const enter = () => {
-    if (timer.current) clearTimeout(timer.current);
-    setOpen(true);
-  };
-  const leave = () => {
-    timer.current = setTimeout(() => setOpen(false), 140);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, []);
-
   return (
-    <div className="relative" onMouseEnter={enter} onMouseLeave={leave}>
+    <div className="group relative">
       <Link
         href={href}
         className={cn(
@@ -91,7 +85,7 @@ function NavDropdown({
         <ChevronDown
           className={cn(
             'h-3.5 w-3.5 opacity-60 transition-transform duration-200',
-            open && 'rotate-180',
+            'group-hover:rotate-180 group-focus-within:rotate-180',
           )}
         />
         {isActive && (
@@ -103,19 +97,9 @@ function NavDropdown({
         )}
       </Link>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.16, ease: 'easeOut' }}
-            className="absolute top-full z-50 pt-3 ltr:left-0 rtl:right-0"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="pointer-events-none absolute top-full z-50 pt-3 opacity-0 transition-[opacity,transform] duration-150 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 ltr:left-0 rtl:right-0">
+        {children}
+      </div>
     </div>
   );
 }
@@ -352,8 +336,8 @@ export function UserHeader() {
                 </p>
                 {bookTypeLoading ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="h-11 animate-pulse rounded-xl bg-muted" />
+                    {BOOK_TYPE_SKELETON_KEYS.map((key) => (
+                      <div key={key} className="h-11 animate-pulse rounded-xl bg-muted" />
                     ))}
                   </div>
                 ) : bookType.length === 0 ? (
@@ -396,8 +380,8 @@ export function UserHeader() {
                 </div>
                 {genresLoading ? (
                   <div className="grid grid-cols-2 gap-2">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="h-11 animate-pulse rounded-xl bg-muted" />
+                    {GENRE_SKELETON_KEYS.map((key) => (
+                      <div key={key} className="h-11 animate-pulse rounded-xl bg-muted" />
                     ))}
                   </div>
                 ) : topGenres.length === 0 ? (

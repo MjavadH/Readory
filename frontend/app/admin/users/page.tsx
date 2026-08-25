@@ -18,7 +18,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { StatCard } from '@/components/admin/stat-card';
 import { AppPagination } from '@/components/app-pagination';
@@ -189,7 +189,7 @@ export default function AdminUsers() {
     if (!selectedUser || !adjustAmount) return;
 
     const amount = Number.parseFloat(adjustAmount);
-    if (isNaN(amount) || amount <= 0) {
+    if (Number.isNaN(amount) || amount <= 0) {
       toast.error(t('EnterValidNumber'), t('InvalidInput'));
       return;
     }

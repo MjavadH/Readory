@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bell, Inbox, Loader2, Megaphone, Send, Users, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { DateTimePicker } from '@/components/admin/date-time-picker';
 import { Badge } from '@/components/ui/badge';

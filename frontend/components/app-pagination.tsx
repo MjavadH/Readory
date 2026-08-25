@@ -27,17 +27,20 @@ type AdminPaginationProps = {
 
 const PAGE_WINDOW = 1;
 
-function getPaginationItems(currentPage: number, totalPages: number): Array<number | 'ellipsis'> {
+function getPaginationItems(
+  currentPage: number,
+  totalPages: number,
+): Array<number | 'ellipsis-prev' | 'ellipsis-next'> {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
   }
 
-  const items: Array<number | 'ellipsis'> = [1];
+  const items: Array<number | 'ellipsis-prev' | 'ellipsis-next'> = [1];
   const start = Math.max(2, currentPage - PAGE_WINDOW);
   const end = Math.min(totalPages - 1, currentPage + PAGE_WINDOW);
 
   if (start > 2) {
-    items.push('ellipsis');
+    items.push('ellipsis-prev');
   }
 
   for (let page = start; page <= end; page += 1) {
@@ -45,7 +48,7 @@ function getPaginationItems(currentPage: number, totalPages: number): Array<numb
   }
 
   if (end < totalPages - 1) {
-    items.push('ellipsis');
+    items.push('ellipsis-next');
   }
 
   items.push(totalPages);
@@ -123,9 +126,9 @@ export function AppPagination({
             />
           </PaginationItem>
 
-          {pageItems.map((page, index) => (
-            <PaginationItem key={`${page}-${index}`}>
-              {page === 'ellipsis' ? (
+          {pageItems.map((page) => (
+            <PaginationItem key={typeof page === 'number' ? `page-${page}` : page}>
+              {page === 'ellipsis-prev' || page === 'ellipsis-next' ? (
                 <PaginationEllipsis />
               ) : (
                 <PaginationLink

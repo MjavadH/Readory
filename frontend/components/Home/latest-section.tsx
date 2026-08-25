@@ -54,6 +54,10 @@ function LatestItemSkeleton() {
 }
 
 export function LatestSectionSkeleton({ count = 6 }: { count?: number }) {
+  const SKELETON_KEYS = Array.from(
+    { length: count },
+    (_, i) => `dashboard-collection-skeleton-${i}`,
+  );
   return (
     <section aria-label="Loading latest updates" aria-busy="true" className="relative">
       <div className="mb-8 flex items-end justify-between">
@@ -66,8 +70,8 @@ export function LatestSectionSkeleton({ count = 6 }: { count?: number }) {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: count }).map((_, index) => (
-          <LatestItemSkeleton key={index} />
+        {SKELETON_KEYS.map((key) => (
+          <LatestItemSkeleton key={key} />
         ))}
       </div>
     </section>

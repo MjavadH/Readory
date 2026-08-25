@@ -2,7 +2,6 @@ import type { ContributorGender } from '@shared/contributor-metadata';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -121,10 +120,11 @@ export function ContributorsGrid({ contributors, onEdit, onDelete }: Props) {
 }
 
 export function ContributorsGridSkeleton({ count = 8 }: { count?: number }) {
+  const SKELETON_KEYS = Array.from({ length: count }, (_, i) => `contributor-grid-skeleton-${i}`);
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: count }).map((_, i) => (
-        <Card key={i} className="h-full">
+      {SKELETON_KEYS.map((key) => (
+        <Card key={key} className="h-full">
           <CardContent className="flex flex-col gap-3 p-4">
             <div className="flex items-start gap-3">
               <Skeleton className="h-10 w-10 rounded-full" />

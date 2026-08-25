@@ -1,5 +1,5 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
@@ -134,10 +134,7 @@
     @apply leading-relaxed;
   }
   :lang(fa) {
-    font-feature-settings: 'ss01';
-  }
-  .must-ltr * {
-    direction: ltr !important;
+    font-feature-settings: "ss01";
   }
   * {
     @apply border-border outline-ring/50;

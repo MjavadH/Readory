@@ -71,7 +71,7 @@ export default function Home() {
       : null,
     PersonalizedFetcher,
     {
-      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+      onErrorRetry: (error, _key, _config, revalidate, { retryCount }) => {
         if (error?.status === 401) return;
 
         if (retryCount >= 3) return;
@@ -127,7 +127,7 @@ export default function Home() {
         )}
 
         {/* ContinueReading Section */}
-        {personalizedData && personalizedData?.continueReading && (
+        {personalizedData?.continueReading && (
           <section className="space-y-6">
             <div className="flex items-center justify-between px-2">
               <h2 className="text-2xl font-bold tracking-tight flex items-center gap-3">

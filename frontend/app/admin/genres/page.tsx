@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { IconPicker } from '@/components/admin/icon-picker';
@@ -211,12 +211,15 @@ export default function AdminGenres() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const normalizeGenres = (data: Genre[]): Genre[] =>
-    data.map((genre) => ({
-      ...genre,
-      isFeatured: Boolean(genre.isFeatured),
-      featuredOrder: Number(genre.featuredOrder) || 0,
-    }));
+  const normalizeGenres = useCallback(
+    (data: Genre[]): Genre[] =>
+      data.map((genre) => ({
+        ...genre,
+        isFeatured: Boolean(genre.isFeatured),
+        featuredOrder: Number(genre.featuredOrder) || 0,
+      })),
+    [],
+  );
 
   const load = async () => {
     const data = await apiClient.get<Genre[]>('/genres').catch(() => []);
@@ -244,7 +247,7 @@ export default function AdminGenres() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [normalizeGenres]);
 
   const create = async () => {
     const v = name.trim();
@@ -655,8 +658,11 @@ export default function AdminGenres() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('Name')}</label>
+                <label htmlFor="genre-name" className="text-sm font-medium">
+                  {t('Name')}
+                </label>
                 <Input
+                  id="genre-name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder={t('EnterGenreName')}
@@ -664,8 +670,11 @@ export default function AdminGenres() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('Slug')}</label>
+                <label htmlFor="genre-slug" className="text-sm font-medium">
+                  {t('Slug')}
+                </label>
                 <Input
+                  id="genre-slug"
                   value={editSlug}
                   onChange={(e) => setEditSlug(e.target.value)}
                   placeholder={t('kebabCaseSlug')}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { type CurrentUser, type Permission, useCurrentUser } from '@/hooks/use-current-user';
 
 interface AuthContextType {
@@ -29,7 +29,7 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const currentUser = useCurrentUser();
-  const value = React.useMemo<AuthContextType>(
+  const value = useMemo<AuthContextType>(
     () => ({
       user: currentUser.user,
       loading: currentUser.isLoading,

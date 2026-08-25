@@ -6,6 +6,36 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
+const CHART_BAR_SKELETON_COUNT = 8;
+const CHART_BAR_SKELETON_KEYS = Array.from(
+  { length: CHART_BAR_SKELETON_COUNT },
+  (_, i) => `dashboard-chart-bar-skeleton-${i}`,
+);
+
+const TRENDING_SKELETON_COUNT = 5;
+const TRENDING_SKELETON_KEYS = Array.from(
+  { length: TRENDING_SKELETON_COUNT },
+  (_, i) => `dashboard-trending-skeleton-${i}`,
+);
+
+const FINANCE_RISK_SKELETON_COUNT = 4;
+const FINANCE_RISK_SKELETON_KEYS = Array.from(
+  { length: FINANCE_RISK_SKELETON_COUNT },
+  (_, i) => `dashboard-finance-risk-skeleton-${i}`,
+);
+
+const USERS_SKELETON_COUNT = 4;
+const USERS_SKELETON_KEYS = Array.from(
+  { length: USERS_SKELETON_COUNT },
+  (_, i) => `dashboard-users-skeleton-${i}`,
+);
+
+const DASHBOARD_STAT_SKELETON_COUNT = 4;
+const DASHBOARD_STAT_SKELETON_KEYS = Array.from(
+  { length: DASHBOARD_STAT_SKELETON_COUNT },
+  (_, i) => `dashboard-stat-skeleton-${i}`,
+);
+
 const shimmer = {
   initial: { opacity: 0.6 },
   animate: { opacity: 1 },
@@ -74,9 +104,9 @@ export function ChartCardSkeleton({
         <div className={cn('relative w-full overflow-hidden rounded-lg bg-muted/40', height)}>
           {/* mock axis */}
           <div className="absolute inset-x-4 bottom-4 top-4 flex items-end justify-between gap-2">
-            {Array.from({ length: 8 }).map((_, i) => (
+            {CHART_BAR_SKELETON_KEYS.map((key, i) => (
               <motion.div
-                key={i}
+                key={key}
                 initial={{ height: '20%', opacity: 0.5 }}
                 animate={{
                   height: `${30 + ((i * 17) % 60)}%`,
@@ -107,6 +137,10 @@ export function ListCardSkeleton({
   className?: string;
   withThumb?: boolean;
 }) {
+  const listSkeletonKeys = Array.from(
+    { length: rows },
+    (_, i) => `dashboard-list-row-skeleton-${i}`,
+  );
   return (
     <Card className={cn('overflow-hidden', className)}>
       <CardHeader className="space-y-2">
@@ -114,8 +148,8 @@ export function ListCardSkeleton({
         <Skeleton className="h-3 w-48 sm:w-56 max-w-full" />
       </CardHeader>
       <CardContent className="space-y-3 sm:space-y-4">
-        {Array.from({ length: rows }).map((_, i) => (
-          <motion.div key={i} {...rise(i)} className="flex items-center gap-3">
+        {listSkeletonKeys.map((key, i) => (
+          <motion.div key={key} {...rise(i)} className="flex items-center gap-3">
             <Skeleton className="h-5 w-5 shrink-0 rounded-full" />
             {withThumb && <Skeleton className="h-10 w-8 sm:h-12 sm:w-9 shrink-0 rounded" />}
             <div className="flex-1 space-y-2 min-w-0">
@@ -140,8 +174,8 @@ export function TrendingCardSkeleton() {
       <CardContent>
         <div className="-mx-1 overflow-x-auto pb-2">
           <div className="flex gap-3 px-1 sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <motion.div key={i} {...rise(i)} className="w-35 shrink-0 space-y-2 sm:w-auto">
+            {TRENDING_SKELETON_KEYS.map((key, i) => (
+              <motion.div key={key} {...rise(i)} className="w-35 shrink-0 space-y-2 sm:w-auto">
                 <Skeleton className="aspect-2/3 w-full rounded-lg" />
                 <Skeleton className="h-3 w-3/4" />
                 <Skeleton className="h-2.5 w-1/2" />
@@ -162,8 +196,8 @@ export function FinanceSectionSkeleton() {
         <Skeleton className="h-5 w-32" />
       </div>
       <div className="grid gap-3 grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <RiskCardSkeleton key={i} index={i} />
+        {FINANCE_RISK_SKELETON_KEYS.map((key, i) => (
+          <RiskCardSkeleton key={key} index={i} />
         ))}
       </div>
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
@@ -201,8 +235,8 @@ export function UsersSectionSkeleton() {
             <Skeleton className="h-3 w-48 max-w-full" />
           </CardHeader>
           <CardContent className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <motion.div key={i} {...rise(i)} className="space-y-2">
+            {USERS_SKELETON_KEYS.map((key, i) => (
+              <motion.div key={key} {...rise(i)} className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
                   <Skeleton className="h-3 w-20 sm:w-24" />
                   <Skeleton className="h-3 w-10" />
@@ -222,8 +256,8 @@ export function DashboardSkeleton() {
     <div className="space-y-6 sm:space-y-8">
       {/* KPI row */}
       <div className="grid gap-3 sm:gap-4 grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <StatCardSkeleton key={i} index={i} />
+        {DASHBOARD_STAT_SKELETON_KEYS.map((key, i) => (
+          <StatCardSkeleton key={key} index={i} />
         ))}
       </div>
 

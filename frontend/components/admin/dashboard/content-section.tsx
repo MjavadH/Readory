@@ -141,16 +141,16 @@ export function ContentSection({ data }: { data: ContentData }) {
               )}
               {topAccessed.map((row, i) => (
                 <div
-                  key={row.book!.id}
+                  key={row.book?.id}
                   className="flex items-center gap-3 rounded-lg border border-transparent p-2 transition-colors hover:border-border hover:bg-muted/40"
                 >
                   <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
                     {i + 1}
                   </div>
-                  {row.book!.coverImage ? (
+                  {row.book?.coverImage ? (
                     <Image
-                      src={getBookCoverThumbnailUrl(row.book!.coverImage)}
-                      alt={row.book!.title}
+                      src={getBookCoverThumbnailUrl(row.book?.coverImage)}
+                      alt={row.book?.title}
                       width={36}
                       height={48}
                       className="h-12 w-9 shrink-0 rounded object-cover"
@@ -161,7 +161,7 @@ export function ContentSection({ data }: { data: ContentData }) {
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{row.book!.title}</p>
+                    <p className="truncate text-sm font-medium">{row.book?.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {t('Accesses', { count: formatter.format(row.accessCount) })}
                     </p>
@@ -294,8 +294,15 @@ export function ContentSection({ data }: { data: ContentData }) {
                       outerRadius={95}
                       paddingAngle={2}
                     >
-                      {typeData.map((_, i) => (
-                        <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                      {typeData.map((type) => (
+                        <Cell
+                          key={type.name}
+                          fill={
+                            PALETTE[
+                              typeData.findIndex((item) => item.name === type.name) % PALETTE.length
+                            ]
+                          }
+                        />
                       ))}
                     </Pie>
                   </PieChart>

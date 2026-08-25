@@ -33,6 +33,12 @@ export function FeaturedCollectionsSection({ collections }: FeaturedCollectionsS
   );
 }
 
+const SKELETON_COUNT = 4;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `featured-collection-skeleton-${i}`,
+);
+
 export function FeaturedCollectionsSkeleton() {
   return (
     <section className="space-y-6">
@@ -41,8 +47,8 @@ export function FeaturedCollectionsSkeleton() {
         <Skeleton className="h-8 w-48" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-64 rounded-3xl" />
+        {SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-64 rounded-3xl" />
         ))}
       </div>
     </section>

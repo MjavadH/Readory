@@ -42,6 +42,18 @@ const defaultVisibilitySettings: ProfileVisibilitySettings = {
   showRecentlyReading: false,
 };
 
+const PROFILE_FORM_SKELETON_COUNT = 2;
+const PROFILE_FORM_SKELETON_KEYS = Array.from(
+  { length: PROFILE_FORM_SKELETON_COUNT },
+  (_, i) => `profile-form-skeleton-${i}`,
+);
+
+const PASSWORD_FORM_SKELETON_COUNT = 2;
+const PASSWORD_FORM_SKELETON_KEYS = Array.from(
+  { length: PASSWORD_FORM_SKELETON_COUNT },
+  (_, i) => `password-form-skeleton-${i}`,
+);
+
 export default function SettingsPage() {
   const t = useTranslations('UserDashboard');
   const toast = useToast();
@@ -240,8 +252,8 @@ export default function SettingsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="space-y-3">
+                {PROFILE_FORM_SKELETON_KEYS.map((key) => (
+                  <div key={key} className="space-y-3">
                     <div className="h-4 w-32 bg-muted rounded-lg" />
                     <div className="h-16 w-full bg-muted rounded-2xl" />
                     <div className="h-3 w-40 bg-muted rounded-lg" />
@@ -271,8 +283,8 @@ export default function SettingsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {Array.from({ length: 2 }).map((_, i) => (
-                  <div key={i} className="space-y-3">
+                {PASSWORD_FORM_SKELETON_KEYS.map((key) => (
+                  <div key={key} className="space-y-3">
                     <div className="h-4 w-40 bg-muted rounded-lg" />
                     <div className="h-16 w-full bg-muted rounded-2xl" />
                   </div>
@@ -300,6 +312,7 @@ export default function SettingsPage() {
           <p className="text-muted-foreground">{error}</p>
         </div>
         <button
+          type="button"
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
         >
@@ -356,12 +369,16 @@ export default function SettingsPage() {
             <form onSubmit={handleUpdateProfile} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">
+                  <label
+                    htmlFor="settings-username"
+                    className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1"
+                  >
                     {t('Username')}
                   </label>
                   <div className="relative group">
                     <User className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="settings-username"
                       type="text"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
@@ -375,13 +392,17 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1 flex items-center gap-2">
+                  <label
+                    htmlFor="settings-email"
+                    className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1 flex items-center gap-2"
+                  >
                     {t('EmailAddress')}
                     <Lock className="w-3 h-3 text-muted-foreground/50" />
                   </label>
                   <div className="relative group opacity-60 cursor-not-allowed">
                     <Mail className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input
+                      id="settings-email"
                       type="email"
                       value={profile?.email}
                       disabled
@@ -433,18 +454,19 @@ export default function SettingsPage() {
                   'showRecentlyReading',
                 ] as const
               ).map((key) => (
-                <label
+                <div
                   key={key}
                   className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-muted/30 p-4"
                 >
                   <span className="font-bold text-foreground">{t(`ProfileVisibility.${key}`)}</span>
                   <Switch
+                    id={`profile-visibility-${key}`}
                     checked={visibilitySettings[key]}
                     onCheckedChange={(checked) =>
                       setVisibilitySettings((current) => ({ ...current, [key]: checked }))
                     }
                   />
-                </label>
+                </div>
               ))}
             </div>
 
@@ -504,12 +526,16 @@ export default function SettingsPage() {
 
             <form onSubmit={handleChangePassword} className="space-y-8">
               <div className="space-y-3 max-w-md">
-                <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">
+                <label
+                  htmlFor="settings-current-password"
+                  className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1"
+                >
                   {t('CurrentPassword')}
                 </label>
                 <div className="relative group">
                   <Lock className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <input
+                    id="settings-current-password"
                     type={showPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
@@ -532,12 +558,16 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">
+                  <label
+                    htmlFor="settings-new-password"
+                    className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1"
+                  >
                     {t('NewPassword')}
                   </label>
                   <div className="relative group">
                     <Shield className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="settings-new-password"
                       type={showPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
@@ -548,12 +578,16 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <label className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1">
+                  <label
+                    htmlFor="settings-confirm-password"
+                    className="text-sm font-bold uppercase tracking-widest text-muted-foreground ms-1"
+                  >
                     {t('ConfirmNewPassword')}
                   </label>
                   <div className="relative group">
                     <Check className="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
+                      id="settings-confirm-password"
                       type={showPassword ? 'text' : 'password'}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}

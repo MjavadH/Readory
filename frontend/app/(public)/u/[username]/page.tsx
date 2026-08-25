@@ -2,7 +2,6 @@
 
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import * as React from 'react';
 import useSWR from 'swr';
 import { BookCard } from '@/components/book-card';
 import { CollectionsGrid } from '@/components/collections/collections-grid';

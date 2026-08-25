@@ -23,7 +23,7 @@ export type LocaleDirection = 'ltr' | 'rtl';
 
 export const defaultLocale = locales[0].code satisfies SupportedLocale;
 
-const localeConfigByCode = new Map<string, LocaleConfig>(
+const localeConfigByCode = new Map<SupportedLocale, LocaleConfig>(
   locales.map((locale) => [locale.code, locale]),
 );
 
@@ -32,15 +32,12 @@ export function getSupportedLocales(): readonly LocaleConfig[] {
 }
 
 export function isSupportedLocale(locale: string | null | undefined): locale is SupportedLocale {
-  return typeof locale === 'string' && localeConfigByCode.has(locale);
+  return typeof locale === 'string' && localeConfigByCode.has(locale as SupportedLocale);
 }
 
 export function getLocaleConfig(locale: string | null | undefined): LocaleConfig {
-  if (isSupportedLocale(locale)) {
-    return localeConfigByCode.get(locale)!;
-  }
-
-  return localeConfigByCode.get(defaultLocale)!;
+  const config = isSupportedLocale(locale) ? localeConfigByCode.get(locale) : undefined;
+  return config ?? locales[0];
 }
 
 export function isRTL(locale: string | null | undefined): boolean {

@@ -43,6 +43,17 @@ type ContributorPublicResponse = {
 const PAGE_SIZE = 18;
 const BIO_COLLAPSED_CHARS = 320;
 
+const CONTRIBUTOR_PAGE_SKELETON_KEYS = Array.from(
+  { length: PAGE_SIZE },
+  (_, i) => `contributor-page-skeleton-${i}`,
+);
+
+const CONTRIBUTOR_BOOKS_SKELETON_COUNT = 10;
+const CONTRIBUTOR_BOOKS_SKELETON_KEYS = Array.from(
+  { length: CONTRIBUTOR_BOOKS_SKELETON_COUNT },
+  (_, i) => `contributor-books-skeleton-${i}`,
+);
+
 export default function ContributorPublicPage() {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? '';
@@ -147,7 +158,7 @@ export default function ContributorPublicPage() {
   const bioText = contributors.biography?.trim() ?? '';
   const isBioLong = bioText.length > BIO_COLLAPSED_CHARS;
   const bioDisplay =
-    !isBioLong || bioExpanded ? bioText : bioText.slice(0, BIO_COLLAPSED_CHARS).trimEnd() + '…';
+    !isBioLong || bioExpanded ? bioText : `${bioText.slice(0, BIO_COLLAPSED_CHARS).trimEnd()}…`;
 
   return (
     <main className="relative min-h-screen bg-background text-foreground">
@@ -314,8 +325,8 @@ export default function ContributorPublicPage() {
             {/* Loading overlay when paginating */}
             {isLoading && data ? (
               <BooksGrid>
-                {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                  <BookCardSkeleton key={i} />
+                {CONTRIBUTOR_PAGE_SKELETON_KEYS.map((key) => (
+                  <BookCardSkeleton key={key} />
                 ))}
               </BooksGrid>
             ) : books.length === 0 ? (
@@ -476,8 +487,8 @@ function ContributorPageSkeleton() {
         <div className="lg:col-span-8">
           <Skeleton className="mb-6 h-14 w-full rounded-2xl" />
           <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-8 md:grid-cols-4 xl:grid-cols-5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <BookCardSkeleton key={i} />
+            {CONTRIBUTOR_BOOKS_SKELETON_KEYS.map((key) => (
+              <BookCardSkeleton key={key} />
             ))}
           </div>
         </div>

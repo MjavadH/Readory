@@ -16,7 +16,9 @@
     "build:shared": "npm --workspace @readory/shared run build",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "check": "biome check --write ."
+    "check": "biome check --write .",
+    "check:frontend": "biome check --write ./frontend",
+    "check:server": "biome check --write ./server"
   },
   "dependencies": {
     "framer-motion": "^12.34.3"

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import DateTimePicker from '@/components/admin/date-time-picker';
@@ -82,6 +82,18 @@ type AuditResponse = {
 
 const fetcher = (url: string) => apiClient.get<AuditResponse>(url);
 const detailFetcher = (url: string) => apiClient.get<AuditLog>(url);
+
+const AUDIT_TABLE_SKELETON_COUNT = 8;
+const AUDIT_TABLE_SKELETON_KEYS = Array.from(
+  { length: AUDIT_TABLE_SKELETON_COUNT },
+  (_, i) => `audit-table-skeleton-${i}`,
+);
+
+const AUDIT_MOBILE_SKELETON_COUNT = 6;
+const AUDIT_MOBILE_SKELETON_KEYS = Array.from(
+  { length: AUDIT_MOBILE_SKELETON_COUNT },
+  (_, i) => `audit-mobile-skeleton-${i}`,
+);
 
 function actionTone(action: string) {
   if (action.includes('CREATED'))
@@ -272,6 +284,9 @@ export default function AuditLogPage() {
     params.get('severity'),
   ].filter(Boolean).length;
 
+  const fromParam = params.get('from');
+  const toParam = params.get('to');
+
   const clearFilters = () => {
     const next = new URLSearchParams();
     if (search) next.set('search', search);
@@ -360,63 +375,91 @@ export default function AuditLogPage() {
       {filtersOpen && (
         <Card className="border-dashed">
           <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-5">
-            <label className="space-y-1.5">
+            <div className="space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">{t('From')}</span>
               <DateTimePicker
                 onChange={(e) => updateParam('from', e.toString(), true)}
                 showTime={false}
-                placeholder={'Pick a date'}
-                max={params.get('to') ? new Date(params.get('to')!) : undefined}
+                placeholder="Pick a date"
+                max={toParam ? new Date(toParam) : undefined}
               />
-            </label>
-            <label className="space-y-1.5">
+            </div>
+
+            <div className="space-y-1.5">
               <span className="text-xs font-medium text-muted-foreground">{t('To')}</span>
               <DateTimePicker
                 onChange={(e) => updateParam('to', e.toString(), true)}
                 showTime={false}
-                placeholder={'Pick a date'}
-                min={params.get('from') ? new Date(params.get('from')!) : undefined}
+                placeholder="Pick a date"
+                min={fromParam ? new Date(fromParam) : undefined}
               />
-            </label>
-            <label className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t('Action')}</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="audit-action-filter"
+                className="block text-xs font-medium text-muted-foreground"
+              >
+                {t('Action')}
+              </label>
               <NativeSelect
+                id="audit-action-filter"
                 className="w-full"
                 value={params.get('action') ?? ''}
                 onChange={(e) => updateParam('action', e.target.value || null, true)}
               >
                 <option value="">{t('AllActions')}</option>
                 {AUDIT_ACTION_VALUES.map((a) => (
-                  <option key={a}>{a}</option>
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
                 ))}
               </NativeSelect>
-            </label>
-            <label className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t('Category')}</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="audit-category-filter"
+                className="block text-xs font-medium text-muted-foreground"
+              >
+                {t('Category')}
+              </label>
               <NativeSelect
+                id="audit-category-filter"
                 className="w-full"
                 value={params.get('category') ?? ''}
                 onChange={(e) => updateParam('category', e.target.value || null, true)}
               >
                 <option value="">{t('AllCategories')}</option>
                 {AUDIT_CATEGORY_VALUES.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </NativeSelect>
-            </label>
-            <label className="space-y-1.5">
-              <span className="text-xs font-medium text-muted-foreground">{t('Severity')}</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <label
+                htmlFor="audit-severity-filter"
+                className="block text-xs font-medium text-muted-foreground"
+              >
+                {t('Severity')}
+              </label>
               <NativeSelect
+                id="audit-severity-filter"
                 className="w-full"
                 value={params.get('severity') ?? ''}
                 onChange={(e) => updateParam('severity', e.target.value || null, true)}
               >
                 <option value="">{t('AllSeverities')}</option>
                 {AUDIT_SEVERITY_VALUES.map((s) => (
-                  <option key={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </NativeSelect>
-            </label>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -465,8 +508,8 @@ export default function AuditLogPage() {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    Array.from({ length: 8 }).map((_, i) => (
-                      <TableRow key={i}>
+                    AUDIT_TABLE_SKELETON_KEYS.map((key) => (
+                      <TableRow key={key}>
                         <TableCell colSpan={9}>
                           <Skeleton className="h-8 w-full" />
                         </TableCell>
@@ -554,8 +597,8 @@ export default function AuditLogPage() {
           {/* Mobile cards */}
           <div className="space-y-2 md:hidden">
             {isLoading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <Card key={i}>
+              AUDIT_MOBILE_SKELETON_KEYS.map((key) => (
+                <Card key={key}>
                   <CardContent className="p-3">
                     <Skeleton className="mb-2 h-4 w-1/2" />
                     <Skeleton className="mb-2 h-4 w-3/4" />
@@ -566,6 +609,7 @@ export default function AuditLogPage() {
             ) : data?.data.length ? (
               data.data.map((log) => (
                 <button
+                  type="button"
                   key={log.id}
                   onClick={() => setSelectedId(log.id)}
                   className="block w-full text-start"

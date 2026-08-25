@@ -61,6 +61,12 @@ export type BookDetailsData = {
 type chapterSectionType = RefObject<HTMLElement | null> | string;
 type Translator = (key: string, values?: Record<string, string | number | Date>) => string;
 
+const BOOK_DETAILS_SKELETON_COUNT = 3;
+const BOOK_DETAILS_SKELETON_KEYS = Array.from(
+  { length: BOOK_DETAILS_SKELETON_COUNT },
+  (_, i) => `book-details-skeleton-${i}`,
+);
+
 export type BookDetailsProps = {
   book: BookDetailsData;
   coverSrc: string;
@@ -139,8 +145,8 @@ export function BookDetailsSkeleton() {
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-7 w-20 rounded-full bg-muted" />
+              {BOOK_DETAILS_SKELETON_KEYS.map((key) => (
+                <div key={key} className="h-7 w-20 rounded-full bg-muted" />
               ))}
             </div>
             <div className="space-y-2">
@@ -291,7 +297,6 @@ export function BookDetails({
                   {isDraft && (
                     <div
                       className="flex items-center gap-1 rounded-full bg-foreground/85 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-background shadow-lg backdrop-blur"
-                      aria-label={t('Draft')}
                       title={t('Draft')}
                     >
                       <EyeOff className="h-3 w-3" />
@@ -301,7 +306,6 @@ export function BookDetails({
                   {book.isFeatured && (
                     <div
                       className="flex w-fit items-center gap-1 rounded-full bg-amber-500/95 px-2 py-1 text-white shadow-lg backdrop-blur"
-                      aria-label={t('Featured')}
                       title={t('Featured')}
                     >
                       <Sparkles className="h-3.5 w-3.5" />
@@ -396,7 +400,7 @@ export function BookDetails({
                     <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
                     <span className="sr-only">{t('OtherNames')}</span>
                     {alternativeTitles.map((alt, i) => (
-                      <span key={`${alt}-${i}`} className="inline-flex items-center gap-1.5">
+                      <span key={alt} className="inline-flex items-center gap-1.5">
                         <span className="italic">{alt}</span>
                         {i < alternativeTitles.length - 1 && (
                           <span aria-hidden className="text-muted-foreground/40">
@@ -411,17 +415,14 @@ export function BookDetails({
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
                   <div className="flex flex-wrap items-center gap-3">
                     {book.contributors && book.contributors.length > 0 ? (
-                      book.contributors.map((item, index) => {
+                      book.contributors.map((item) => {
                         const contributorName = item.name || t('UnknownContributor');
                         const roleLabel = item.role;
                         const roleIconKey = CONTRIBUTOR_ROLE_ICONS[item.role as ContributorRole];
 
                         return (
                           <Link key={item.slug} href={`/contributor/${item.slug}`}>
-                            <span
-                              key={index}
-                              className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium"
-                            >
+                            <span className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium">
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
                                 {roleIconKey ? (
                                   <AppIcon

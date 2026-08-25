@@ -66,6 +66,7 @@ function GenreCardSkeleton() {
 }
 
 export function GenresSectionSkeleton({ count = 8 }: { count?: number }) {
+  const SKELETON_KEYS = Array.from({ length: count }, (_, i) => `genre-card-skeleton-${i}`);
   return (
     <section aria-label="Loading genres" aria-busy="true">
       <div className="mb-8 space-y-3">
@@ -77,8 +78,8 @@ export function GenresSectionSkeleton({ count = 8 }: { count?: number }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
-        {Array.from({ length: count }).map((_, i) => (
-          <GenreCardSkeleton key={i} />
+        {SKELETON_KEYS.map((key) => (
+          <GenreCardSkeleton key={key} />
         ))}
       </div>
     </section>

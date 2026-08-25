@@ -164,7 +164,7 @@ export function useBookBrowser<T extends BookBrowserApi>({
     setNextCursor(undefined);
     setHasMore(false);
     void fetchItems(undefined);
-  }, [selectedTypes, selectedGenres, sortBy, searchQuery, fetchItems]);
+  }, [fetchItems]);
 
   useEffect(() => {
     if (observerRef.current) observerRef.current.disconnect();

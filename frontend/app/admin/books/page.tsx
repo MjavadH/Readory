@@ -2,7 +2,7 @@
 import { type AgeRating, BookStatus, PublicationStatus } from '@readory/shared';
 import { BookOpen, CheckCircle2, Clock, Plus, Search, Star, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { BookEditor } from '@/components/admin/book-editor';
 import type { BookContributorEntry } from '@/components/admin/contributors/contributors-field';
@@ -196,27 +196,30 @@ export default function AdminBooks() {
     }>(`/books/allBooks?${qs.toString()}`);
   }, [page, statusFilter, debouncedQ]);
 
-  const transformBooks = (items: AdminApiBook[]): BookCardData[] =>
-    items.map((book) => ({
-      id: book.id,
-      title: book.title,
-      originalTitle: book.originalTitle,
-      alternativeTitles: book.alternativeTitles,
-      coverImage: book.coverImage || '',
-      type: book.type as BookType,
-      contributors: book.contributors ?? undefined,
-      ratingAvg: book.ratingAvg,
-      ratingCount: book.ratingCount,
-      genres: book.genres?.map((g) => g.genre) || [],
-      isFeatured: book.isFeatured,
-      publishStatus: book.publishStatus,
-      status: book.status,
-      ageRating: book.ageRating,
-      publicationYear: book.publicationYear,
-      chapterCount: book.chapterCount || 0,
-      lastContentUpdate: book.lastContentUpdate,
-      updatedAt: book.updatedAt,
-    }));
+  const transformBooks = useCallback(
+    (items: AdminApiBook[]): BookCardData[] =>
+      items.map((book) => ({
+        id: book.id,
+        title: book.title,
+        originalTitle: book.originalTitle,
+        alternativeTitles: book.alternativeTitles,
+        coverImage: book.coverImage || '',
+        type: book.type as BookType,
+        contributors: book.contributors ?? undefined,
+        ratingAvg: book.ratingAvg,
+        ratingCount: book.ratingCount,
+        genres: book.genres?.map((g) => g.genre) || [],
+        isFeatured: book.isFeatured,
+        publishStatus: book.publishStatus,
+        status: book.status,
+        ageRating: book.ageRating,
+        publicationYear: book.publicationYear,
+        chapterCount: book.chapterCount || 0,
+        lastContentUpdate: book.lastContentUpdate,
+        updatedAt: book.updatedAt,
+      })),
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -241,7 +244,7 @@ export default function AdminBooks() {
     return () => {
       cancelled = true;
     };
-  }, [requestBooks, toast, t]);
+  }, [requestBooks, toast, t, transformBooks]);
 
   const handleAddBook = async () => {
     if (!newBook.title.trim()) {

@@ -2,7 +2,6 @@
 
 import { Check, ChevronDown, Languages } from 'lucide-react';
 import Image from 'next/image';
-import * as React from 'react';
 import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -39,6 +38,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
       <div className="flex flex-col gap-2 py-2">
         {supportedLocales.map((lang) => (
           <button
+            type="button"
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
             disabled={isPending}

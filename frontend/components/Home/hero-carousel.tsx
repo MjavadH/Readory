@@ -182,9 +182,9 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
 
               {book.genres && book.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-6 sm:mb-7">
-                  {book.genres.map((genre, idx) => (
+                  {book.genres.map((genre) => (
                     <Badge
-                      key={`${book.id}-genre-${idx}`}
+                      key={`${book.id}-${genre.name}`}
                       variant="outline"
                       className="border-secondary-foreground/15 text-secondary-foreground/70 bg-secondary-foreground/5 backdrop-blur-sm text-xs px-3 py-1 rounded-full gap-1"
                     >

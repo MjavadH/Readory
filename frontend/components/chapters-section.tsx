@@ -17,7 +17,7 @@ import {
   Trash,
 } from 'lucide-react';
 import Link from 'next/link';
-import React, { type RefObject, useRef } from 'react';
+import { type RefObject, useRef } from 'react';
 import { AppPagination } from '@/components/app-pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,11 +92,14 @@ type AdminProps = CommonProps & {
 
 export type ChaptersSectionProps = PublicProps | AdminProps;
 
+const SKELETON_COUNT = 8;
+const SKELETON_KEYS = Array.from({ length: SKELETON_COUNT }, (_, i) => `chapter-skeleton-${i}`);
+
 function ChaptersGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="animate-pulse rounded-2xl border border-border/70 bg-card/70 p-4">
+      {SKELETON_KEYS.map((key) => (
+        <div key={key} className="animate-pulse rounded-2xl border border-border/70 bg-card/70 p-4">
           <div className="mb-3 flex items-start gap-3">
             <div className="h-11 w-11 rounded-xl bg-muted" />
             <div className="flex-1 space-y-2">
@@ -395,7 +398,7 @@ function ChapterCard({
         })
       : `$${Number(chapter.price).toFixed(2)}`;
 
-  let accent;
+  let accent: string;
 
   if (isAdmin) {
     switch (chapter.publishStatus) {

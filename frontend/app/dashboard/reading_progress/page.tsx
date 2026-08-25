@@ -13,7 +13,11 @@ import { apiClient } from '@/lib/api-client';
 import type { ReadingProgressResponse } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 24;
-
+const SKELETON_COUNT = 5;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `continue-reading-skeleton-${i}`,
+);
 export default function ReadingProgressPage() {
   const t = useTranslations('UserDashboard');
   const [data, setData] = useState<ReadingProgressResponse | null>(null);
@@ -57,8 +61,8 @@ export default function ReadingProgressPage() {
 
         {/* Progress */}
         <div className="grid grid-cols-1 gap-8">
-          {Array.from({ length: 5 }).map((_, idx) => (
-            <ContinueReadingCardSkeleton key={idx} />
+          {SKELETON_KEYS.map((key) => (
+            <ContinueReadingCardSkeleton key={key} />
           ))}
         </div>
       </div>
@@ -76,6 +80,7 @@ export default function ReadingProgressPage() {
           <p className="text-muted-foreground">{error}</p>
         </div>
         <button
+          type="button"
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
         >
@@ -103,8 +108,8 @@ export default function ReadingProgressPage() {
       {data && data.data.length > 0 ? (
         <div ref={paginationScrollRef} className="grid grid-cols-1 gap-8">
           <AnimatePresence mode="popLayout">
-            {data?.data.map((item, index) => (
-              <ContinueReadingCard key={index} progress={item} />
+            {data?.data.map((item) => (
+              <ContinueReadingCard key={item.chapter.id} progress={item} />
             ))}
           </AnimatePresence>
         </div>

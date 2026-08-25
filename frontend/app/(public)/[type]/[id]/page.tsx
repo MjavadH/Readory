@@ -420,11 +420,12 @@ export default function BookDetailsPage() {
               <div className="h-24 animate-pulse rounded-2xl bg-muted" />
             ) : userCollections.length > 0 ? (
               userCollections.map((collection) => (
-                <label
+                <div
                   key={collection.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border p-3"
+                  className="flex items-center gap-3 rounded-2xl border border-border p-3"
                 >
                   <Checkbox
+                    id={`collection-${collection.id}`}
                     checked={selectedCollectionIds.includes(collection.id)}
                     onCheckedChange={(checked) => {
                       setSelectedCollectionIds((prev) =>
@@ -434,9 +435,14 @@ export default function BookDetailsPage() {
                       );
                     }}
                   />
-                  <span className="min-w-0 flex-1 truncate font-medium">{collection.title}</span>
+                  <label
+                    htmlFor={`collection-${collection.id}`}
+                    className="min-w-0 flex-1 cursor-pointer truncate font-medium"
+                  >
+                    {collection.title}
+                  </label>
                   <span className="text-xs text-muted-foreground">{collection.bookCount}</span>
-                </label>
+                </div>
               ))
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">

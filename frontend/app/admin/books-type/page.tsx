@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { IconPicker } from '@/components/admin/icon-picker';
@@ -195,13 +195,16 @@ export default function AdminBookTypesPage() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const normalizeBookTypes = (data: BookType[]): BookType[] =>
-    data.map((type) => ({
-      ...type,
-      isActive: Boolean(type.isActive),
-      sortOrder: Number(type.sortOrder) || 0,
-      iconKey: (type.iconKey ?? null) as IconKey | null,
-    }));
+  const normalizeBookTypes = useCallback(
+    (data: BookType[]): BookType[] =>
+      data.map((type) => ({
+        ...type,
+        isActive: Boolean(type.isActive),
+        sortOrder: Number(type.sortOrder) || 0,
+        iconKey: (type.iconKey ?? null) as IconKey | null,
+      })),
+    [],
+  );
 
   const load = async () => {
     const data = await apiClient.get<BookType[]>('/book-types').catch(() => []);
@@ -229,7 +232,7 @@ export default function AdminBookTypesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [normalizeBookTypes]);
 
   const activeTypes = useMemo(
     () =>
@@ -633,8 +636,11 @@ export default function AdminBookTypesPage() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('Name')}</label>
+                <label htmlFor="type-name" className="text-sm font-medium">
+                  {t('Name')}
+                </label>
                 <Input
+                  id="type-name"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder={t('EnterTypeName')}
@@ -642,8 +648,11 @@ export default function AdminBookTypesPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">{t('Slug')}</label>
+                <label htmlFor="type-slug" className="text-sm font-medium">
+                  {t('Slug')}
+                </label>
                 <Input
+                  id="type-slug"
                   value={editSlug}
                   onChange={(e) => setEditSlug(e.target.value)}
                   placeholder={t('kebabCaseSlug')}

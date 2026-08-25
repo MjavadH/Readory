@@ -4,7 +4,7 @@ import type { IconKey } from '@readory/shared';
 import { ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { cn } from '@/lib/utils';
 
@@ -30,17 +30,22 @@ export function GenreCarousel({
   onViewAll,
 }: GenreCarouselProps) {
   const t = useTranslations('UserHeader');
+  const SKELETON_COUNT = 6;
+  const SKELETON_KEYS = Array.from(
+    { length: SKELETON_COUNT },
+    (_, i) => `genre-carousel-skeleton-${i}`,
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const checkScroll = () => {
+  const checkScroll = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkScroll();
@@ -52,13 +57,13 @@ export function GenreCarousel({
       container?.removeEventListener('scroll', checkScroll);
       window.removeEventListener('resize', checkScroll);
     };
-  }, []);
+  }, [checkScroll]);
 
   if (isLoading) {
     return (
       <div className="flex gap-2 overflow-hidden px-1">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-9 w-20 shrink-0 rounded-full bg-muted animate-pulse" />
+        {SKELETON_KEYS.map((key) => (
+          <div key={key} className="h-9 w-20 shrink-0 rounded-full bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -106,6 +111,7 @@ export function GenreCarousel({
         {/* View All Button */}
         {onViewAll && (
           <button
+            type="button"
             onClick={onViewAll}
             className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted/30 px-3 py-2 text-xs font-semibold text-muted-foreground backdrop-blur-sm transition-all duration-200 active:scale-95 hover:bg-muted/50 border border-border/40 whitespace-nowrap scroll-snap-align-start"
           >

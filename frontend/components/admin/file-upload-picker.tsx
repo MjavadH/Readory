@@ -137,7 +137,8 @@ export function FileUploadPicker({
   return (
     <div className={cn('space-y-4', className)}>
       {files.length === 0 ? (
-        <div
+        <section
+          aria-label={dropTitleIdle}
           onDragOver={(e) => {
             e.preventDefault();
             if (disabled || uploading) return;
@@ -213,7 +214,7 @@ export function FileUploadPicker({
               {error}
             </div>
           )}
-        </div>
+        </section>
       ) : (
         <div
           className={cn(

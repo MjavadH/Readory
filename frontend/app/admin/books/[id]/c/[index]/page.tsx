@@ -90,6 +90,18 @@ const IMAGE_MAX_BYTES = 12 * 1024 * 1024;
 const TEXT_MAX_BYTES = 2 * 1024 * 1024;
 const PDF_MAX_BYTES = 100 * 1024 * 1024;
 
+const PAGE_SKELETON_COUNT = 6;
+const PAGE_SKELETON_KEYS = Array.from(
+  { length: PAGE_SKELETON_COUNT },
+  (_, i) => `chapter-page-skeleton-${i}`,
+);
+
+const PDF_PROCESSING_SKELETON_COUNT = 6;
+const PDF_PROCESSING_SKELETON_KEYS = Array.from(
+  { length: PDF_PROCESSING_SKELETON_COUNT },
+  (_, i) => `chapter-pdf-processing-skeleton-${i}`,
+);
+
 const EASE = [0.25, 0.46, 0.45, 0.94] as const;
 
 function formatBytes(bytes: number) {
@@ -111,8 +123,8 @@ function PageSkeleton() {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-xl" />
+        {PAGE_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-20 rounded-xl" />
         ))}
       </div>
       <Skeleton className="h-64 rounded-2xl" />
@@ -503,7 +515,9 @@ export default function ChapterContentManager() {
     setProgress(0);
     try {
       const formData = new FormData();
-      imageFiles.forEach((file) => formData.append('files', file));
+      for (const file of imageFiles) {
+        formData.append('files', file);
+      }
       const url =
         mode === 'append'
           ? `/admin/books/${bookId}/chapters/${chapterIndex}/content/images/append`
@@ -1234,8 +1248,8 @@ export default function ChapterContentManager() {
 
           {!data?.manifest && isPdfProcessing && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-3/4 rounded-xl" />
+              {PDF_PROCESSING_SKELETON_KEYS.map((key) => (
+                <Skeleton key={key} className="aspect-3/4 rounded-xl" />
               ))}
             </div>
           )}
@@ -1260,6 +1274,7 @@ export default function ChapterContentManager() {
                   'prose prose-sm dark:prose-invert max-h-150 max-w-none overflow-auto rounded-xl border border-border bg-muted/30 px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5 transition-opacity duration-200',
                   isLoadingText ? 'opacity-50 pointer-events-none' : 'opacity-100',
                 )}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is pre-sanitized by the backend API
                 dangerouslySetInnerHTML={{ __html: currentTextHtml || data.textPreviewHtml || '' }}
               />
 
@@ -1314,7 +1329,7 @@ export default function ChapterContentManager() {
                     >
                       <div className="relative aspect-3/4 overflow-hidden bg-muted/40">
                         {adminPreviewToken ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
+                          // biome-ignore lint/performance/noImgElement: false positive
                           <img
                             src={buildAdminPreviewImageUrl(pageNumber)}
                             alt={t('PageNumber', { Page: pageNumber })}

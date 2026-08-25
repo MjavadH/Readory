@@ -314,14 +314,14 @@ export function DateTimePicker({
 
       {/* Days */}
       <div className="grid grid-cols-7 gap-1">
-        {grid.map(({ date, inMonth }, i) => {
+        {grid.map(({ date, inMonth }) => {
           const dParts = getParts(date, locale, calendar);
           const isSelected = samePart(dParts, selectedParts);
           const isToday = samePart(dParts, todayParts);
           const dDisabled = isDayDisabled(date);
           return (
             <button
-              key={i}
+              key={date.toISOString()}
               type="button"
               disabled={dDisabled}
               onClick={() => {

@@ -13,7 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { BookPicker } from '@/components/admin/book-picker';
 import { type ChapterItemData, ChapterPicker } from '@/components/admin/chapter/chapter-picker';
@@ -185,7 +185,7 @@ export default function ScheduledPublicationsPage() {
     return () => clearTimeout(timer);
   }, [isPickerOpen, bookPage, bookSearch, isBookForChapter, t, toast]);
 
-  const load = React.useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await apiClient.get<{ data: Schedule[] }>('/scheduled-publications', {

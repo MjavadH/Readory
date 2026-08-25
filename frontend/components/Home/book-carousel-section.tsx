@@ -31,6 +31,7 @@ export function BookCarouselSkeleton({
   count = 8,
   ariaLabel = 'Loading books',
 }: SkeletonProps) {
+  const SKELETON_KEYS = Array.from({ length: count }, (_, i) => `book-carousel-skeleton-${i}`);
   return (
     <section aria-label={ariaLabel} aria-busy="true" className="relative">
       <div className="mb-5 flex items-center gap-3 px-1 sm:mb-6">
@@ -45,8 +46,8 @@ export function BookCarouselSkeleton({
       </div>
 
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-hidden px-4 pb-3 sm:gap-4 sm:px-6 md:-mx-6">
-        {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="w-[42vw] max-w-44 shrink-0 sm:w-40 md:w-44 lg:w-48">
+        {SKELETON_KEYS.slice(0, count).map((key) => (
+          <div key={key} className="w-[42vw] max-w-44 shrink-0 sm:w-40 md:w-44 lg:w-48">
             <BookCardSkeleton />
           </div>
         ))}

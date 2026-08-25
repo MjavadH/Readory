@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import {
   AlertDialog,
@@ -150,7 +150,7 @@ export default function AdminStaff() {
     }
   };
 
-  const searchUsers = async (query: string) => {
+  const searchUsers = useCallback(async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
       return;
@@ -170,7 +170,7 @@ export default function AdminStaff() {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, []);
 
   const promoteToAdmin = async (userId: number) => {
     setIsSubmitting(true);
@@ -290,7 +290,7 @@ export default function AdminStaff() {
       void searchUsers(searchQuery);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, searchUsers]);
 
   if (loading) {
     return (
@@ -494,8 +494,7 @@ export default function AdminStaff() {
                   {searchResults.map((user) => (
                     <div
                       key={user.id}
-                      className="flex items-center justify-between gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => promoteToAdmin(user.id)}
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <Avatar className="size-9 ring-2 ring-border/50">
@@ -556,16 +555,17 @@ export default function AdminStaff() {
                 const isDisabled = permission === 'MANAGE_STAFF' && currentUserId !== 1;
 
                 return (
-                  <div
+                  <label
                     key={permission}
+                    htmlFor={`permission-${permission}`}
                     className={`flex items-start gap-3 p-3 rounded-lg border border-border/50 transition-colors ${
                       isDisabled
                         ? 'opacity-50 cursor-not-allowed bg-muted'
                         : 'hover:bg-muted/30 cursor-pointer'
                     }`}
-                    onClick={() => !isDisabled && togglePermission(permission)}
                   >
                     <Checkbox
+                      id={`permission-${permission}`}
                       checked={isChecked}
                       onCheckedChange={() => togglePermission(permission)}
                       disabled={isDisabled}
@@ -578,7 +578,7 @@ export default function AdminStaff() {
                       </div>
                       <p className="text-xs text-muted-foreground">{meta.description}</p>
                     </div>
-                  </div>
+                  </label>
                 );
               })}
             </div>

@@ -2,7 +2,7 @@
 
 import type { IconKey } from '@readory/shared';
 import { Palette, Search } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { Button } from '@/components/ui/button';
 import {

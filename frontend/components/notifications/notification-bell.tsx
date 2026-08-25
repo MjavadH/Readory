@@ -16,6 +16,12 @@ import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
+const NOTIFICATION_SKELETON_COUNT = 4;
+const NOTIFICATION_SKELETON_KEYS = Array.from(
+  { length: NOTIFICATION_SKELETON_COUNT },
+  (_, i) => `notification-loading-${i}`,
+);
+
 type NotificationItem = {
   id: string;
   type: string;
@@ -304,8 +310,8 @@ export function NotificationBell() {
           <div className="p-2">
             {loading ? (
               <div className="space-y-0.5">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <SkeletonRow key={i} />
+                {NOTIFICATION_SKELETON_KEYS.map((key) => (
+                  <SkeletonRow key={key} />
                 ))}
               </div>
             ) : items.length === 0 ? (

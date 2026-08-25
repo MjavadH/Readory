@@ -117,7 +117,7 @@ export default function ChapterPage() {
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [_reloadKey, setReloadKey] = useState(0);
   const [showPurchase, setShowPurchase] = useState(false);
   const [brightness, setBrightness] = useState(100);
   const [readMode, setReadMode] = useState<'scroll' | 'page'>('page');
@@ -387,8 +387,6 @@ export default function ChapterPage() {
 
           try {
             await newTask;
-          } catch (err) {
-            throw err;
           } finally {
             inFlightPagesRef.current.delete(page);
           }
@@ -527,7 +525,7 @@ export default function ChapterPage() {
     return () => {
       cancelled = true;
     };
-  }, [bookId, chapterIndex, reloadKey, resetChapterRenderState, t]);
+  }, [bookId, chapterIndex, resetChapterRenderState, t]);
 
   useEffect(() => {
     maxReachedPageRef.current = Math.max(maxReachedPageRef.current, currentPage);
@@ -636,7 +634,9 @@ export default function ChapterPage() {
 
     return () => {
       observer.disconnect();
-      abortControllers.forEach((c) => c.abort());
+      abortControllers.forEach((c) => {
+        c.abort();
+      });
       abortControllers.clear();
     };
   }, [session, manifest, readMode, drawPageToCanvas]);
@@ -644,7 +644,7 @@ export default function ChapterPage() {
   // Track currentPage in scroll mode by viewport center
   useEffect(() => {
     if (readMode !== 'scroll') return;
-    if (!manifest || manifest.format !== 'images') return;
+    if (manifest?.format !== 'images') return;
 
     // Track active page efficiently using viewport center
     const pageObserver = new IntersectionObserver(
@@ -700,7 +700,7 @@ export default function ChapterPage() {
     }, 1200);
 
     return () => window.clearTimeout(id);
-  }, [session, currentPage]);
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
@@ -739,7 +739,7 @@ export default function ChapterPage() {
       window.removeEventListener('beforeunload', saveNow);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [session, currentPage]);
+  }, [session]);
 
   const toggleFullscreen = useCallback(() => {
     const element = readerRootRef.current;
@@ -872,6 +872,25 @@ export default function ChapterPage() {
     [showFootnote],
   );
 
+  const handleFootnoteFocus = useCallback(
+    (e: React.FocusEvent) => {
+      const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement | null;
+      if (target) showFootnote(target);
+    },
+    [showFootnote],
+  );
+
+  const handleFootnoteKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement | null;
+      if (!target) return;
+      e.preventDefault();
+      showFootnote(target);
+    },
+    [showFootnote],
+  );
+
   const handleFootnoteHover = useCallback(
     (e: React.MouseEvent) => {
       const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement;
@@ -880,7 +899,7 @@ export default function ChapterPage() {
     [showFootnote],
   );
 
-  const handleFootnoteLeave = useCallback((e: React.MouseEvent) => {
+  const handleFootnoteLeave = useCallback((e: React.SyntheticEvent) => {
     const target = (e.target as HTMLElement).closest('.reader-footnote') as HTMLElement;
     if (target) {
       hideFootnoteTimeout.current = window.setTimeout(() => setFootnote(null), 250);
@@ -1171,12 +1190,16 @@ export default function ChapterPage() {
               onClick={handleFootnoteInteraction}
               onMouseOver={handleFootnoteHover}
               onMouseOut={handleFootnoteLeave}
+              onBlur={handleFootnoteLeave}
+              onFocus={handleFootnoteFocus}
+              onKeyDown={handleFootnoteKeyDown}
               className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground/90 sm:p-6"
               style={{
                 fontSize: `${readerSettings.fontSize}px`,
                 lineHeight: readerSettings.lineHeight,
                 fontFamily: readerSettings.fontFamily,
               }}
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is pre-sanitized by the backend API
               dangerouslySetInnerHTML={{ __html: textHtml }}
             />
           </div>

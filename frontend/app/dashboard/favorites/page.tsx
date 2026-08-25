@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { AppPagination } from '@/components/app-pagination';
 import { BookGrid, BookGridSkeleton } from '@/components/book-grid';
+import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import type { FavoriteBooksResponse } from '@/lib/types';
 
@@ -70,12 +71,12 @@ export default function LibraryPage() {
           <h2 className="text-2xl font-bold">{t('SomethingWentWrong')}</h2>
           <p className="text-muted-foreground">{error}</p>
         </div>
-        <button
+        <Button
           onClick={() => window.location.reload()}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-2xl font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
         >
           {t('TryAgain')}
-        </button>
+        </Button>
       </div>
     );
   }

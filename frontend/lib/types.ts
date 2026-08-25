@@ -92,6 +92,7 @@ export interface ReadingProgress {
     type: { slug: string; iconKey?: IconKey };
   };
   chapter: {
+    id: number;
     title: string;
     index: number;
     pageCount: number;

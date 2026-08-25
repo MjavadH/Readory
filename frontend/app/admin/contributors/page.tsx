@@ -4,7 +4,7 @@ import { ContributorGender } from '@shared/contributor-metadata';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Loader2, Plus, Search, UserRoundPen, UserX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import {
   type ContributorEditorValue,
@@ -107,7 +107,6 @@ export default function AdminContributorsPage() {
     const id = setTimeout(() => {
       setDebouncedQ(q.trim());
       setPage(1);
-      setLoading(true);
     }, 300);
     return () => clearTimeout(id);
   }, [q]);

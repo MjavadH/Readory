@@ -15,7 +15,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
@@ -23,6 +23,12 @@ import { formatUpdateTime } from '@/lib/time';
 import { cn } from '@/lib/utils';
 
 type Filter = 'all' | 'unread';
+
+const NOTIFICATION_SKELETON_COUNT = 5;
+const NOTIFICATION_SKELETON_KEYS = Array.from(
+  { length: NOTIFICATION_SKELETON_COUNT },
+  (_, i) => `notification-skeleton-${i}`,
+);
 
 const listVariants = {
   hidden: {},
@@ -220,8 +226,8 @@ export default function NotificationsPage() {
       <section className="mt-4">
         {loading ? (
           <ul className="space-y-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <li key={i} className="rounded-2xl border bg-card p-4">
+            {NOTIFICATION_SKELETON_KEYS.map((key) => (
+              <li key={key} className="rounded-2xl border bg-card p-4">
                 <div className="flex gap-3">
                   <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-muted" />
                   <div className="w-full space-y-2">
@@ -377,10 +383,10 @@ function EmptyState({
   description,
   action,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
-  action?: React.ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <motion.div

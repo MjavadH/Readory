@@ -15,7 +15,6 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import React from 'react';
 import { BrandLogo } from '@/components/brand-logo';
 import { apiClient } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
@@ -86,6 +85,7 @@ export function Sidebar() {
 
       <div className="p-4 mt-auto">
         <button
+          type="button"
           onClick={handleLogout}
           className="flex items-center gap-3 w-full px-4 py-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
         >

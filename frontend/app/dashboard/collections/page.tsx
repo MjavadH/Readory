@@ -49,6 +49,12 @@ const userDefaults: CollectionFormState = {
   allowIndexing: false,
 };
 
+const SKELETON_COUNT = 6;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `dashboard-collection-skeleton-${i}`,
+);
+
 export default function DashboardCollectionsPage() {
   const t = useTranslations('Collections');
   const userDashboardT = useTranslations('UserDashboard');
@@ -193,8 +199,8 @@ export default function DashboardCollectionsPage() {
       {/* Content */}
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-1 xl:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 rounded-3xl" />
+          {SKELETON_KEYS.map((key) => (
+            <Skeleton key={key} className="h-44 rounded-3xl" />
           ))}
         </div>
       ) : error ? (

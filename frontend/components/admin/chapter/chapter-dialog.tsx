@@ -223,7 +223,7 @@ export function ChapterDialog({
 
           {/* Access + price */}
           <div className="space-y-3 rounded-xl border border-border/60 bg-card p-3 sm:p-4">
-            <label className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-sm font-medium">
                 <Unlock className="h-4 w-4 text-muted-foreground" />
                 {t('FreeChapter')}
@@ -235,7 +235,7 @@ export function ChapterDialog({
                   update({ isFree: checked, price: checked ? 0 : value.price })
                 }
               />
-            </label>
+            </div>
 
             <MorphReveal show={!value.isFree}>
               <div className="space-y-2 border-t border-border/60 pt-3">

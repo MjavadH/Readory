@@ -127,18 +127,19 @@ export function ChapterPurchaseDialog({
   }, [handleClose]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 sm:items-center sm:p-4"
-      onClick={handleClose}
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-50 flex items-end justify-center animate-in fade-in duration-200 sm:items-center sm:p-4">
+      <button
+        type="button"
+        aria-label={g('Cancel')}
+        onClick={handleClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="chapter-purchase-title"
         aria-describedby="chapter-purchase-description"
-        onClick={(event) => event.stopPropagation()}
-        className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-border bg-card text-card-foreground shadow-2xl animate-in slide-in-from-bottom duration-300 sm:max-w-md sm:rounded-2xl sm:zoom-in-95"
+        className="relative z-10 flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-border bg-card text-card-foreground shadow-2xl animate-in slide-in-from-bottom duration-300 sm:max-w-md sm:rounded-2xl sm:zoom-in-95"
       >
         {/* Mobile drag affordance */}
         <div className="flex justify-center pt-3 sm:hidden" aria-hidden="true">

@@ -2,7 +2,7 @@
 
 import { Activity, ArrowDownCircle, ArrowUpCircle, Banknote, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { StatCard } from '@/components/admin/stat-card';
 import { AppPagination } from '@/components/app-pagination';

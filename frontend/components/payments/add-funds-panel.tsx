@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, CreditCard, Loader2, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -219,8 +220,14 @@ export function AddFundsPanel({ open, onOpenChange, currency, onSuccess }: AddFu
                       />
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted">
                         {item.logo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={item.logo} alt="" className="h-6 w-6 object-contain" />
+                          <Image
+                            src={item.logo}
+                            alt=""
+                            height={24}
+                            width={24}
+                            loading="lazy"
+                            className="h-6 w-6 object-contain"
+                          />
                         ) : (
                           <CreditCard className="h-5 w-5 text-muted-foreground" aria-hidden />
                         )}

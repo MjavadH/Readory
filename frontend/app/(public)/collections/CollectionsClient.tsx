@@ -23,6 +23,12 @@ export function CollectionsClient({ initialData }: { initialData: CollectionsRes
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
 
+  const LOAD_MORE_SKELETON_COUNT = 4;
+  const LOAD_MORE_SKELETON_KEYS = Array.from(
+    { length: LOAD_MORE_SKELETON_COUNT },
+    (_, i) => `collections-load-more-skeleton-${i}`,
+  );
+
   const loadMore = React.useCallback(async () => {
     if (!nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
@@ -58,8 +64,8 @@ export function CollectionsClient({ initialData }: { initialData: CollectionsRes
           className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {isLoadingMore &&
-            Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-72 rounded-3xl" />
+            LOAD_MORE_SKELETON_KEYS.map((key) => (
+              <Skeleton key={key} className="h-72 rounded-3xl" />
             ))}
         </div>
       )}

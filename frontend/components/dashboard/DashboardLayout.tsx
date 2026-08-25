@@ -3,7 +3,7 @@
 import { Loader2, Menu } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import React, { type ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { NotificationBell } from '@/components/notifications/notification-bell';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -51,6 +51,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <header className="h-18 border-b border-border flex items-center justify-between px-8 bg-card/50 backdrop-blur-sm sticky top-0 z-10 shrink-0">
           <div className="flex items-center gap-4">
             <button
+              type="button"
               className="md:hidden p-2 hover:bg-muted rounded-lg"
               onClick={() => setIsSidebarOpen(true)}
             >
@@ -87,7 +88,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div
+        <button
+          type="button"
+          aria-label="Close sidebar"
           className="fixed inset-0 bg-black/50 z-50 md:hidden backdrop-blur-sm"
           onClick={() => setIsSidebarOpen(false)}
         />

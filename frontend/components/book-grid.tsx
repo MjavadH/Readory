@@ -44,6 +44,7 @@ interface BookGridSkeletonProps {
 }
 
 export function BookGridSkeleton({ count = 12, className }: BookGridSkeletonProps) {
+  const SKELETON_KEYS = Array.from({ length: count }, (_, i) => `skeleton-${i}`);
   return (
     <div
       className={cn(
@@ -55,8 +56,8 @@ export function BookGridSkeleton({ count = 12, className }: BookGridSkeletonProp
         className,
       )}
     >
-      {Array.from({ length: count }).map((_, i) => (
-        <BookCardSkeleton key={`skeleton-${i}`} />
+      {SKELETON_KEYS.map((key) => (
+        <BookCardSkeleton key={key} />
       ))}
     </div>
   );

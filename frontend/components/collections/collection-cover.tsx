@@ -16,9 +16,9 @@ type CollectionCoverProps = {
 };
 
 type Piece = {
-  /** Horizontal centre of the cover, in % of the container width. */
+  /** Horizontal center of the cover, in % of the container width. */
   x: number;
-  /** Vertical centre of the cover, in % of the container height. */
+  /** Vertical center of the cover, in % of the container height. */
   y: number;
   /** Rotation in degrees. */
   r: number;
@@ -86,7 +86,7 @@ export function CollectionCover({
       )}
     >
       {covers.map((book, index) => {
-        const piece = layout[index]!;
+        const piece = layout[index] ?? layout[0];
         return (
           <CollagePiece
             key={book.id ?? index}
@@ -170,9 +170,9 @@ function EmptyCover({ compact }: { compact: boolean }) {
 
   return (
     <div className={cn('relative w-full opacity-60', compact ? 'aspect-16/9' : 'aspect-3/2')}>
-      {stubs.map((s, i) => (
+      {stubs.map((s) => (
         <span
-          key={i}
+          key={`empty-cover-stub-${s.x}-${s.y}-${s.r}`}
           style={{
             left: `${s.x}%`,
             top: `${s.y}%`,

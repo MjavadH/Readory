@@ -35,7 +35,9 @@ const listeners = new Set<() => void>();
 
 const emit = (next: State) => {
   state = next;
-  listeners.forEach((listener) => listener());
+  listeners.forEach((listener) => {
+    listener();
+  });
 };
 
 const fetchProfile = (force = false): Promise<CurrentUser | null> => {
@@ -114,7 +116,7 @@ export function useCurrentUser() {
     isAdmin: snapshot.user?.roleName === 'ADMIN',
     isSuperAdmin: snapshot.user?.id === 1,
     hasPermission: (permission: Permission | Permission[]) => {
-      if (!snapshot.user || snapshot.user.roleName !== 'ADMIN') return false;
+      if (snapshot.user?.roleName !== 'ADMIN') return false;
       if (snapshot.user.id === 1) return true;
       const required = Array.isArray(permission) ? permission : [permission];
       return required.some((p) => Boolean(snapshot.user?.permissions?.includes(p)));

@@ -3,7 +3,6 @@
 import { ImageIcon, Loader2, Pencil, Search, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import AdminPageHeader from '@/components/admin/admin-page-header';
 import { FileUploadPicker } from '@/components/admin/file-upload-picker';
@@ -42,6 +41,11 @@ type PagedMediaResponse = {
 
 const ITEMS_PER_PAGE = 30;
 const MAX_UPLOAD_FILES = 10;
+const SKELETON_COUNT = 10;
+const SKELETON_KEYS = Array.from(
+  { length: SKELETON_COUNT },
+  (_, i) => `media-gallery-skeleton-${i}`,
+);
 
 function isAllowedImage(file: File) {
   return file.type === 'image/jpeg' || file.type === 'image/webp';
@@ -60,7 +64,7 @@ export default function AdminMedia() {
   const paginationScrollRef = useRef<HTMLDivElement>(null);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [_refreshNonce, setRefreshNonce] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -132,7 +136,7 @@ export default function AdminMedia() {
       controller.abort();
       clearTimeout(t);
     };
-  }, [searchQuery, page, refreshNonce, toast]);
+  }, [searchQuery, page, toast]);
 
   const handleUpload = async () => {
     if (!selectedFiles.length) return;
@@ -367,8 +371,8 @@ export default function AdminMedia() {
               {/* First load: skeleton grid */}
               {isGalleryLoading && !hasLoadedOnce ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
-                  {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="overflow-hidden rounded-xl border bg-card">
+                  {SKELETON_KEYS.map((key) => (
+                    <div key={key} className="overflow-hidden rounded-xl border bg-card">
                       <div className="aspect-square bg-muted animate-pulse" />
                       <div className="p-2.5 space-y-2">
                         <div className="h-3 bg-muted animate-pulse rounded" />

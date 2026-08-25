@@ -114,7 +114,9 @@ function PillInput({
     const val = e.target.value;
     if (val.includes(',')) {
       const parts = val.split(',');
-      parts.slice(0, -1).forEach((p) => commitValue(p));
+      parts.slice(0, -1).forEach((p) => {
+        commitValue(p);
+      });
       setInputValue(parts[parts.length - 1]);
     } else {
       setInputValue(val);
@@ -133,13 +135,12 @@ function PillInput({
         'dark:bg-input/30',
         className,
       )}
-      onClick={() => inputRef.current?.focus()}
     >
       {icon && <span className="pointer-events-none shrink-0 text-muted-foreground">{icon}</span>}
       <AnimatePresence initial={false}>
         {pills.map((pill, i) => (
           <motion.div
-            key={pill + i}
+            key={`pill-${pill}`}
             initial={{ opacity: 0, scale: 0.75 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.75 }}
@@ -559,7 +560,7 @@ function ToggleRow({
         : '';
 
   return (
-    <motion.label
+    <motion.div
       data-active={checked}
       animate={checked ? { scale: 1.015 } : { scale: 1 }}
       transition={{ type: 'spring', stiffness: 350, damping: 22 }}
@@ -576,6 +577,6 @@ function ToggleRow({
         </div>
       </div>
       <Switch checked={checked} onCheckedChange={onCheckedChange} />
-    </motion.label>
+    </motion.div>
   );
 }
