@@ -54,6 +54,18 @@ const PASSWORD_FORM_SKELETON_KEYS = Array.from(
   (_, i) => `password-form-skeleton-${i}`,
 );
 
+const VISIBILITY_SKELETON_COUNT = 4;
+const VISIBILITY_SKELETON_KEYS = Array.from(
+  { length: VISIBILITY_SKELETON_COUNT },
+  (_, i) => `visibility-skeleton-${i}`,
+);
+
+const CONNECTED_DEVICES_SKELETON_COUNT = 3;
+const CONNECTED_DEVICES_SKELETON_KEYS = Array.from(
+  { length: CONNECTED_DEVICES_SKELETON_COUNT },
+  (_, i) => `connected-device-skeleton-${i}`,
+);
+
 export default function SettingsPage() {
   const t = useTranslations('UserDashboard');
   const toast = useToast();
@@ -226,7 +238,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="space-y-12 pb-24 animate-pulse">
-        {/* Header */}
+        {/* Header Skeleton */}
         <section className="px-2">
           <div className="space-y-3">
             <div className="flex items-center gap-4">
@@ -240,7 +252,18 @@ export default function SettingsPage() {
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* Forms */}
+          {/* Profile Card Skeleton */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="rounded-3xl border border-border bg-card p-5 sm:p-7 space-y-6 flex flex-col items-center sm:items-start lg:items-center">
+              <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-3xl bg-muted" />
+              <div className="w-full space-y-2 flex flex-col items-center sm:items-start lg:items-center">
+                <div className="h-6 w-36 bg-muted rounded-lg" />
+                <div className="h-4 w-48 bg-muted rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Forms Skeleton */}
           <div className="lg:col-span-8 space-y-10">
             {/* Profile Form Skeleton */}
             <section className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 space-y-8">
@@ -263,6 +286,48 @@ export default function SettingsPage() {
 
               <div className="flex justify-end pt-4">
                 <div className="h-16 w-44 bg-muted rounded-2xl" />
+              </div>
+            </section>
+
+            {/* Public Visibility Settings Skeleton */}
+            <section className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="p-2.5 bg-muted rounded-2xl">
+                  <div className="w-6 h-6 bg-muted-foreground/20 rounded-md" />
+                </div>
+                <div className="h-6 w-56 bg-muted rounded-lg" />
+              </div>
+
+              <div className="space-y-5">
+                {VISIBILITY_SKELETON_KEYS.map((key) => (
+                  <div key={key} className="h-14 w-full bg-muted/60 rounded-2xl" />
+                ))}
+              </div>
+
+              <div className="flex justify-end pt-4">
+                <div className="h-16 w-48 bg-muted rounded-2xl" />
+              </div>
+            </section>
+
+            {/* Connected Devices Skeleton */}
+            <section className="bg-card border border-border rounded-[2.5rem] p-10 shadow-xl shadow-black/5 space-y-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-2.5 bg-muted rounded-2xl">
+                    <div className="w-6 h-6 bg-muted-foreground/20 rounded-md" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-6 w-44 bg-muted rounded-lg" />
+                    <div className="h-4 w-60 bg-muted rounded-lg" />
+                  </div>
+                </div>
+                <div className="h-11 w-11 bg-muted rounded-2xl" />
+              </div>
+
+              <div className="space-y-4">
+                {CONNECTED_DEVICES_SKELETON_KEYS.map((key) => (
+                  <div key={key} className="h-20 w-full bg-muted/60 rounded-2xl" />
+                ))}
               </div>
             </section>
 
