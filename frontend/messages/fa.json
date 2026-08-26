@@ -947,7 +947,8 @@
     "ErrorIndexRequired": "شماره فصل باید ۱ یا بیشتر باشد.",
     "ErrorPriceRequired": "برای فصل پولی، مبلغی بیشتر از صفر وارد کنید.",
     "ErrorScheduleDateRequired": "لطفاً تاریخ و ساعت انتشار را انتخاب کنید.",
-    "ErrorScheduleDateInFuture": "زمان زمان‌بندی باید در آینده باشد."
+    "ErrorScheduleDateInFuture": "زمان زمان‌بندی باید در آینده باشد.",
+    "Close": "بستن"
   },
   "Contributors": {
     "Title": "همکاران",
@@ -1169,7 +1170,9 @@
     "WalletBalance": "موجودی کیف پول",
     "AddFunds": "افزودن موجودی",
     "Language": "زبان",
-    "Notifications": "اعلان‌ها"
+    "Notifications": "اعلان‌ها",
+    "NoResults": "کتابی یافت نشد",
+    "SearchError": "درحال حاضر جست و جو در دسترس نیست"
   },
   "Notifications": {
     "title": "اعلان‌ها",
@@ -1411,6 +1414,7 @@
     "MorePages": "صفحات بیشتر",
     "Edit": "ویرایش",
     "View": "مشاهده",
+    "Retry": "تلاش مجدد",
     "Back": "برگشت"
   }
 }
