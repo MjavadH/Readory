@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
 
 export function ensureAuditRequestMetadata(req: any) {
   const requestId = String(req.headers?.['x-request-id'] ?? req.id ?? randomUUID());

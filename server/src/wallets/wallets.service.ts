@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { type Prisma, TransactionType } from '@prisma/client';
-import type { CacheManager } from '../cache/cache.manager';
+import { Prisma, TransactionType } from '@prisma/client';
+import { CacheManager } from '../cache/cache.manager';
 import { calculateGrowth, clampInt } from '../common';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 type GetWalletOptions = {
   includeTransactions?: boolean;

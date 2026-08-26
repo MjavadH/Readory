@@ -15,7 +15,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { RoleName } from '@prisma/client';
@@ -27,12 +27,12 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { RateLimitService } from '../rate-limit/rate-limit.service';
-import type { WalletsService } from '../wallets/wallets.service';
-import type { AvatarService } from './avatar.service';
-import type { UpdateUserDto } from './dto/update-user.dto';
-import type { UsersService } from './users.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { RateLimitService } from '../rate-limit/rate-limit.service';
+import { WalletsService } from '../wallets/wallets.service';
+import { AvatarService } from './avatar.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UsersService } from './users.service';
 
 @Controller('users')
 export class UsersController {

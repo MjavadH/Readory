@@ -18,9 +18,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { CreateGenreDto } from './dto/create-genre.dto';
-import type { UpdateGenreDto } from './dto/update-genre.dto';
-import type { GenresService } from './genres.service';
+import { CreateGenreDto } from './dto/create-genre.dto';
+import { UpdateGenreDto } from './dto/update-genre.dto';
+import { GenresService } from './genres.service';
 
 @Controller('genres')
 export class GenresController {

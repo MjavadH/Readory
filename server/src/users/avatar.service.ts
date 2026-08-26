@@ -9,9 +9,9 @@ import {
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
-import type { CacheManager } from '../cache/cache.manager';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { StorageService } from '../storage/storage.service';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 const MAX_AVATAR_DIMENSION = 1024;

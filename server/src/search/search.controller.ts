@@ -6,9 +6,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { LiveSearchDto } from './dto/live_search_dto';
-import type { SearchQueryDto } from './dto/search-query.dto';
-import type { SearchService } from './search.service';
+import { LiveSearchDto } from './dto/live_search_dto';
+import { SearchQueryDto } from './dto/search-query.dto';
+import { SearchService } from './search.service';
 
 @Controller('search')
 export class SearchController {

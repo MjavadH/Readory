@@ -2,10 +2,10 @@ import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/commo
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
-import type { BookTypesService } from '../book-types/book-types.service';
-import type { BooksService } from '../books/books.service';
-import type { BrowseGenreDto } from '../books/dto/browse-genre.dto';
-import type { PublicService } from './public.service';
+import { BookTypesService } from '../book-types/book-types.service';
+import { BooksService } from '../books/books.service';
+import { BrowseGenreDto } from '../books/dto/browse-genre.dto';
+import { PublicService } from './public.service';
 
 @Controller('public')
 export class PublicController {

@@ -10,9 +10,9 @@ import {
 import { ChapterContentType } from '@prisma/client';
 import DOMPurify from 'isomorphic-dompurify';
 import { parse } from 'marked';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { ReaderService } from '../reader/reader.service';
-import type { StorageService } from '../storage/storage.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ReaderService } from '../reader/reader.service';
+import { StorageService } from '../storage/storage.service';
 
 const TEXT_UPLOAD_MAX_FILE_BYTES = 2 * 1024 * 1024;
 

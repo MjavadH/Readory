@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import type { PublicationStatus } from '@readory/shared';
-import type { CacheManager } from './cache.manager';
+import { PublicationStatus } from '@readory/shared';
+import { CacheManager } from './cache.manager';
 
 @Injectable()
 export class ChapterCache {

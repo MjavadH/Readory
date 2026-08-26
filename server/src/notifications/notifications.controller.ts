@@ -20,8 +20,8 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { CreateBroadcastDto } from './dto/create-broadcast.dto';
-import type { NotificationsService } from './notifications.service';
+import { CreateBroadcastDto } from './dto/create-broadcast.dto';
+import { NotificationsService } from './notifications.service';
 
 type AuthenticatedRequest = { user: { userId?: number | string; id?: number | string } };
 

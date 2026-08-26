@@ -1,4 +1,4 @@
-import type { PrismaService } from '../prisma/prisma.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 export type LibraryGroup = {
   bookId: number | null;

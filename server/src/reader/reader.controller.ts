@@ -20,9 +20,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { CreateReaderSessionDto } from './dto/create-reader-session.dto';
-import type { SaveProgressDto } from './dto/save-progress.dto';
-import type { ReaderService } from './reader.service';
+import { CreateReaderSessionDto } from './dto/create-reader-session.dto';
+import { SaveProgressDto } from './dto/save-progress.dto';
+import { ReaderService } from './reader.service';
 
 type AuthRequest = Request & { user?: { userId?: number } };
 

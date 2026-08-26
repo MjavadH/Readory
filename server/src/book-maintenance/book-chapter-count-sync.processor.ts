@@ -1,7 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
-import type { Job } from 'bullmq';
-import type {
+import { Job } from 'bullmq';
+import {
   BookChapterCountSyncJobData,
   BookChapterCountSyncResult,
   BookChapterCountSyncService,

@@ -2,17 +2,17 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CollectionType, Prisma } from '@prisma/client';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { createHash } from 'crypto';
-import type { CacheManager } from '../cache/cache.manager';
-import type { CollectionsService } from '../collections/collections.service';
+import { CacheManager } from '../cache/cache.manager';
+import { CollectionsService } from '../collections/collections.service';
 import { clamp, normalizeQ, normalizeSlug, slugify, toNumber } from '../common';
-import type { OutboxService } from '../outbox/outbox.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { PublicService } from '../public/public.service';
-import type { SearchService } from '../search/search.service';
-import type { BrowseSort } from './dto/base-browse.dto';
-import type { BrowseBooksDto } from './dto/browse-books.dto';
-import type { CreateBookDto } from './dto/create-book.dto';
-import type { UpdateBookDto } from './dto/update-book.dto';
+import { OutboxService } from '../outbox/outbox.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicService } from '../public/public.service';
+import { SearchService } from '../search/search.service';
+import { BrowseSort } from './dto/base-browse.dto';
+import { BrowseBooksDto } from './dto/browse-books.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 import {
   RELATED_EXPONENTIAL_DECAY_LAMBDA,
   RELATED_FRESHNESS_WEIGHT,

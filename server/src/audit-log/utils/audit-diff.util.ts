@@ -1,4 +1,4 @@
-import type { AuditDiffEntry } from '../interfaces/audit-log.interface';
+import { AuditDiffEntry } from '../interfaces/audit-log.interface';
 
 const IGNORED_KEYS = [
   /^updatedAt$/i,

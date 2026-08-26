@@ -11,19 +11,19 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import type { AuthService } from './auth.service';
-import type { ForgotPasswordDto } from './dto/forgot-password.dto';
-import type { GoogleLoginDto } from './dto/google-login.dto';
-import type { LinkGoogleDto } from './dto/link-google.dto';
-import type { LoginDto } from './dto/login.dto';
-import type { RegisterDto } from './dto/register.dto';
-import type { ResetPasswordDto } from './dto/reset-password.dto';
-import type { VerifyOtpDto } from './dto/verify-otp.dto';
+import { AuthService } from './auth.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
+import { LinkGoogleDto } from './dto/link-google.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { GoogleOriginGuard } from './google-origin.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
-import type { AuthSecurityService } from './security/auth-security.service';
-import type { SessionService } from './sessions/session.service';
+import { AuthSecurityService } from './security/auth-security.service';
+import { SessionService } from './sessions/session.service';
 
 @Controller('auth')
 export class AuthController {

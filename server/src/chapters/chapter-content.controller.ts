@@ -21,7 +21,7 @@ import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import {
-  type ChapterContentService,
+  ChapterContentService,
   IMAGE_UPLOAD_MAX_FILE_BYTES,
   IMAGE_UPLOAD_MAX_FILES,
   PDF_UPLOAD_MAX_FILE_BYTES,

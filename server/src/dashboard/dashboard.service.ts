@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { AuthService } from '../auth/auth.service';
-import type { CacheManager } from '../cache/cache.manager';
+import { AuthService } from '../auth/auth.service';
+import { CacheManager } from '../cache/cache.manager';
 import { calculateGrowth, clampInt, enrichLibraryGroups, normalizePagination } from '../common';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { WalletsService } from '../wallets/wallets.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { WalletsService } from '../wallets/wallets.service';
 
 type OverviewOptions = {
   txLimit: number;

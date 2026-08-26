@@ -21,10 +21,10 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { ChaptersService } from './chapters.service';
-import type { CreateChapterDto } from './dto/create-chapter.dto';
-import type { ListChaptersDto } from './dto/list-chapters.dto';
-import type { UpdateChapterDto } from './dto/update-chapter.dto';
+import { ChaptersService } from './chapters.service';
+import { CreateChapterDto } from './dto/create-chapter.dto';
+import { ListChaptersDto } from './dto/list-chapters.dto';
+import { UpdateChapterDto } from './dto/update-chapter.dto';
 
 @Controller('books/:bookId/chapters')
 export class ChaptersController {

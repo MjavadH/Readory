@@ -1,21 +1,21 @@
-import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import {
-  type DomainOutboxEvent,
+  DomainOutboxEvent,
   NotificationAudienceType,
   NotificationBroadcastStatus,
   NotificationCategory,
   OutboxEventStatus,
-  type Prisma,
+  Prisma,
 } from '@prisma/client';
 import { DomainEventType, NotificationType } from '@readory/shared';
-import type {
+import {
   AdminBroadcastRequestedEvent,
   BookPublishedEvent,
   ChapterPublishedEvent,
 } from '../outbox/domain-events';
-import type { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { notificationConfig } from './notification.config';
-import type { NotificationsService } from './notifications.service';
+import { NotificationsService } from './notifications.service';
 
 type ClaimedOutboxEvent = DomainOutboxEvent;
 type EventHandler<TPayload> = (event: ClaimedOutboxEvent, payload: TPayload) => Promise<void>;

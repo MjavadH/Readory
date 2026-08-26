@@ -27,7 +27,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { MediaService } from './media.service';
+import { MediaService } from './media.service';
 
 type RenameMediaBody = { filename: string };
 const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9 _-]{3,80}$/;

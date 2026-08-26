@@ -2,24 +2,24 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  type OnModuleDestroy,
-  type OnModuleInit,
+  OnModuleDestroy,
+  OnModuleInit,
 } from '@nestjs/common';
 import {
-  type Prisma,
-  type ScheduledPublication,
+  Prisma,
+  ScheduledPublication,
   ScheduledPublicationStatus,
   ScheduledTargetType,
 } from '@prisma/client';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
-import type { AuditLogService } from '../audit-log/audit-log.service';
-import type { CacheManager } from '../cache/cache.manager';
-import type { ChapterCache } from '../cache/chapter-cache.service';
-import type { OutboxService } from '../outbox/outbox.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { PublicService } from '../public/public.service';
-import type { CreateScheduleDto } from './dto/create-schedule.dto';
-import type { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { CacheManager } from '../cache/cache.manager';
+import { ChapterCache } from '../cache/chapter-cache.service';
+import { OutboxService } from '../outbox/outbox.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicService } from '../public/public.service';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
 
 const QUEUE_NAME = 'scheduled-publications';
 const ACTIVE_STATUSES = [ScheduledPublicationStatus.Pending, ScheduledPublicationStatus.Processing];

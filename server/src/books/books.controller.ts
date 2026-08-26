@@ -23,12 +23,12 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { BooksService } from './books.service';
-import type { BrowseBooksDto } from './dto/browse-books.dto';
-import type { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
-import type { CreateBookDto } from './dto/create-book.dto';
-import type { RateBookDto } from './dto/rate-book.dto';
-import type { UpdateBookDto } from './dto/update-book.dto';
+import { BooksService } from './books.service';
+import { BrowseBooksDto } from './dto/browse-books.dto';
+import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
+import { CreateBookDto } from './dto/create-book.dto';
+import { RateBookDto } from './dto/rate-book.dto';
+import { UpdateBookDto } from './dto/update-book.dto';
 
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 

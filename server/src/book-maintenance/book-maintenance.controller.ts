@@ -7,7 +7,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { BookChapterCountSyncService } from './book-chapter-count-sync.service';
+import { BookChapterCountSyncService } from './book-chapter-count-sync.service';
 
 @Controller('admin/maintenance')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)

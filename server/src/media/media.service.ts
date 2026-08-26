@@ -6,8 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import sharp from 'sharp';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { StorageService } from '../storage/storage.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 const COVER_THUMBNAIL_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const COVER_THUMBNAIL_WIDTH = 480;

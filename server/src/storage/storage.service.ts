@@ -8,10 +8,10 @@ import {
   ListObjectsV2Command,
   PutBucketPolicyCommand,
   PutObjectCommand,
-  type S3Client,
+  S3Client,
 } from '@aws-sdk/client-s3';
-import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 type PutParams = {
   key: string;

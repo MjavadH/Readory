@@ -3,12 +3,12 @@ import { BadRequestException, Injectable, Logger, NotFoundException } from '@nes
 import { ChapterContentType } from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
-import type { CacheManager } from '../cache/cache.manager';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { ReaderService } from '../reader/reader.service';
-import type { StorageService } from '../storage/storage.service';
-import type { PdfProcessingService } from './pdf-processing.service';
-import type { TextProcessingService } from './text-processing.service';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
+import { ReaderService } from '../reader/reader.service';
+import { StorageService } from '../storage/storage.service';
+import { PdfProcessingService } from './pdf-processing.service';
+import { TextProcessingService } from './text-processing.service';
 
 export const IMAGE_UPLOAD_MAX_FILES = 120;
 export const IMAGE_UPLOAD_MAX_FILE_BYTES = 12 * 1024 * 1024;

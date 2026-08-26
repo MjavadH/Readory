@@ -20,9 +20,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { ContributorService } from './contributor.service';
-import type { CreateContributorDto } from './dto/create-contributor.dto';
-import type { UpdateContributorDto } from './dto/update-contributor.dto';
+import { ContributorService } from './contributor.service';
+import { CreateContributorDto } from './dto/create-contributor.dto';
+import { UpdateContributorDto } from './dto/update-contributor.dto';
 
 @Controller('contributor')
 export class ContributorController {

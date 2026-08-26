@@ -2,16 +2,16 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   ForbiddenException,
   Injectable,
-  type OnModuleInit,
+  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { JwtService } from '@nestjs/jwt';
+import { JwtService } from '@nestjs/jwt';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Prisma } from '@prisma/client';
-import type { Request, Response } from 'express';
-import type { CacheManager } from '../../cache/cache.manager';
-import type { MailService } from '../../mail/mail.service';
-import type { PrismaService } from '../../prisma/prisma.service';
+import { Request, Response } from 'express';
+import { CacheManager } from '../../cache/cache.manager';
+import { MailService } from '../../mail/mail.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 type SessionRecord = { id: string };
 

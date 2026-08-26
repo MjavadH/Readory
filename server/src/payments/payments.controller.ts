@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   Body,
   Controller,
@@ -10,14 +11,13 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
-import { randomUUID } from 'crypto';
 import type { Request as ExpressRequest, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import type { CacheManager } from '../cache/cache.manager';
-import type { InitializePaymentDto } from './dto/initialize-payment.dto';
-import type { PaymentsService } from './payments.service';
+import { CacheManager } from '../cache/cache.manager';
+import { InitializePaymentDto } from './dto/initialize-payment.dto';
+import { PaymentsService } from './payments.service';
 
 @Controller('wallet/payment')
 export class PaymentsController {

@@ -1,4 +1,4 @@
-import type { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 const delegateByTarget: Record<string, string> = {
   Book: 'book',

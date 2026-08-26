@@ -1,10 +1,10 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import type { IconKey } from '@readory/shared';
-import type { CacheManager } from '../cache/cache.manager';
+import { IconKey } from '@readory/shared';
+import { CacheManager } from '../cache/cache.manager';
 import { slugify } from '../common';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { PublicService } from '../public/public.service';
-import type { UpdateGenreDto } from './dto/update-genre.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicService } from '../public/public.service';
+import { UpdateGenreDto } from './dto/update-genre.dto';
 
 @Injectable()
 export class GenresService {

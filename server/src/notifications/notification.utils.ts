@@ -1,5 +1,5 @@
+import { createHash } from 'node:crypto';
 import { BadRequestException } from '@nestjs/common';
-import { createHash } from 'crypto';
 
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_BODY_LENGTH = 1000;

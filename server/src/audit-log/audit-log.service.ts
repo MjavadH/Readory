@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import type { CacheManager } from '../cache/cache.manager';
-import type { PrismaService } from '../prisma/prisma.service';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
 import { AUDIT_LOG_CACHE, AUDIT_LOG_CACHE_VERSION_KEY } from './constants/audit-log.constants';
-import type { AuditLogQueryDto } from './dto/audit-log-query.dto';
-import type { AuditLogInput } from './interfaces/audit-log.interface';
+import { AuditLogQueryDto } from './dto/audit-log-query.dto';
+import { AuditLogInput } from './interfaces/audit-log.interface';
 import { generateAuditDiff } from './utils/audit-diff.util';
 import { sanitizeAuditValue } from './utils/audit-sanitizer.util';
 import { inferAuditSeverity } from './utils/audit-severity.util';

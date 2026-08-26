@@ -5,11 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CollectionType, CollectionVisibility, Prisma } from '@prisma/client';
-import type { CacheManager } from '../cache/cache.manager';
+import { CacheManager } from '../cache/cache.manager';
 import { normalizeSlug, toNumber } from '../common';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { CreateCollectionDto } from './dto/create-collection.dto';
-import type { UpdateCollectionDto } from './dto/update-collection.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateCollectionDto } from './dto/create-collection.dto';
+import { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Injectable()
 export class CollectionsService {

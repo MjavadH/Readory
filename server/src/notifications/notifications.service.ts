@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import {
-  type Notification,
-  type NotificationCategory,
+  Notification,
+  NotificationCategory,
   Prisma,
-  type NotificationAudienceType as PrismaNotificationAudienceType,
+  NotificationAudienceType as PrismaNotificationAudienceType,
 } from '@prisma/client';
 import {
   AuditAction,
@@ -11,10 +11,10 @@ import {
   DomainEventType,
   NotificationAudienceType,
 } from '@readory/shared';
-import type { AuditLogService } from '../audit-log/audit-log.service';
-import type { OutboxService } from '../outbox/outbox.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { CreateBroadcastDto } from './dto/create-broadcast.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { OutboxService } from '../outbox/outbox.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateBroadcastDto } from './dto/create-broadcast.dto';
 import { notificationConfig } from './notification.config';
 import {
   compactMetadata,

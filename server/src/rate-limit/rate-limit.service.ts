@@ -1,7 +1,7 @@
+import { createHash } from 'node:crypto';
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import { createHash } from 'crypto';
-import type { Request } from 'express';
-import type Redis from 'ioredis';
+import { Request } from 'express';
+import Redis from 'ioredis';
 
 type LimitOptions = {
   key: string;

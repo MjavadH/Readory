@@ -18,9 +18,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { CreateScheduleDto } from './dto/create-schedule.dto';
-import type { UpdateScheduleDto } from './dto/update-schedule.dto';
-import type { ScheduledPublishingService } from './scheduled-publishing.service';
+import { CreateScheduleDto } from './dto/create-schedule.dto';
+import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { ScheduledPublishingService } from './scheduled-publishing.service';
 
 @Controller('scheduled-publications')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)

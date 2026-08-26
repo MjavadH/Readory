@@ -1,8 +1,8 @@
+import { createHash } from 'node:crypto';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { createHash } from 'crypto';
-import type Redis from 'ioredis';
+import Redis from 'ioredis';
 import { CacheSerializer } from './cache.serializer';
-import type { CacheEnvelope, CacheGetOrSetOptions, CacheObserveContext } from './cache.types';
+import { CacheEnvelope, CacheGetOrSetOptions, CacheObserveContext } from './cache.types';
 
 @Injectable()
 export class CacheManager {

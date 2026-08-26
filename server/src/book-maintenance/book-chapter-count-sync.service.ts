@@ -1,8 +1,8 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import type { Job, Queue } from 'bullmq';
-import type { CacheManager } from '../cache/cache.manager';
-import type { PrismaService } from '../prisma/prisma.service';
+import { Job, Queue } from 'bullmq';
+import { CacheManager } from '../cache/cache.manager';
+import { PrismaService } from '../prisma/prisma.service';
 
 import {
   BOOK_CHAPTER_COUNT_SYNC_ATTEMPTS,

@@ -23,14 +23,14 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { CollectionsService } from './collections.service';
-import type {
+import { CollectionsService } from './collections.service';
+import {
   AddCollectionItemDto,
   ReorderCollectionItemsDto,
   UpdateCollectionItemDto,
 } from './dto/collection-items.dto';
-import type { CreateCollectionDto } from './dto/create-collection.dto';
-import type { UpdateCollectionDto } from './dto/update-collection.dto';
+import { CreateCollectionDto } from './dto/create-collection.dto';
+import { UpdateCollectionDto } from './dto/update-collection.dto';
 
 @Controller('collections')
 export class CollectionsController {

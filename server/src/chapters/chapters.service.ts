@@ -1,16 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DomainEventType } from '@readory/shared';
-import type { CacheManager } from '../cache/cache.manager';
-import type { ChapterCache } from '../cache/chapter-cache.service';
+import { CacheManager } from '../cache/cache.manager';
+import { ChapterCache } from '../cache/chapter-cache.service';
 import { normalizeQ } from '../common';
-import type { OutboxService } from '../outbox/outbox.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { PublicService } from '../public/public.service';
-import type { WalletsService } from '../wallets/wallets.service';
-import type { CreateChapterDto } from './dto/create-chapter.dto';
-import type { ListChaptersDto } from './dto/list-chapters.dto';
-import type { UpdateChapterDto } from './dto/update-chapter.dto';
+import { OutboxService } from '../outbox/outbox.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { PublicService } from '../public/public.service';
+import { WalletsService } from '../wallets/wallets.service';
+import { CreateChapterDto } from './dto/create-chapter.dto';
+import { ListChaptersDto } from './dto/list-chapters.dto';
+import { UpdateChapterDto } from './dto/update-chapter.dto';
 
 @Injectable()
 export class ChaptersService {

@@ -18,9 +18,9 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { BookTypesService } from './book-types.service';
-import type { CreateBookTypeDto } from './dto/create-book-type.dto';
-import type { UpdateBookTypeDto } from './dto/update-book-type.dto';
+import { BookTypesService } from './book-types.service';
+import { CreateBookTypeDto } from './dto/create-book-type.dto';
+import { UpdateBookTypeDto } from './dto/update-book-type.dto';
 
 @Controller('book-types')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)

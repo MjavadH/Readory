@@ -1,20 +1,19 @@
+import * as crypto from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { RoleName } from '@prisma/client';
-import { Prisma } from '@prisma/client';
+import { Prisma, RoleName } from '@prisma/client';
 import * as argon2 from 'argon2';
-import * as crypto from 'crypto';
-import type { CacheManager } from '../cache/cache.manager';
-import type { CollectionsService } from '../collections/collections.service';
-import type { MailService } from '../mail/mail.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { StorageService } from '../storage/storage.service';
-import type { AvatarService } from './avatar.service';
-import type { UpdateUserDto } from './dto/update-user.dto';
+import { CacheManager } from '../cache/cache.manager';
+import { CollectionsService } from '../collections/collections.service';
+import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { AvatarService } from './avatar.service';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {

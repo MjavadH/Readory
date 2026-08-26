@@ -1,15 +1,15 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import * as argon2 from 'argon2';
-import type { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
-import type { CacheManager } from '../cache/cache.manager';
-import type { MailService } from '../mail/mail.service';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { UsersService } from '../users/users.service';
-import type { GoogleAvatarService } from './google-avatar.service';
-import type { SessionService } from './sessions/session.service';
+import { CacheManager } from '../cache/cache.manager';
+import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
+import { GoogleAvatarService } from './google-avatar.service';
+import { SessionService } from './sessions/session.service';
 
 type UserWithRoleAndWallet = {
   id: number;

@@ -13,9 +13,9 @@ import {
 import { ChapterContentType } from '@prisma/client';
 import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
-import type { PrismaService } from '../prisma/prisma.service';
-import type { ReaderService } from '../reader/reader.service';
-import type { StorageService } from '../storage/storage.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { ReaderService } from '../reader/reader.service';
+import { StorageService } from '../storage/storage.service';
 
 export const PDF_UPLOAD_MAX_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_PDF_PAGES = 1000;

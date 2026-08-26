@@ -6,7 +6,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import type { WalletsService } from './wallets.service';
+import { WalletsService } from './wallets.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('wallet')
