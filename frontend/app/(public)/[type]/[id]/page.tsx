@@ -16,7 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { BookCardData } from '@/lib/types';
@@ -92,7 +92,7 @@ export default function BookDetailsPage() {
 
   useEffect(() => {
     if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      return;
+      notFound();
     }
 
     let cancelled = false;
@@ -136,9 +136,11 @@ export default function BookDetailsPage() {
         if (cancelled) return;
 
         setRelatedBooks(relatedResponse.items ?? []);
-      } catch (loadError) {
-        if (!cancelled) {
-          toast.error(getApiErrorMessage(loadError, t('FailedLoadDetails')));
+      } catch (loadError: unknown) {
+        if (loadError instanceof ApiError) {
+          if (!cancelled && loadError.status !== 404) {
+            toast.error(getApiErrorMessage(loadError, t('FailedLoadDetails')));
+          }
         }
       } finally {
         if (!cancelled) {
