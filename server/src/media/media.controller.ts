@@ -78,10 +78,7 @@ export class MediaController {
   )
   async upload(
     @UploadedFiles()
-    payload: {
-      files?: Express.Multer.File[];
-      file?: Express.Multer.File[];
-    },
+    payload: { files?: Express.Multer.File[]; file?: Express.Multer.File[] },
   ) {
     const files = [...(payload.files ?? []), ...(payload.file ?? [])];
 

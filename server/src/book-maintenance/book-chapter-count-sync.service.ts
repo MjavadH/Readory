@@ -210,18 +210,18 @@ export class BookChapterCountSyncService {
             WHERE c."publishStatus" = 'PUBLISHED'::"PublicationStatus"
           )::integer AS "chapterCount"
         FROM "Book" b
-        LEFT JOIN "Chapter" c
-          ON c."bookId" = b."id"
+               LEFT JOIN "Chapter" c
+                         ON c."bookId" = b."id"
         WHERE b."id" > ${cursorId}
           AND b."id" <= ${lastBookId}
         GROUP BY b."id"
       )
       UPDATE "Book" b
       SET "chapterCount" = desired_counts."chapterCount"
-      FROM desired_counts
+        FROM desired_counts
       WHERE b."id" = desired_counts."id"
         AND b."chapterCount" IS DISTINCT FROM desired_counts."chapterCount"
-      RETURNING b."id";
+        RETURNING b."id";
     `;
 
     return updatedRows.map((row) => row.id);
