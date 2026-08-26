@@ -108,8 +108,11 @@ export default function ReadingProgressPage() {
       {data && data.data.length > 0 ? (
         <div ref={paginationScrollRef} className="grid grid-cols-1 gap-8">
           <AnimatePresence mode="popLayout">
-            {data?.data.map((item) => (
-              <ContinueReadingCard key={item.chapter.id} progress={item} />
+            {data.data.map((item) => (
+              <ContinueReadingCard
+                key={`progress-${item.book.id}-${item.chapter?.id ?? item.chapter?.index}`}
+                progress={item}
+              />
             ))}
           </AnimatePresence>
         </div>
