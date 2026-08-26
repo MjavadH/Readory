@@ -28,6 +28,7 @@ export function LanguageSwitcher({ variant = 'default' }: LanguageSwitcherProps)
     if (newLocale === currentLocale) return;
 
     startTransition(() => {
+      // biome-ignore lint/suspicious/noDocumentCookie: Direct cookie write required to persist locale before page reload
       document.cookie = `locale=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
       window.location.reload();
     });

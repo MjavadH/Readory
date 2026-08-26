@@ -1,9 +1,9 @@
-import { Injectable, Inject, Logger, BadRequestException } from '@nestjs/common';
-import { Prisma, PublicationStatus } from '@prisma/client';
-import { Index, Meilisearch } from 'meilisearch';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import type { Prisma, PublicationStatus } from '@prisma/client';
+import type { Index, Meilisearch } from 'meilisearch';
 import { normalizeAndValidateSlug } from '../common';
-import { PrismaService } from '../prisma/prisma.service';
-import { SearchQueryDto } from './dto/search-query.dto';
+import type { PrismaService } from '../prisma/prisma.service';
+import type { SearchQueryDto } from './dto/search-query.dto';
 
 export interface BookSearchDocument {
   id: number;
@@ -31,8 +31,8 @@ export class SearchService {
   private fullSyncRunning = false;
 
   constructor(
-      @Inject('MEILISEARCH_CLIENT') private readonly client: Meilisearch,
-      private readonly prisma: PrismaService,
+    @Inject('MEILISEARCH_CLIENT') private readonly client: Meilisearch,
+    private readonly prisma: PrismaService,
   ) {
     this.bookIndex = this.client.index('books');
   }
@@ -193,7 +193,7 @@ export class SearchService {
   }
 
   async syncAllDatabaseBooks() {
-    let cursorId: number | undefined = undefined;
+    let cursorId: number | undefined;
     const batchSize = 500;
 
     type SyncBookType = Prisma.BookGetPayload<{
