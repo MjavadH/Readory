@@ -193,7 +193,7 @@ export class SearchService {
   }
 
   async syncAllDatabaseBooks() {
-    let cursorId: number | undefined = undefined;
+    let cursorId: number | undefined;
     const batchSize = 500;
 
     type SyncBookType = Prisma.BookGetPayload<{

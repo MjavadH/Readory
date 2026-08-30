@@ -394,6 +394,7 @@ export class ReaderService {
       where: {
         bookId,
         contentType: { not: null },
+        publishStatus: PublicationStatus.PUBLISHED,
       },
       orderBy: {
         index: 'asc',
