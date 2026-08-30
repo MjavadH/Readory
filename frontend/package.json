@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p 3001",
-    "lint": "eslint"
+    "start": "next start -p 3001"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
