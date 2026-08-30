@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Bell,
   BookOpen,
   Check,
   Crown,
@@ -120,17 +121,17 @@ export default function AdminStaff() {
       icon: DollarSign,
       color: 'text-yellow-600 dark:text-yellow-500',
     },
+    MANAGE_NOTIFICATIONS: {
+      label: t('ManageNotifications'),
+      description: t('ManageNotificationsDescription'),
+      icon: Bell,
+      color: 'text-purple-600 dark:text-purple-500',
+    },
     MANAGE_STAFF: {
       label: t('ManageStaff'),
       description: t('ManageStaffDescription'),
       icon: UserCog,
       color: 'text-red-600 dark:text-red-500',
-    },
-    MANAGE_NOTIFICATIONS: {
-      label: 'Manage notifications',
-      description: 'Create broadcasts and review notification delivery status.',
-      icon: UserCog,
-      color: 'text-purple-600 dark:text-purple-500',
     },
   };
 

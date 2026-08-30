@@ -8,7 +8,6 @@
       "Catalog": "کاتالوگ",
       "Books": "کتاب‌ها",
       "Contributors": "همکاران",
-      "Authors": "نویسندگان",
       "Genres": "ژانرها",
       "BooksType": "نوع کتاب",
       "MediaLibrary": "کتابخانه رسانه",
@@ -267,10 +266,13 @@
       "ManageFinance": "مدیریت مالی",
       "ManageFinanceDescription": "می‌تواند تراکنش‌ها را مشاهده و موجودی‌ها را تنظیم کند",
       "ManageStaff": "مدیریت کارکنان",
-      "ManageStaffDescription": "می‌تواند سایر ادمین‌ها را مدیریت کند (فقط ابرادمین)"
+      "ManageStaffDescription": "می‌تواند سایر ادمین‌ها را مدیریت کند (فقط ابرادمین)",
+      "ManageNotifications": "مدیرییت اعلان‌ها",
+      "ManageNotificationsDescription": "ایجاد و بررسی وضعیت انتقال اعلان‌ها"
     },
     "AuditLog": {
       "AuditLog": "گزارش ممیزی",
+      "ScheduledPublishing": "زمانبندی انتشار",
       "Title": "گزارش ممیزی",
       "Description": "اقدامات مدیریتی حساس را بررسی کنید.",
       "Filters": "فیلترها",
@@ -373,7 +375,12 @@
     "Settings": {
       "Title": "تنظیمات",
       "Description": "تنظیم ترجیحات سیستم",
-      "SyncAllBooks": "همگام‌سازی همه کتاب‌ها"
+      "SyncAllBooks": "همگام‌سازی همه کتاب‌ها با سیستم جست و جو",
+      "SyncAllBooksLoading": "درحال همگام سازی...",
+      "SyncAllBooksSuccess": "همگام‌سازی کتاب ها شروع شد",
+      "SyncBookChapterCounts": "تعمیر تعداد چپترهای کتاب",
+      "SyncBookChapterCountsLoading": "افزودن تعمیر به صف...",
+      "SyncBookChapterCountsSuccess": "وظیفه تعمیر چپترهای کتاب شروع شد"
     }
   },
   "Auth": {

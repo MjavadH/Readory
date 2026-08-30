@@ -266,7 +266,9 @@
       "ManageFinance": "Manage Finance",
       "ManageFinanceDescription": "Can view transactions and adjust balances",
       "ManageStaff": "Manage Staff",
-      "ManageStaffDescription": "Can manage other admins (Super Admin only)"
+      "ManageStaffDescription": "Can manage other admins (Super Admin only)",
+      "ManageNotifications": "Manage notifications",
+      "ManageNotificationsDescription": "Create broadcasts and review notification delivery status"
     },
     "AuditLog": {
       "AuditLog": "Audit Log",
