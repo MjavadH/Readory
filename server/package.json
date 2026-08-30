@@ -11,11 +11,14 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "pretest": "prisma generate --schema prisma/schema.prisma",
+    "test": "jest --config ./test/jest.unit.config.ts",
+    "test:watch": "jest --config ./test/jest.unit.config.ts --watch",
+    "test:cov": "jest --config ./test/jest.unit.config.ts --coverage",
+    "test:debug": "node --inspect-brk ../node_modules/jest/bin/jest.js --config ./test/jest.unit.config.ts --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:spec": "tsc -p tsconfig.spec.json --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",
@@ -88,25 +91,5 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^@readory/shared$": "<rootDir>/../../shared/index.ts"
-    }
   }
 }
