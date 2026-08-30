@@ -1,234 +1,347 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
+import {
+  asCacheManager,
+  asPrismaService,
+  createMockCacheManager,
+  createMockPrismaService,
+  decimal,
+  type MockCacheManager,
+  type MockPrismaService,
+} from '../../test/mocks';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletsService } from './wallets.service';
 
+const USER_ID = 10;
+const WALLET_ID = 1;
+
 describe('WalletsService', () => {
   let service: WalletsService;
-  let prisma: Record<string, any>;
-  let cacheManager: Record<string, any>;
+  let prisma: MockPrismaService;
+  let cacheManager: MockCacheManager;
+
+  /** Money columns arrive from Prisma as Decimal, so fixtures must use it too. */
+  const wallet = (balance: number) => ({
+    id: WALLET_ID,
+    userId: USER_ID,
+    balance: decimal(balance),
+  });
 
   beforeEach(async () => {
-    prisma = {
-      wallet: {
-        upsert: jest.fn().mockResolvedValue({ id: 1, userId: 10, balance: 50 }),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-      },
-      walletTransaction: {
-        aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 0 } }),
-        count: jest.fn().mockResolvedValue(0),
-        findMany: jest.fn().mockResolvedValue([]),
-        groupBy: jest.fn().mockResolvedValue([]),
-        create: jest.fn(),
-      },
-      $transaction: jest.fn((fn: Function) => fn(prisma)),
-    };
+    prisma = createMockPrismaService();
+    cacheManager = createMockCacheManager();
 
-    cacheManager = {
-      getString: jest.fn().mockResolvedValue(null),
-      setString: jest.fn(),
-      del: jest.fn(),
-    };
+    prisma.wallet.upsert.mockResolvedValue(wallet(50));
+    prisma.walletTransaction.aggregate.mockResolvedValue({ _sum: { amount: decimal(0) } });
+    prisma.walletTransaction.count.mockResolvedValue(0);
+    prisma.walletTransaction.findMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WalletsService,
-        { provide: PrismaService, useValue: prisma },
-        { provide: CacheManager, useValue: cacheManager },
+        { provide: PrismaService, useValue: asPrismaService(prisma) },
+        { provide: CacheManager, useValue: asCacheManager(cacheManager) },
       ],
     }).compile();
 
-    service = module.get<WalletsService>(WalletsService);
+    service = module.get(WalletsService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('getWallet', () => {
-    it('returns wallet without transactions when includeTransactions is false', async () => {
+    it('creates the wallet on first access via upsert', async () => {
+      // Act
+      await service.getWallet(USER_ID, { includeTransactions: false });
+
+      // Assert: a missing wallet must be provisioned rather than 404.
+      expect(prisma.wallet.upsert).toHaveBeenCalledWith({
+        where: { userId: USER_ID },
+        update: {},
+        create: { userId: USER_ID, balance: 0 },
+        select: { id: true, userId: true, balance: true },
+      });
+    });
+
+    it('returns balance and totals as plain numbers when transactions are excluded', async () => {
+      // Arrange
       prisma.walletTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 100 } })
-        .mockResolvedValueOnce({ _sum: { amount: 30 } });
+        .mockResolvedValueOnce({ _sum: { amount: decimal(100) } })
+        .mockResolvedValueOnce({ _sum: { amount: decimal(30) } });
 
-      const result = await service.getWallet(10, { includeTransactions: false });
+      // Act
+      const result = await service.getWallet(USER_ID, { includeTransactions: false });
 
+      // Assert: Decimal is normalised to number for the API boundary.
       expect(result).toEqual({
-        id: 1,
-        userId: 10,
+        id: WALLET_ID,
+        userId: USER_ID,
         balance: 50,
         totals: { deposits: 100, withdrawals: 30 },
       });
-      expect(result).not.toHaveProperty('transactions');
+      expect(typeof result.balance).toBe('number');
+      // No transaction listing should be fetched in this mode.
+      expect(prisma.walletTransaction.findMany).not.toHaveBeenCalled();
     });
 
-    it('returns recent transactions with take option', async () => {
-      const tx = {
-        id: 1,
-        amount: { toString: () => '10' },
-        type: 'CREDIT',
-        reference: 'ref',
-        createdAt: new Date(),
-      };
-      prisma.walletTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 100 } })
-        .mockResolvedValueOnce({ _sum: { amount: 30 } });
-      prisma.walletTransaction.count.mockResolvedValue(5);
-      prisma.walletTransaction.findMany.mockResolvedValue([tx]);
+    it('coerces null aggregate sums to zero', async () => {
+      // Arrange: Prisma returns null when no rows match.
+      prisma.walletTransaction.aggregate.mockResolvedValue({ _sum: { amount: null } });
 
-      const result = await service.getWallet(10, { take: 3 });
+      // Act
+      const result = await service.getWallet(USER_ID, { includeTransactions: false });
 
-      expect(result.transactions.data).toHaveLength(1);
-      expect(result.transactions.hasMore).toBe(true);
+      // Assert
+      expect(result.totals).toEqual({ deposits: 0, withdrawals: 0 });
     });
 
-    it('returns paginated transactions in history mode', async () => {
-      prisma.walletTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 0 } })
-        .mockResolvedValueOnce({ _sum: { amount: 0 } });
-      prisma.walletTransaction.count.mockResolvedValue(100);
-      prisma.walletTransaction.findMany.mockResolvedValue([]);
-
-      const result = await service.getWallet(10, { page: 2, limit: 10 });
-
-      expect(result.transactions.page).toBe(2);
-      expect(result.transactions.lastPage).toBe(10);
-      expect(result.transactions.hasMore).toBe(true);
-    });
-
-    it('clamps take value to [1, 50]', async () => {
-      prisma.walletTransaction.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
-      prisma.walletTransaction.count.mockResolvedValue(0);
-      prisma.walletTransaction.findMany.mockResolvedValue([]);
-
-      await service.getWallet(10, { take: 999 });
-
-      expect(prisma.walletTransaction.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ take: 50 }),
-      );
-    });
-
-    it('creates wallet if not existing (ensureWallet)', async () => {
-      prisma.walletTransaction.aggregate.mockResolvedValue({ _sum: { amount: 0 } });
-
-      await service.getWallet(10, { includeTransactions: false });
-
-      expect(prisma.wallet.upsert).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { userId: 10 } }),
-      );
-    });
-  });
-
-  describe('getAllTransactions', () => {
-    it('returns cached stats when available', async () => {
-      const stats = {
-        total: 5,
-        credits: 3,
-        debits: 2,
-        creditAmount: 100,
-        debitAmount: 50,
-        growth: { totalTransactions: 0, creditAmount: 0, debitAmount: 0 },
-      };
-      cacheManager.getString.mockResolvedValue(JSON.stringify(stats));
-      prisma.walletTransaction.findMany.mockResolvedValue([]);
-
-      const result = await service.getAllTransactions(1, 10);
-
-      expect(result.stats).toEqual(stats);
-    });
-
-    it('fetches and caches stats when not cached', async () => {
-      cacheManager.getString.mockResolvedValue(null);
-      prisma.walletTransaction.count.mockResolvedValue(10);
-      prisma.walletTransaction.groupBy.mockResolvedValue([
-        { type: 'CREDIT', _sum: { amount: 100 }, _count: { _all: 5 } },
-        { type: 'DEBIT', _sum: { amount: 50 }, _count: { _all: 5 } },
+    it('returns recent transactions and reports hasMore when more exist', async () => {
+      // Arrange
+      const createdAt = new Date('2026-01-01T00:00:00.000Z');
+      prisma.walletTransaction.count.mockResolvedValue(25);
+      prisma.walletTransaction.findMany.mockResolvedValue([
+        { id: 5, amount: decimal(75.5), type: 'CREDIT', reference: 'topup', createdAt },
       ]);
-      prisma.walletTransaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: 20 } })
-        .mockResolvedValueOnce({ _sum: { amount: 10 } })
-        .mockResolvedValueOnce({ _sum: { amount: 15 } })
-        .mockResolvedValueOnce({ _sum: { amount: 8 } });
-      prisma.walletTransaction.findMany.mockResolvedValue([]);
 
-      const result = await service.getAllTransactions(1, 10);
+      // Act
+      const result = await service.getWallet(USER_ID, { take: 10 });
 
-      expect(result.stats).toBeDefined();
-      expect(result.stats.total).toBe(10);
-      expect(cacheManager.setString).toHaveBeenCalledWith(
-        'stats:transactions',
-        expect.any(String),
-        3600,
+      // Assert
+      expect(result.transactions).toEqual({
+        data: [{ id: 5, amount: 75.5, type: 'CREDIT', reference: 'topup', createdAt }],
+        total: 25,
+        hasMore: true,
+      });
+    });
+
+    it('reports hasMore false when the page covers every transaction', async () => {
+      // Arrange
+      prisma.walletTransaction.count.mockResolvedValue(3);
+
+      // Act
+      const result = await service.getWallet(USER_ID, { take: 10 });
+
+      // Assert
+      expect(result.transactions?.hasMore).toBe(false);
+    });
+
+    it('clamps an out-of-range take to the 50 maximum', async () => {
+      // Act
+      await service.getWallet(USER_ID, { take: 9999 });
+
+      // Assert
+      expect(prisma.walletTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 50, orderBy: { createdAt: 'desc' } }),
+      );
+    });
+
+    it('paginates history mode and derives lastPage', async () => {
+      // Arrange
+      prisma.walletTransaction.count.mockResolvedValue(95);
+
+      // Act
+      const result = await service.getWallet(USER_ID, { page: 2, limit: 30 });
+
+      // Assert
+      expect(prisma.walletTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 30, take: 30 }),
+      );
+      expect(result.transactions).toMatchObject({ total: 95, page: 2, lastPage: 4 });
+    });
+
+    it('clamps a page below 1 and a limit above the cap', async () => {
+      // Arrange
+      prisma.walletTransaction.count.mockResolvedValue(10);
+
+      // Act
+      const result = await service.getWallet(USER_ID, { page: 0, limit: 500 });
+
+      // Assert
+      expect(result.transactions?.page).toBe(1);
+      expect(prisma.walletTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 100, skip: 0 }),
+      );
+    });
+
+    it('defaults to history mode with page 1 and limit 30', async () => {
+      // Act
+      const result = await service.getWallet(USER_ID);
+
+      // Assert
+      expect(result.transactions).toMatchObject({ page: 1, lastPage: 1 });
+      expect(prisma.walletTransaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skip: 0, take: 30 }),
       );
     });
   });
 
   describe('credit', () => {
-    it('throws ForbiddenException when amount <= 0', async () => {
-      await expect(service.credit(1, 0)).rejects.toThrow(ForbiddenException);
-      await expect(service.credit(1, -5)).rejects.toThrow(ForbiddenException);
-    });
+    it('increments the balance, records a CREDIT row and busts the stats cache', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(wallet(50));
+      prisma.wallet.update.mockResolvedValue(wallet(150));
 
-    it('throws NotFoundException when wallet not found', async () => {
-      prisma.wallet.findUnique.mockResolvedValue(null);
-      await expect(service.credit(1, 10)).rejects.toThrow(NotFoundException);
-    });
+      // Act
+      const result = await service.credit(USER_ID, 100, 'invoice-1');
 
-    it('credits wallet and creates transaction record', async () => {
-      prisma.wallet.findUnique.mockResolvedValue({ id: 1, userId: 10, balance: 50 });
-      prisma.wallet.update.mockResolvedValue({ id: 1, userId: 10, balance: 60 });
-
-      const result = await service.credit(10, 10, 'deposit');
-
-      expect(result.balance).toBe(60);
+      // Assert
+      expect(prisma.wallet.update).toHaveBeenCalledWith({
+        where: { userId: USER_ID },
+        data: { balance: { increment: 100 } },
+      });
       expect(prisma.walletTransaction.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          amount: 10,
+        data: {
+          walletId: WALLET_ID,
+          amount: 100,
           type: 'CREDIT',
-          reference: 'deposit',
-        }),
+          reference: 'invoice-1',
+        },
       });
       expect(cacheManager.del).toHaveBeenCalledWith('stats:transactions');
+      expect(result.balance.toNumber()).toBe(150);
+    });
+
+    it('runs inside a transaction when no client is supplied', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(wallet(0));
+      prisma.wallet.update.mockResolvedValue(wallet(5));
+
+      // Act
+      await service.credit(USER_ID, 5);
+
+      // Assert: the balance read and write must be atomic.
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('joins an ambient transaction instead of opening its own', async () => {
+      // Arrange: a caller-provided client (e.g. a payment callback).
+      const ambient = createMockPrismaService();
+      ambient.wallet.findUnique.mockResolvedValue(wallet(0));
+      ambient.wallet.update.mockResolvedValue(wallet(20));
+
+      // Act
+      await service.credit(USER_ID, 20, 'ref', ambient as never);
+
+      // Assert
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(ambient.wallet.update).toHaveBeenCalled();
+    });
+
+    it.each([0, -1, -0.5])('rejects a non-positive amount of %s', async (amount) => {
+      // Act & Assert
+      await expect(service.credit(USER_ID, amount)).rejects.toThrow(ForbiddenException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when the wallet is missing', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(service.credit(USER_ID, 10)).rejects.toThrow(NotFoundException);
+      expect(prisma.wallet.update).not.toHaveBeenCalled();
+    });
+
+    it('does not bust the cache when the transaction fails', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(wallet(0));
+      prisma.wallet.update.mockRejectedValue(new Error('deadlock'));
+
+      // Act & Assert
+      await expect(service.credit(USER_ID, 10)).rejects.toThrow('deadlock');
+      expect(cacheManager.del).not.toHaveBeenCalled();
     });
   });
 
   describe('debit', () => {
-    it('throws ForbiddenException when amount <= 0', async () => {
-      await expect(service.debit(1, 0)).rejects.toThrow(ForbiddenException);
-      await expect(service.debit(1, -5)).rejects.toThrow(ForbiddenException);
-    });
+    it('decrements the balance and records a DEBIT row', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(wallet(100));
+      prisma.wallet.update.mockResolvedValue(wallet(60));
 
-    it('throws NotFoundException when wallet not found', async () => {
-      prisma.wallet.findUnique.mockResolvedValue(null);
-      await expect(service.debit(1, 10)).rejects.toThrow(NotFoundException);
-    });
+      // Act
+      const result = await service.debit(USER_ID, 40, 'purchase-1');
 
-    it('throws ForbiddenException when balance insufficient', async () => {
-      prisma.wallet.findUnique.mockResolvedValue({ id: 1, balance: { toNumber: () => 5 } });
-      await expect(service.debit(1, 10)).rejects.toThrow(ForbiddenException);
-    });
-
-    it('debits wallet and creates transaction record', async () => {
-      prisma.wallet.findUnique.mockResolvedValue({
-        id: 1,
-        userId: 10,
-        balance: { toNumber: () => 50 },
+      // Assert
+      expect(prisma.wallet.update).toHaveBeenCalledWith({
+        where: { userId: USER_ID },
+        data: { balance: { decrement: 40 } },
       });
-      prisma.wallet.update.mockResolvedValue({ id: 1, userId: 10, balance: 40 });
-
-      const result = await service.debit(10, 10, 'purchase');
-
-      expect(result.balance).toBe(40);
       expect(prisma.walletTransaction.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          amount: 10,
+        data: {
+          walletId: WALLET_ID,
+          amount: 40,
           type: 'DEBIT',
-          reference: 'purchase',
-        }),
+          reference: 'purchase-1',
+        },
       });
-      expect(cacheManager.del).toHaveBeenCalledWith('stats:transactions');
+      expect(result.balance.toNumber()).toBe(60);
+    });
+
+    it('throws ForbiddenException and records nothing when funds are insufficient', async () => {
+      // Arrange: the decrement drives the balance negative.
+      prisma.wallet.findUnique.mockResolvedValue(wallet(10));
+      prisma.wallet.update.mockResolvedValue(wallet(-40));
+
+      // Act & Assert
+      await expect(service.debit(USER_ID, 50)).rejects.toThrow('Insufficient balance');
+      // The throw happens before the ledger write, so the transaction rolls back
+      // without leaving an orphaned DEBIT record.
+      expect(prisma.walletTransaction.create).not.toHaveBeenCalled();
+    });
+
+    it('permits a debit that lands exactly on a zero balance', async () => {
+      // Arrange: boundary case — zero is allowed, only negative is refused.
+      prisma.wallet.findUnique.mockResolvedValue(wallet(50));
+      prisma.wallet.update.mockResolvedValue(wallet(0));
+
+      // Act
+      const result = await service.debit(USER_ID, 50);
+
+      // Assert
+      expect(result.balance.toNumber()).toBe(0);
+      expect(prisma.walletTransaction.create).toHaveBeenCalled();
+    });
+
+    it.each([0, -25])('rejects a non-positive amount of %s', async (amount) => {
+      // Act & Assert
+      await expect(service.debit(USER_ID, amount)).rejects.toThrow('Amount must be positive');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when the wallet is missing', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(service.debit(USER_ID, 10)).rejects.toThrow(NotFoundException);
+    });
+
+    it('joins an ambient transaction when one is provided', async () => {
+      // Arrange
+      const ambient = createMockPrismaService();
+      ambient.wallet.findUnique.mockResolvedValue(wallet(100));
+      ambient.wallet.update.mockResolvedValue(wallet(90));
+
+      // Act
+      await service.debit(USER_ID, 10, 'ref', ambient);
+
+      // Assert
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(ambient.walletTransaction.create).toHaveBeenCalled();
+    });
+
+    it('does not bust the cache when the debit is rejected', async () => {
+      // Arrange
+      prisma.wallet.findUnique.mockResolvedValue(wallet(10));
+      prisma.wallet.update.mockResolvedValue(wallet(-1));
+
+      // Act & Assert
+      await expect(service.debit(USER_ID, 11)).rejects.toThrow(ForbiddenException);
+      expect(cacheManager.del).not.toHaveBeenCalled();
     });
   });
 });

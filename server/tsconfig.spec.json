@@ -1,0 +1,22 @@
+{
+  // Jest executes on CommonJS. The runtime tsconfig targets `nodenext`, which makes
+  // TypeScript emit real ESM for any file in an ESM package scope (notably the
+  // `@readory/shared` workspace, whose package.json declares `"type": "module"`).
+  // The CJS Jest runtime cannot parse that output, so tests get a
+  // `SyntaxError: Unexpected token 'export'`. Overriding the module system here
+  // keeps production emit untouched while giving tests loadable CommonJS.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    // `resolvePackageJsonExports` is only legal with node16/nodenext/bundler
+    // resolution, so it must be switched off alongside the override above.
+    "resolvePackageJsonExports": false,
+    // ts-jest compiles file-by-file; `isolatedModules` in the base config is a
+    // correctness constraint for that mode and is enforced by the typecheck gate
+    // (`npm run typecheck:spec`) rather than at transform time.
+    "isolatedModules": false,
+    "types": ["jest", "node"]
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"]
+}
