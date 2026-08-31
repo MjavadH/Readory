@@ -1,5 +1,5 @@
 import type { Config } from 'jest';
-import { discoverEsmModuleNameMappings, discoverEsmOnlyPackages } from './esm-only-packages.ts';
+import { discoverEsmModuleNameMappings, discoverEsmOnlyPackages } from './esm-only-packages';
 
 /**
  * The ESM interop surface is discovered from the installed dependency tree at
@@ -40,7 +40,7 @@ const config: Config = {
 
   moduleNameMapper: {
     // The workspace symlinks @readory/shared into node_modules, so map it to
-    // the real source. Its package.json is `"type": "module"`, which is why
+    // the real source. It's package.json is `"type": "module"`, which is why
     // tsconfig.spec.json must force CommonJS emit.
     '^@readory/shared$': '<rootDir>/../shared/index.ts',
 
