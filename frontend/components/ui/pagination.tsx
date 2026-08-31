@@ -78,19 +78,17 @@ function PaginationNext({ className, ...props }: React.ComponentProps<typeof Pag
 }
 
 function PaginationEllipsis({ className, ...props }: React.ComponentProps<'span'>) {
-  const t = useTranslations('General');
   return (
     <span
       aria-hidden
       data-slot="pagination-ellipsis"
       className={cn(
-        "size-9 items-center justify-center [&_svg:not([class*='size-'])]:size-4 flex items-center justify-center",
+        "size-9 items-center justify-center [&_svg:not([class*='size-'])]:size-4 flex",
         className,
       )}
       {...props}
     >
       <MoreHorizontalIcon />
-      <span className="sr-only">{t('MorePages')}</span>
     </span>
   );
 }
