@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 
 export interface LiveSearchHit {
   id: number;
+  slug: string;
   title: string;
   coverImage: string | null;
   bookTypeSlug: string;

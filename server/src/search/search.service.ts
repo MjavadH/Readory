@@ -7,6 +7,7 @@ import { SearchQueryDto } from './dto/search-query.dto';
 
 export interface BookSearchDocument {
   id: number;
+  slug: string;
   title: string;
   originalTitle: string | null;
   alternativeTitles: string[];
@@ -88,7 +89,7 @@ export class SearchService {
     const result = await this.bookIndex.search(query, {
       limit: 5,
       filter: ['publishStatus = "PUBLISHED"', 'typeIsActive = true'],
-      attributesToRetrieve: ['id', 'title', 'coverImage', 'bookTypeSlug'],
+      attributesToRetrieve: ['id', 'slug', 'title', 'coverImage', 'bookTypeSlug'],
     });
     return result.hits;
   }
@@ -234,6 +235,7 @@ export class SearchService {
         const documents: BookSearchDocument[] = books.map((book: SyncBookType) => {
           return {
             id: book.id,
+            slug: book.slug,
             title: book.title,
             originalTitle: book.originalTitle,
             alternativeTitles: book.alternativeTitles,

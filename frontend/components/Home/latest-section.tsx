@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { formatUpdateTime } from '@/lib/time';
-import type { BookType } from '@/lib/types';
+import { getBookUrl, type BookType } from '@/lib/types';
 
 interface Chapter {
   id: number;
@@ -20,6 +20,7 @@ interface Chapter {
 
 interface LatestBook {
   id: number;
+  slug: string;
   title: string;
   cover: string;
   time: string;
@@ -118,8 +119,8 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
       {/* Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.map((book, index) => {
-          const typeSlug = book.type.slug;
           const typeDisplay = book.type.name;
+          const bookUrl = getBookUrl(book);
           const isFree = book.chapters[0]?.free;
 
           return (
@@ -134,7 +135,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                 ease: [0.22, 1, 0.36, 1],
               }}
               whileHover={{ y: -4 }}
-              onClick={() => router.push(`/${typeSlug}/${book.id}`)}
+              onClick={() => router.push(bookUrl)}
               className="group relative flex cursor-pointer gap-4 overflow-hidden rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-colors duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
             >
               {/* Hover gradient wash */}
@@ -196,7 +197,7 @@ export function LatestSection({ books }: { books: LatestBook[] }) {
                   {book.chapters.slice(0, 2).map((ch) => (
                     <Link
                       key={ch.id}
-                      href={`/${typeSlug}/${book.id}/c/${ch.num}`}
+                      href={`${bookUrl}/c/${ch.num}`}
                       onClick={(e) => e.stopPropagation()}
                       className="group/ch flex items-center justify-between rounded-lg border border-border/40 bg-muted/60 px-2.5 py-1.5 text-xs transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                     >

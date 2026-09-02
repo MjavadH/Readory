@@ -270,7 +270,6 @@ export function ReaderToolbar({
         <ChapterPurchaseDialog
           book={book}
           chapter={toDialogChapter(purchaseTarget)}
-          typeSlug={typeSlug}
           onPurchased={(chapterId) => {
             onPurchased?.(chapterId);
             setPurchaseTarget(null);

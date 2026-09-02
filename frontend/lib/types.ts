@@ -86,6 +86,7 @@ export interface Transaction {
 export interface ReadingProgress {
   book: {
     id: number;
+    slug: string;
     title: string;
     contributors: string;
     coverImage: string;
@@ -167,12 +168,10 @@ export function bookTypeLabel(type: BookType | string): string {
 }
 
 /**
- * Generates the URL for a book based on its type and id/slug.
+ * Generates the canonical URL for a book.
  */
-export function getBookUrl(book: Pick<BookCardData, 'id' | 'slug' | 'type'>): string {
-  const typeSlug = book.type.slug;
-  const identifier = book.slug ?? book.id;
-  return `/${typeSlug}/${identifier}`;
+export function getBookUrl(book: { id: number; slug?: string; type: { slug: string } }): string {
+  return `/${encodeURIComponent(book.type.slug)}/${book.id}-${encodeURIComponent(book.slug ?? '')}`;
 }
 
 export type SortOption = 'newest' | 'oldest' | 'most_popular' | 'recently_updated' | 'trend';

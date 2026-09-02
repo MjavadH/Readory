@@ -44,12 +44,14 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { slugify } from '@/lib/slugify';
 import { cn } from '@/lib/utils';
 
 type OptionItem = { id: number; name: string };
 
 export type BookEditorValue = {
   title?: string;
+  slug?: string;
   originalTitle?: string | null;
   alternativeTitles?: string[];
   contributors?: BookContributorEntry[];
@@ -290,11 +292,33 @@ export function BookEditor({
                   <BookText className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={value.title || ''}
-                    onChange={(e) => onChange({ ...value, title: e.target.value })}
+                    onChange={(e) => {
+                      const title = e.target.value;
+                      const previousGeneratedSlug = slugify(value.title ?? '');
+                      onChange({
+                        ...value,
+                        title,
+                        slug:
+                          !value.slug || value.slug === previousGeneratedSlug
+                            ? slugify(title)
+                            : value.slug,
+                      });
+                    }}
                     className="h-11 ps-9 text-base font-medium"
                     placeholder={t('BookTitlePlaceholder')}
                   />
                 </div>
+              </EditField>
+
+              <EditField label={t('Slug')} required>
+                <Input
+                  value={value.slug || ''}
+                  onChange={(e) => onChange({ ...value, slug: slugify(e.target.value) })}
+                  placeholder={t('SlugPlaceholder')}
+                  inputMode="text"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
               </EditField>
 
               <div className="grid gap-4 sm:grid-cols-2">

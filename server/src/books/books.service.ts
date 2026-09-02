@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CollectionType, Prisma } from '@prisma/client';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
 import { createHash } from 'crypto';
@@ -21,7 +26,7 @@ import {
   RELATED_TYPE_WEIGHT,
 } from './recommendation/recommendation.constants';
 
-const SAFE_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SAFE_SLUG = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u;
 type StatusFilter = 'all' | 'published' | 'draft' | 'featured';
 
 @Injectable()
@@ -45,6 +50,7 @@ export class BooksService {
     type FetchedBookType = Prisma.BookGetPayload<{
       select: {
         id: true;
+        slug: true;
         title: true;
         coverImage: true;
         type: { select: { name: true; slug: true } };
@@ -63,6 +69,7 @@ export class BooksService {
     // Define hydrated item interface for frontend
     interface BrowseItem {
       id: number;
+      slug: string;
       title: string;
       coverImage: string | null;
       type: { name: string; slug: string };
@@ -99,6 +106,7 @@ export class BooksService {
         where: { id: { in: ids } },
         select: {
           id: true,
+          slug: true,
           title: true,
           coverImage: true,
           type: { select: { name: true, slug: true } },
@@ -130,6 +138,7 @@ export class BooksService {
 
           return {
             id: b.id,
+            slug: b.slug,
             title: b.title,
             coverImage: b.coverImage,
             type: b.type,
@@ -602,6 +611,7 @@ export class BooksService {
           where: { id: { in: candidateIds } },
           select: {
             id: true,
+            slug: true,
             title: true,
             coverImage: true,
             contributors: {
@@ -632,6 +642,7 @@ export class BooksService {
               book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
             return {
               id: book.id,
+              slug: book.slug,
               title: book.title,
               coverImage: book.coverImage,
               contributors: mainContributor ? mainContributor.contributor.name : null,
@@ -678,6 +689,7 @@ export class BooksService {
           take: limit,
           select: {
             id: true,
+            slug: true,
             title: true,
             coverImage: true,
             ratingAvg: true,
@@ -701,6 +713,7 @@ export class BooksService {
             b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
           return {
             id: b.id,
+            slug: b.slug,
             title: b.title,
             coverImage: b.coverImage,
             type: b.type,
@@ -730,6 +743,7 @@ export class BooksService {
           where: { id, publishStatus: PublicationStatus.PUBLISHED },
           select: {
             id: true,
+            slug: true,
             title: true,
             originalTitle: true,
             alternativeTitles: true,
@@ -783,6 +797,7 @@ export class BooksService {
       where: { id },
       select: {
         id: true,
+        slug: true,
         title: true,
         originalTitle: true,
         alternativeTitles: true,
@@ -874,8 +889,11 @@ export class BooksService {
       throw new BadRequestException('book type not found');
     }
 
+    await this.assertSlugAvailable(data.slug);
+
     const payload: Prisma.BookCreateInput = {
       title: rest.title,
+      slug: data.slug,
       type: { connect: { id: foundType.id } },
       genres: {
         create: genreIds.map((genreId) => ({
@@ -965,6 +983,8 @@ export class BooksService {
     });
 
     if (!currentBook) throw new NotFoundException('book not found');
+
+    await this.assertSlugAvailable(data.slug, id);
 
     let typeConnect: Prisma.BookUpdateInput = {};
     if (typeId !== undefined) typeConnect = { type: { connect: { id: typeId } } };
@@ -1273,6 +1293,7 @@ export class BooksService {
         book: {
           select: {
             id: true,
+            slug: true,
             title: true,
             contributors: {
               select: {
@@ -1304,6 +1325,7 @@ export class BooksService {
         book.contributors.find((a) => a.role === 'AUTHOR') || book.contributors[0];
       return {
         id: book.id,
+        slug: book.slug,
         title: book.title,
         contributors: mainContributor ? mainContributor.contributor.name : null,
         coverImage: book.coverImage,
@@ -1338,6 +1360,17 @@ export class BooksService {
 
   private buildRelatedBooksCacheKey(version: string, bookId: number, limit: number) {
     return this.cacheManager.buildKey('books:related', version, bookId, limit);
+  }
+
+  private async assertSlugAvailable(slug: string, excludeBookId?: number): Promise<void> {
+    const book = await this.prisma.book.findUnique({
+      where: { slug },
+      select: { id: true },
+    });
+
+    if (book && book.id !== excludeBookId) {
+      throw new ConflictException('A book with this slug already exists');
+    }
   }
 
   private async invalidateCache() {
