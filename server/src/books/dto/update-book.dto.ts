@@ -6,9 +6,11 @@ import {
   IsBoolean,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -18,6 +20,12 @@ import {
 import { BookContributorDto } from './create-book.dto';
 
 export class UpdateBookDto {
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().normalize('NFKC') : value))
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u, { message: 'Invalid slug format' })
+  slug!: string;
+
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsOptional()
   @IsString()

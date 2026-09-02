@@ -11,10 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { getBookUrl } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
 
 export interface PurchaseDialogBook {
   id: number;
+  slug: string;
   title: string;
   contributors?: Array<{
     id: number;
@@ -23,7 +25,7 @@ export interface PurchaseDialogBook {
     slug: string;
   }>;
   coverImage: string;
-  type: { name: string; iconKey: IconKey };
+  type: { name: string; slug: string; iconKey: IconKey };
 }
 
 export interface PurchaseDialogChapter {
@@ -38,7 +40,6 @@ export interface PurchaseDialogChapter {
 interface ChapterPurchaseDialogProps {
   book: PurchaseDialogBook;
   chapter: PurchaseDialogChapter;
-  typeSlug: string;
   onPurchased: (chapterId: number) => void;
   onClose: () => void;
 }
@@ -46,7 +47,6 @@ interface ChapterPurchaseDialogProps {
 export function ChapterPurchaseDialog({
   book,
   chapter,
-  typeSlug,
   onPurchased,
   onClose,
 }: ChapterPurchaseDialogProps) {
@@ -76,7 +76,7 @@ export function ChapterPurchaseDialog({
     setError(null);
     setIsPending(true);
 
-    const chapterUrl = `/${encodeURIComponent(typeSlug)}/${book.id}/c/${chapter.index}`;
+    const chapterUrl = `${getBookUrl(book)}/c/${chapter.index}`;
 
     try {
       await apiClient.post(`/books/${book.id}/chapters/${chapter.id}/purchase`);
@@ -94,18 +94,7 @@ export function ChapterPurchaseDialog({
       toast.error(message);
       setIsPending(false);
     }
-  }, [
-    book.id,
-    chapter.id,
-    chapter.index,
-    isAccess,
-    onClose,
-    onPurchased,
-    router,
-    t,
-    toast,
-    typeSlug,
-  ]);
+  }, [book.id, chapter.id, chapter.index, isAccess, onClose, onPurchased, router, t, toast]);
 
   // Lock body scroll while the dialog is open.
   useEffect(() => {

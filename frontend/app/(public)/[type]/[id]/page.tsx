@@ -19,7 +19,7 @@ import {
 import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
-import type { BookCardData } from '@/lib/types';
+import { getBookUrl, type BookCardData } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
 
 type ChaptersResponse = {
@@ -52,7 +52,8 @@ export default function BookDetailsPage() {
 
   const typeSlug = Array.isArray(params.type) ? params.type[0] : params.type;
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
-  const bookId = Number(idParam);
+  const rawIdPart = idParam?.split('-')[0] ?? '';
+  const bookId = Number(decodeURIComponent(rawIdPart));
 
   const [book, setBook] = useState<BookDetailsData | null>(null);
   const [viewer, setViewer] = useState<ViewerState | null>(null);
@@ -292,7 +293,7 @@ export default function BookDetailsPage() {
 
     const alreadyPurchased = new Set(purchasedIds).has(chapter.id);
     if (alreadyPurchased) {
-      router.push(`/${encodeURIComponent(typeSlug)}/${book.id}/c/${chapter.index}`);
+      router.push(`${getBookUrl(book)}/c/${chapter.index}`);
       return;
     }
 
@@ -407,7 +408,6 @@ export default function BookDetailsPage() {
         <ChapterPurchaseDialog
           book={book}
           chapter={actionChapter}
-          typeSlug={typeSlug}
           onPurchased={handlePurchased}
           onClose={() => setActionChapter(null)}
         />

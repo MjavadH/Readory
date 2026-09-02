@@ -32,6 +32,7 @@ interface Chapter {
 
 interface LatestBook {
   id: number;
+  slug: string;
   title: string;
   cover: string;
   time: string;

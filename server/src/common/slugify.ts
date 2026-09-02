@@ -1,16 +1,14 @@
 /**
  * Converts a string to a URL-friendly slug.
  *
- * Strips diacritics, lowercases, replaces non-alphanumeric runs with hyphens.
+ * Preserves Unicode letters and numbers while normalizing separators.
  */
 export function slugify(input: string): string {
   return input
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFKC')
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
-    .replace(/-{2,}/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 }

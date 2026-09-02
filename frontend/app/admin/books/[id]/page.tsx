@@ -258,6 +258,7 @@ export default function AdminBookDetail() {
     try {
       await apiClient.patch(`/books/${book.id}`, {
         title: editedBook.title,
+        slug: editedBook.slug,
         contributors: editedBook.contributors?.map(({ contributorId, role }) => ({
           contributorId,
           role,

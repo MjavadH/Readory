@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { getBookUrl } from '@/lib/types';
 import type { BookCardData } from '@/lib/types';
 
 export function HeroSkeleton() {
@@ -69,9 +70,8 @@ export function HeroCarousel({ books }: { books: BookCardData[] }) {
   if (books.length === 0) return null;
 
   const book = books[current];
-  const bookTypeSlug = book.type.slug;
   const coverSrc = book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : '/placeholder.svg';
-  const bookHref = `/${bookTypeSlug}/${book.id}`;
+  const bookHref = getBookUrl(book);
 
   const rtlMul = isRTL ? -1 : 1;
   const slideVariants = prefersReducedMotion

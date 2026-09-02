@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { getBookUrl } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
 
 type SessionResponse = {
@@ -65,6 +66,7 @@ type ReaderContextResponse = {
 
 type BookDetailsResponse = {
   id: number;
+  slug: string;
   title: string;
   contributors?: Array<{
     id: number;
@@ -103,7 +105,8 @@ export default function ChapterPage() {
   const indexParam = Array.isArray(params.index) ? params.index[0] : params.index;
   const typeSlug = Array.isArray(params.type) ? params.type[0] : params.type;
 
-  const bookId = Number(idParam);
+  const rawIdPart = idParam?.split('-')[0] ?? '';
+  const bookId = Number(decodeURIComponent(rawIdPart));
   const chapterIndex = Number(indexParam);
 
   const backUrl = useMemo(() => `/${encodeURIComponent(typeSlug)}/${bookId}`, [typeSlug, bookId]);
@@ -447,6 +450,7 @@ export default function ChapterPage() {
             if (!cancelled) {
               setBook({
                 id: b.id,
+                slug: b.slug,
                 title: b.title,
                 contributors: b.contributors,
                 coverImage: b.coverImage,
@@ -758,9 +762,9 @@ export default function ChapterPage() {
 
   const handleChapterChange = useCallback(
     (chapter: ReaderChapterItem) => {
-      router.push(`/${encodeURIComponent(typeSlug)}/${bookId}/c/${chapter.index}`);
+      if (book) router.push(`${getBookUrl(book)}/c/${chapter.index}`);
     },
-    [router, typeSlug, bookId],
+    [router, book],
   );
 
   const handlePageChange = useCallback(
@@ -1155,7 +1159,6 @@ export default function ChapterPage() {
           <ChapterPurchaseDialog
             book={book}
             chapter={purchaseChapter}
-            typeSlug={typeSlug}
             onPurchased={handlePurchased}
             onClose={() => setShowPurchase(false)}
           />
@@ -1234,6 +1237,7 @@ export default function ChapterPage() {
 
         <ReaderToolbar
           contentMode="text"
+          typeSlug={typeSlug}
           currentPage={currentPage}
           totalPages={totalPages}
           brightness={brightness}
@@ -1247,7 +1251,6 @@ export default function ChapterPage() {
           onReadModeChange={() => {}}
           onChapterChange={handleChapterChange}
           book={book}
-          typeSlug={typeSlug}
           onPurchased={handlePurchased}
           showReadModeToggle={false}
           fullscreenTarget={readerRootEl}
@@ -1321,6 +1324,7 @@ export default function ChapterPage() {
       {/* Toolbar */}
       <ReaderToolbar
         contentMode="image"
+        typeSlug={typeSlug}
         currentPage={currentPage}
         totalPages={totalPages}
         brightness={brightness}
@@ -1332,7 +1336,6 @@ export default function ChapterPage() {
         onReadModeChange={setReadMode}
         onChapterChange={handleChapterChange}
         book={book}
-        typeSlug={typeSlug}
         onPurchased={handlePurchased}
         fullscreenTarget={readerRootEl}
         zoom={zoom}

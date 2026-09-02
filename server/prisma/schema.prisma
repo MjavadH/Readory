@@ -104,6 +104,7 @@ enum PaymentStatus {
 
 model Book {
   id                        Int                            @id @default(autoincrement())
+  slug                      String                         @unique
   title                     String
   description               String?
   coverImage                String?

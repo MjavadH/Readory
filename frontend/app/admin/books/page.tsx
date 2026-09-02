@@ -42,6 +42,7 @@ interface BookStats {
 
 interface AdminApiBook {
   id: number;
+  slug: string;
   title: string;
   originalTitle?: string | null;
   alternativeTitles?: string[];
@@ -65,6 +66,7 @@ const ITEMS_PER_PAGE = 24;
 
 type NewBookForm = {
   title: string;
+  slug: string;
   originalTitle: string;
   alternativeTitles: string[];
   contributors: BookContributorEntry[];
@@ -108,6 +110,7 @@ export default function AdminBooks() {
 
   const [newBook, setNewBook] = useState<NewBookForm>({
     title: '',
+    slug: '',
     originalTitle: '',
     alternativeTitles: [] as string[],
     contributors: [] as BookContributorEntry[],
@@ -200,6 +203,7 @@ export default function AdminBooks() {
     (items: AdminApiBook[]): BookCardData[] =>
       items.map((book) => ({
         id: book.id,
+        slug: book.slug,
         title: book.title,
         originalTitle: book.originalTitle,
         alternativeTitles: book.alternativeTitles,
@@ -251,6 +255,10 @@ export default function AdminBooks() {
       return toast.error(t('TitleRequired'), t('Validation Error'));
     }
 
+    if (!newBook.slug) {
+      return toast.error(t('SlugRequired'), t('Validation Error'));
+    }
+
     if (newBook.genreIds.length === 0) {
       return toast.error(t('SelectOneGenre'), t('Validation Error'));
     }
@@ -284,6 +292,7 @@ export default function AdminBooks() {
 
       setNewBook({
         title: '',
+        slug: '',
         originalTitle: '',
         alternativeTitles: [],
         contributors: [],
@@ -311,6 +320,7 @@ export default function AdminBooks() {
     setShowAddCard(false);
     setNewBook({
       title: '',
+      slug: '',
       originalTitle: '',
       alternativeTitles: [] as string[],
       contributors: [] as BookContributorEntry[],

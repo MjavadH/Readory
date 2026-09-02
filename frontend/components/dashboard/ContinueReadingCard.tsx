@@ -8,7 +8,7 @@ import { useTranslations } from 'next-intl';
 import { AppIcon } from '@/components/AppIcon';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { formatUpdateTime } from '@/lib/time';
-import type { ReadingProgress } from '@/lib/types';
+import { getBookUrl, type ReadingProgress } from '@/lib/types';
 
 interface Props {
   progress: ReadingProgress;
@@ -59,7 +59,7 @@ export function ContinueReadingCardSkeleton() {
 export function ContinueReadingCard({ progress }: Props) {
   const t = useTranslations('UserDashboard');
   const ti = useTranslations('Time');
-  const url = `/${progress.book.type.slug}/${progress.book.id}/c/${progress.chapter.index}`;
+  const url = `${getBookUrl(progress.book)}/c/${progress.chapter.index}`;
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}

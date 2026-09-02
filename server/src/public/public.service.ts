@@ -206,6 +206,7 @@ export class PublicService {
       book.contributors.find((a: any) => a.role === 'AUTHOR') ?? book.contributors[0];
     return {
       id: book.id,
+      slug: book.slug,
       title: book.title,
       contributors: mainContributor ? mainContributor.contributor.name : null,
       genres: book.genres.map((g: any) => g.genre),
@@ -237,6 +238,7 @@ export class PublicService {
               b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
             return {
               id: b.id,
+              slug: b.slug,
               title: b.title,
               description: b.description ? `${b.description.substring(0, 200)}...` : '',
               coverImage: b.coverImage,
@@ -249,6 +251,7 @@ export class PublicService {
           }),
           latest: latestUpdates.map((b) => ({
             id: b.id,
+            slug: b.slug,
             title: b.title,
             cover: b.coverImage,
             time: b.lastContentUpdate ?? b.updatedAt,
@@ -308,6 +311,7 @@ export class PublicService {
       },
       select: {
         id: true,
+        slug: true,
         title: true,
         description: true,
         coverImage: true,
@@ -364,6 +368,7 @@ export class PublicService {
 
       select: {
         id: true,
+        slug: true,
         title: true,
         coverImage: true,
 

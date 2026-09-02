@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { LiveSearchHit } from '@/hooks/use-live-search';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { getBookUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface LiveSearchResultsProps {
@@ -79,7 +80,11 @@ export function LiveSearchResults({
               transition={{ duration: 0.12, ease: 'easeOut', delay: i * 0.03 }}
             >
               <Link
-                href={`/${book.bookTypeSlug}/${book.id}`}
+                href={getBookUrl({
+                  id: book.id,
+                  slug: book.slug,
+                  type: { slug: book.bookTypeSlug },
+                })}
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={onSelect}
                 className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"

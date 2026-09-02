@@ -955,7 +955,10 @@
     "ErrorPriceRequired": "برای فصل پولی، مبلغی بیشتر از صفر وارد کنید.",
     "ErrorScheduleDateRequired": "لطفاً تاریخ و ساعت انتشار را انتخاب کنید.",
     "ErrorScheduleDateInFuture": "زمان زمان‌بندی باید در آینده باشد.",
-    "Close": "بستن"
+    "Close": "بستن",
+    "Slug": "نامک",
+    "SlugPlaceholder": "نامک-کتاب",
+    "SlugRequired": "نامک الزامی است."
   },
   "Contributors": {
     "Title": "همکاران",

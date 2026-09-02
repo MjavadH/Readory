@@ -151,6 +151,7 @@ export class DashboardService {
         book: {
           select: {
             id: true,
+            slug: true,
             type: { select: { slug: true, iconKey: true } },
             title: true,
             coverImage: true,
@@ -211,6 +212,7 @@ export class DashboardService {
         book: {
           select: {
             id: true,
+            slug: true,
             title: true,
             coverImage: true,
             type: { select: { slug: true, iconKey: true } },

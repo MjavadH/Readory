@@ -184,6 +184,7 @@ export class SearchSyncProcessor implements OnModuleInit, OnModuleDestroy {
 
     const document: BookSearchDocument = {
       id: book.id,
+      slug: book.slug,
       title: book.title,
       originalTitle: book.originalTitle,
       alternativeTitles: book.alternativeTitles,

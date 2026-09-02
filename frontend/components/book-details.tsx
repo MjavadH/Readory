@@ -32,6 +32,7 @@ import { formatUpdateTime } from '@/lib/time';
 
 export type BookDetailsData = {
   id: number;
+  slug: string;
   title: string;
   originalTitle?: string | null;
   alternativeTitles?: string[];
