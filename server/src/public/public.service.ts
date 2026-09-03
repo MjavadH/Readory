@@ -136,6 +136,7 @@ export class PublicService {
     return {
       id: true,
       title: true,
+      slug: true,
       coverImage: true,
       ratingAvg: true,
       ratingCount: true,
@@ -269,6 +270,7 @@ export class PublicService {
             return {
               id: b.id,
               title: b.title,
+              slug: b.slug,
               contributors: mainContributor ? mainContributor.contributor.name : null,
               coverImage: b.coverImage,
               type: b.type,
@@ -414,6 +416,7 @@ export class PublicService {
 
       select: {
         id: true,
+        slug: true,
         title: true,
         coverImage: true,
 
@@ -499,6 +502,7 @@ export class PublicService {
               take: 6,
               select: {
                 id: true,
+                slug: true,
                 title: true,
                 type: { select: { id: true, name: true, slug: true } },
                 ratingAvg: true,
@@ -518,6 +522,7 @@ export class PublicService {
                 b.contributors.find((a) => a.role === 'AUTHOR') || b.contributors[0];
               return {
                 id: b.id,
+                slug: b.slug,
                 title: b.title,
                 type: b.type,
                 ratingAvg: b.ratingAvg,

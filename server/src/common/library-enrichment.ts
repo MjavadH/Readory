@@ -9,6 +9,7 @@ export type LibraryGroup = {
 export type EnrichedLibraryItem = {
   book: {
     id: number;
+    slug: string;
     title: string;
     contributors: string | null;
     coverImage: string | null;
@@ -38,6 +39,7 @@ export async function enrichLibraryGroups(
     where: { id: { in: bookIds } },
     select: {
       id: true,
+      slug: true,
       title: true,
       contributors: {
         select: {
@@ -72,6 +74,7 @@ export async function enrichLibraryGroups(
     items.push({
       book: {
         id: book.id,
+        slug: book.slug,
         title: book.title,
         contributors: mainContributor ? mainContributor.contributor.name : null,
         coverImage: book.coverImage,

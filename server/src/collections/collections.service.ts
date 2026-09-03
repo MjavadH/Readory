@@ -467,6 +467,7 @@ export class CollectionsService {
           book: {
             select: {
               id: true,
+              slug: true,
               title: true,
               coverImage: true,
               ratingAvg: true,
@@ -504,6 +505,7 @@ export class CollectionsService {
 
     return {
       id: book.id,
+      slug: book.slug,
       title: book.title,
       contributors: mainContributor ? mainContributor.contributor.name : null,
       genres: book.genres.map((g: any) => g.genre),

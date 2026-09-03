@@ -181,6 +181,7 @@ export class DashboardService {
     return {
       book: {
         id: row.book.id,
+        slug: row.book.slug,
         type: row.book.type,
         title: row.book.title,
         coverImage: row.book.coverImage,
@@ -241,6 +242,7 @@ export class DashboardService {
         return {
           book: {
             id: p.book.id,
+            slug: p.book.slug,
             title: p.book.title,
             coverImage: p.book.coverImage,
             type: p.book.type,
