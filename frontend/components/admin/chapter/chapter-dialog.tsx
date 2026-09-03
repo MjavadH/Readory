@@ -238,7 +238,7 @@ export function ChapterDialog({
             </div>
 
             <MorphReveal show={!value.isFree}>
-              <div className="space-y-2 border-t border-border/60 pt-3">
+              <div className="space-y-2 border-t border-border/60 pt-3 px-2">
                 <Label className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   <Coins className="h-3.5 w-3.5" />
                   {t('Price', { CurrencySymbols: g('CurrencySymbols') + g('CurrencyName') })}
@@ -255,7 +255,7 @@ export function ChapterDialog({
                   placeholder="0.00"
                   aria-invalid={!!errors.price}
                   className={cn(
-                    'h-11 text-start',
+                    'h-11 text-start my-2',
                     errors.price && 'border-destructive focus-visible:ring-destructive',
                   )}
                 />
