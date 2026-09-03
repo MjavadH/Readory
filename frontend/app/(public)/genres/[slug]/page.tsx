@@ -3,8 +3,8 @@
 import { notFound, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { AllGenresSection } from '@/components/all-genres-section';
 import { BookBrowseLayout } from '@/components/book-browse-layout';
+import { AllGenresSection } from '@/components/genres/all-genres-section';
 import { useBookBrowser } from '@/hooks/use-book-browser';
 import { apiClient } from '@/lib/api-client';
 import type { BookBrowserApi, BookType } from '@/lib/types';
