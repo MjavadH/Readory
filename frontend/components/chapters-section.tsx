@@ -10,6 +10,7 @@ import {
   Clock,
   Edit,
   EyeIcon,
+  FileX,
   Lock,
   Plus,
   Search,
@@ -42,6 +43,7 @@ export type ChaptersSectionChapter = {
   price: number | null;
   updatedAt: string;
   publishStatus: PublicationStatus;
+  contentPath: string | null;
 };
 
 type Translator = (key: string, values?: Record<string, string | number | Date>) => string;
@@ -439,6 +441,9 @@ function ChapterCard({
 
       {/* Price / Owned pill */}
       <div className="absolute top-3 ltr:right-3 rtl:left-3">
+        {isAdmin && (!chapter.contentPath || chapter.contentPath.split('/').length <= 2) && (
+          <FileX className="size-4 inline me-1 text-destructive" />
+        )}
         <Badge
           variant={owned ? 'default' : isFree ? 'secondary' : 'outline'}
           className={cn(
