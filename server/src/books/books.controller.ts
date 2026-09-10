@@ -23,6 +23,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { BooksService } from './books.service';
 import { BrowseBooksDto } from './dto/browse-books.dto';
 import { BrowseTypeBooksDto } from './dto/browse-type-books.dto';
@@ -46,7 +47,7 @@ export class BooksController {
   async getFavorites(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.getFavorites(Number(userId), { page, limit });
@@ -77,7 +78,10 @@ export class BooksController {
 
   @Get(':id/viewer-state')
   @UseGuards(JwtAuthGuard)
-  async getViewerState(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async getViewerState(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.getViewerState(id, Number(userId));
   }
@@ -135,7 +139,7 @@ export class BooksController {
   async rateBook(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RateBookDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.rateBook(Number(userId), id, dto.rating);
@@ -144,7 +148,10 @@ export class BooksController {
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post(':id/favorite')
   @UseGuards(JwtAuthGuard)
-  async toggleFavorite(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async toggleFavorite(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     const userId = req.user.userId ?? req.user.id;
     return this.booksService.toggleFavorite(Number(userId), id);
   }

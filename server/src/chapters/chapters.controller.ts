@@ -21,6 +21,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { ListChaptersDto } from './dto/list-chapters.dto';
@@ -104,7 +105,7 @@ export class ChaptersController {
   async getAccessibleChapterByIndex(
     @Param('bookId', ParseIntPipe) bookId: number,
     @Param('index', ParseIntPipe) index: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     return this.chaptersService.getAccessibleChapterByIndex(bookId, index, req.user.userId);
   }
@@ -113,7 +114,10 @@ export class ChaptersController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post(':chapterId/purchase')
-  async purchase(@Param('chapterId', ParseIntPipe) chapterId: number, @Request() req: any) {
+  async purchase(
+    @Param('chapterId', ParseIntPipe) chapterId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.chaptersService.purchaseChapter(req.user.userId, chapterId);
   }
 }

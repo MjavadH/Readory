@@ -18,6 +18,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { ScheduledPublishingService } from './scheduled-publishing.service';
@@ -39,7 +40,7 @@ export class ScheduledPublishingController {
   }
 
   @Post()
-  create(@Body() dto: CreateScheduleDto, @Request() req: any) {
+  create(@Body() dto: CreateScheduleDto, @Request() req: AuthenticatedRequest) {
     return this.service.create(dto, req.user.userId ?? req.user.id);
   }
 
@@ -53,12 +54,12 @@ export class ScheduledPublishingController {
   }
 
   @Post(':id/cancel')
-  cancel(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  cancel(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
     return this.service.cancel(id, req.user.userId ?? req.user.id);
   }
 
   @Post(':id/publish-now')
-  publishNow(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  publishNow(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
     return this.service.publishNow(id, req.user.userId ?? req.user.id);
   }
 }

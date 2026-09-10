@@ -11,6 +11,11 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
+import type {
+  AuthenticatedRequest,
+  LocalAuthRequest,
+  OptionalAuthRequest,
+} from '../common/interfaces/request.interface';
 import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
@@ -36,7 +41,7 @@ export class AuthController {
   // User registration
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
-  async register(@Body() registerDto: RegisterDto, @Request() req: any) {
+  async register(@Body() registerDto: RegisterDto, @Request() req: OptionalAuthRequest) {
     await this.authSecurityService.assertRegistrationAllowed(registerDto.email, req);
     return this.authService.register(registerDto.email, registerDto.username, registerDto.password);
   }
@@ -45,7 +50,7 @@ export class AuthController {
   @Post('verify-otp')
   async verifyOtp(
     @Body() body: VerifyOtpDto,
-    @Request() req: any,
+    @Request() req: OptionalAuthRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     await this.authSecurityService.assertVerificationAllowed(body.email, req);
@@ -73,7 +78,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(
-    @Request() req: any,
+    @Request() req: LocalAuthRequest,
     @Res({ passthrough: true }) response: Response,
     @Body() _loginDto: LoginDto,
   ) {
@@ -100,7 +105,7 @@ export class AuthController {
   @Post('google')
   async googleLogin(
     @Body() dto: GoogleLoginDto,
-    @Request() req: any,
+    @Request() req: OptionalAuthRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const result = await this.authService.googleLogin(dto.credential, dto.nonce, req, response);
@@ -126,7 +131,7 @@ export class AuthController {
   @Post('google/link')
   async linkGoogle(
     @Body() dto: LinkGoogleDto,
-    @Request() req: any,
+    @Request() req: OptionalAuthRequest,
     @Res({ passthrough: true }) response: Response,
   ) {
     const { access_token, access_token_max_age, user, linked } = await this.authService.linkGoogle(
@@ -152,7 +157,10 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Request() req: any, @Res({ passthrough: true }) response: Response) {
+  async refresh(
+    @Request() req: OptionalAuthRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const { accessToken, accessTokenMaxAgeMs } = await this.authService.rotateRefreshToken(
       req.cookies?.refresh_token,
       req,
@@ -170,7 +178,10 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Request() req: any, @Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Request() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     if (req.user?.sessionId) {
       await this.sessionService.revokeSession(
         req.user.userId,
@@ -195,33 +206,33 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('sessions')
-  async listSessions(@Request() req: any) {
+  async listSessions(@Request() req: AuthenticatedRequest) {
     return this.sessionService.listSessions(req.user.userId, req.user.sessionId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('sessions/others')
-  async revokeOtherSessions(@Request() req: any) {
+  async revokeOtherSessions(@Request() req: AuthenticatedRequest) {
     await this.sessionService.revokeOtherSessions(req.user.userId, req.user.sessionId);
     return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('sessions/:id')
-  async revokeSession(@Param('id') id: string, @Request() req: any) {
+  async revokeSession(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     await this.sessionService.revokeSession(req.user.userId, id, req.user.sessionId);
     return { success: true };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getProfile(@Request() req: any) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     return this.authService.getProfile(req.user.userId);
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('forgot-password')
-  async forgotPassword(@Body() dto: ForgotPasswordDto, @Request() req: any) {
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Request() req: OptionalAuthRequest) {
     await this.authSecurityService.assertForgotPasswordAllowed(dto.email, req);
     await this.authService.forgotPassword(dto.email);
     return {
@@ -231,7 +242,7 @@ export class AuthController {
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('reset-password')
-  async resetPassword(@Body() dto: ResetPasswordDto, @Request() req: any) {
+  async resetPassword(@Body() dto: ResetPasswordDto, @Request() req: OptionalAuthRequest) {
     await this.authSecurityService.assertResetPasswordAllowed(req);
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return {

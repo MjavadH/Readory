@@ -23,6 +23,10 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type {
+  AuthenticatedRequest,
+  OptionalAuthRequest,
+} from '../common/interfaces/request.interface';
 import { CollectionsService } from './collections.service';
 import {
   AddCollectionItemDto,
@@ -47,7 +51,7 @@ export class CollectionsController {
     @Query('cursor') cursor: string | undefined,
     @Query('limit') limit: string | undefined,
     @Query('bookId') bookId: string | undefined,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.listMine(Number(userId), {
@@ -86,7 +90,7 @@ export class CollectionsController {
     @Param('slug') slug: string,
     @Query('cursor') cursor: string | undefined,
     @Query('limit') limit: string | undefined,
-    @Request() req: any,
+    @Request() req: OptionalAuthRequest,
   ) {
     const userId = req.user?.userId ?? req.user?.id;
     return this.collectionsService.getBySlug(
@@ -99,7 +103,7 @@ export class CollectionsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createUser(@Body() dto: CreateCollectionDto, @Request() req: any) {
+  async createUser(@Body() dto: CreateCollectionDto, @Request() req: AuthenticatedRequest) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.createUserCollection(Number(userId), dto);
   }
@@ -129,7 +133,7 @@ export class CollectionsController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCollectionDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.update(
@@ -148,7 +152,7 @@ export class CollectionsController {
     targetType: 'Collection',
     adminOnly: true,
   })
-  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: any) {
+  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.delete(id, Number(userId), req.user.roleName === RoleName.ADMIN);
   }
@@ -165,7 +169,7 @@ export class CollectionsController {
   async addBook(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCollectionItemDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.addBook(
@@ -190,7 +194,7 @@ export class CollectionsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
     @Body() dto: UpdateCollectionItemDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.updateItem(
@@ -214,7 +218,7 @@ export class CollectionsController {
   async removeBook(
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.removeBook(
@@ -238,7 +242,7 @@ export class CollectionsController {
   async reorder(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReorderCollectionItemsDto,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     const userId = req.user.userId ?? req.user.id;
     return this.collectionsService.reorder(
@@ -276,7 +280,7 @@ export class UserCollectionsController {
     @Param('slug') slug: string,
     @Query('cursor') cursor: string | undefined,
     @Query('limit') limit: string | undefined,
-    @Request() req: any,
+    @Request() req: OptionalAuthRequest,
   ) {
     const userId = req.user?.userId ?? req.user?.id;
     return this.collectionsService.getUserCollection(

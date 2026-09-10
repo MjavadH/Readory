@@ -6,6 +6,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { WalletsService } from './wallets.service';
 
 @UseGuards(JwtAuthGuard)
@@ -14,7 +15,7 @@ export class WalletsController {
   constructor(private walletsService: WalletsService) {}
 
   @Get()
-  getWallet(@Request() req: any) {
+  getWallet(@Request() req: AuthenticatedRequest) {
     return this.walletsService.getWallet(req.user.userId);
   }
 

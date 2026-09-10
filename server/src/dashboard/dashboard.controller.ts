@@ -4,6 +4,7 @@ import express from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { WalletsService } from '../wallets/wallets.service';
 import { DashboardService } from './dashboard.service';
 
@@ -25,7 +26,7 @@ export class DashboardController {
    */
   @Get()
   async getOverview(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('txLimit') txLimit: string = '6',
     @Query('libraryLimit') libraryLimit: string = '9',
   ) {
@@ -39,7 +40,7 @@ export class DashboardController {
   // Full transaction history
   @Get('history')
   async getHistory(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '30',
   ) {
@@ -58,7 +59,7 @@ export class DashboardController {
   }
 
   @Get('history/export')
-  async exportHistory(@Request() req: any, @Res() res: express.Response) {
+  async exportHistory(@Request() req: AuthenticatedRequest, @Res() res: express.Response) {
     const userId = req.user.id || req.user.userId;
 
     const csv = await this.dashboardService.exportTransactionsCsv(userId);
@@ -72,7 +73,7 @@ export class DashboardController {
   // Full library list
   @Get('library')
   async getLibrary(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '24',
   ) {
@@ -83,7 +84,7 @@ export class DashboardController {
   // Full reading progress
   @Get('progress')
   async getReadingProgress(
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '24',
   ) {
@@ -94,7 +95,7 @@ export class DashboardController {
   @Get('admin/overview')
   @UseGuards(RolesGuard)
   @Roles(RoleName.ADMIN)
-  async getAdminOverview(@Request() req: any) {
+  async getAdminOverview(@Request() req: AuthenticatedRequest) {
     const userId = req.user.id || req.user.userId;
     return this.dashboardService.getAdminOverview(req.user.permissions || [], Number(userId));
   }
@@ -102,7 +103,7 @@ export class DashboardController {
   @Get('admin/finance')
   @UseGuards(RolesGuard)
   @Roles(RoleName.ADMIN)
-  async getAdminFinance(@Request() req: any) {
+  async getAdminFinance(@Request() req: AuthenticatedRequest) {
     const userId = req.user.id || req.user.userId;
     return this.dashboardService.getAdminFinanceData(req.user.permissions || [], Number(userId));
   }
@@ -110,7 +111,7 @@ export class DashboardController {
   @Get('admin/content')
   @UseGuards(RolesGuard)
   @Roles(RoleName.ADMIN)
-  async getAdminContent(@Request() req: any) {
+  async getAdminContent(@Request() req: AuthenticatedRequest) {
     const userId = req.user.id || req.user.userId;
     return this.dashboardService.getAdminContentAnalytics(
       req.user.permissions || [],
@@ -121,7 +122,7 @@ export class DashboardController {
   @Get('admin/users')
   @UseGuards(RolesGuard)
   @Roles(RoleName.ADMIN)
-  async getAdminUsers(@Request() req: any) {
+  async getAdminUsers(@Request() req: AuthenticatedRequest) {
     const userId = req.user.id || req.user.userId;
     return this.dashboardService.getAdminUserAnalytics(req.user.permissions || [], Number(userId));
   }

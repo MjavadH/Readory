@@ -5,6 +5,10 @@ import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { BookTypesService } from '../book-types/book-types.service';
 import { BooksService } from '../books/books.service';
 import { BrowseGenreDto } from '../books/dto/browse-genre.dto';
+import type {
+  AuthenticatedRequest,
+  OptionalAuthRequest,
+} from '../common/interfaces/request.interface';
 import { PublicService } from './public.service';
 
 @Controller('public')
@@ -22,7 +26,7 @@ export class PublicController {
 
   @UseGuards(JwtAuthGuard)
   @Get('personalized')
-  async getPersonalizedContent(@Request() req: any) {
+  async getPersonalizedContent(@Request() req: AuthenticatedRequest) {
     const userId = req.user.userId ?? req.user.id;
     return this.publicService.getUserPersonalizedContent(userId);
   }
@@ -50,7 +54,7 @@ export class PublicController {
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Get('profiles/:username')
   @UseGuards(OptionalJwtAuthGuard)
-  async getUserProfile(@Param('username') username: string, @Request() req: any) {
+  async getUserProfile(@Param('username') username: string, @Request() req: OptionalAuthRequest) {
     const userId = req.user?.userId ?? req.user?.id;
     return this.publicService.getPublicUserProfile(username, userId ? Number(userId) : undefined);
   }

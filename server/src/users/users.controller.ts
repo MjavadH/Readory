@@ -27,6 +27,7 @@ import { AdminPermissions } from '../auth/permissions.enum';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import type { AuthenticatedRequest } from '../common/interfaces/request.interface';
 import { PrismaService } from '../prisma/prisma.service';
 import { RateLimitService } from '../rate-limit/rate-limit.service';
 import { WalletsService } from '../wallets/wallets.service';
@@ -182,7 +183,10 @@ export class UsersController {
       limits: { fileSize: 5 * 1024 * 1024 - 1, files: 1 },
     }),
   )
-  async updateMyAvatar(@Request() req: any, @UploadedFile() file?: Express.Multer.File) {
+  async updateMyAvatar(
+    @Request() req: AuthenticatedRequest,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     await this.rateLimitService.consume({
       key: this.rateLimitService.key('avatar', req.user.userId),
       limit: 5,
@@ -195,7 +199,7 @@ export class UsersController {
   @Throttle({ default: { limit: 6, ttl: 3600000 } })
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
-  async updateProfile(@Request() req: any, @Body() dto: UpdateUserDto) {
+  async updateProfile(@Request() req: AuthenticatedRequest, @Body() dto: UpdateUserDto) {
     if (dto.username !== undefined || dto.newPassword !== undefined) {
       await this.assertTrustedSession(req.user.sessionId);
     }
@@ -216,7 +220,7 @@ export class UsersController {
   async changeRole(
     @Param('id', ParseIntPipe) id: number,
     @Body('role') role: 'ADMIN' | 'USER',
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     this.checkHierarchy(id, req.user.userId);
     const superAdminId = this.getSuperAdminId();
@@ -248,7 +252,7 @@ export class UsersController {
   async changeBanStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('isBanned') isBanned: boolean,
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     this.checkHierarchy(id, req.user.userId);
 
@@ -300,7 +304,7 @@ export class UsersController {
   async updatePermissions(
     @Param('id', ParseIntPipe) id: number,
     @Body('permissions') permissions: string[],
-    @Request() req: any,
+    @Request() req: AuthenticatedRequest,
   ) {
     this.checkHierarchy(id, req.user.userId);
 
