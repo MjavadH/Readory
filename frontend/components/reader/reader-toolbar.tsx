@@ -38,7 +38,6 @@ export function ReaderToolbar({
   onReadModeChange,
   onChapterChange,
   book,
-  typeSlug,
   onPurchased,
   showReadModeToggle = true,
   fullscreenTarget = null,
