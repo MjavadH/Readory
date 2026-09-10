@@ -1396,6 +1396,26 @@
     },
     "hint": "نکته: با جست‌وجوی بالای صفحه هر کتابی را پیدا کنید."
   },
+  "DateTimePicker": {
+    "SelectDate": "انتخاب تاریخ",
+    "SelectDateTime": "انتخاب تاریخ و زمان",
+    "Placeholder": "انتخاب یک تاریخ",
+    "PrevMonth": "ماه قبل",
+    "NextMonth": "ماه بعد",
+    "PrevYears": "سال‌های قبل",
+    "NextYears": "سال‌های بعد",
+    "ChooseMonthYear": "انتخاب ماه و سال",
+    "BackToDays": "بازگشت به تقویم",
+    "Hour": "ساعت",
+    "Minute": "دقیقه",
+    "Increase": "افزایش",
+    "Decrease": "کاهش",
+    "AM": "قبل‌ازظهر",
+    "PM": "بعدازظهر",
+    "Cancel": "لغو",
+    "Confirm": "تایید",
+    "Today": "امروز"
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "ریال",

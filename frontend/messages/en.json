@@ -1396,6 +1396,26 @@
     },
     "hint": "Tip: use the search in the header to find any title."
   },
+  "DateTimePicker": {
+    "SelectDate": "Select date",
+    "SelectDateTime": "Select date & time",
+    "Placeholder": "Pick a date",
+    "PrevMonth": "Previous month",
+    "NextMonth": "Next month",
+    "PrevYears": "Previous years",
+    "NextYears": "Next years",
+    "ChooseMonthYear": "Choose month and year",
+    "BackToDays": "Back to calendar",
+    "Hour": "Hour",
+    "Minute": "Minute",
+    "Increase": "Increase",
+    "Decrease": "Decrease",
+    "AM": "AM",
+    "PM": "PM",
+    "Cancel": "Cancel",
+    "Confirm": "Confirm",
+    "Today": "Today"
+  },
   "General": {
     "Readory": "Readory",
     "CurrencySymbols": "$",
