@@ -114,7 +114,9 @@ describe('DashboardService', () => {
 
       // Assert: clampInt's fallbacks are 6 (tx) and 8 (library).
       expect(walletsService.getWallet).toHaveBeenCalledWith(7, { take: 6 });
-      expect(prisma.accessRecord.groupBy).toHaveBeenCalledWith(expect.objectContaining({ take: 8 }));
+      expect(prisma.accessRecord.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 8 }),
+      );
     });
 
     it('projects continueReading from the most recent unfinished progress row', async () => {
@@ -246,9 +248,7 @@ describe('DashboardService', () => {
       const csv = await service.exportTransactionsCsv(7);
 
       // Assert
-      expect(csv.split('\n')[1]).toBe(
-        '"1","91","2026-01-01T00:00:00.000Z","DEBIT","40","order-1"',
-      );
+      expect(csv.split('\n')[1]).toBe('"1","91","2026-01-01T00:00:00.000Z","DEBIT","40","order-1"');
     });
   });
 

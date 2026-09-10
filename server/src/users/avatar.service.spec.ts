@@ -106,9 +106,9 @@ describe('AvatarService', () => {
 
     it('rejects an upload at or above the 5 MB limit', async () => {
       // Act & Assert: the guard is `>=`, so exactly 5 MB is refused.
-      await expect(
-        service.processAvatar(asUpload(Buffer.alloc(MAX_AVATAR_BYTES))),
-      ).rejects.toThrow('Avatar must be smaller than 5 MB');
+      await expect(service.processAvatar(asUpload(Buffer.alloc(MAX_AVATAR_BYTES)))).rejects.toThrow(
+        'Avatar must be smaller than 5 MB',
+      );
     });
 
     it('rejects an upload whose declared size exceeds the limit even if the buffer is small', async () => {
@@ -130,9 +130,9 @@ describe('AvatarService', () => {
 
     it('rejects a file object carrying no buffer', async () => {
       // Act & Assert
-      await expect(
-        service.processAvatar({ size: 10 } as Express.Multer.File),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processAvatar({ size: 10 } as Express.Multer.File)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('does not enlarge an image smaller than the target size', async () => {

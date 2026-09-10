@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { formatUpdateTime } from '@/lib/time';
-import { getBookUrl, type BookType } from '@/lib/types';
+import { type BookType, getBookUrl } from '@/lib/types';
 
 interface Chapter {
   id: number;

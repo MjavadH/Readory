@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useLocaleInfo } from '@/hooks/use-locale-info';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { getBookUrl } from '@/lib/types';
 import type { BookCardData } from '@/lib/types';
+import { getBookUrl } from '@/lib/types';
 
 export function HeroSkeleton() {
   return (

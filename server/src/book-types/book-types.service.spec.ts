@@ -293,9 +293,7 @@ describe('BookTypesService', () => {
       ['name is punctuation only', { name: '???' }],
     ])('rejects with BadRequestException when %s', async (_label, dto) => {
       // Act & Assert
-      await expect(service.create(dto)).rejects.toThrow(
-        new BadRequestException('slug is invalid'),
-      );
+      await expect(service.create(dto)).rejects.toThrow(new BadRequestException('slug is invalid'));
       expect(prisma.bookType.create).not.toHaveBeenCalled();
     });
 

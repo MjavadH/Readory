@@ -1,12 +1,23 @@
-import { createMockPrismaService, createMockRedis, createMockQueue, createMockCacheManager, createMockStorageService, createMockJob } from '../../../test/mocks';
+import {
+  createMockCacheManager,
+  createMockJob,
+  createMockPrismaService,
+  createMockQueue,
+  createMockRedis,
+  createMockStorageService,
+} from '../../../test/mocks';
 
 describe('shared test doubles', () => {
   it('prisma $transaction supports callback and array forms', async () => {
     const prisma = createMockPrismaService();
     prisma.book.update.mockResolvedValue({ id: 1 });
-    const cb = await prisma.$transaction(async (tx: typeof prisma) => tx.book.update({ where: { id: 1 }, data: {} }));
+    const cb = await prisma.$transaction(async (tx: typeof prisma) =>
+      tx.book.update({ where: { id: 1 }, data: {} }),
+    );
     expect(cb).toEqual({ id: 1 });
-    await expect(prisma.$transaction([Promise.resolve('a'), Promise.resolve('b')])).resolves.toEqual(['a', 'b']);
+    await expect(
+      prisma.$transaction([Promise.resolve('a'), Promise.resolve('b')]),
+    ).resolves.toEqual(['a', 'b']);
   });
 
   it('redis pipeline is chainable and exec resolves tuples', async () => {

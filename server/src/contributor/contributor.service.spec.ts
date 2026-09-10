@@ -136,14 +136,7 @@ describe('ContributorService', () => {
 
       // Assert
       expect(cacheManager.getVersion).toHaveBeenCalledWith(LIST_VERSION_KEY);
-      expect(cacheManager.buildKey).toHaveBeenCalledWith(
-        'contributor',
-        'list',
-        '7',
-        1,
-        30,
-        'all',
-      );
+      expect(cacheManager.buildKey).toHaveBeenCalledWith('contributor', 'list', '7', 1, 30, 'all');
     });
 
     it('applies a case-insensitive search across name and originalName', async () => {
@@ -227,9 +220,7 @@ describe('ContributorService', () => {
       prisma.contributor.findUnique.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.findOne(999)).rejects.toThrow(
-        'No contributor with ID 999 was found.',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('No contributor with ID 999 was found.');
     });
   });
 

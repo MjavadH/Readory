@@ -19,7 +19,7 @@ import {
 import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
-import { getBookUrl, type BookCardData } from '@/lib/types';
+import { type BookCardData, getBookUrl } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
 
 type ChaptersResponse = {

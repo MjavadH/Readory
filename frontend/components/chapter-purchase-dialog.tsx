@@ -94,7 +94,7 @@ export function ChapterPurchaseDialog({
       toast.error(message);
       setIsPending(false);
     }
-  }, [book.id, chapter.id, chapter.index, isAccess, onClose, onPurchased, router, t, toast]);
+  }, [book.id, chapter.id, chapter.index, isAccess, onClose, onPurchased, router, t, toast, book]);
 
   // Lock body scroll while the dialog is open.
   useEffect(() => {

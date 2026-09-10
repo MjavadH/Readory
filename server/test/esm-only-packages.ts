@@ -168,9 +168,7 @@ export function discoverEsmOnlyPackages(): string[] {
  * sniffing, and a stub that always reported `image/jpeg` would make every
  * spoofed-upload rejection test vacuously green.
  */
-export function discoverEsmModuleNameMappings(
-  packages: readonly string[],
-): Record<string, string> {
+export function discoverEsmModuleNameMappings(packages: readonly string[]): Record<string, string> {
   const mappings: Record<string, string> = {};
 
   for (const name of packages) {
