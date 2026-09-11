@@ -1,474 +1,291 @@
-'use client';
-
-import { notFound, useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookCard } from '@/components/book-card';
-import { BookDetails, type BookDetailsData, BookDetailsSkeleton } from '@/components/book-details';
-import { ChapterPurchaseDialog } from '@/components/chapter-purchase-dialog';
-import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
-import type { Collection } from '@/lib/collection-types';
+import { PublicationStatus } from '@readory/shared';
+import { ChevronRight, Home } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { AppIcon } from '@/components/AppIcon';
+import type { BookDetailsData } from '@/components/book-details';
+import type { ChaptersSectionChapter } from '@/components/chapters-section';
+import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { type BookCardData, getBookUrl } from '@/lib/types';
-import { useToast } from '@/providers/toast-provider';
+import { BookDetailsPageClient } from './book-details-page-client';
+
+// ---------------------------------------------------------------------------
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://example.com').replace(/\/$/, '');
+const CHAPTERS_PER_PAGE = 36;
+const REVALIDATE_SECONDS = 300;
+
+type PageParams = { type: string; id: string };
+type PageProps = { params: Promise<PageParams> };
 
 type ChaptersResponse = {
   items: ChaptersSectionChapter[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: { page: number; limit: number; total: number; totalPages: number };
 };
 
-type ViewerState = {
-  myRating: number | null;
-  purchasedChapterIds: number[];
-  isFavorited: boolean;
-};
-
-type ActionChapter = ChaptersSectionChapter & { mode: 'purchase' | 'access' };
-
-const CHAPTERS_PER_PAGE = 36;
-
-export default function BookDetailsPage() {
-  const t = useTranslations('Books');
-  const g = useTranslations('General');
-  const ti = useTranslations('Time');
-  const toast = useToast();
-  const params = useParams<{ type: string; id: string }>();
-  const router = useRouter();
-
-  const typeSlug = Array.isArray(params.type) ? params.type[0] : params.type;
-  const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
+function parseBookId(idParam: string | undefined): number {
   const rawIdPart = idParam?.split('-')[0] ?? '';
-  const bookId = Number(decodeURIComponent(rawIdPart));
+  return Number(decodeURIComponent(rawIdPart));
+}
 
-  const [book, setBook] = useState<BookDetailsData | null>(null);
-  const [viewer, setViewer] = useState<ViewerState | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
-  const [isRatingPending, setIsRatingPending] = useState(false);
-
-  const [isFavorited, setIsFavorited] = useState(false);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
-  const [userCollections, setUserCollections] = useState<
-    Array<Collection & { containsBook?: boolean }>
-  >([]);
-  const [selectedCollectionIds, setSelectedCollectionIds] = useState<number[]>([]);
-  const [collectionsLoading, setCollectionsLoading] = useState(false);
-
-  const [chapters, setChapters] = useState<ChaptersSectionChapter[]>([]);
-  const [chaptersPage, setChaptersPage] = useState(1);
-  const chaptersPaginationScrollRef = useRef<HTMLDivElement>(null);
-  const [chaptersTotal, setChaptersTotal] = useState(0);
-  const [chaptersTotalPages, setChaptersTotalPages] = useState(1);
-  const [chapterSearch, setChapterSearch] = useState('');
-  const [chapterSearchInput, setChapterSearchInput] = useState('');
-  const [chaptersOrder, setChaptersOrder] = useState<'asc' | 'desc'>('asc');
-  const [chaptersLoading, setChaptersLoading] = useState(true);
-
-  const [relatedBooks, setRelatedBooks] = useState<BookCardData[]>([]);
-  const [actionChapter, setActionChapter] = useState<ActionChapter | null>(null);
-
-  const purchasedIds = useMemo(
-    () => viewer?.purchasedChapterIds ?? [],
-    [viewer?.purchasedChapterIds],
-  );
-
-  useEffect(() => {
-    if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
-      notFound();
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const [bookData, profile] = await Promise.all([
-          apiClient.get<BookDetailsData>(`/books/${bookId}`),
-          apiClient.get('/auth/profile').catch(() => null),
-        ]);
-
-        if (cancelled) return;
-
-        if (!bookData || bookData.type.slug !== typeSlug) {
-          setIsLoading(false);
-          return;
-        }
-
-        setBook(bookData);
-
-        if (profile) {
-          setIsAuthenticated(true);
-
-          const viewerState = await apiClient.get<ViewerState>(`/books/${bookId}/viewer-state`);
-
-          if (cancelled) return;
-
-          setViewer(viewerState);
-          setSelectedRating(viewerState.myRating ?? 0);
-          setIsFavorited(viewerState.isFavorited);
-        } else {
-          setIsAuthenticated(false);
-          setViewer(null);
-          setSelectedRating(0);
-        }
-
-        const relatedResponse = await apiClient.get<{
-          items: BookCardData[];
-        }>(`/books/${bookId}/related?limit=12`);
-
-        if (cancelled) return;
-
-        setRelatedBooks(relatedResponse.items ?? []);
-      } catch (loadError: unknown) {
-        if (loadError instanceof ApiError) {
-          if (!cancelled && loadError.status !== 404) {
-            toast.error(getApiErrorMessage(loadError, t('FailedLoadDetails')));
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bookId, typeSlug, t, toast]);
-
-  useEffect(() => {
-    if (!Number.isInteger(bookId) || bookId <= 0) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const data = await apiClient.get<ChaptersResponse>(
-          `/books/${bookId}/chapters?page=${chaptersPage}&limit=${CHAPTERS_PER_PAGE}&q=${encodeURIComponent(
-            chapterSearch,
-          )}&order=${chaptersOrder}&publishStatus=PUBLISHED`,
-        );
-
-        if (cancelled) return;
-
-        setChapters(data.items);
-        setChaptersTotal(data.pagination.total);
-        setChaptersTotalPages(data.pagination.totalPages);
-      } catch (chapterError) {
-        if (!cancelled) {
-          toast.error(getApiErrorMessage(chapterError, t('FailedLoadChapters')));
-        }
-      } finally {
-        if (!cancelled) {
-          setChaptersLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [bookId, chapterSearch, chaptersPage, chaptersOrder, t, toast]);
-
-  const handleSelectRating = (rating: number) => setSelectedRating(rating);
-
-  const handleSubmitRating = async () => {
-    if (!book || !isAuthenticated || selectedRating === 0) {
-      toast.error(t('SelectRating'));
-      return;
-    }
-
-    setIsRatingPending(true);
-    try {
-      const updated = await apiClient.put<{
-        ratingAvg: number;
-        ratingCount: number;
-        rating: number;
-      }>(`/books/${book.id}/rating`, { rating: selectedRating });
-
-      setBook((prev) =>
-        prev
-          ? {
-              ...prev,
-              ratingAvg: updated.ratingAvg,
-              ratingCount: updated.ratingCount,
-            }
-          : prev,
-      );
-      toast.success(t('RatingSaved'));
-    } catch (rateError) {
-      toast.error(getApiErrorMessage(rateError, t('UnableSaveRating')));
-    } finally {
-      setIsRatingPending(false);
-    }
-  };
-
-  const openCollectionDialog = async () => {
-    if (!book) return;
-    if (!isAuthenticated) {
-      toast.error(t('OnlyRegisteredUsers'));
-      return;
-    }
-
-    setCollectionDialogOpen(true);
-    setCollectionsLoading(true);
-    try {
-      const res = await apiClient.get<{ items: Array<Collection & { containsBook?: boolean }> }>(
-        `/collections/mine?limit=48&bookId=${book.id}`,
-      );
-      const items = res.items ?? [];
-      setUserCollections(items);
-      setSelectedCollectionIds(
-        items.filter((collection) => collection.containsBook).map((collection) => collection.id),
-      );
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, t('FailedLoadDetails')));
-    } finally {
-      setCollectionsLoading(false);
-    }
-  };
-
-  const saveCollectionSelection = async () => {
-    if (!book) return;
-    setCollectionsLoading(true);
-    try {
-      const existingIds = new Set(
-        userCollections
-          .filter((collection) => collection.containsBook)
-          .map((collection) => collection.id),
-      );
-      const idsToAdd = selectedCollectionIds.filter((id) => !existingIds.has(id));
-      await Promise.all(
-        idsToAdd.map((id) => apiClient.post(`/collections/${id}/items`, { bookId: book.id })),
-      );
-      toast.success(t('AddedToCollections'));
-      setCollectionDialogOpen(false);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err, t('UnableSaveRating')));
-    } finally {
-      setCollectionsLoading(false);
-    }
-  };
-
-  const handleToggleFavorite = async () => {
-    if (!book) return;
-    setFavoriteLoading(true);
-    try {
-      const res: { favorited: boolean } = await apiClient.post(`/books/${book.id}/favorite`);
-      setIsFavorited(res.favorited);
-    } catch (err) {
-      toast.error(getApiErrorMessage(err));
-    } finally {
-      setFavoriteLoading(false);
-    }
-  };
-
-  const onChapterSelect = (chapter: ChaptersSectionChapter) => {
-    if (!book) return;
-    if (!isAuthenticated) {
-      toast.error(t('OnlyRegisteredUsers'));
-      return;
-    }
-
-    const alreadyPurchased = new Set(purchasedIds).has(chapter.id);
-    if (alreadyPurchased) {
-      router.push(`${getBookUrl(book)}/c/${chapter.index}`);
-      return;
-    }
-
-    setActionChapter({
-      ...chapter,
-      mode: chapter.isFree || chapter.price == null ? 'access' : 'purchase',
+async function fetchBook(bookId: number): Promise<BookDetailsData | null> {
+  try {
+    return await apiClient.get<BookDetailsData>(`/books/${bookId}`, {
+      next: { revalidate: REVALIDATE_SECONDS, tags: [`book:${bookId}`] },
     });
-  };
+  } catch {
+    return null;
+  }
+}
 
-  const handlePurchased = useCallback((chapterId: number) => {
-    setViewer((prev) => {
-      if (!prev) return prev;
-      const next = new Set(prev.purchasedChapterIds);
-      next.add(chapterId);
-      return { ...prev, purchasedChapterIds: [...next] };
+async function fetchChapters(bookId: number): Promise<ChaptersResponse | null> {
+  try {
+    return await apiClient.get<ChaptersResponse>(`/books/${bookId}/chapters`, {
+      query: { page: 1, limit: CHAPTERS_PER_PAGE, q: '', order: 'asc', publishStatus: 'PUBLISHED' },
+      next: { revalidate: REVALIDATE_SECONDS, tags: [`book:${bookId}:chapters`] },
     });
-  }, []);
+  } catch {
+    return null;
+  }
+}
 
-  const handleSearch = () => {
-    setChaptersLoading(true);
-    setChaptersPage(1);
-    setChapterSearch(chapterSearchInput.trim());
-  };
+async function fetchRelatedBooks(bookId: number): Promise<{ items: BookCardData[] } | null> {
+  try {
+    return await apiClient.get<{ items: BookCardData[] }>(`/books/${bookId}/related`, {
+      query: { limit: 12 },
+      next: { revalidate: REVALIDATE_SECONDS },
+    });
+  } catch {
+    return null;
+  }
+}
 
-  const toggleOrder = () => {
-    setChaptersLoading(true);
-    setChaptersOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    setChaptersPage(1);
-  };
+function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const clipped = text.slice(0, maxLength - 1);
+  const lastSpace = clipped.lastIndexOf(' ');
+  return `${clipped.slice(0, lastSpace > 0 ? lastSpace : maxLength - 1)}…`;
+}
 
-  if (isLoading) {
-    return <BookDetailsSkeleton />;
+function absoluteUrl(path: string): string {
+  return path.startsWith('http') ? path : `${SITE_URL}${path}`;
+}
+
+function getAuthorNames(book: BookDetailsData): string[] {
+  return (book.contributors ?? [])
+    .filter((c) => c.role === 'AUTHOR' || c.role === 'WRITER')
+    .map((c) => c.name);
+}
+
+// Metadata (title, description, canonical, Open Graph, Twitter, robots)
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { type: typeSlug, id: idParam } = await params;
+  const bookId = parseBookId(idParam);
+
+  if (!Number.isInteger(bookId) || bookId <= 0) {
+    return {};
   }
 
-  if (!book) {
+  const book = await fetchBook(bookId);
+
+  if (!book || book.type.slug !== typeSlug) {
+    return {};
+  }
+
+  const canonicalPath = getBookUrl(book);
+  const canonicalUrl = absoluteUrl(canonicalPath);
+  const coverPath = book.coverImage
+    ? getBookCoverThumbnailUrl(book.coverImage)
+    : '/placeholder.svg';
+  const coverUrl = absoluteUrl(coverPath);
+
+  const authorNames = getAuthorNames(book);
+  const authorSuffix = authorNames.length > 0 ? ` by ${authorNames.join(', ')}` : '';
+  const title = `${book.title}${authorSuffix} — Read Online | ${book.type.name}`;
+
+  const rawDescription = book.description?.trim();
+  const fallbackDescription = `Read ${book.title}${authorSuffix} online. ${book.chapterCount} chapters${
+    book.genres.length ? ` in ${book.genres.map((g) => g.name).join(', ')}` : ''
+  }.`;
+  const description = truncate(rawDescription || fallbackDescription, 160);
+
+  const isDraft = book.publishStatus === PublicationStatus.DRAFT;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    robots: isDraft
+      ? { index: false, follow: false }
+      : {
+          index: true,
+          follow: true,
+          googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
+        },
+    openGraph: {
+      type: 'book',
+      title,
+      description,
+      url: canonicalUrl,
+      images: [{ url: coverUrl, width: 600, height: 900, alt: `Cover of ${book.title}` }],
+      authors: authorNames,
+      releaseDate: book.publicationYear ? `${book.publicationYear}-01-01` : undefined,
+      tags: book.genres.map((g) => g.name),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [coverUrl],
+    },
+  };
+}
+
+// Structured data (JSON-LD)
+function buildBookJsonLd(book: BookDetailsData, canonicalUrl: string, coverUrl: string) {
+  const authorNames = getAuthorNames(book);
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Book',
+    name: book.title,
+    alternateName: book.alternativeTitles?.filter(Boolean),
+    description: book.description ?? undefined,
+    image: coverUrl,
+    url: canonicalUrl,
+    genre: book.genres.map((g) => g.name),
+    datePublished: book.publicationYear ? String(book.publicationYear) : undefined,
+    author:
+      authorNames.length > 0 ? authorNames.map((name) => ({ '@type': 'Person', name })) : undefined,
+    aggregateRating:
+      book.ratingCount > 0
+        ? {
+            '@type': 'AggregateRating',
+            ratingValue: book.ratingAvg,
+            ratingCount: book.ratingCount,
+            bestRating: 5,
+            worstRating: 1,
+          }
+        : undefined,
+  };
+}
+
+function buildBreadcrumbJsonLd(book: BookDetailsData, canonicalUrl: string) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: book.type.name,
+        item: absoluteUrl(`/${book.type.slug}`),
+      },
+      { '@type': 'ListItem', position: 3, name: book.title, item: canonicalUrl },
+    ],
+  };
+}
+
+/** Escapes `<` so JSON-LD can't be broken out of by a `</script>` in user content. */
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
+// fetches once, renders JSON-LD + crawlable
+// breadcrumb, then hands off to the interactive client component.
+export default async function BookDetailsPage({ params }: PageProps) {
+  const { type: typeSlug, id: idParam } = await params;
+  const bookId = parseBookId(idParam);
+
+  if (!Number.isInteger(bookId) || bookId <= 0 || !typeSlug) {
     notFound();
   }
 
-  const ratingValue = Number(book.ratingAvg ?? 0);
-  const coverSrc = book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : '/placeholder.svg';
+  const book = await fetchBook(bookId);
+
+  if (!book || book.type.slug !== typeSlug) {
+    notFound();
+  }
+
+  const [chaptersData, relatedData] = await Promise.all([
+    fetchChapters(bookId),
+    fetchRelatedBooks(bookId),
+  ]);
+
+  const canonicalUrl = absoluteUrl(getBookUrl(book));
+  const coverUrl = absoluteUrl(
+    book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : '/placeholder.svg',
+  );
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:px-6 lg:space-y-12 lg:px-8 lg:py-10">
-      {/* Book Details */}
-      <BookDetails
-        book={book}
-        coverSrc={coverSrc}
-        ratingValue={ratingValue}
-        chaptersTotal={chaptersTotal}
-        isAuthenticated={isAuthenticated}
-        isFavorited={isFavorited}
-        favoriteLoading={favoriteLoading}
-        onToggleFavorite={handleToggleFavorite}
-        onAddToCollection={openCollectionDialog}
-        selectedRating={selectedRating}
-        hoverRating={hoverRating}
-        onHoverRating={setHoverRating}
-        onSelectRating={handleSelectRating}
-        onSubmitRating={() => void handleSubmitRating()}
-        isRatingPending={isRatingPending}
-        chapterSection={chaptersPaginationScrollRef}
-        t={t}
-        ti={ti}
-        hideUpdatedAt={true}
-        hideCreatedAt={true}
-      />
-
-      {/* Chapters (shared component, public mode) */}
-      <ChaptersSection
-        mode="public"
-        chapters={chapters}
-        chaptersLoading={chaptersLoading}
-        chaptersTotal={chaptersTotal}
-        chaptersTotalPages={chaptersTotalPages}
-        chaptersPage={chaptersPage}
-        pageSize={CHAPTERS_PER_PAGE}
-        onPageChange={(page) => {
-          setChaptersLoading(true);
-          setChaptersPage(page);
+    <>
+      {/* Structured data: enables rich results (star ratings, breadcrumbs) in search */}
+      <script
+        type="application/ld+json"
+        // biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML
+        dangerouslySetInnerHTML={{
+          __html: safeJsonLd(buildBookJsonLd(book, canonicalUrl, coverUrl)),
         }}
-        scrollRef={chaptersPaginationScrollRef}
-        t={t}
-        ti={ti}
-        g={g}
-        purchasedChapterIds={purchasedIds}
-        onChapterSelect={onChapterSelect}
-        searchInput={chapterSearchInput}
-        onSearchInputChange={setChapterSearchInput}
-        onSearchSubmit={handleSearch}
-        order={chaptersOrder}
-        onToggleOrder={toggleOrder}
+      />
+      <script
+        type="application/ld+json"
+        // biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildBreadcrumbJsonLd(book, canonicalUrl)) }}
       />
 
-      {/* Related */}
-      {relatedBooks.length > 0 && (
-        <section>
-          <div className="mb-5 flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold sm:text-2xl">{t('SimilarBooks')}</h2>
-              <p className="text-sm text-muted-foreground">{t('MayLike')}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {relatedBooks.map((relatedBook) => (
-              <BookCard key={relatedBook.id} book={relatedBook} />
-            ))}
-          </div>
-        </section>
-      )}
+      <div className="mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" className="min-w-0">
+          <ol className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/70 px-2 py-1.5 text-sm shadow-sm backdrop-blur-md scrollbar-none sm:gap-1.5 sm:px-3">
+            <li className="shrink-0">
+              <Link
+                href="/"
+                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Home className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">Home</span>
+                <span className="sr-only sm:hidden">Home</span>
+              </Link>
+            </li>
 
-      {book && actionChapter && (
-        <ChapterPurchaseDialog
-          book={book}
-          chapter={actionChapter}
-          onPurchased={handlePurchased}
-          onClose={() => setActionChapter(null)}
-        />
-      )}
-      <Dialog open={collectionDialogOpen} onOpenChange={setCollectionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('SelectCollections')}</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-80 space-y-3 overflow-y-auto">
-            {collectionsLoading && userCollections.length === 0 ? (
-              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-            ) : userCollections.length > 0 ? (
-              userCollections.map((collection) => (
-                <div
-                  key={collection.id}
-                  className="flex items-center gap-3 rounded-2xl border border-border p-3"
-                >
-                  <Checkbox
-                    id={`collection-${collection.id}`}
-                    checked={selectedCollectionIds.includes(collection.id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedCollectionIds((prev) =>
-                        checked
-                          ? [...new Set([...prev, collection.id])]
-                          : prev.filter((id) => id !== collection.id),
-                      );
-                    }}
-                  />
-                  <label
-                    htmlFor={`collection-${collection.id}`}
-                    className="min-w-0 flex-1 cursor-pointer truncate font-medium"
-                  >
-                    {collection.title}
-                  </label>
-                  <span className="text-xs text-muted-foreground">{collection.bookCount}</span>
-                </div>
-              ))
-            ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                {t('NoUserCollections')}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCollectionDialogOpen(false)}
-              disabled={collectionsLoading}
-            >
-              {g('Cancel')}
-            </Button>
-            <Button
-              onClick={() => void saveCollectionSelection()}
-              disabled={collectionsLoading || userCollections.length === 0}
-            >
-              {g('Save')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            <li aria-hidden className="shrink-0 text-muted-foreground/40">
+              <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+            </li>
+
+            <li className="shrink-0">
+              <Link
+                href={`/${book.type.slug}`}
+                className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-medium text-primary transition-colors hover:bg-primary/15"
+              >
+                <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
+                {book.type.name}
+              </Link>
+            </li>
+
+            <li aria-hidden className="shrink-0 text-muted-foreground/40">
+              <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+            </li>
+
+            <li aria-current="page" className="min-w-0">
+              <span className="block truncate px-2.5 py-1 font-semibold text-foreground">
+                {book.title}
+              </span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+
+      <BookDetailsPageClient
+        key={book.id}
+        initialBook={book}
+        initialChapters={chaptersData?.items ?? []}
+        initialChaptersTotal={chaptersData?.pagination.total ?? 0}
+        initialChaptersTotalPages={chaptersData?.pagination.totalPages ?? 1}
+        initialRelatedBooks={relatedData?.items ?? []}
+      />
+    </>
   );
 }

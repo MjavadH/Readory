@@ -421,8 +421,14 @@ export function BookDetails({
                         const roleLabel = item.role;
                         const roleIconKey = CONTRIBUTOR_ROLE_ICONS[item.role as ContributorRole];
 
+                        const isAuthorRole = item.role === 'AUTHOR';
+
                         return (
-                          <Link key={item.slug} href={`/contributor/${item.slug}`}>
+                          <Link
+                            key={item.slug}
+                            href={`/contributor/${item.slug}`}
+                            rel={isAuthorRole ? 'author' : undefined}
+                          >
                             <span className="inline-flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2.5 py-1 text-sm font-medium">
                               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted">
                                 {roleIconKey ? (
@@ -587,9 +593,9 @@ export function BookDetails({
                     <Clock className="h-4 w-4 shrink-0 text-emerald-500" />
                     <span className="min-w-0 truncate">
                       <span>{t('LastUpdated')}: </span>
-                      <span className="font-medium text-foreground">
+                      <time dateTime={book.updatedAt} className="font-medium text-foreground">
                         {formatUpdateTime(book.updatedAt, ti)}
-                      </span>
+                      </time>
                     </span>
                   </span>
                 )}
@@ -599,9 +605,12 @@ export function BookDetails({
                     <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
                     <span className="min-w-0 truncate">
                       <span>{t('LastContentUpdate')}: </span>
-                      <span className="font-medium text-foreground">
+                      <time
+                        dateTime={book.lastContentUpdate}
+                        className="font-medium text-foreground"
+                      >
                         {formatUpdateTime(book.lastContentUpdate, ti)}
-                      </span>
+                      </time>
                     </span>
                   </span>
                 )}
@@ -611,9 +620,9 @@ export function BookDetails({
                     <Calendar className="h-4 w-4 shrink-0 text-sky-500" />
                     <span className="min-w-0 truncate">
                       <span>{t('AddedOn')}: </span>
-                      <span className="font-medium text-foreground">
+                      <time dateTime={book.createdAt} className="font-medium text-foreground">
                         {formatUpdateTime(book.createdAt, ti)}
-                      </span>
+                      </time>
                     </span>
                   </span>
                 )}
