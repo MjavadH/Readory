@@ -59,6 +59,8 @@ export function BookCard({
   return (
     <Link
       href={link ?? url}
+      itemScope
+      itemType="https://schema.org/Book"
       className={cn(
         'group relative flex flex-col rounded-lg outline-none',
         'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -66,6 +68,10 @@ export function BookCard({
       )}
       aria-label={`View ${book.title}${book.contributors ? ` by ${book.contributors}` : ''}`}
     >
+      <meta itemProp="url" content={link ?? url} />
+      <meta itemProp="name" content={book.title} />
+      {book.contributors && <meta itemProp="author" content={book.contributors} />}
+
       {/* Cover Image Container */}
       <div className="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-muted">
         {/* Skeleton / loading state */}
@@ -91,7 +97,8 @@ export function BookCard({
         {/* Image with smooth scale on hover */}
         <Image
           src={book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : '/placeholder.svg'}
-          alt={`Cover of ${book.title}`}
+          alt={book.title}
+          itemProp="image"
           fill
           sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 200px"
           className={cn(
@@ -202,8 +209,16 @@ export function BookCard({
             <div
               role="img"
               aria-label={`Rating: ${book.ratingAvg} out of 5`}
+              itemProp="aggregateRating"
+              itemScope
+              itemType="https://schema.org/AggregateRating"
               className="flex items-center gap-1"
             >
+              <meta itemProp="ratingValue" content={String(book.ratingAvg)} />
+              <meta itemProp="bestRating" content="5" />
+              {book.ratingCount !== undefined && book.ratingCount > 0 && (
+                <meta itemProp="ratingCount" content={String(book.ratingCount)} />
+              )}
               <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
               <span className="text-xs font-medium text-foreground">{book.ratingAvg}</span>
               {book.ratingCount !== undefined && book.ratingCount > 0 && (
@@ -220,6 +235,7 @@ export function BookCard({
               {book.genres.slice(0, 2).map((genre) => (
                 <span
                   key={genre.slug}
+                  itemProp="genre"
                   className="shrink-0 rounded-full bg-secondary px-1.5 py-px text-[10px] text-secondary-foreground"
                 >
                   {genre.name}
