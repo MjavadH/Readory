@@ -8,6 +8,7 @@ import type { BookDetailsData } from '@/components/book-details';
 import type { ChaptersSectionChapter } from '@/components/chapters-section';
 import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { jsonLdScript } from '@/lib/structured-data';
 import { type BookCardData, getBookUrl } from '@/lib/types';
 import { BookDetailsPageClient } from './book-details-page-client';
 
@@ -190,11 +191,6 @@ function buildBreadcrumbJsonLd(book: BookDetailsData, canonicalUrl: string) {
   };
 }
 
-/** Escapes `<` so JSON-LD can't be broken out of by a `</script>` in user content. */
-function safeJsonLd(data: unknown): string {
-  return JSON.stringify(data).replace(/</g, '\\u003c');
-}
-
 // fetches once, renders JSON-LD + crawlable
 // breadcrumb, then hands off to the interactive client component.
 export default async function BookDetailsPage({ params }: PageProps) {
@@ -227,14 +223,12 @@ export default async function BookDetailsPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         // biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML
-        dangerouslySetInnerHTML={{
-          __html: safeJsonLd(buildBookJsonLd(book, canonicalUrl, coverUrl)),
-        }}
+        dangerouslySetInnerHTML={jsonLdScript(buildBookJsonLd(book, canonicalUrl, coverUrl))}
       />
       <script
         type="application/ld+json"
         // biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML
-        dangerouslySetInnerHTML={{ __html: safeJsonLd(buildBreadcrumbJsonLd(book, canonicalUrl)) }}
+        dangerouslySetInnerHTML={jsonLdScript(buildBreadcrumbJsonLd(book, canonicalUrl))}
       />
 
       <div className="mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">

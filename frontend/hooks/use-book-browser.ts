@@ -12,6 +12,14 @@ const normalizeListParam = (v: string | null) =>
         .filter(Boolean)
     : [];
 
+/**
+ * Sorts a filter value list before it hits the URL so that selecting the same
+ * filters in a different order (e.g. "Fantasy" then "Sci-Fi" vs the reverse)
+ * always produces the exact same URL. Without this, every click order is a
+ * distinct URL that reads as duplicate content to search engines.
+ */
+const sortForUrl = (values: string[]) => [...values].sort();
+
 interface UseBookBrowserOptions<T> {
   fetcher: (params: string, abortSignal: AbortSignal) => Promise<T>;
   baseUrl: string;
@@ -56,6 +64,7 @@ export function useBookBrowser<T extends BookBrowserApi>({
   const lastPushedRef = useRef<string>('');
   const fetcherRef = useRef(fetcher);
   const didInitRef = useRef(false);
+  const skipNextFetchRef = useRef(!!initialData);
 
   useEffect(() => {
     fetcherRef.current = fetcher;
@@ -70,8 +79,8 @@ export function useBookBrowser<T extends BookBrowserApi>({
   const updateUrl = useCallback(
     (next: { types: string[]; genres: string[]; sort: SortOption; query: string }) => {
       const params = new URLSearchParams();
-      if (next.types.length > 0) params.set('types', next.types.join(','));
-      if (next.genres.length > 0) params.set('genres', next.genres.join(','));
+      if (next.types.length > 0) params.set('types', sortForUrl(next.types).join(','));
+      if (next.genres.length > 0) params.set('genres', sortForUrl(next.genres).join(','));
       if (next.sort !== defaultSort) params.set('sort', next.sort);
       if (next.query) params.set('q', next.query);
 
@@ -94,8 +103,8 @@ export function useBookBrowser<T extends BookBrowserApi>({
   const buildQueryParams = useCallback(
     (cursor?: string) => {
       const params = new URLSearchParams();
-      if (selectedTypes.length > 0) params.set('types', selectedTypes.join(','));
-      if (selectedGenres.length > 0) params.set('genres', selectedGenres.join(','));
+      if (selectedTypes.length > 0) params.set('types', sortForUrl(selectedTypes).join(','));
+      if (selectedGenres.length > 0) params.set('genres', sortForUrl(selectedGenres).join(','));
       if (sortBy) params.set('sort', sortBy);
       if (searchQuery) params.set('q', searchQuery);
       if (cursor) params.set('cursor', cursor);
@@ -160,6 +169,11 @@ export function useBookBrowser<T extends BookBrowserApi>({
 
   useEffect(() => {
     if (!didInitRef.current) return;
+
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
 
     setNextCursor(undefined);
     setHasMore(false);
@@ -243,6 +257,7 @@ export function useBookBrowser<T extends BookBrowserApi>({
     isLoading,
     isLoadingMore,
     hasMore,
+    nextCursor,
     loadMoreRef,
     isNotFound,
     filters: {
