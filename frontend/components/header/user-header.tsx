@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppIcon } from '@/components/AppIcon';
 import { BrandLogo } from '@/components/brand-logo';
 import { GenreCarousel } from '@/components/header/genre-carousel';
@@ -71,8 +71,43 @@ function NavDropdown({
   children: React.ReactNode;
   isActive?: boolean;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on route change
+  useEffect(() => {
+    if (pathname) {
+      setIsOpen(false);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const handleMouseEnter = () => setIsOpen(true);
+    const handleMouseLeave = () => setIsOpen(false);
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('a')) {
+        setIsOpen(false);
+      }
+    };
+
+    element.addEventListener('mouseenter', handleMouseEnter);
+    element.addEventListener('mouseleave', handleMouseLeave);
+    element.addEventListener('click', handleClick);
+
+    return () => {
+      element.removeEventListener('mouseenter', handleMouseEnter);
+      element.removeEventListener('mouseleave', handleMouseLeave);
+      element.removeEventListener('click', handleClick);
+    };
+  }, []);
+
   return (
-    <div className="group relative">
+    <div ref={containerRef} className="relative">
       <Link
         href={href}
         className={cn(
@@ -85,7 +120,7 @@ function NavDropdown({
         <ChevronDown
           className={cn(
             'h-3.5 w-3.5 opacity-60 transition-transform duration-200',
-            'group-hover:rotate-180 group-focus-within:rotate-180',
+            isOpen && 'rotate-180',
           )}
         />
         {isActive && (
@@ -97,7 +132,14 @@ function NavDropdown({
         )}
       </Link>
 
-      <div className="pointer-events-none absolute top-full z-50 pt-3 opacity-0 transition-[opacity,transform] duration-150 ease-out group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 ltr:left-0 rtl:right-0">
+      <div
+        className={cn(
+          'absolute top-full z-50 pt-3 transition-all duration-150 ease-out ltr:left-0 rtl:right-0',
+          isOpen
+            ? 'pointer-events-auto opacity-100 translate-y-0'
+            : 'pointer-events-none opacity-0 -translate-y-1',
+        )}
+      >
         {children}
       </div>
     </div>
