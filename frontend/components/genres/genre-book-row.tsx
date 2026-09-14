@@ -18,6 +18,7 @@ interface GenreBook {
   type: BookType;
   ratingAvg: number | null;
   ratingCount: number;
+  slug: string;
 }
 
 interface GenreBookRowProps {
@@ -156,6 +157,7 @@ export function GenreBookRow({ genre }: GenreBookRowProps) {
               contributors: book.contributors ?? undefined,
               ratingAvg: book.ratingAvg ?? undefined,
               ratingCount: book.ratingCount,
+              slug: book.slug,
             };
 
             return (

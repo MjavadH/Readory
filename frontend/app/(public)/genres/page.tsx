@@ -1,89 +1,67 @@
-'use client';
-
-import type { IconKey } from '@readory/shared';
-import { useTranslations } from 'next-intl';
-import useSWR from 'swr';
-import { AllGenresSection } from '@/components/genres/all-genres-section';
-import { GenreBookRow } from '@/components/genres/genre-book-row';
-import { GenresPageSkeleton } from '@/components/genres/genres-page-skeleton';
+import type { Metadata } from 'next';
 import { apiClient } from '@/lib/api-client';
-import type { BookType } from '@/lib/types';
+import { absoluteUrl, SITE_NAME } from '@/lib/seo';
+import { buildGenresIndexJsonLd, jsonLdScript } from '@/lib/structured-data';
+import type { BookCardData } from '@/lib/types';
+import GenresPageClient from './GenresClient';
+import type { GenresPageResponse } from './genres-types';
 
-interface ApiFeaturedGenre {
-  id: number;
-  name: string;
-  slug: string;
-  iconKey: IconKey;
-  books: Array<{
-    id: number;
-    title: string;
-    coverImage: string;
-    contributors: string | null;
-    type: BookType;
-    ratingAvg: number | null;
-    ratingCount: number;
-  }>;
+const title = `Browse Genres | ${SITE_NAME}`;
+const description = `Explore books by genre on ${SITE_NAME} — from fantasy and romance to sci-fi and mystery. Find your next favorite read.`;
+const canonical = absoluteUrl('/genres');
+const ogImage = absoluteUrl('/og/genres.png');
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: { canonical },
+  openGraph: {
+    title,
+    description,
+    url: canonical,
+    siteName: SITE_NAME,
+    type: 'website',
+    images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: [ogImage],
+  },
+};
+
+function toBookCardData(
+  book: GenresPageResponse['featured'][number]['books'][number],
+): BookCardData {
+  return {
+    id: book.id,
+    title: book.title,
+    coverImage: book.coverImage,
+    type: book.type,
+    contributors: book.contributors ?? undefined,
+    ratingAvg: book.ratingAvg ?? undefined,
+    ratingCount: book.ratingCount,
+  };
 }
 
-interface GenresPageResponse {
-  featured: ApiFeaturedGenre[];
-  allGenres: Array<{ id: number; name: string; slug: string; iconKey: IconKey }>;
-}
+export default async function GenresPage() {
+  const data = await apiClient.get<GenresPageResponse>('/public/genres');
 
-const fetcher = (url: string) => apiClient.get<GenresPageResponse>(url);
-
-export default function GenresPage() {
-  const { data, error, isLoading } = useSWR<GenresPageResponse>(
-    `${process.env.NEXT_PUBLIC_API_BASE}/public/genres`,
-    fetcher,
+  const jsonLd = buildGenresIndexJsonLd(
+    data.allGenres,
+    data.featured.map((genre) => ({
+      name: genre.name,
+      slug: genre.slug,
+      books: genre.books.map(toBookCardData),
+    })),
   );
-  const t = useTranslations('Genres');
-
-  const featured = data?.featured ?? [];
-  const allGenres = data?.allGenres ?? [];
 
   return (
-    <main className="min-h-screen bg-background">
-      {/* Page header */}
-      <div className="mx-auto max-w-7xl px-4 pt-8 pb-2 sm:px-6 sm:pt-10 lg:px-8">
-        <h1 className="text-2xl font-bold text-foreground sm:text-3xl lg:text-4xl text-balance">
-          {t('Title')}
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed sm:text-base">
-          {t('Description')}
-        </p>
-      </div>
-
-      {/* Featured genre sections */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {isLoading && <GenresPageSkeleton />}
-
-        {error && !isLoading && (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-6 text-center">
-            <p className="text-sm text-destructive">
-              {error instanceof Error ? error.message : t('Error')}
-            </p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-3 text-xs font-medium text-primary underline-offset-4 hover:underline"
-            >
-              {t('TryAgain')}
-            </button>
-          </div>
-        )}
-
-        {!isLoading && !error && (
-          <div className="flex flex-col gap-10 sm:gap-12">
-            {featured.map((genre) => (
-              <GenreBookRow key={genre.slug} genre={genre} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* All Genres */}
-      {!isLoading && !error && allGenres.length > 0 && <AllGenresSection genres={allGenres} />}
-    </main>
+    <>
+      {/** biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
+      <GenresPageClient initialData={data} />
+    </>
   );
 }

@@ -63,6 +63,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: absoluteUrl('/'), changeFrequency: 'daily', priority: 1 },
     { url: absoluteUrl('/books'), changeFrequency: 'daily', priority: 0.9 },
+    { url: absoluteUrl('/genres'), changeFrequency: 'weekly', priority: 0.8 },
     ...filterUrls,
     ...bookUrls,
   ];

@@ -21,6 +21,47 @@ export interface BooksListJsonLdOptions {
   breadcrumb: BreadcrumbItem[];
 }
 
+function breadcrumbList(trail: BreadcrumbItem[]) {
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'Home', path: '/' }, ...trail].map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
+  };
+}
+
+/** Shared Book -> ListItem mapping used by every listing page's JSON-LD. */
+function bookListItem(book: BookCardData, position: number) {
+  const url = absoluteUrl(getBookUrl(book));
+  return {
+    '@type': 'ListItem',
+    position,
+    url,
+    item: {
+      '@type': 'Book',
+      name: book.title,
+      url,
+      ...(book.contributors && {
+        author: { '@type': 'Person', name: book.contributors },
+      }),
+      ...(book.coverImage && { image: book.coverImage }),
+      ...(book.genres?.length && { genre: book.genres.map((g) => g.name) }),
+      ...(book.ratingAvg &&
+        book.ratingCount && {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: book.ratingAvg,
+            ratingCount: book.ratingCount,
+            bestRating: 5,
+          },
+        }),
+    },
+  };
+}
+
 /**
  * Builds JSON-LD (BreadcrumbList + CollectionPage + ItemList of Book) for any
  * books-listing page: the main /books browse page, a /genres/[slug] page, or
@@ -32,18 +73,6 @@ export function buildBooksListJsonLd(
   books: BookCardData[],
   { collectionName, canonicalUrl, breadcrumb }: BooksListJsonLdOptions,
 ) {
-  const trail: BreadcrumbItem[] = [{ name: 'Home', path: '/' }, ...breadcrumb];
-
-  const breadcrumbList = {
-    '@type': 'BreadcrumbList',
-    itemListElement: trail.map((item, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: item.name,
-      item: absoluteUrl(item.path),
-    })),
-  };
-
   const collectionPage = {
     '@type': 'CollectionPage',
     name: collectionName,
@@ -57,38 +86,75 @@ export function buildBooksListJsonLd(
 
   const itemList = {
     '@type': 'ItemList',
-    itemListElement: books.map((book, index) => {
-      const url = absoluteUrl(getBookUrl(book));
-      return {
-        '@type': 'ListItem',
-        position: index + 1,
-        url,
-        item: {
-          '@type': 'Book',
-          name: book.title,
-          url,
-          ...(book.contributors && {
-            author: { '@type': 'Person', name: book.contributors },
-          }),
-          ...(book.coverImage && { image: book.coverImage }),
-          ...(book.genres?.length && { genre: book.genres.map((g) => g.name) }),
-          ...(book.ratingAvg &&
-            book.ratingCount && {
-              aggregateRating: {
-                '@type': 'AggregateRating',
-                ratingValue: book.ratingAvg,
-                ratingCount: book.ratingCount,
-                bestRating: 5,
-              },
-            }),
-        },
-      };
-    }),
+    itemListElement: books.map((book, index) => bookListItem(book, index + 1)),
   };
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [breadcrumbList, collectionPage, itemList],
+    '@graph': [breadcrumbList(breadcrumb), collectionPage, itemList],
+  };
+}
+
+export interface FeaturedGenreForJsonLd {
+  name: string;
+  slug: string;
+  books: BookCardData[];
+}
+
+export interface GenreSummary {
+  name: string;
+  slug: string;
+}
+
+/**
+ * Builds JSON-LD for the /genres index page: BreadcrumbList, the
+ * CollectionPage itself, an ItemList linking to every genre (a clean
+ * discovery signal separate from the sitemap), and one ItemList of books per
+ * featured genre row, since those books are genuinely visible on the page.
+ */
+export function buildGenresIndexJsonLd(
+  allGenres: GenreSummary[],
+  featuredGenres: FeaturedGenreForJsonLd[],
+) {
+  const collectionPage = {
+    '@type': 'CollectionPage',
+    name: 'Browse Genres',
+    url: absoluteUrl('/genres'),
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: getSiteUrl(),
+    },
+  };
+
+  const genreIndex = {
+    '@type': 'ItemList',
+    name: 'All Genres',
+    itemListElement: allGenres.map((genre, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: genre.name,
+      url: absoluteUrl(`/genres/${genre.slug}`),
+    })),
+  };
+
+  const featuredBookLists = featuredGenres
+    .filter((genre) => genre.books.length > 0)
+    .map((genre) => ({
+      '@type': 'ItemList',
+      name: `${genre.name} Books`,
+      url: absoluteUrl(`/genres/${genre.slug}`),
+      itemListElement: genre.books.map((book, index) => bookListItem(book, index + 1)),
+    }));
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      breadcrumbList([{ name: 'Genres', path: '/genres' }]),
+      collectionPage,
+      genreIndex,
+      ...featuredBookLists,
+    ],
   };
 }
 
