@@ -14,8 +14,12 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: 'Readory',
-  description: 'Your favorite book library',
+  title: 'Readory | Login',
+  description: 'Log in to your Readory account.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function RootLayout({

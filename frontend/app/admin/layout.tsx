@@ -2,12 +2,21 @@ import { Vazirmatn } from 'next/font/google';
 import { getLocale, getMessages } from 'next-intl/server';
 import { AdminLayoutClient } from './AdminLayoutClient';
 import '@/styles/globals.css';
+import type { Metadata } from 'next';
 import { getDirection, getLocaleConfig } from '@/i18n/locales';
 
 const vazirmatn = Vazirmatn({
   subsets: ['latin', 'arabic'],
   variable: '--font-vazirmatn',
 });
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
