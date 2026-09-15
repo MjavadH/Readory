@@ -5,6 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
@@ -127,8 +128,10 @@ export class MediaService {
         select: { code: true, filename: true, storageKey: true },
       });
       return this.toPublicMediaItem(updated);
-    } catch (err: any) {
-      if (err?.code === 'P2002') throw new ConflictException('Filename already exists');
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Filename already exists');
+      }
       throw new InternalServerErrorException('Failed to rename media');
     }
   }
@@ -141,8 +144,10 @@ export class MediaService {
 
     try {
       await this.storage.deleteKeys([record.storageKey]);
-    } catch (err: any) {
-      this.logger.error(`Failed to delete media object ${record.storageKey}: ${err.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Failed to delete media object ${record.storageKey}: ${error.message}`);
+      }
       throw new InternalServerErrorException('Failed to delete media object');
     }
 

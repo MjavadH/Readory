@@ -1,4 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { IconKey } from '@readory/shared';
 import { CacheManager } from '../cache/cache.manager';
 import { slugify } from '../common';
@@ -123,9 +124,11 @@ export class GenresService {
       });
       await this.invalidateCache();
       return genre;
-    } catch (err: any) {
-      if (err?.code === 'P2002') throw new ConflictException('Genre already exists');
-      throw err;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Genre already exists');
+      }
+      throw error;
     }
   }
 
@@ -154,9 +157,11 @@ export class GenresService {
 
       await this.invalidateCache();
       return updatedGenre;
-    } catch (err: any) {
-      if (err?.code === 'P2002') throw new ConflictException('Genre name or slug already exists');
-      throw err;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Genre name or slug already exists');
+      }
+      throw error;
     }
   }
 

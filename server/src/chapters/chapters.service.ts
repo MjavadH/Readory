@@ -171,10 +171,11 @@ export class ChaptersService {
       await this.publicService.clearHomeCache();
       await this.chapterCache.bumpListVersion(bookId);
       return chapter;
-    } catch (err: any) {
-      if (err?.code === 'P2002')
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('Chapter index already exists for this book');
-      throw err;
+      }
+      throw error;
     }
   }
 
@@ -260,10 +261,11 @@ export class ChaptersService {
       await this.publicService.clearHomeCache();
       await this.chapterCache.bumpListVersion(bookId);
       return chapter;
-    } catch (err: any) {
-      if (err?.code === 'P2002')
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('Chapter index already exists for this book');
-      throw err;
+      }
+      throw error;
     }
   }
 

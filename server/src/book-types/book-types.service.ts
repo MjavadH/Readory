@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { IconKey, PublicationStatus } from '@readory/shared';
 import { slugify } from '../common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -105,9 +106,11 @@ export class BookTypesService {
           sortOrder: true,
         },
       });
-    } catch (e: any) {
-      if (e?.code === 'P2002') throw new BadRequestException('slug already exists');
-      throw e;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('slug already exists');
+      }
+      throw error;
     }
   }
 
@@ -147,9 +150,11 @@ export class BookTypesService {
           sortOrder: true,
         },
       });
-    } catch (e: any) {
-      if (e?.code === 'P2002') throw new BadRequestException('slug already exists');
-      throw e;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('slug already exists');
+      }
+      throw error;
     }
   }
 
