@@ -51,7 +51,6 @@ function normalizeFilter(value: string | null | undefined): FilterKey | null {
 const MENU_MARGIN = 10;
 const MORPH_DURATION = 0.28;
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-const SPRING_LAYOUT = { type: 'spring', stiffness: 520, damping: 38, mass: 0.7 } as const;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -114,7 +113,6 @@ export function ReaderContextMenu({
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   const [morphReady, setMorphReady] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
 
   /* position */
   useLayoutEffect(() => {
@@ -220,19 +218,17 @@ export function ReaderContextMenu({
     [t],
   );
 
-  const ctx = { activeId, setActiveId, menuId, reduce };
+  const ctx = { menuId, reduce };
 
   const body = (
     <>
       <div className="flex flex-col gap-0.5">
         <ContextItem
-          ctx={ctx}
           icon={<Maximize className="h-4 w-4" />}
           label={t('Fullscreen')}
           onSelect={() => select('fullscreen')}
         />
         <ContextItem
-          ctx={ctx}
           icon={<RefreshCcw className="h-4 w-4" />}
           label={t('ReloadPage')}
           onSelect={() => select('reload')}
@@ -248,7 +244,6 @@ export function ReaderContextMenu({
               className="overflow-hidden"
             >
               <ContextItem
-                ctx={ctx}
                 icon={<RotateCcw className="h-4 w-4" />}
                 label={t('ResetZoom')}
                 onSelect={() => select('reset-zoom')}
@@ -372,33 +367,25 @@ export function ReaderContextMenu({
 /* pieces */
 
 type ItemCtx = {
-  activeId: string | null;
-  setActiveId: (id: string | null) => void;
   menuId: string;
   reduce: boolean;
 };
 
 function ContextItem({
-  ctx,
   icon,
   label,
   onSelect,
 }: {
-  ctx: ItemCtx;
   icon: ReactNode;
   label: string;
   onSelect: () => void;
 }) {
-  const id = useId();
-  const active = ctx.activeId === id;
-
   return (
     <button
       type="button"
       role="menuitem"
       data-menu-item="true"
       tabIndex={-1}
-      onFocus={() => ctx.setActiveId(id)}
       onPointerMove={(e) => {
         if (e.pointerType !== 'touch') e.currentTarget.focus();
       }}
@@ -406,15 +393,8 @@ function ContextItem({
         e.stopPropagation();
         onSelect();
       }}
-      className="relative isolate flex w-full select-none items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-medium text-foreground outline-none sm:py-2.5"
+      className="flex w-full select-none items-center gap-3 rounded-xl px-3 py-3 text-start text-sm font-medium text-foreground outline-none transition-colors duration-100 hover:bg-secondary focus-visible:bg-secondary sm:py-2.5"
     >
-      {active && (
-        <motion.span
-          layoutId={`${ctx.menuId}-active`}
-          transition={ctx.reduce ? { duration: 0 } : SPRING_LAYOUT}
-          className="absolute inset-0 -z-10 rounded-xl bg-secondary"
-        />
-      )}
       <span className="shrink-0 text-muted-foreground">{icon}</span>
       <span className="min-w-0 truncate">{label}</span>
     </button>
@@ -439,7 +419,6 @@ function FilterButton({
       aria-checked={checked}
       data-menu-item="true"
       tabIndex={-1}
-      onFocus={() => ctx.setActiveId(null)}
       onClick={(e) => {
         e.stopPropagation();
         onSelect();
