@@ -1,12 +1,13 @@
 'use client';
 
+import { BookCopy } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookCard } from '@/components/book-card';
 import { BookDetails, type BookDetailsData } from '@/components/book-details';
 import { ChapterPurchaseDialog } from '@/components/chapter-purchase-dialog';
 import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
+import { BookCarouselSection } from '@/components/Home/book-carousel-section';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -18,7 +19,6 @@ import {
 } from '@/components/ui/dialog';
 import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
-
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { type BookCardData, getBookUrl } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
@@ -386,19 +386,12 @@ export function BookDetailsPageClient({
 
       {/* Related */}
       {relatedBooks.length > 0 && (
-        <section>
-          <div className="mb-5 flex items-end justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold sm:text-2xl">{t('SimilarBooks')}</h2>
-              <p className="text-sm text-muted-foreground">{t('MayLike')}</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {relatedBooks.map((relatedBook) => (
-              <BookCard key={relatedBook.id} book={relatedBook} />
-            ))}
-          </div>
-        </section>
+        <BookCarouselSection
+          books={relatedBooks}
+          icon={BookCopy}
+          eyebrow={t('MayLike')}
+          title={t('SimilarBooks')}
+        />
       )}
 
       {actionChapter && (
