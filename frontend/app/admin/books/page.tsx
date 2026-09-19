@@ -252,19 +252,19 @@ export default function AdminBooks() {
 
   const handleAddBook = async () => {
     if (!newBook.title.trim()) {
-      return toast.error(t('TitleRequired'), t('Validation Error'));
+      return toast.error(t('TitleRequired'), t('ValidationError'));
     }
 
     if (!newBook.slug) {
-      return toast.error(t('SlugRequired'), t('Validation Error'));
+      return toast.error(t('SlugRequired'), t('ValidationError'));
     }
 
     if (newBook.genreIds.length === 0) {
-      return toast.error(t('SelectOneGenre'), t('Validation Error'));
+      return toast.error(t('SelectOneGenre'), t('ValidationError'));
     }
 
     if (newBook.typeId == null) {
-      return toast.error(t('BookTypeRequired'), t('Validation Error'));
+      return toast.error(t('BookTypeRequired'), t('ValidationError'));
     }
 
     setIsSubmitting(true);
