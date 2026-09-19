@@ -260,23 +260,49 @@ export function BookDetailsPageClient({
     }
   };
 
-  const onChapterSelect = (chapter: ChaptersSectionChapter) => {
-    if (!isAuthenticated) {
-      toast.error(t('OnlyRegisteredUsers'));
-      return;
-    }
+  const onChapterSelect = useCallback(
+    (chapter: ChaptersSectionChapter) => {
+      if (!isAuthenticated) {
+        toast.error(t('OnlyRegisteredUsers'));
+        return;
+      }
 
-    const alreadyPurchased = new Set(purchasedIds).has(chapter.id);
+      const alreadyPurchased = new Set(purchasedIds).has(chapter.id);
+      if (alreadyPurchased) {
+        router.push(`${getBookUrl(book)}/c/${chapter.index}`);
+        return;
+      }
+
+      setActionChapter({
+        ...chapter,
+        mode: chapter.isFree || chapter.price == null ? 'access' : 'purchase',
+      });
+    },
+    [isAuthenticated, purchasedIds, book, router, t, toast.error],
+  );
+
+  // Single-chapter books: hide the chapters section and turn the primary
+  // "Chapters" button into a direct Read / Access / Buy action.
+  const isSingleChapter = chaptersTotal === 1;
+  const singleChapter = isSingleChapter ? chapters[0] : undefined;
+
+  const singleChapterAction = useMemo(() => {
+    if (!singleChapter) return null;
+
+    const alreadyPurchased = new Set(purchasedIds).has(singleChapter.id);
     if (alreadyPurchased) {
-      router.push(`${getBookUrl(book)}/c/${chapter.index}`);
-      return;
+      return {
+        label: t('Read'),
+        onClick: () => router.push(`${getBookUrl(book)}/c/${singleChapter.index}`),
+      };
     }
 
-    setActionChapter({
-      ...chapter,
-      mode: chapter.isFree || chapter.price == null ? 'access' : 'purchase',
-    });
-  };
+    const needsPurchase = !singleChapter.isFree && singleChapter.price != null;
+    return {
+      label: needsPurchase ? t('Buy') : t('Access'),
+      onClick: () => onChapterSelect(singleChapter),
+    };
+  }, [singleChapter, purchasedIds, book, router, t, onChapterSelect]);
 
   const handlePurchased = useCallback((chapterId: number) => {
     setViewer((prev) => {
@@ -322,37 +348,41 @@ export function BookDetailsPageClient({
         onSubmitRating={() => void handleSubmitRating()}
         isRatingPending={isRatingPending}
         chapterSection={chaptersPaginationScrollRef}
+        primaryActionLabel={singleChapterAction?.label}
+        onPrimaryAction={singleChapterAction?.onClick}
         t={t}
         ti={ti}
         hideUpdatedAt={true}
         hideCreatedAt={true}
       />
 
-      {/* Chapters (shared component, public mode) */}
-      <ChaptersSection
-        mode="public"
-        chapters={chapters}
-        chaptersLoading={chaptersLoading}
-        chaptersTotal={chaptersTotal}
-        chaptersTotalPages={chaptersTotalPages}
-        chaptersPage={chaptersPage}
-        pageSize={CHAPTERS_PER_PAGE}
-        onPageChange={(page) => {
-          setChaptersLoading(true);
-          setChaptersPage(page);
-        }}
-        scrollRef={chaptersPaginationScrollRef}
-        t={t}
-        ti={ti}
-        g={g}
-        purchasedChapterIds={purchasedIds}
-        onChapterSelect={onChapterSelect}
-        searchInput={chapterSearchInput}
-        onSearchInputChange={setChapterSearchInput}
-        onSearchSubmit={handleSearch}
-        order={chaptersOrder}
-        onToggleOrder={toggleOrder}
-      />
+      {/* Chapters (shared component, public mode) — hidden for single-chapter books */}
+      {!isSingleChapter && (
+        <ChaptersSection
+          mode="public"
+          chapters={chapters}
+          chaptersLoading={chaptersLoading}
+          chaptersTotal={chaptersTotal}
+          chaptersTotalPages={chaptersTotalPages}
+          chaptersPage={chaptersPage}
+          pageSize={CHAPTERS_PER_PAGE}
+          onPageChange={(page) => {
+            setChaptersLoading(true);
+            setChaptersPage(page);
+          }}
+          scrollRef={chaptersPaginationScrollRef}
+          t={t}
+          ti={ti}
+          g={g}
+          purchasedChapterIds={purchasedIds}
+          onChapterSelect={onChapterSelect}
+          searchInput={chapterSearchInput}
+          onSearchInputChange={setChapterSearchInput}
+          onSearchSubmit={handleSearch}
+          order={chaptersOrder}
+          onToggleOrder={toggleOrder}
+        />
+      )}
 
       {/* Related */}
       {relatedBooks.length > 0 && (

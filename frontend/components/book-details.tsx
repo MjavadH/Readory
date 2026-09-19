@@ -92,6 +92,10 @@ export type BookDetailsProps = {
 
   chapterSection?: chapterSectionType;
 
+  /** Single-chapter books: replaces the default "Chapters" scroll CTA. */
+  primaryActionLabel?: string;
+  onPrimaryAction?: () => void;
+
   t: Translator;
   ti: Translator;
 
@@ -184,6 +188,8 @@ export function BookDetails({
   onSubmitRating,
   isRatingPending,
   chapterSection,
+  primaryActionLabel,
+  onPrimaryAction,
   t,
   ti,
   primaryActionSlot,
@@ -498,11 +504,11 @@ export function BookDetails({
                   <motion.div whileTap={{ scale: 0.97 }} className="flex-1 sm:flex-initial">
                     <Button
                       size="lg"
-                      onClick={scrollToTarget}
+                      onClick={onPrimaryAction ?? scrollToTarget}
                       className="h-12 w-full gap-2 rounded-2xl bg-linear-to-br from-primary to-primary/85 px-6 text-base font-semibold shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 sm:w-auto"
                     >
                       <BookOpen className="h-5 w-5" />
-                      {t('Chapters')}
+                      {primaryActionLabel ?? t('Chapters')}
                     </Button>
                   </motion.div>
                 )}
