@@ -7,18 +7,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookDetails, type BookDetailsData } from '@/components/book-details';
 import { ChapterPurchaseDialog } from '@/components/chapter-purchase-dialog';
 import { ChaptersSection, type ChaptersSectionChapter } from '@/components/chapters-section';
-import { BookCarouselSection } from '@/components/Home/book-carousel-section';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  CollectionSelection,
+  type CollectionSelectionItem,
+} from '@/components/collections/collection-selection';
+import { BookCarouselSection } from '@/components/Home/book-carousel-section';
 import { ApiError, apiClient, getApiErrorMessage } from '@/lib/api-client';
-import type { Collection } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { type BookCardData, getBookUrl } from '@/lib/types';
 import { useToast } from '@/providers/toast-provider';
@@ -76,10 +70,8 @@ export function BookDetailsPageClient({
 
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [collectionDialogOpen, setCollectionDialogOpen] = useState(false);
-  const [userCollections, setUserCollections] = useState<
-    Array<Collection & { containsBook?: boolean }>
-  >([]);
+  const [collectionSelectionOpen, setCollectionSelectionOpen] = useState(false);
+  const [userCollections, setUserCollections] = useState<CollectionSelectionItem[]>([]);
   const [selectedCollectionIds, setSelectedCollectionIds] = useState<number[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
 
@@ -119,7 +111,9 @@ export function BookDetailsPageClient({
 
         if (profile) {
           setIsAuthenticated(true);
-          const viewerState = await apiClient.get<ViewerState>(`/books/${bookId}/viewer-state`);
+          const viewerState = await apiClient.get<ViewerState>(`/books/${bookId}/viewer-state`, {
+            authRequired: true,
+          });
           if (cancelled) return;
           setViewer(viewerState);
           setSelectedRating(viewerState.myRating ?? 0);
@@ -203,17 +197,18 @@ export function BookDetailsPageClient({
     }
   };
 
-  const openCollectionDialog = async () => {
+  const openCollectionSelection = async () => {
     if (!isAuthenticated) {
       toast.error(t('OnlyRegisteredUsers'));
       return;
     }
 
-    setCollectionDialogOpen(true);
+    setCollectionSelectionOpen(true);
     setCollectionsLoading(true);
     try {
-      const res = await apiClient.get<{ items: Array<Collection & { containsBook?: boolean }> }>(
+      const res = await apiClient.get<{ items: CollectionSelectionItem[] }>(
         `/collections/mine?limit=48&bookId=${book.id}`,
+        { authRequired: true },
       );
       const items = res.items ?? [];
       setUserCollections(items);
@@ -240,7 +235,13 @@ export function BookDetailsPageClient({
         idsToAdd.map((id) => apiClient.post(`/collections/${id}/items`, { bookId: book.id })),
       );
       toast.success(t('AddedToCollections'));
-      setCollectionDialogOpen(false);
+      setUserCollections((current) =>
+        current.map((collection) => ({
+          ...collection,
+          containsBook: selectedCollectionIds.includes(collection.id),
+        })),
+      );
+      setCollectionSelectionOpen(false);
     } catch (err) {
       toast.error(getApiErrorMessage(err, t('UnableSaveRating')));
     } finally {
@@ -251,7 +252,9 @@ export function BookDetailsPageClient({
   const handleToggleFavorite = async () => {
     setFavoriteLoading(true);
     try {
-      const res: { favorited: boolean } = await apiClient.post(`/books/${book.id}/favorite`);
+      const res: { favorited: boolean } = await apiClient.post(`/books/${book.id}/favorite`, {
+        authRequired: true,
+      });
       setIsFavorited(res.favorited);
     } catch (err) {
       toast.error(getApiErrorMessage(err));
@@ -340,7 +343,7 @@ export function BookDetailsPageClient({
         isFavorited={isFavorited}
         favoriteLoading={favoriteLoading}
         onToggleFavorite={handleToggleFavorite}
-        onAddToCollection={openCollectionDialog}
+        onAddToCollection={openCollectionSelection}
         selectedRating={selectedRating}
         hoverRating={hoverRating}
         onHoverRating={setHoverRating}
@@ -402,63 +405,15 @@ export function BookDetailsPageClient({
           onClose={() => setActionChapter(null)}
         />
       )}
-      <Dialog open={collectionDialogOpen} onOpenChange={setCollectionDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('SelectCollections')}</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-80 space-y-3 overflow-y-auto">
-            {collectionsLoading && userCollections.length === 0 ? (
-              <div className="h-24 animate-pulse rounded-2xl bg-muted" />
-            ) : userCollections.length > 0 ? (
-              userCollections.map((collection) => (
-                <div
-                  key={collection.id}
-                  className="flex items-center gap-3 rounded-2xl border border-border p-3"
-                >
-                  <Checkbox
-                    id={`collection-${collection.id}`}
-                    checked={selectedCollectionIds.includes(collection.id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedCollectionIds((prev) =>
-                        checked
-                          ? [...new Set([...prev, collection.id])]
-                          : prev.filter((id) => id !== collection.id),
-                      );
-                    }}
-                  />
-                  <label
-                    htmlFor={`collection-${collection.id}`}
-                    className="min-w-0 flex-1 cursor-pointer truncate font-medium"
-                  >
-                    {collection.title}
-                  </label>
-                  <span className="text-xs text-muted-foreground">{collection.bookCount}</span>
-                </div>
-              ))
-            ) : (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                {t('NoUserCollections')}
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCollectionDialogOpen(false)}
-              disabled={collectionsLoading}
-            >
-              {g('Cancel')}
-            </Button>
-            <Button
-              onClick={() => void saveCollectionSelection()}
-              disabled={collectionsLoading || userCollections.length === 0}
-            >
-              {g('Save')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CollectionSelection
+        open={collectionSelectionOpen}
+        collections={userCollections}
+        selectedIds={selectedCollectionIds}
+        loading={collectionsLoading}
+        onOpenChange={setCollectionSelectionOpen}
+        onSelectedIdsChange={setSelectedCollectionIds}
+        onSave={saveCollectionSelection}
+      />
     </div>
   );
 }
