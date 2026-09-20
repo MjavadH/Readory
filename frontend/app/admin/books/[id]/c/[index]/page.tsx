@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertCircle,
   BookOpen,
+  BookText,
   Check,
   FileStack,
   FileText,
@@ -44,26 +45,41 @@ import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/providers/toast-provider';
 
+type ChapterContentStatus = 'EMPTY' | 'PROCESSING' | 'READY' | 'FAILED';
+
 type ChapterMeta = {
   id: number;
   title: string;
   index: number;
   contentPath: string | null;
-  contentType: 'images' | 'text' | null;
+  contentType: 'images' | 'text' | 'epub' | null;
+  contentStatus: ChapterContentStatus;
   pageCount: number;
   contentVersion: number;
   updatedAt: string;
-  pdfKey?: string | null;
-  pdfPageCount?: number | null;
-  pdfUploadedAt?: string | null;
+  contentKey?: string | null;
+  contentSourcePageCount?: number | null;
+  contentUploadedAt?: string | null;
 };
 
-type Manifest = {
-  version: 1;
-  format: 'images' | 'text';
-  pageCount: number;
-  pages: Array<{ key: string; w?: number; h?: number; sha256?: string }>;
-};
+type ManifestPage = { key: string; w?: number; h?: number; sha256?: string };
+type EpubManifestPage = { key: string; sectionId: string; unitCount: number; hasImages: boolean };
+type EpubManifestTocEntry = { title: string; pageIndex: number };
+
+type Manifest =
+  | {
+      version: 1;
+      format: 'images' | 'text';
+      pageCount: number;
+      pages: ManifestPage[];
+    }
+  | {
+      version: 2;
+      format: 'epub';
+      pageCount: number;
+      pages: EpubManifestPage[];
+      toc: EpubManifestTocEntry[];
+    };
 
 type ChapterContentResponse = {
   chapter: ChapterMeta;
@@ -74,21 +90,22 @@ type ChapterContentResponse = {
 type AdminPreviewSessionResponse = {
   sessionToken: string;
   pageCount: number;
-  contentType: 'images' | 'text' | null;
+  contentType: 'images' | 'text' | 'epub' | null;
   contentVersion: number;
   adminPreview: true;
 };
 
-type UploadTab = 'images' | 'text' | 'pdf';
+type UploadTab = 'images' | 'text' | 'pdf' | 'epub';
 
 const PAGE_SIZE = 24;
 const POLL_INTERVAL_MS = 5000;
 
-// Mirrors backend limits (chapter-content.service.ts / pdf-processing.service.ts)
+// Mirrors backend limits (chapter-content / pdf-processing / epub-validation)
 const IMAGE_MAX_FILES = 120;
 const IMAGE_MAX_BYTES = 12 * 1024 * 1024;
 const TEXT_MAX_BYTES = 2 * 1024 * 1024;
 const PDF_MAX_BYTES = 100 * 1024 * 1024;
+const EPUB_MAX_BYTES = 150 * 1024 * 1024;
 
 const PAGE_SKELETON_COUNT = 6;
 const PAGE_SKELETON_KEYS = Array.from(
@@ -262,10 +279,12 @@ export default function ChapterContentManager() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [textFile, setTextFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [epubFile, setEpubFile] = useState<File | null>(null);
 
   const [imageError, setImageError] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const [epubError, setEpubError] = useState<string | null>(null);
 
   const [imagePage, setImagePage] = useState(1);
   const imagePaginationScrollRef = useRef<HTMLDivElement>(null);
@@ -274,6 +293,10 @@ export default function ChapterContentManager() {
   const [currentTextHtml, setCurrentTextHtml] = useState<string | null>(null);
   const [isLoadingText, setIsLoadingText] = useState(true);
   const textContainerRef = useRef<HTMLDivElement>(null);
+  const [epubPage, setEpubPage] = useState(1);
+  const [currentEpubHtml, setCurrentEpubHtml] = useState<string | null>(null);
+  const [isLoadingEpubPage, setIsLoadingEpubPage] = useState(true);
+  const epubContainerRef = useRef<HTMLDivElement>(null);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedImagePages, setSelectedImagePages] = useState<number[]>([]);
   const [deletingImages, setDeletingImages] = useState(false);
@@ -301,6 +324,9 @@ export default function ChapterContentManager() {
         setTextPage(1);
         setCurrentTextHtml(null);
         setIsLoadingText(response.manifest?.format === 'text');
+        setEpubPage(1);
+        setCurrentEpubHtml(null);
+        setIsLoadingEpubPage(response.manifest?.format === 'epub');
 
         if (response.manifest && response.manifest.pageCount > 0) {
           try {
@@ -352,6 +378,8 @@ export default function ChapterContentManager() {
         setSelectedImagePages([]);
         setTextPage(1);
         setCurrentTextHtml(null);
+        setEpubPage(1);
+        setCurrentEpubHtml(null);
 
         if (response.manifest && response.manifest.pageCount > 0) {
           try {
@@ -395,17 +423,25 @@ export default function ChapterContentManager() {
   }, [canLoad, bookId, chapterIndex, toast, t]);
 
   const chapter = data?.chapter ?? null;
-  const isPdfProcessing = Boolean(chapter && !chapter.contentType && chapter.pdfKey);
+  const isProcessing = chapter?.contentStatus === 'PROCESSING';
+  const isFailed = chapter?.contentStatus === 'FAILED';
   const hasContent = Boolean(chapter?.contentType);
 
-  // Poll while the PDF worker converts pages in the background.
+  const processingKind = useMemo((): 'pdf' | 'epub' | 'text' | null => {
+    if (!isProcessing || !chapter?.contentKey) return null;
+    if (chapter.contentKey.endsWith('.pdf')) return 'pdf';
+    if (chapter.contentKey.endsWith('.epub')) return 'epub';
+    return 'text';
+  }, [isProcessing, chapter?.contentKey]);
+
+  // Poll while the pdf/epub/text worker processes in the background.
   useEffect(() => {
-    if (!isPdfProcessing) return;
+    if (!isProcessing) return;
     const timer = window.setInterval(() => {
       void loadContent({ silent: true });
     }, POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [isPdfProcessing, loadContent]);
+  }, [isProcessing, loadContent]);
 
   const imagePages = useMemo(
     () => (data?.manifest?.format === 'images' ? data.manifest.pages : []),
@@ -451,6 +487,42 @@ export default function ChapterContentManager() {
       isMounted = false;
     };
   }, [adminPreviewToken, data, textPage, toast, t]);
+
+  useEffect(() => {
+    if (data?.manifest?.format !== 'epub' || !adminPreviewToken) {
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingEpubPage(true);
+
+    void apiClient
+      .get<{ html: string }>('/reader/epub-text', {
+        query: {
+          token: adminPreviewToken,
+          p: epubPage,
+        },
+      })
+      .then((res) => {
+        if (isMounted) {
+          setCurrentEpubHtml(res.html);
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          toast.error(getApiErrorMessage(error, t('UnableFetchChapterContent')));
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingEpubPage(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [adminPreviewToken, data, epubPage, toast, t]);
 
   const uploadWithXhr = useCallback(
     (url: string, formData: FormData): Promise<void> =>
@@ -608,6 +680,42 @@ export default function ChapterContentManager() {
     }
   };
 
+  const handleUploadEpub = async () => {
+    if (!epubFile) {
+      setEpubError(t('SelectEpubFile'));
+      toast.error(t('SelectEpubFile'), t('NoFileSelected'));
+      return;
+    }
+    if (epubFile.size > EPUB_MAX_BYTES) {
+      setEpubError(
+        t('FileTooLarge', {
+          FileName: epubFile.name,
+          Max: formatBytes(EPUB_MAX_BYTES),
+        }),
+      );
+      return;
+    }
+
+    setEpubError(null);
+    setUploading(true);
+    setProgress(0);
+    try {
+      const formData = new FormData();
+      formData.append('file', epubFile);
+      await uploadWithXhr(`/admin/books/${bookId}/chapters/${chapterIndex}/content/epub`, formData);
+      toast.success(t('EpubQueued'), t('EpubProcessingStarted'));
+      setEpubFile(null);
+      await loadContent({ silent: true });
+    } catch (error) {
+      const message = getApiErrorMessage(error, t('UnableUploadEpub'));
+      setEpubError(message);
+      toast.error(message, t('EpubUploadFailed'));
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
   const handleDeleteAll = async () => {
     setDeleting(true);
     try {
@@ -624,6 +732,16 @@ export default function ChapterContentManager() {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? '';
   const buildAdminPreviewImageUrl = (pageNumber: number) =>
     `${apiBase}/reader/page?token=${encodeURIComponent(adminPreviewToken ?? '')}&p=${pageNumber}`;
+
+  const prepareEpubPreviewHtml = useCallback(
+    (html: string) =>
+      html.replace(/<img\b([^>]*?)\ssrc="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+        if (!src || /^https?:\/\//i.test(src)) return match;
+        const absoluteSrc = `${apiBase}${src}`;
+        return `<img${before} src="${absoluteSrc}"${after} crossorigin="use-credentials">`;
+      }),
+    [apiBase],
+  );
 
   const absolutePageNumber = (pageIndexInCurrentPage: number) =>
     (safeImagePage - 1) * PAGE_SIZE + pageIndexInCurrentPage + 1;
@@ -691,7 +809,7 @@ export default function ChapterContentManager() {
       {
         icon: <Layers className="h-3.5 w-3.5" />,
         label: t('ContentType'),
-        value: chapter.contentType ?? (isPdfProcessing ? t('Processing') : t('None')),
+        value: chapter.contentType ?? (isProcessing ? t('Processing') : t('None')),
       },
       {
         icon: <Hash className="h-3.5 w-3.5" />,
@@ -727,10 +845,10 @@ export default function ChapterContentManager() {
         ),
       },
     ];
-  }, [chapter, data, bookId, chapterIndex, isPdfProcessing, t]);
+  }, [chapter, data, bookId, chapterIndex, isProcessing, t]);
 
   const isBusy = loading || uploading || deleting || deletingImages;
-  const imagesDisabledByPdf = isPdfProcessing;
+  const contentUploadsDisabled = isProcessing;
 
   const handleRefresh = useCallback(async () => {
     setRefreshPulse(false);
@@ -825,7 +943,7 @@ export default function ChapterContentManager() {
                     variant="destructive"
                     size="sm"
                     className="flex-1 gap-2 sm:flex-none"
-                    disabled={isBusy || (!hasContent && !isPdfProcessing)}
+                    disabled={isBusy || (!hasContent && !isProcessing)}
                   >
                     {deleting ? (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -875,7 +993,7 @@ export default function ChapterContentManager() {
 
         {/* PDF processing banner */}
         <AnimatePresence>
-          {isPdfProcessing && (
+          {processingKind === 'pdf' && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -890,7 +1008,7 @@ export default function ChapterContentManager() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-foreground">{t('PdfProcessingTitle')}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t('PdfProcessingDescription', { Pages: chapter?.pdfPageCount ?? 0 })}
+                    {t('PdfProcessingDescription', { Pages: chapter?.contentSourcePageCount ?? 0 })}
                   </p>
                 </div>
               </div>
@@ -904,6 +1022,70 @@ export default function ChapterContentManager() {
                 <RefreshCcw className="h-3.5 w-3.5" />
                 {g('Refresh')}
               </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* EPUB processing banner */}
+        <AnimatePresence>
+          {processingKind === 'epub' && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('EpubProcessingTitle')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{t('EpubProcessingDescription')}</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={() => void loadContent({ silent: true })}
+                disabled={isBusy}
+              >
+                <RefreshCcw className="h-3.5 w-3.5" />
+                {g('Refresh')}
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Failed processing banner */}
+        <AnimatePresence>
+          {isFailed && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="flex flex-col gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-destructive/15 text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {t('ContentProcessingFailed')}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {hasContent
+                      ? t('ContentProcessingFailedKeptPrevious')
+                      : t('ContentProcessingFailedDescription')}
+                  </p>
+                </div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -934,6 +1116,13 @@ export default function ChapterContentManager() {
                   onClick={() => setActiveTab('pdf')}
                   disabled={uploading}
                 />
+                <TabBtn
+                  active={activeTab === 'epub'}
+                  icon={<BookText className="h-3.5 w-3.5" />}
+                  label={t('Epub')}
+                  onClick={() => setActiveTab('epub')}
+                  disabled={uploading}
+                />
               </div>
 
               <AnimatePresence mode="wait">
@@ -949,7 +1138,7 @@ export default function ChapterContentManager() {
                     files={imageFiles}
                     onFilesChange={setImageFiles}
                     uploading={uploading && activeTab === 'images'}
-                    disabled={imagesDisabledByPdf}
+                    disabled={contentUploadsDisabled}
                     progress={progress}
                     progressLabel={t('UploadingImages')}
                     error={imageError}
@@ -958,7 +1147,7 @@ export default function ChapterContentManager() {
                     maxFilesErrorText={(max) => t('TooManyImages', { Max: max })}
                     helperText={t('ImageAllowed')}
                     notice={
-                      imagesDisabledByPdf ? (
+                      contentUploadsDisabled ? (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                           {t('PdfProcessingBlocksUpload')}
@@ -977,7 +1166,7 @@ export default function ChapterContentManager() {
                             size="sm"
                             className="w-full gap-2 sm:w-auto"
                             onClick={() => void handleUploadImages('append')}
-                            disabled={isBusy || imagesDisabledByPdf}
+                            disabled={isBusy || contentUploadsDisabled}
                           >
                             {uploading ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -992,7 +1181,7 @@ export default function ChapterContentManager() {
                           variant={hasContent ? 'outline' : 'default'}
                           className="w-full gap-2 sm:w-auto"
                           onClick={() => void handleUploadImages('replace')}
-                          disabled={isBusy || imagesDisabledByPdf}
+                          disabled={isBusy || contentUploadsDisabled}
                         >
                           {uploading ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1018,7 +1207,7 @@ export default function ChapterContentManager() {
                     files={textFile ? [textFile] : []}
                     onFilesChange={(files) => setTextFile(files[0] ?? null)}
                     uploading={uploading && activeTab === 'text'}
-                    disabled={imagesDisabledByPdf}
+                    disabled={contentUploadsDisabled}
                     progress={progress}
                     progressLabel={t('UploadingText')}
                     error={textError}
@@ -1028,7 +1217,7 @@ export default function ChapterContentManager() {
                     dropTitleIdle={t('DropTextFile')}
                     helperText={t('TextFormats')}
                     notice={
-                      imagesDisabledByPdf ? (
+                      contentUploadsDisabled ? (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                           {t('PdfProcessingBlocksUpload')}
@@ -1040,7 +1229,7 @@ export default function ChapterContentManager() {
                         size="sm"
                         className="w-full gap-2 sm:w-auto"
                         onClick={() => void handleUploadText()}
-                        disabled={isBusy || imagesDisabledByPdf}
+                        disabled={isBusy || contentUploadsDisabled}
                       >
                         {uploading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1066,7 +1255,7 @@ export default function ChapterContentManager() {
                       file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
                     }
                     uploading={uploading && activeTab === 'pdf'}
-                    disabled={imagesDisabledByPdf}
+                    disabled={contentUploadsDisabled}
                     progress={progress}
                     progressLabel={t('UploadingPdf')}
                     error={pdfError}
@@ -1080,7 +1269,7 @@ export default function ChapterContentManager() {
                     notice={
                       <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                         <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
-                        {imagesDisabledByPdf
+                        {contentUploadsDisabled
                           ? t('PdfProcessingBlocksUpload')
                           : t('PdfReplaceWarning')}
                       </p>
@@ -1090,7 +1279,7 @@ export default function ChapterContentManager() {
                         size="sm"
                         className="w-full gap-2 sm:w-auto"
                         onClick={() => void handleUploadPdf()}
-                        disabled={isBusy || imagesDisabledByPdf}
+                        disabled={isBusy || contentUploadsDisabled}
                       >
                         {uploading ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1098,6 +1287,57 @@ export default function ChapterContentManager() {
                           <Upload className="h-3.5 w-3.5" />
                         )}
                         {t('UploadPdf')}
+                      </Button>
+                    }
+                  />
+                )}
+
+                {activeTab === 'epub' && (
+                  <UploadPanel
+                    key="epub"
+                    kind="file"
+                    description={t('UploadEpubDescription')}
+                    accept="application/epub+zip,.epub"
+                    maxFiles={1}
+                    files={epubFile ? [epubFile] : []}
+                    onFilesChange={(files) => setEpubFile(files[0] ?? null)}
+                    isAllowedFile={(file) =>
+                      file.type === 'application/epub+zip' ||
+                      file.name.toLowerCase().endsWith('.epub')
+                    }
+                    uploading={uploading && activeTab === 'epub'}
+                    disabled={contentUploadsDisabled}
+                    progress={progress}
+                    progressLabel={t('UploadingEpub')}
+                    error={epubError}
+                    onErrorChange={setEpubError}
+                    blockedErrorText={t('OnlyEpubAllowed')}
+                    maxFilesErrorText={() => t('OnlyOneFileAllowed')}
+                    dropTitleIdle={t('DropEpubFile')}
+                    helperText={t('EpubLimits', {
+                      Max: formatBytes(EPUB_MAX_BYTES),
+                    })}
+                    notice={
+                      <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                        <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+                        {contentUploadsDisabled
+                          ? t('PdfProcessingBlocksUpload')
+                          : t('EpubReplaceWarning')}
+                      </p>
+                    }
+                    actions={
+                      <Button
+                        size="sm"
+                        className="w-full gap-2 sm:w-auto"
+                        onClick={() => void handleUploadEpub()}
+                        disabled={isBusy || contentUploadsDisabled}
+                      >
+                        {uploading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Upload className="h-3.5 w-3.5" />
+                        )}
+                        {t('UploadEpub')}
                       </Button>
                     }
                   />
@@ -1141,9 +1381,13 @@ export default function ChapterContentManager() {
           subtitle={
             data?.manifest
               ? `${data.manifest.format} · ${t('NPages', { NPages: data.manifest.pageCount })}`
-              : isPdfProcessing
+              : processingKind === 'pdf'
                 ? t('PdfProcessingTitle')
-                : t('NoContentUploaded')
+                : processingKind === 'epub'
+                  ? t('EpubProcessingTitle')
+                  : isFailed
+                    ? t('ContentProcessingFailed')
+                    : t('NoContentUploaded')
           }
           action={
             data?.manifest?.format === 'images' && imagePages.length > 0 ? (
@@ -1233,7 +1477,7 @@ export default function ChapterContentManager() {
             ) : undefined
           }
         >
-          {!data?.manifest && !isPdfProcessing && (
+          {!data?.manifest && !isProcessing && !isFailed && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1246,12 +1490,36 @@ export default function ChapterContentManager() {
             </motion.div>
           )}
 
-          {!data?.manifest && isPdfProcessing && (
+          {!data?.manifest && isFailed && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-destructive/40 py-12 text-muted-foreground sm:py-16"
+            >
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-destructive/10 text-destructive">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <p className="text-sm">{t('ContentProcessingFailedDescription')}</p>
+            </motion.div>
+          )}
+
+          {!data?.manifest && processingKind === 'pdf' && (
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {PDF_PROCESSING_SKELETON_KEYS.map((key) => (
                 <Skeleton key={key} className="aspect-3/4 rounded-xl" />
               ))}
             </div>
+          )}
+
+          {!data?.manifest && processingKind === 'epub' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border py-12 text-muted-foreground sm:py-16"
+            >
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm">{t('EpubProcessingTitle')}</p>
+            </motion.div>
           )}
 
           {data?.manifest?.format === 'text' && (
@@ -1290,6 +1558,56 @@ export default function ChapterContentManager() {
                     setTextPage(page);
                   }}
                   scrollTarget={textContainerRef}
+                />
+              )}
+            </motion.div>
+          )}
+
+          {data?.manifest?.format === 'epub' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-4"
+              ref={epubContainerRef}
+            >
+              <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <BookText className="h-4 w-4 text-primary" />
+                <span>{t('EpubChapterUploaded')}</span>
+                <Badge variant="outline" className="h-5 px-1.5 py-0 font-mono text-xs">
+                  {data.manifest.format}
+                </Badge>
+                {data.manifest.pages[epubPage - 1]?.hasImages && (
+                  <Badge variant="outline" className="h-5 gap-1 px-1.5 py-0 text-xs">
+                    <ImageIcon className="h-3 w-3" />
+                    {t('ContainsImages')}
+                  </Badge>
+                )}
+              </div>
+
+              <div
+                className={cn(
+                  'prose prose-sm dark:prose-invert max-h-150 max-w-none overflow-auto rounded-xl border border-border bg-muted/30 px-4 py-4 text-sm leading-relaxed sm:px-6 sm:py-5 transition-opacity duration-200',
+                  'prose-img:mx-auto prose-img:rounded-lg',
+                  isLoadingEpubPage ? 'opacity-50 pointer-events-none' : 'opacity-100',
+                )}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is pre-sanitized by the backend API; only src rewriting happens client-side
+                dangerouslySetInnerHTML={{
+                  __html: currentEpubHtml ? prepareEpubPreviewHtml(currentEpubHtml) : '',
+                }}
+              />
+
+              {(data.manifest.pageCount || 0) > 1 && (
+                <AppPagination
+                  currentPage={epubPage}
+                  pageSize={1}
+                  totalItems={data.manifest.pageCount}
+                  itemLabel={t('Page')}
+                  totalPages={data.manifest.pageCount}
+                  onPageChange={(page) => {
+                    setIsLoadingEpubPage(true);
+                    setEpubPage(page);
+                  }}
+                  scrollTarget={epubContainerRef}
                 />
               )}
             </motion.div>

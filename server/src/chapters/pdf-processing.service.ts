@@ -10,7 +10,7 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import { ChapterContentType } from '@prisma/client';
+import { ChapterContentStatus, ChapterContentType } from '@prisma/client';
 import { PDFDocument } from 'pdf-lib';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
@@ -99,9 +99,7 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
       },
       select: {
         id: true,
-        contentPath: true,
-        contentType: true,
-        pdfKey: true,
+        contentStatus: true,
       },
     });
 
@@ -109,8 +107,8 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
       throw new NotFoundException('Chapter not found');
     }
 
-    if (chapter.contentType === null && chapter.pdfKey !== null) {
-      throw new BadRequestException('A PDF is already being processed for this chapter');
+    if (chapter.contentStatus === ChapterContentStatus.PROCESSING) {
+      throw new BadRequestException('Another file is already being processed for this chapter');
     }
 
     const contentPath = this.chapterVersionPrefix(bookId, chapterIndex);
@@ -129,15 +127,10 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
         id: chapter.id,
       },
       data: {
-        contentPath: null,
-        contentType: null,
-        pageCount: 0,
-        contentVersion: {
-          increment: 1,
-        },
-        pdfKey,
-        pdfPageCount: pageCount,
-        pdfUploadedAt: new Date(),
+        contentStatus: ChapterContentStatus.PROCESSING,
+        contentKey: pdfKey,
+        contentSourcePageCount: pageCount,
+        contentUploadedAt: new Date(),
       },
     });
 
@@ -162,12 +155,14 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
     }
 
     await this.queue.add('convert', data, {
-      jobId: `chapter-${data.chapterId}`,
+      jobId: `chapter-pdf-${data.chapterId}-${data.contentPath}`,
       attempts: 3,
       backoff: {
         type: 'exponential',
         delay: 5000,
       },
+      removeOnComplete: true,
+      removeOnFail: true,
     });
   }
 
@@ -201,11 +196,11 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
           id: data.chapterId,
         },
         select: {
-          pdfKey: true,
+          contentKey: true,
         },
       });
 
-      if (currentChapter?.pdfKey !== data.pdfKey) {
+      if (currentChapter?.contentKey !== data.pdfKey) {
         this.logger.warn(`Skipping outdated PDF job for chapter ${data.chapterId}`);
 
         return;
@@ -260,10 +255,14 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
           id: data.chapterId,
         },
         data: {
+          contentStatus: ChapterContentStatus.READY,
           contentType: ChapterContentType.images,
           contentPath: data.contentPath,
           pageCount: pages.length,
-          pdfKey: null,
+          contentVersion: { increment: 1 },
+          contentKey: null,
+          contentSourcePageCount: null,
+          contentUploadedAt: null,
         },
       });
       await this.storage.deleteKeys([data.pdfKey]);
@@ -278,8 +277,10 @@ export class PdfProcessingService implements OnModuleInit, OnModuleDestroy {
           id: data.chapterId,
         },
         data: {
-          pdfKey: null,
-          contentType: null,
+          contentStatus: ChapterContentStatus.FAILED,
+          contentKey: null,
+          contentSourcePageCount: null,
+          contentUploadedAt: null,
         },
       });
       throw error;

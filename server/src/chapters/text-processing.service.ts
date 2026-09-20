@@ -7,7 +7,7 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import { ChapterContentType } from '@prisma/client';
+import { ChapterContentStatus, ChapterContentType } from '@prisma/client';
 import DOMPurify from 'isomorphic-dompurify';
 import { parse } from 'marked';
 import { PrismaService } from '../prisma/prisma.service';
@@ -164,9 +164,13 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
 
     const chapter = await this.prisma.chapter.findFirst({
       where: { bookId, index: chapterIndex },
-      select: { id: true },
+      select: { id: true, contentStatus: true },
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
+
+    if (chapter.contentStatus === ChapterContentStatus.PROCESSING) {
+      throw new BadRequestException('Another file is already being processed for this chapter');
+    }
 
     const contentPath = this.chapterVersionPrefix(bookId, chapterIndex);
     const sourceKey = `${contentPath}/source${ext.endsWith('.md') ? '.md' : '.txt'}`;
@@ -175,10 +179,9 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
     await this.prisma.chapter.update({
       where: { id: chapter.id },
       data: {
-        contentPath: null,
-        contentType: null,
-        pageCount: 0,
-        contentVersion: { increment: 1 },
+        contentStatus: ChapterContentStatus.PROCESSING,
+        contentKey: sourceKey,
+        contentUploadedAt: new Date(),
       },
     });
 
@@ -189,9 +192,11 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
   private async enqueue(data: TextJobData) {
     if (!this.queue) throw new Error('Text queue is not initialized');
     await this.queue.add('process', data, {
-      jobId: `chapter-text-${data.chapterId}`,
+      jobId: `chapter-text-${data.chapterId}-${data.contentPath}`,
       attempts: 3,
       backoff: { type: 'exponential', delay: 3000 },
+      removeOnComplete: true,
+      removeOnFail: true,
     });
   }
 
@@ -203,9 +208,13 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
       const source = await this.storage.getObjectBuffer(data.sourceKey);
       const currentChapter = await this.prisma.chapter.findUnique({
         where: { id: data.chapterId },
-        select: { contentPath: true, contentType: true },
+        select: { contentKey: true },
       });
-      if (currentChapter?.contentPath && currentChapter.contentPath !== data.contentPath) return;
+
+      if (currentChapter?.contentKey !== data.sourceKey) {
+        this.logger.warn(`Skipping outdated text job for chapter ${data.chapterId}`);
+        return;
+      }
 
       const htmlPages = this.processTextUpload(source.toString('utf8'));
       const pages = [] as Array<{ key: string }>;
@@ -228,9 +237,13 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
       await this.prisma.chapter.update({
         where: { id: data.chapterId },
         data: {
+          contentStatus: ChapterContentStatus.READY,
           contentPath: data.contentPath,
           contentType: ChapterContentType.text,
           pageCount: pages.length,
+          contentVersion: { increment: 1 },
+          contentKey: null,
+          contentUploadedAt: null,
         },
       });
       await this.storage.deleteKeys([data.sourceKey]);
@@ -242,7 +255,11 @@ export class TextProcessingService implements OnModuleInit, OnModuleDestroy {
       );
       await this.prisma.chapter.update({
         where: { id: data.chapterId },
-        data: { contentType: null, contentPath: null, pageCount: 0 },
+        data: {
+          contentStatus: ChapterContentStatus.FAILED,
+          contentKey: null,
+          contentUploadedAt: null,
+        },
       });
       throw error;
     }

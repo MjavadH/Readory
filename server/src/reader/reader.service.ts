@@ -32,12 +32,23 @@ type ReaderTokenPayload = {
 
 type AuthenticatedRequest = Request & { user?: { userId?: number } };
 type ManifestPage = { key: string; w?: number; h?: number; sha256?: string };
-type ChapterManifest = {
-  version: 1;
-  format: 'images' | 'text';
-  pageCount: number;
-  pages: ManifestPage[];
-};
+type EpubManifestPage = { key: string; sectionId: string; unitCount: number; hasImages: boolean };
+type EpubManifestTocEntry = { title: string; pageIndex: number };
+
+type ChapterManifest =
+  | {
+      version: 1;
+      format: 'images' | 'text';
+      pageCount: number;
+      pages: ManifestPage[];
+    }
+  | {
+      version: 2;
+      format: 'epub';
+      pageCount: number;
+      pages: EpubManifestPage[];
+      toc: EpubManifestTocEntry[];
+    };
 
 function escapeXml(s: string) {
   return s.replace(
@@ -123,12 +134,13 @@ export class ReaderService {
         index: true,
         isFree: true,
         contentType: true,
+        contentPath: true,
         pageCount: true,
         contentVersion: true,
       },
     });
     if (!chapter) throw new NotFoundException('Chapter not found');
-    if (chapter.contentType === null) {
+    if (chapter.contentType === null || !chapter.contentPath) {
       throw new HttpException({ message: 'Content is being prepared', code: 'PROCESSING' }, 503);
     }
 
@@ -304,6 +316,57 @@ export class ReaderService {
       : this.injectZeroWidthWatermark(buffer.toString('utf8'), payload.userId);
   }
 
+  /**
+   * Serves one EPUB chapter page's HTML, watermarking its text content the
+   * same way plain-text chapters are watermarked, and rewriting every
+   * embedded image's `src` (a raw storage key set by EpubProcessingService)
+   * into a same-origin `/reader/epub-asset` URL carrying the reader token.
+   * This keeps every asset request authenticated, per-user watermarked, and
+   * scoped to this exact chapter version — the client never sees or needs
+   * a direct storage URL.
+   */
+  async getEpubText(token: string, pageNumber: number, req: Request): Promise<string> {
+    const payload = await this.verifyToken(token, req);
+    const manifest = await this.getManifestByPayload(payload);
+
+    if (manifest.format !== 'epub') {
+      throw new BadRequestException('Not an EPUB chapter');
+    }
+
+    if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > manifest.pageCount) {
+      throw new BadRequestException('Invalid page');
+    }
+
+    const page = manifest.pages[pageNumber - 1];
+    if (!page?.key) throw new NotFoundException('Page content missing');
+
+    const buffer = await this.storageService.getObjectBuffer(page.key);
+    const rawHtml = buffer.toString('utf8');
+
+    const htmlWithRewrittenAssets = this.rewriteEpubImageSources(rawHtml, token);
+
+    return payload.scope === 'admin-preview'
+      ? htmlWithRewrittenAssets
+      : this.injectZeroWidthWatermark(htmlWithRewrittenAssets, payload.userId);
+  }
+
+  /**
+   * Rewrites every `src="<storage-key>"` produced by EpubProcessingService
+   * into `/reader/epub-asset?token=...&key=<storage-key>`. The storage key
+   * itself is opaque to the client; access control happens per-request in
+   * `getEpubAsset`, which re-derives the manifest from the token and only
+   * serves keys that actually belong to this chapter's current manifest
+   */
+  private rewriteEpubImageSources(html: string, token: string): string {
+    return html.replace(/(<img\b[^>]*\bsrc=")([^"]*)(")/gi, (match, prefix, srcValue, suffix) => {
+      if (!srcValue) return match;
+      const assetUrl = `/reader/epub-asset?token=${encodeURIComponent(token)}&key=${encodeURIComponent(
+        srcValue,
+      )}`;
+      return `${prefix}${assetUrl}${suffix}`;
+    });
+  }
+
   async getPage(token: string, page: number, req: Request): Promise<Buffer> {
     const payload = await this.verifyToken(token, req);
     const isAdminPreview = payload.scope === 'admin-preview';
@@ -354,11 +417,28 @@ export class ReaderService {
 
     if (isAdminPreview) return source;
 
+    return this.applyImageWatermark(source, token, payload.userId, payload.chapterId);
+  }
+
+  /**
+   * Composites a per-request, per-user SVG watermark onto an image buffer.
+   * Shared by `getPage` (image-chapter pages) and `getEpubAsset` (EPUB
+   * embedded images) so both formats get identical tamper-evidence:
+   * a user+chapter-identifying, slightly randomized (per-token) overlay
+   * blended into the pixel data itself, not just an attribute that could
+   * be stripped client-side.
+   */
+  private async applyImageWatermark(
+    source: Buffer,
+    token: string,
+    userId: number,
+    chapterId: number,
+  ): Promise<Buffer> {
     const trace = createHash('sha256').update(token).digest('hex').slice(0, 8);
     const dynamicRotation = -25 + (parseInt(trace[0], 16) % 6) - 3;
     const dynamicOpacity = 0.35 + (parseInt(trace[1], 16) % 15) / 100;
 
-    const watermarkText = `Readory #u${payload.userId}c${payload.chapterId}#${trace}`;
+    const watermarkText = `Readory #u${userId}c${chapterId}#${trace}`;
     const svg = `<svg width="500" height="260" xmlns="http://www.w3.org/2000/svg">
 <text 
     x="10"
@@ -387,6 +467,74 @@ export class ReaderService {
       ])
       .webp({ quality: 82 })
       .toBuffer();
+  }
+
+  /**
+   * Serves a single image embedded in an EPUB chapter page, watermarked
+   * exactly like image-chapter pages.
+   *
+   * Security: `key` arrives from the client (it's the query param the page
+   * HTML was rewritten to point at). It is NEVER trusted directly — it is
+   * only ever used to read from storage after being checked against the
+   * allow-list of keys that actually appear in this exact chapter's current
+   * manifest (assembled from `pages[].key`'s directory plus each page's own
+   * declared assets). This prevents a caller from swapping in an arbitrary
+   * storage key to read unrelated objects out of the bucket.
+   */
+  async getEpubAsset(token: string, key: string, req: Request): Promise<Buffer> {
+    const payload = await this.verifyToken(token, req);
+    const isAdminPreview = payload.scope === 'admin-preview';
+
+    if (!isAdminPreview) {
+      await this.enforceRateLimit('epub-asset', payload.userId, 300, 60);
+    }
+
+    const manifest = await this.getManifestByPayload(payload);
+    if (manifest.format !== 'epub') {
+      throw new BadRequestException('Not an EPUB chapter');
+    }
+
+    this.assertKeyBelongsToChapterContent(key, manifest);
+
+    const source = await this.storageService.getObjectBuffer(key);
+
+    if (isAdminPreview) return source;
+
+    return this.applyImageWatermark(source, token, payload.userId, payload.chapterId);
+  }
+
+  /**
+   * Validates that a requested storage key is actually scoped under this
+   * chapter's current content prefix (derived from any known page key in
+   * the manifest) and points at the `assets/` subpath specifically — never
+   * `content/` (page HTML) or `source.epub` (the raw upload). This is the
+   * allow-list enforcement point referenced in `getEpubAsset`'s docstring.
+   */
+  private assertKeyBelongsToChapterContent(
+    key: string,
+    manifest: Extract<ChapterManifest, { format: 'epub' }>,
+  ): void {
+    if (!key || key.includes('..') || key.startsWith('/')) {
+      throw new BadRequestException('Invalid asset key');
+    }
+
+    const samplePageKey = manifest.pages[0]?.key;
+    if (!samplePageKey) {
+      throw new NotFoundException('Chapter content unavailable');
+    }
+
+    const contentMarker = '/content/';
+    const markerIndex = samplePageKey.indexOf(contentMarker);
+    if (markerIndex === -1) {
+      throw new NotFoundException('Chapter content unavailable');
+    }
+
+    const contentPrefix = samplePageKey.slice(0, markerIndex);
+    const expectedAssetPrefix = `${contentPrefix}/assets/`;
+
+    if (!key.startsWith(expectedAssetPrefix)) {
+      throw new BadRequestException('Asset key does not belong to this chapter');
+    }
   }
 
   async getReaderContext(userId: number, bookId: number) {
@@ -484,7 +632,10 @@ export class ReaderService {
     await this.cacheManager.del(this.manifestKey(chapterId, chapter.contentVersion));
   }
 
-  buildManifest(chapterType: ChapterContentType, keys: ManifestPage[]): ChapterManifest {
+  buildManifest(
+    chapterType: Extract<ChapterContentType, 'images' | 'text'>,
+    keys: ManifestPage[],
+  ): Extract<ChapterManifest, { version: 1 }> {
     return {
       version: 1,
       format: chapterType,

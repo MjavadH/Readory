@@ -11,6 +11,8 @@ import { ChapterContentController } from './chapter-content.controller';
 import { ChapterContentService } from './chapter-content.service';
 import { ChaptersController } from './chapters.controller';
 import { ChaptersService } from './chapters.service';
+import { EpubProcessingService } from './epub/epub-processing.service';
+import { EpubValidationService } from './epub/epub-validation.service';
 import { PdfProcessingService } from './pdf-processing.service';
 import { TextProcessingService } from './text-processing.service';
 
@@ -29,6 +31,8 @@ import { TextProcessingService } from './text-processing.service';
     ChapterContentService,
     PdfProcessingService,
     TextProcessingService,
+    EpubValidationService,
+    EpubProcessingService,
     RecommendationService,
   ],
   controllers: [ChaptersController, ChapterContentController],

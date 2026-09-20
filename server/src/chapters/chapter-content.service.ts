@@ -1,12 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ChapterContentType } from '@prisma/client';
+import { ChapterContentStatus, ChapterContentType } from '@prisma/client';
 import { fileTypeFromBuffer } from 'file-type';
 import sharp from 'sharp';
 import { CacheManager } from '../cache/cache.manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { ReaderService } from '../reader/reader.service';
 import { StorageService } from '../storage/storage.service';
+import { EpubProcessingService } from './epub/epub-processing.service';
 import { PdfProcessingService } from './pdf-processing.service';
 import { TextProcessingService } from './text-processing.service';
 
@@ -33,6 +34,7 @@ export class ChapterContentService {
     private readonly cacheManager: CacheManager,
     private readonly pdfProcessingService: PdfProcessingService,
     private readonly textProcessingService: TextProcessingService,
+    private readonly epubProcessingService: EpubProcessingService,
   ) {}
   private readonly logger = new Logger(ChapterContentService.name);
 
@@ -103,10 +105,10 @@ export class ChapterContentService {
       contentPath?: string | null;
       contentType?: ChapterContentType | null;
       pageCount: number;
-      pdfKey?: string | null;
-      pdfPageCount?: number | null;
     },
   ) {
+    const nextStatus = data.pageCount > 0 ? ChapterContentStatus.READY : ChapterContentStatus.EMPTY;
+
     await this.prisma.$transaction([
       this.prisma.chapter.update({
         where: { id: chapterId },
@@ -115,8 +117,10 @@ export class ChapterContentService {
           contentType: data.contentType ?? null,
           pageCount: data.pageCount,
           contentVersion: { increment: 1 },
-          pdfKey: data.pdfKey,
-          pdfPageCount: data.pdfPageCount,
+          contentStatus: nextStatus,
+          contentKey: null,
+          contentSourcePageCount: null,
+          contentUploadedAt: null,
         },
       }),
       this.prisma.book.update({
@@ -284,6 +288,14 @@ export class ChapterContentService {
     return this.pdfProcessingService.uploadAndReplace(bookId, index, file);
   }
 
+  async uploadEpub(bookId: number, index: number, file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('EPUB file is required');
+    }
+
+    return this.epubProcessingService.uploadAndReplace(bookId, index, file);
+  }
+
   async deleteContent(bookId: number, index: number) {
     const chapter = await this.getChapter(bookId, index);
     const basePrefix = this.chapterBasePrefix(bookId, index);
@@ -294,8 +306,6 @@ export class ChapterContentService {
       contentPath: null,
       contentType: null,
       pageCount: 0,
-      pdfKey: null,
-      pdfPageCount: null,
     });
 
     return { deleted: true };

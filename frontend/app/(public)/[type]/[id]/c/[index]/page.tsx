@@ -37,19 +37,31 @@ type SessionResponse = {
   chapterId: number;
   bookId: number;
   chapterIndex: number;
-  contentType: 'images' | 'text' | null;
+  contentType: 'images' | 'text' | 'epub' | null;
   pageCount: number;
   contentVersion: number;
   resume: { lastPage: number; percent: number } | null;
   sessionToken: string;
 };
 
-type Manifest = {
-  version: 1;
-  format: 'images' | 'text';
-  pageCount: number;
-  pages: Array<{ key: string; w?: number; h?: number; sha256?: string }>;
-};
+type ImageManifestPage = { key: string; w?: number; h?: number; sha256?: string };
+type EpubManifestPage = { key: string; sectionId: string; unitCount: number; hasImages: boolean };
+type EpubManifestTocEntry = { title: string; pageIndex: number };
+
+type Manifest =
+  | {
+      version: 1;
+      format: 'images' | 'text';
+      pageCount: number;
+      pages: ImageManifestPage[];
+    }
+  | {
+      version: 2;
+      format: 'epub';
+      pageCount: number;
+      pages: EpubManifestPage[];
+      toc: EpubManifestTocEntry[];
+    };
 
 type ReaderChapterItem = {
   id: number;
@@ -114,6 +126,11 @@ export default function ChapterPage() {
   const [session, setSession] = useState<SessionResponse | null>(null);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [textHtml, setTextHtml] = useState<string>('');
+  const [epubHtml, setEpubHtml] = useState<string>('');
+  const [epubPageLoading, setEpubPageLoading] = useState(false);
+  const epubHtmlCacheRef = useRef<Map<number, string>>(new Map());
+  const epubInFlightRef = useRef<Map<number, Promise<string>>>(new Map());
+  const epubFetchRequestIdRef = useRef(0);
   const [readerCtx, setReaderCtx] = useState<ReaderContextResponse | null>(null);
   const [book, setBook] = useState<PurchaseDialogBook | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -246,6 +263,24 @@ export default function ChapterPage() {
         setManifest(nextManifest);
         setTextHtml(nextText.html);
         setCurrentPage(safePage);
+      } else if (nextSession.contentType === 'epub') {
+        const nextManifest = await apiClient.get<Manifest>('/reader/manifest', {
+          query: { token: nextSession.sessionToken },
+        });
+        const safePage = Math.max(1, Math.min(currentPage, nextManifest.pageCount || 1));
+
+        // Every cached page's HTML embeds <img> URLs signed with the OLD
+        // token, which is no longer valid — the cache must be dropped
+        // entirely, not just the current page, or neighboring pages the
+        // user navigates to next would serve broken images.
+        epubHtmlCacheRef.current.clear();
+        epubInFlightRef.current.clear();
+
+        setManifest(nextManifest);
+        setCurrentPage(safePage);
+        // The epub page-loading effect (keyed on session.sessionToken via
+        // fetchEpubPageHtml's closure) re-fetches automatically once
+        // `session` updates below, since sessionRef.current is what it reads.
       }
 
       return nextSession;
@@ -273,7 +308,83 @@ export default function ChapterPage() {
     inFlightPagesRef.current.clear();
     loadedPagesRef.current = new Set();
     setLoadedPages(new Set());
+    epubHtmlCacheRef.current.clear();
+    epubInFlightRef.current.clear();
   }, []);
+
+  // Rewrites relative /reader/epub-asset URLs (as returned by the backend)
+  // into absolute URLs against NEXT_PUBLIC_API_BASE, and marks every <img>
+  // to send credentials — required because the asset endpoint is
+  // authenticated and per-request watermarked, and dangerouslySetInnerHTML
+  // gives us no way to attach React's crossOrigin prop per-element.
+  const prepareEpubHtml = useCallback((html: string) => {
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? '';
+    return html.replace(/<img\b([^>]*?)\ssrc="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+      if (!src) {
+        return `<img${before} src="/placeholder.svg"${after}>`;
+      }
+      const absoluteSrc = /^https?:\/\//i.test(src) ? src : `${apiBase}${src}`;
+      return `<img${before} src="${absoluteSrc}"${after} crossorigin="use-credentials" onerror="this.onerror=null;this.src='/placeholder.svg';">`;
+    });
+  }, []);
+
+  // Fetches (and caches) one EPUB page's sanitized HTML. Mirrors
+  // fetchPageBlob's shape: an in-memory cache keyed by page number, a
+  // single in-flight request per page (so rapid navigation or a
+  // simultaneous prefetch + user click never double-fetches), and a
+  // one-shot session-refresh retry on an expired token. The cache is kept
+  // only in a ref (never localStorage/sessionStorage), so nothing persists
+  // past this reader session — content isn't left sitting in durable
+  // client storage.
+  const fetchEpubPageHtml = useCallback(
+    async (page: number, signal?: AbortSignal): Promise<string> => {
+      const activeSession = sessionRef.current;
+      if (!activeSession) throw new Error('No reader session');
+
+      const cached = epubHtmlCacheRef.current.get(page);
+      if (cached !== undefined) return cached;
+
+      const existing = epubInFlightRef.current.get(page);
+      if (existing) return existing;
+
+      const task = (async () => {
+        const requestPage = (token: string) =>
+          apiClient.get<{ html: string }>('/reader/epub-text', {
+            query: { token, p: page },
+            signal,
+          });
+
+        let result: { html: string };
+        try {
+          result = await requestPage(activeSession.sessionToken);
+        } catch (e) {
+          if (e instanceof ApiError && e.status === 401) {
+            const refreshed = await refreshReaderSession();
+            result = await requestPage(refreshed.sessionToken);
+          } else {
+            throw e;
+          }
+        }
+
+        const prepared = prepareEpubHtml(result.html);
+
+        if (epubHtmlCacheRef.current.size > 10) {
+          const firstKey = epubHtmlCacheRef.current.keys().next().value;
+          if (firstKey !== undefined) epubHtmlCacheRef.current.delete(firstKey);
+        }
+        epubHtmlCacheRef.current.set(page, prepared);
+        return prepared;
+      })();
+
+      epubInFlightRef.current.set(page, task);
+      try {
+        return await task;
+      } finally {
+        epubInFlightRef.current.delete(page);
+      }
+    },
+    [refreshReaderSession, prepareEpubHtml],
+  );
 
   const fetchPageBlob = useCallback(
     async (page: number, signal?: AbortSignal): Promise<Blob> => {
@@ -509,6 +620,15 @@ export default function ChapterPage() {
           if (cancelled) return;
           setCurrentPage(textPage);
           setTextHtml(txt.html);
+        } else if (s.contentType === 'epub') {
+          const m = await apiClient.get<Manifest>('/reader/manifest', {
+            query: { token: s.sessionToken },
+          });
+          if (cancelled) return;
+          setManifest(m);
+
+          const epubPage = Math.max(1, Math.min(m.pageCount || 1, initialPage));
+          setCurrentPage(epubPage);
         } else {
           setError('Chapter content is unavailable');
           setErrorStatus(0);
@@ -560,6 +680,64 @@ export default function ChapterPage() {
       cancelled = true;
     };
   }, [session, manifest, currentPage, refreshReaderSession]);
+
+  // EPUB: display the current page from cache-or-fetch, and silently
+  // prefetch the next and previous pages in the background so that when
+  // the user actually navigates, the page is already processed and ready
+  useEffect(() => {
+    if (!session || !manifest || manifest.format !== 'epub') return;
+
+    let cancelled = false;
+    const reqId = ++epubFetchRequestIdRef.current;
+    const totalEpubPages = manifest.pageCount || 1;
+
+    const currentPageController = new AbortController();
+
+    const run = async () => {
+      const cached = epubHtmlCacheRef.current.get(currentPage);
+      if (cached === undefined) {
+        setEpubPageLoading(true);
+      }
+
+      try {
+        const html = await fetchEpubPageHtml(currentPage, currentPageController.signal);
+        if (cancelled || reqId !== epubFetchRequestIdRef.current) return;
+        setEpubHtml(html);
+      } catch (e) {
+        if (cancelled || currentPageController.signal.aborted) return;
+        if (e instanceof ApiError && e.status === 401) {
+          // fetchEpubPageHtml already retries once internally after a
+          // refresh; reaching here means the retry also failed.
+          toast.error(t('SessionExpired'));
+        } else {
+          toast.error(getApiErrorMessage(e, t('UnableFetchChapterContent')));
+        }
+      } finally {
+        if (!cancelled && reqId === epubFetchRequestIdRef.current) {
+          setEpubPageLoading(false);
+        }
+      }
+
+      // Prefetch neighbors in the background; failures here are silent —
+      // the page will simply be fetched normally if/when the user reaches
+      // it and the prefetch didn't already succeed. These are NOT tied to
+      // currentPageController, so a quick back-and-forth doesn't abort a
+      // prefetch that's still useful for wherever the user lands next.
+      const neighbors = [currentPage + 1, currentPage - 1].filter(
+        (p) => p >= 1 && p <= totalEpubPages && !epubHtmlCacheRef.current.has(p),
+      );
+      for (const neighbor of neighbors) {
+        void fetchEpubPageHtml(neighbor).catch(() => undefined);
+      }
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+      currentPageController.abort();
+    };
+  }, [session, manifest, currentPage, fetchEpubPageHtml, toast, t]);
 
   // Page mode: draw current page to single canvas
   useEffect(() => {
@@ -1259,6 +1437,96 @@ export default function ChapterPage() {
     );
   }
 
+  // EPUB mode
+  if (session.contentType === 'epub') {
+    return (
+      <div ref={setReaderRoot} className="min-h-screen bg-reader-bg overflow-y-auto">
+        <main
+          onContextMenu={handleContextMenu}
+          className="pt-20 pb-10 transition-[filter] duration-300"
+          style={{ filter: `brightness(${brightness}%) ${readerFilter}`.trim() }}
+        >
+          <div className="mx-auto w-full px-4 lg:max-w-3/4">
+            <div className="relative">
+              {epubPageLoading && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-card/60 backdrop-blur-sm">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              )}
+              <article
+                dir={readerSettings.textDirection}
+                onClick={handleFootnoteInteraction}
+                onMouseOver={handleFootnoteHover}
+                onMouseOut={handleFootnoteLeave}
+                onBlur={handleFootnoteLeave}
+                onFocus={handleFootnoteFocus}
+                onKeyDown={handleFootnoteKeyDown}
+                onCopy={(e) => e.preventDefault()}
+                className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground/90 transition-opacity duration-200 sm:p-6"
+                style={{
+                  fontSize: `${readerSettings.fontSize}px`,
+                  lineHeight: readerSettings.lineHeight,
+                  fontFamily: readerSettings.fontFamily,
+                  opacity: epubPageLoading ? 0.4 : 1,
+                }}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: Content is pre-sanitized by the backend API; image src rewriting happens client-side only
+                dangerouslySetInnerHTML={{ __html: epubHtml }}
+              />
+            </div>
+          </div>
+        </main>
+
+        {footnote && (
+          <div
+            className="fixed z-50 animate-in zoom-in-95 duration-200 pointer-events-none fade-in-0 rounded-xl border border-border bg-popover/95 p-3 text-popover-foreground shadow-xl backdrop-blur-md"
+            style={{
+              top: `${footnote.top}px`,
+              left: `${footnote.left}px`,
+              transform: 'translate(-50%, -100%)',
+              width: 'max-content',
+              maxWidth: '260px',
+            }}
+          >
+            <div
+              className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-foreground/80"
+              dir={readerSettings.textDirection}
+            >
+              {footnote.text}
+              <div
+                className="absolute bottom-[-6.5px] h-3 w-3 border-b border-r border-border bg-popover"
+                style={{
+                  left: `calc(50% + ${footnote.arrowLeft}px)`,
+                  transform: 'translateX(-50%) rotate(45deg)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        <ReaderToolbar
+          contentMode="text"
+          typeSlug={typeSlug}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          brightness={brightness}
+          readMode="page"
+          typography={readerSettings}
+          onTypographyChange={setReaderSettings}
+          currentChapter={currentChapter}
+          chapters={chapters}
+          onPageChange={handlePageChange}
+          onBrightnessChange={setBrightness}
+          onReadModeChange={() => {}}
+          onChapterChange={handleChapterChange}
+          book={book}
+          onPurchased={handlePurchased}
+          showReadModeToggle={false}
+          fullscreenTarget={readerRootEl}
+        />
+      </div>
+    );
+  }
+
   return (
     <div ref={setReaderRoot} className="min-h-screen bg-reader-bg overflow-y-auto">
       {/* Main content */}
@@ -1289,7 +1557,7 @@ export default function ChapterPage() {
             <div className="mx-auto max-w-2xl px-4 pt-8 space-y-4">
               {Array.from({ length: manifest?.pageCount ?? 0 }).map((_, idx) => {
                 const pageNo = idx + 1;
-                const meta = manifest?.pages?.[idx];
+                const meta = manifest?.format === 'images' ? manifest.pages?.[idx] : undefined;
                 const ratio = meta?.w && meta?.h ? `${meta.w} / ${meta.h}` : undefined;
                 return (
                   <motion.div

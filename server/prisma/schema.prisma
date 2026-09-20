@@ -196,25 +196,26 @@ model BookGenre {
 }
 
 model Chapter {
-  id              Int                 @id @default(autoincrement())
-  bookId          Int
-  title           String
-  index           Int
-  price           Decimal?            @db.Decimal(12, 2)
-  isFree          Boolean             @default(false)
-  contentPath     String?
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  contentType     ChapterContentType?
-  pageCount       Int                 @default(0)
-  contentVersion  Int                 @default(0)
-  pdfKey          String?
-  pdfPageCount    Int?
-  pdfUploadedAt   DateTime?
-  publishStatus   PublicationStatus   @default(DRAFT)
-  accessRecords   AccessRecord[]
-  book            Book                @relation(fields: [bookId], references: [id])
-  readingProgress ReadingProgress[]
+  id                     Int                  @id @default(autoincrement())
+  bookId                 Int
+  title                  String
+  index                  Int
+  price                  Decimal?             @db.Decimal(12, 2)
+  isFree                 Boolean              @default(false)
+  contentPath            String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  contentType            ChapterContentType?
+  pageCount              Int                  @default(0)
+  contentVersion         Int                  @default(0)
+  contentStatus          ChapterContentStatus @default(EMPTY)
+  contentKey             String?
+  contentSourcePageCount Int?
+  contentUploadedAt      DateTime?
+  publishStatus          PublicationStatus    @default(DRAFT)
+  accessRecords          AccessRecord[]
+  book                   Book                 @relation(fields: [bookId], references: [id])
+  readingProgress        ReadingProgress[]
 
   @@unique([bookId, index])
 }
@@ -353,6 +354,14 @@ enum TransactionType {
 enum ChapterContentType {
   images
   text
+  epub
+}
+
+enum ChapterContentStatus {
+  EMPTY
+  PROCESSING
+  READY
+  FAILED
 }
 
 enum ContributorGender {

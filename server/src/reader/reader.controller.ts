@@ -85,6 +85,31 @@ export class ReaderController {
     return { html };
   }
 
+  @Get('epub-text')
+  @Header('Cache-Control', 'private, no-store, max-age=0')
+  async epubText(
+    @Query('token') token: string,
+    @Query('p', ParseIntPipe) p: number,
+    @Req() req: Request,
+  ) {
+    const html = await this.readerService.getEpubText(token, p, req);
+    return { html };
+  }
+
+  @Get('epub-asset')
+  async epubAsset(
+    @Query('token') token: string,
+    @Query('key') key: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const data = await this.readerService.getEpubAsset(token, key, req);
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.type('image/webp');
+    res.send(data);
+  }
+
   @Get('context')
   async getContext(@Query('bookId', ParseIntPipe) bookId: number, @Req() req: AuthRequest) {
     const userId = req.user?.userId;

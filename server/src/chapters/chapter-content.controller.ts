@@ -27,6 +27,7 @@ import {
   PDF_UPLOAD_MAX_FILE_BYTES,
   TEXT_UPLOAD_MAX_FILE_BYTES,
 } from './chapter-content.service';
+import { EPUB_UPLOAD_MAX_FILE_BYTES } from './epub/epub-processing.service';
 
 const IMAGE_UPLOAD_MULTER = {
   storage: multer.memoryStorage(),
@@ -49,6 +50,14 @@ const PDF_UPLOAD_MULTER = {
   limits: {
     files: 1,
     fileSize: PDF_UPLOAD_MAX_FILE_BYTES,
+  },
+};
+
+const EPUB_UPLOAD_MULTER = {
+  storage: multer.memoryStorage(),
+  limits: {
+    files: 1,
+    fileSize: EPUB_UPLOAD_MAX_FILE_BYTES,
   },
 };
 
@@ -102,6 +111,16 @@ export class ChapterContentController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     return this.service.uploadPdf(bookId, index, file);
+  }
+
+  @Post('epub')
+  @UseInterceptors(FileInterceptor('file', EPUB_UPLOAD_MULTER))
+  uploadEpub(
+    @Param('bookId', ParseIntPipe) bookId: number,
+    @Param('index', ParseIntPipe) index: number,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.service.uploadEpub(bookId, index, file);
   }
 
   @Delete()
