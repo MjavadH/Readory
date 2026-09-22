@@ -1150,7 +1150,7 @@ export default function ChapterContentManager() {
                       contentUploadsDisabled ? (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          {t('PdfProcessingBlocksUpload')}
+                          {t('ProcessingBlocksUpload')}
                         </p>
                       ) : chapter?.contentType === 'text' ? (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
@@ -1220,7 +1220,7 @@ export default function ChapterContentManager() {
                       contentUploadsDisabled ? (
                         <p className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          {t('PdfProcessingBlocksUpload')}
+                          {t('ProcessingBlocksUpload')}
                         </p>
                       ) : null
                     }
@@ -1270,7 +1270,7 @@ export default function ChapterContentManager() {
                       <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                         <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
                         {contentUploadsDisabled
-                          ? t('PdfProcessingBlocksUpload')
+                          ? t('ProcessingBlocksUpload')
                           : t('PdfReplaceWarning')}
                       </p>
                     }
@@ -1321,7 +1321,7 @@ export default function ChapterContentManager() {
                       <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                         <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
                         {contentUploadsDisabled
-                          ? t('PdfProcessingBlocksUpload')
+                          ? t('ProcessingBlocksUpload')
                           : t('EpubReplaceWarning')}
                       </p>
                     }

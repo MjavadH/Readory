@@ -920,7 +920,7 @@
     "PdfReplaceWarning": "بارگذاری یک PDF جایگزین تمام محتوای موجود این فصل می‌شود.",
     "PdfProcessingTitle": "PDF در حال تبدیل است",
     "PdfProcessingDescription": "{Pages} صفحه در حال رندر شدن هستند. این صفحه به‌صورت خودکار تازه‌سازی می‌شود.",
-    "PdfProcessingBlocksUpload": "تا زمانی که PDF در حال پردازش است، بارگذاری‌ها غیرفعال هستند.",
+    "ProcessingBlocksUpload": "تا زمانی که پردازشی درحال پردازش است، بارگذاری‌ها غیرفعال هستند.",
     "NPages": "{NPages} صفحه",
     "PageNumber": "صفحه {Page}",
     "SelectPdfFile": "انتخاب فایل pdf",
