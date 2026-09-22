@@ -1462,7 +1462,7 @@ export default function ChapterPage() {
                 onFocus={handleFootnoteFocus}
                 onKeyDown={handleFootnoteKeyDown}
                 onCopy={(e) => e.preventDefault()}
-                className="prose prose-neutral dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground/90 transition-opacity duration-200 sm:p-6"
+                className="prose prose-neutral prose-img:mx-auto prose-img:rounded-lg dark:prose-invert max-w-none select-none rounded-2xl border border-border bg-card/60 p-5 text-foreground/90 transition-opacity duration-200 sm:p-6"
                 style={{
                   fontSize: `${readerSettings.fontSize}px`,
                   lineHeight: readerSettings.lineHeight,
