@@ -1,589 +1,605 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CollectionType, CollectionVisibility, Prisma } from '@prisma/client';
+import { Collection, CollectionType, CollectionVisibility, Prisma } from '@prisma/client';
 import { CacheManager } from '../cache/cache.manager';
-import { normalizeSlug, toNumber } from '../common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  CACHE_KEYS,
+  CACHE_TTL_SECONDS,
+  FAVORITES_SLUG,
+  loadCollectionLimits,
+  MY_COLLECTIONS_HARD_CAP,
+  PAGINATION,
+  USER_COLLECTIONS_LOCK_NAMESPACE,
+} from './collections.constants';
+import {
+  CARD_SELECT,
+  DETAIL_META_SELECT,
+  detailSelect,
+  MANAGE_SELECT,
+  OWNED_CARD_SELECT,
+} from './collections.selects';
+import { toCard, toDetail, toMeta, toOwnedCard } from './collections.serializer';
+import type {
+  Actor,
+  AddedItem,
+  CollectionCard,
+  CollectionDetail,
+  CollectionMeta,
+  CursorPage,
+  MyCollectionCard,
+  OwnedCollectionCard,
+  UserCollectionDetail,
+} from './collections.types';
+import { blankToNull, clampLimit, isPrismaError, toPage, toSlug } from './collections.utils';
+import { AddCollectionItemDto, UpdateCollectionItemDto } from './dto/collection-items.dto';
+import { CursorPageQueryDto } from './dto/collection-query.dto';
 import { CreateCollectionDto } from './dto/create-collection.dto';
+import { CreateSystemCollectionDto } from './dto/create-system-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
+
+type Db = Prisma.TransactionClient;
+
+/** The minimum needed to decide which caches a change affects. */
+type CacheScope = Pick<Collection, 'type' | 'ownerId' | 'visibility'>;
+
+/** Row returned by `lockCollection` (raw SQL, so enums arrive as their string values). */
+interface LockedCollection extends CacheScope {
+  id: number;
+  bookCount: number;
+  maxPosition: number;
+}
+
+const NOT_FOUND = 'collection not found';
+const FAVORITES_IMMUTABLE = 'favorites collection can only have books added or removed';
 
 @Injectable()
 export class CollectionsService {
+  private readonly limits = loadCollectionLimits();
+
   constructor(
-    private prisma: PrismaService,
-    private readonly cacheManager: CacheManager,
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheManager,
   ) {}
 
-  private readonly CACHE_KEY_SYSTEM_COLLECTIONS = 'collections:system';
-  private readonly CACHE_KEY_SYSTEM_COLLECTIONS_VERSION = 'collections:system:version';
-  private readonly CACHE_KEY_COLLECTION_DETAIL_VERSION = 'collections:detail:version';
-  private readonly userCollectionLimit = Number(process.env.USER_COLLECTION_LIMIT || 25);
-  private readonly userCollectionBookLimit = Number(process.env.USER_COLLECTION_BOOK_LIMIT || 100);
+  async ensureFavoritesCollection(userId: number, db: Db = this.prisma): Promise<Collection> {
+    const where = { ownerId: userId, type: CollectionType.FAVORITES } as const;
 
-  async ensureFavoritesCollection(userId: number, tx: Prisma.TransactionClient = this.prisma) {
-    const slug = 'favorites';
-    try {
-      return await tx.collection.create({
-        data: {
+    const existing = await db.collection.findFirst({ where });
+    if (existing) return existing;
+
+    await db.collection.createMany({
+      data: [
+        {
           ownerId: userId,
           type: CollectionType.FAVORITES,
           title: 'Favorites',
-          slug,
+          slug: FAVORITES_SLUG,
           visibility: CollectionVisibility.PRIVATE,
           locked: true,
         },
+      ],
+      skipDuplicates: true,
+    });
+    return db.collection.findFirstOrThrow({ where });
+  }
+
+  /** Public, viewer-independent and therefore cached. */
+  async listSystem(query: CursorPageQueryDto): Promise<CursorPage<CollectionCard>> {
+    const limit = clampLimit(query.limit, PAGINATION.list);
+    const { cursor } = query;
+
+    return this.cached(CACHE_KEYS.systemList, [cursor ?? 'first', limit], async () => {
+      const rows = await this.prisma.collection.findMany({
+        where: { type: CollectionType.SYSTEM, visibility: CollectionVisibility.PUBLIC },
+        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        take: limit + 1,
+        select: CARD_SELECT,
       });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        return tx.collection.findFirstOrThrow({
-          where: { ownerId: userId, type: CollectionType.FAVORITES },
-        });
-      }
-      throw error;
-    }
-  }
-
-  async listSystem(options?: { cursor?: string; limit?: number }) {
-    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
-    const cursor = options?.cursor ? Number(options.cursor) : undefined;
-    const version = await this.cacheManager.getVersion(this.CACHE_KEY_SYSTEM_COLLECTIONS_VERSION);
-    const cacheKey = this.cacheManager.buildKey(
-      this.CACHE_KEY_SYSTEM_COLLECTIONS,
-      version,
-      cursor ?? 'first',
-      limit,
-    );
-    const cached = await this.cacheManager.getString(cacheKey);
-    if (cached) return JSON.parse(cached);
-
-    const rows = await this.prisma.collection.findMany({
-      where: { type: CollectionType.SYSTEM, visibility: CollectionVisibility.PUBLIC },
-      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      take: limit + 1,
-      select: this.collectionSelect(4),
+      return toPage(rows, limit, toCard);
     });
-    const page = rows.slice(0, limit);
-    const result = {
-      items: page.map((row) => this.serializeCollection(row)),
-      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
-      hasMore: rows.length > limit,
-    };
-    await this.cacheManager.setString(cacheKey, JSON.stringify(result), 120);
-    return result;
   }
 
-  async listMine(userId: number, options?: { cursor?: string; limit?: number; bookId?: number }) {
-    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
-    const rows = await this.prisma.collection.findMany({
-      where: { ownerId: userId, type: CollectionType.USER },
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-      ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
-      take: limit + 1,
-      select: {
-        ...this.collectionSelect(4),
-        ...(options?.bookId
-          ? {
-              items: {
-                where: { bookId: options.bookId },
-                take: 1,
-                select: {
-                  id: true,
-                  position: true,
-                  note: true,
-                  addedAt: true,
-                  book: {
-                    select: {
-                      id: true,
-                      title: true,
-                      coverImage: true,
-                      ratingAvg: true,
-                      ratingCount: true,
-                      updatedAt: true,
-                      type: { select: { id: true, name: true, slug: true } },
-                      genres: { select: { genre: { select: { name: true, slug: true } } } },
-                      contributors: {
-                        select: { role: true, contributor: { select: { name: true } } },
-                      },
-                    },
-                  },
-                },
-              },
-            }
-          : {}),
-      },
-    });
-    const page = rows.slice(0, limit);
-    return {
-      items: page.map((row) => ({
-        ...this.serializeCollection(row),
-        containsBook: options?.bookId ? row.items.length > 0 : undefined,
-      })),
-      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
-      hasMore: rows.length > limit,
-    };
-  }
+  async listAdmin(query: CursorPageQueryDto): Promise<CursorPage<OwnedCollectionCard>> {
+    const limit = clampLimit(query.limit, PAGINATION.list);
+    const { cursor } = query;
 
-  async listAdmin(options?: { cursor?: string; limit?: number }) {
-    const limit = Math.min(Math.max(options?.limit || 24, 1), 48);
     const rows = await this.prisma.collection.findMany({
       where: { type: CollectionType.SYSTEM },
-      orderBy: [{ type: 'asc' }, { featured: 'desc' }, { updatedAt: 'desc' }, { id: 'desc' }],
-      ...(options?.cursor ? { cursor: { id: Number(options.cursor) }, skip: 1 } : {}),
+      orderBy: [{ featured: 'desc' }, { updatedAt: 'desc' }, { id: 'desc' }],
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       take: limit + 1,
-      select: this.collectionSelect(4),
+      select: OWNED_CARD_SELECT,
     });
-    const page = rows.slice(0, limit);
+    return toPage(rows, limit, toOwnedCard);
+  }
+
+  /**
+   * A user owns a bounded number of collections, so this is one unpaginated query.
+   * With `bookId`, a second lightweight query (ids only, run in parallel) tells the
+   * "add to collection" dialog which collections already contain the book and
+   * which item to delete to remove it.
+   */
+  async listMine(userId: number, bookId?: number): Promise<{ items: MyCollectionCard[] }> {
+    const [rows, containing] = await Promise.all([
+      this.prisma.collection.findMany({
+        where: { ownerId: userId, type: CollectionType.USER },
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        take: MY_COLLECTIONS_HARD_CAP,
+        select: OWNED_CARD_SELECT,
+      }),
+      bookId === undefined
+        ? Promise.resolve<Array<{ id: number; collectionId: number }>>([])
+        : this.prisma.collectionItem.findMany({
+            where: { bookId, collection: { ownerId: userId, type: CollectionType.USER } },
+            select: { id: true, collectionId: true },
+          }),
+    ]);
+
+    if (bookId === undefined) return { items: rows.map(toOwnedCard) };
+
+    const itemByCollection = new Map(
+      containing.map((item) => [item.collectionId, item.id] as const),
+    );
     return {
-      items: page.map((row) => this.serializeCollection(row)),
-      nextCursor: rows.length > limit ? String(rows[limit].id) : undefined,
-      hasMore: rows.length > limit,
+      items: rows.map((row) => ({
+        ...toOwnedCard(row),
+        containsBook: itemByCollection.has(row.id),
+        itemId: itemByCollection.get(row.id) ?? null,
+      })),
     };
   }
 
-  async getAdminById(id: number, options?: { cursor?: string; limit?: number }) {
-    const itemLimit = this.normalizeItemLimit(options?.limit);
-    const itemCursor = options?.cursor ? Number(options.cursor) : undefined;
-    const cacheKey = await this.detailCacheKey('admin', id, itemCursor ?? 'first', itemLimit);
-    const cached = await this.cacheManager.getString(cacheKey);
-    if (cached) return JSON.parse(cached);
+  /**
+   * Public system collection. PRIVATE ones are 404 here (admins preview them via
+   * `getAdminById`), which makes the response viewer-independent and cacheable.
+   */
+  async getSystemBySlug(rawSlug: string, query: CursorPageQueryDto): Promise<CollectionDetail> {
+    const slug = toSlug(rawSlug);
+    const limit = clampLimit(query.limit, PAGINATION.items);
+    const { cursor } = query;
 
-    const collection = await this.prisma.collection.findUnique({
-      where: { id },
-      select: this.collectionSelect(itemLimit + 1, itemCursor),
+    return this.cached(CACHE_KEYS.systemDetail, [slug, cursor ?? 'first', limit], async () => {
+      const row = await this.prisma.collection.findFirst({
+        where: {
+          ownerId: null,
+          slug,
+          type: CollectionType.SYSTEM,
+          visibility: { not: CollectionVisibility.PRIVATE },
+        },
+        select: detailSelect(cursor, limit + 1),
+      });
+      if (!row) throw new NotFoundException(NOT_FOUND);
+      return toDetail(row, limit);
     });
-    if (!collection) throw new NotFoundException('collection not found');
-    const result = this.serializeCollection(collection, itemLimit);
-    await this.cacheManager.setString(cacheKey, JSON.stringify(result), 120);
-    return result;
   }
 
-  async getBySlug(
-    slug: string,
-    viewerId?: number,
-    isAdmin = false,
-    options?: { cursor?: string; limit?: number },
-  ) {
-    const itemLimit = this.normalizeItemLimit(options?.limit);
-    const itemCursor = options?.cursor ? Number(options.cursor) : undefined;
-    const cacheKey = await this.detailCacheKey(
-      'slug',
-      normalizeSlug(slug) || slug,
-      viewerId ?? 'anonymous',
-      isAdmin,
-      itemCursor ?? 'first',
-      itemLimit,
-    );
-    const cached = await this.cacheManager.getString(cacheKey);
-    if (cached) return JSON.parse(cached);
+  async getAdminById(id: number, query: CursorPageQueryDto): Promise<CollectionDetail> {
+    const limit = clampLimit(query.limit, PAGINATION.items);
 
-    const collection = await this.prisma.collection.findFirst({
-      where: { slug: normalizeSlug(slug) || slug, type: CollectionType.SYSTEM },
-      select: this.collectionSelect(itemLimit + 1, itemCursor),
+    const row = await this.prisma.collection.findFirst({
+      where: { id, type: CollectionType.SYSTEM },
+      select: detailSelect(query.cursor, limit + 1),
     });
-    if (!collection) throw new NotFoundException('collection not found');
-    this.assertCanView(collection, viewerId, isAdmin);
-    const result = this.serializeCollection(collection, itemLimit);
-    await this.cacheManager.setString(cacheKey, JSON.stringify(result), 120);
-    return result;
+    if (!row) throw new NotFoundException(NOT_FOUND);
+    return toDetail(row, limit);
   }
 
   async getUserCollection(
     username: string,
-    slug: string,
-    viewerId?: number,
-    options?: { cursor?: string; limit?: number },
-  ) {
-    const itemLimit = this.normalizeItemLimit(options?.limit);
-    const itemCursor = options?.cursor ? Number(options.cursor) : undefined;
-    const cacheKey = await this.detailCacheKey(
-      'user',
-      username.toLowerCase(),
-      normalizeSlug(slug) || slug,
-      viewerId ?? 'anonymous',
-      itemCursor ?? 'first',
-      itemLimit,
-    );
-    const cached = await this.cacheManager.getString(cacheKey);
-    if (cached) return JSON.parse(cached);
+    rawSlug: string,
+    viewerId: number | undefined,
+    query: CursorPageQueryDto,
+  ): Promise<UserCollectionDetail> {
+    const limit = clampLimit(query.limit, PAGINATION.items);
 
-    const user = await this.prisma.user.findUnique({
-      where: { username: username.toLowerCase() },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('collection not found');
+    const visibleToViewer: Prisma.CollectionWhereInput = viewerId
+      ? { OR: [{ visibility: { not: CollectionVisibility.PRIVATE } }, { ownerId: viewerId }] }
+      : { visibility: { not: CollectionVisibility.PRIVATE } };
 
-    const collection = await this.prisma.collection.findFirst({
+    const row = await this.prisma.collection.findFirst({
       where: {
-        ownerId: user.id,
-        slug: normalizeSlug(slug) || slug,
+        slug: toSlug(rawSlug),
         type: { in: [CollectionType.USER, CollectionType.FAVORITES] },
+        owner: { username: username.toLowerCase() },
+        ...visibleToViewer,
       },
-      select: this.collectionSelect(itemLimit + 1, itemCursor),
+      select: { ...detailSelect(query.cursor, limit + 1), ownerId: true },
     });
-    if (!collection) throw new NotFoundException('collection not found');
-    this.assertCanView(collection, viewerId);
-    const result = this.serializeCollection(collection, itemLimit);
-    await this.cacheManager.setString(cacheKey, JSON.stringify(result), 120);
-    return result;
+    if (!row) throw new NotFoundException(NOT_FOUND);
+
+    return { ...toDetail(row, limit), isOwner: viewerId !== undefined && row.ownerId === viewerId };
   }
 
-  async createUserCollection(userId: number, dto: CreateCollectionDto) {
-    const count = await this.prisma.collection.count({
-      where: { ownerId: userId, type: CollectionType.USER },
+  async createUserCollection(userId: number, dto: CreateCollectionDto): Promise<CollectionMeta> {
+    const created = await this.prisma.$transaction(async (tx) => {
+      // Serialize creations per user so the limit cannot be exceeded by concurrent requests.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${USER_COLLECTIONS_LOCK_NAMESPACE}::int, ${userId}::int)`;
+
+      const count = await tx.collection.count({
+        where: { ownerId: userId, type: CollectionType.USER },
+      });
+      if (count >= this.limits.userCollections) {
+        throw new BadRequestException('collection limit reached');
+      }
+
+      const slug = await this.resolveSlug(tx, userId, dto.slug);
+      return tx.collection.create({
+        data: {
+          ownerId: userId,
+          type: CollectionType.USER,
+          title: dto.title,
+          slug,
+          description: blankToNull(dto.description),
+          visibility: dto.visibility ?? CollectionVisibility.PRIVATE,
+          allowIndexing: false, // user collections are never indexed
+        },
+        select: DETAIL_META_SELECT,
+      });
     });
-    if (count >= this.userCollectionLimit)
-      throw new BadRequestException('collection limit reached');
-    return this.createCollection(CollectionType.USER, userId, dto);
+
+    await this.invalidate({
+      type: CollectionType.USER,
+      ownerId: userId,
+      visibility: created.visibility,
+    });
+    return toMeta(created);
   }
 
-  async createSystemCollection(dto: CreateCollectionDto) {
-    return this.createCollection(CollectionType.SYSTEM, null, { ...dto, allowIndexing: true });
+  async createSystemCollection(dto: CreateSystemCollectionDto): Promise<CollectionMeta> {
+    try {
+      const slug = await this.resolveSlug(this.prisma, null, dto.slug);
+      const created = await this.prisma.collection.create({
+        data: {
+          ownerId: null,
+          type: CollectionType.SYSTEM,
+          title: dto.title,
+          slug,
+          description: blankToNull(dto.description),
+          visibility: dto.visibility ?? CollectionVisibility.PUBLIC,
+          allowIndexing: true, // system collections are always indexed
+          featured: dto.featured ?? false,
+        },
+        select: DETAIL_META_SELECT,
+      });
+      await this.invalidate({
+        type: CollectionType.SYSTEM,
+        ownerId: null,
+        visibility: created.visibility,
+      });
+      return toMeta(created);
+    } catch (error) {
+      throw this.mapSlugError(error);
+    }
   }
 
-  async update(id: number, userId: number | null, isAdmin: boolean, dto: UpdateCollectionDto) {
-    const existing = await this.prisma.collection.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('collection not found');
-    this.assertCanManage(existing, userId, isAdmin);
+  async update(id: number, actor: Actor, dto: UpdateCollectionDto): Promise<CollectionMeta> {
+    const existing = await this.findManageable(this.prisma, id, actor);
+    if (existing.type === CollectionType.FAVORITES) {
+      throw new ForbiddenException(FAVORITES_IMMUTABLE);
+    }
 
+    // Indexing is derived from the collection type and can never be set by the client.
     const data: Prisma.CollectionUpdateInput = {};
     if (dto.title !== undefined) data.title = dto.title;
-    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.description !== undefined) data.description = blankToNull(dto.description);
     if (dto.visibility !== undefined) data.visibility = dto.visibility;
-    if (dto.allowIndexing !== undefined) data.allowIndexing = dto.allowIndexing;
-    if (dto.featured !== undefined && existing.type === CollectionType.SYSTEM)
+    if (dto.featured !== undefined && existing.type === CollectionType.SYSTEM) {
       data.featured = dto.featured;
-    if (dto.slug !== undefined && existing.type !== CollectionType.FAVORITES)
-      data.slug = await this.uniqueSlug(dto.slug, existing.ownerId ?? undefined, id);
+    }
 
-    const updated = await this.prisma.collection.update({
-      where: { id },
-      data,
-      select: this.collectionSelect(4),
-    });
-    await Promise.all([
-      this.invalidateSystemCache(existing.type),
-      this.invalidateDetailCache(),
-      this.invalidatePublicProfileCache(existing),
-    ]);
-    return this.serializeCollection(updated);
+    try {
+      if (dto.slug !== undefined && toSlug(dto.slug) !== existing.slug) {
+        data.slug = await this.resolveSlug(this.prisma, existing.ownerId, dto.slug, id);
+      }
+      if (Object.keys(data).length === 0) return toMeta(existing); // nothing to write
+
+      const updated = await this.prisma.collection.update({
+        where: { id },
+        data,
+        select: DETAIL_META_SELECT,
+      });
+      await this.invalidate(
+        { type: existing.type, ownerId: existing.ownerId, visibility: updated.visibility },
+        existing.visibility,
+      );
+      return toMeta(updated);
+    } catch (error) {
+      throw this.mapSlugError(error);
+    }
   }
 
-  async delete(id: number, userId: number, isAdmin: boolean) {
-    const existing = await this.prisma.collection.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException('collection not found');
-    this.assertCanManage(existing, userId, isAdmin);
-    if (existing.locked || existing.type === CollectionType.FAVORITES)
-      throw new BadRequestException('collection is locked');
+  async delete(id: number, actor: Actor): Promise<{ id: number; deleted: true }> {
+    const existing = await this.findManageable(this.prisma, id, actor);
+    if (existing.locked || existing.type === CollectionType.FAVORITES) {
+      throw new ForbiddenException('collection is locked');
+    }
+
     await this.prisma.collection.delete({ where: { id } });
-    await Promise.all([
-      this.invalidateSystemCache(existing.type),
-      this.invalidateDetailCache(),
-      this.invalidatePublicProfileCache(existing),
-    ]);
+    await this.invalidate(existing);
     return { id, deleted: true };
   }
 
-  async addBook(id: number, userId: number, isAdmin: boolean, bookId: number, note?: string) {
-    const result = await this.prisma.$transaction(async (tx) => {
-      const collection = await tx.collection.findUnique({ where: { id } });
-      if (!collection) throw new NotFoundException('collection not found');
-      this.assertCanManage(collection, userId, isAdmin);
-      const book = await tx.book.findUnique({ where: { id: bookId }, select: { id: true } });
-      if (!book) throw new NotFoundException('book not found');
-      if (
-        collection.type === CollectionType.USER &&
-        collection.bookCount >= this.userCollectionBookLimit
-      )
-        throw new BadRequestException('book limit reached');
-      await this.lockCollection(tx, id);
-      const existing = await tx.collectionItem.findUnique({
-        where: { collectionId_bookId: { collectionId: id, bookId } },
-      });
-      if (existing) throw new BadRequestException('book already exists in collection');
-      const position = await this.nextItemPosition(tx, id);
-      const item = await tx.collectionItem.create({
-        data: { collectionId: id, bookId, note, position },
-      });
-      await tx.collection.update({ where: { id }, data: { bookCount: { increment: 1 } } });
-      if (collection.type === CollectionType.FAVORITES)
-        await tx.book.update({ where: { id: bookId }, data: { favoriteCount: { increment: 1 } } });
-      return item;
-    });
-    await this.invalidateAfterItemChange(id);
-    return result;
-  }
+  /**
+   * One row lock serves as permission read, limit check (against the locked, exact
+   * count) and next-position source. Existence of the book and duplicates are
+   * enforced by the FK / unique constraint instead of extra SELECTs.
+   */
+  async addBook(id: number, actor: Actor, dto: AddCollectionItemDto): Promise<AddedItem> {
+    try {
+      const { collection, item } = await this.prisma.$transaction(async (tx) => {
+        const collection = await this.lockCollection(tx, id);
+        this.assertCanManage(collection, actor);
+        if (collection.bookCount >= this.limits.booksPerCollection[collection.type]) {
+          throw new BadRequestException('book limit reached');
+        }
 
-  async updateItem(id: number, itemId: number, userId: number, isAdmin: boolean, note?: string) {
-    const item = await this.prisma.collectionItem.findUnique({
-      where: { id: itemId },
-      include: { collection: true },
-    });
-    if (!item || item.collectionId !== id) throw new NotFoundException('collection item not found');
-    this.assertCanManage(item.collection, userId, isAdmin);
-    const updated = await this.prisma.collectionItem.update({
-      where: { id: itemId },
-      data: { note },
-    });
-    await this.invalidateAfterItemChange(id);
-    return updated;
-  }
-
-  async removeBook(id: number, itemId: number, userId: number, isAdmin: boolean) {
-    await this.prisma.$transaction(async (tx) => {
-      const item = await tx.collectionItem.findUnique({
-        where: { id: itemId },
-        include: { collection: true },
-      });
-      if (!item || item.collectionId !== id)
-        throw new NotFoundException('collection item not found');
-      this.assertCanManage(item.collection, userId, isAdmin);
-      await tx.collectionItem.delete({ where: { id: itemId } });
-      await tx.collection.update({ where: { id }, data: { bookCount: { decrement: 1 } } });
-      if (item.collection.type === CollectionType.FAVORITES)
-        await tx.book.update({
-          where: { id: item.bookId },
-          data: { favoriteCount: { decrement: 1 } },
+        const isFavorites = collection.type === CollectionType.FAVORITES;
+        const item = await tx.collectionItem.create({
+          data: {
+            collectionId: id,
+            bookId: dto.bookId,
+            position: collection.maxPosition + 1,
+            note: isFavorites ? null : (blankToNull(dto.note) ?? null),
+          },
+          select: { id: true, note: true, addedAt: true },
         });
-    });
-    await this.invalidateAfterItemChange(id);
-    return { id: itemId, deleted: true };
+        await tx.collection.update({
+          where: { id },
+          data: { bookCount: { increment: 1 } },
+          select: { id: true },
+        });
+        if (isFavorites) await this.adjustFavoriteCount(tx, dto.bookId, 1);
+
+        return { collection, item };
+      });
+
+      await this.invalidate(collection);
+      return {
+        id: item.id,
+        bookId: dto.bookId,
+        note: item.note,
+        addedAt: item.addedAt.toISOString(),
+        bookCount: collection.bookCount + 1,
+      };
+    } catch (error) {
+      throw this.mapItemError(error);
+    }
   }
 
-  async reorder(id: number, userId: number, isAdmin: boolean, itemIds: number[]) {
-    await this.prisma.$transaction(async (tx) => {
-      const collection = await tx.collection.findUnique({ where: { id } });
-      if (!collection) throw new NotFoundException('collection not found');
-      this.assertCanManage(collection, userId, isAdmin);
+  async updateItem(
+    id: number,
+    itemId: number,
+    actor: Actor,
+    dto: UpdateCollectionItemDto,
+  ): Promise<{ id: number; note: string | null }> {
+    const collection = await this.findManageable(this.prisma, id, actor);
+    if (collection.type === CollectionType.FAVORITES) {
+      throw new ForbiddenException(FAVORITES_IMMUTABLE);
+    }
 
-      const uniqueItemIds = [...new Set(itemIds)];
-      if (uniqueItemIds.length !== itemIds.length) {
-        throw new BadRequestException('Duplicate item IDs are not allowed');
+    try {
+      const item = await this.prisma.collectionItem.update({
+        where: { id: itemId, collectionId: id },
+        data: { note: blankToNull(dto.note) },
+        select: { id: true, note: true },
+      });
+      await this.invalidate(collection);
+      return item;
+    } catch (error) {
+      throw this.mapItemError(error);
+    }
+  }
+
+  async removeBook(
+    id: number,
+    itemId: number,
+    actor: Actor,
+  ): Promise<{ id: number; deleted: true }> {
+    try {
+      const collection = await this.prisma.$transaction(async (tx) => {
+        const collection = await this.findManageable(tx, id, actor);
+        // `collectionId` in the filter guarantees the item belongs to this collection (P2025 otherwise).
+        const removed = await tx.collectionItem.delete({
+          where: { id: itemId, collectionId: id },
+          select: { bookId: true },
+        });
+        await tx.collection.update({
+          where: { id },
+          data: { bookCount: { decrement: 1 } },
+          select: { id: true },
+        });
+        if (collection.type === CollectionType.FAVORITES) {
+          await this.adjustFavoriteCount(tx, removed.bookId, -1);
+        }
+        return collection;
+      });
+
+      await this.invalidate(collection);
+      return { id: itemId, deleted: true };
+    } catch (error) {
+      throw this.mapItemError(error);
+    }
+  }
+
+  /**
+   * `itemIds` may be a subset (e.g. one page): they are redistributed, in the given
+   * order, over the positions they already occupy. Two-phase update because the
+   * (collectionId, position) unique constraint is checked row by row.
+   */
+  async reorder(id: number, actor: Actor, itemIds: number[]): Promise<{ reordered: true }> {
+    const changed = await this.prisma.$transaction(async (tx) => {
+      const collection = await this.lockCollection(tx, id);
+      this.assertCanManage(collection, actor);
+      if (collection.type === CollectionType.FAVORITES) {
+        throw new ForbiddenException(FAVORITES_IMMUTABLE);
       }
 
       const existing = await tx.collectionItem.findMany({
-        where: { collectionId: id, id: { in: uniqueItemIds } },
+        where: { collectionId: id, id: { in: itemIds } },
         select: { id: true, position: true },
         orderBy: { position: 'asc' },
       });
-
-      if (existing.length !== uniqueItemIds.length) {
+      if (existing.length !== itemIds.length) {
         throw new BadRequestException('Some items do not belong to this collection');
       }
+      if (existing.every((item, index) => item.id === itemIds[index])) return null; // already in this order
 
-      const sortedPositions = existing.map((item) => item.position);
-
+      const positions = existing.map((item) => item.position);
       await tx.$executeRaw`
-        UPDATE "CollectionItem"
-        SET "position" = -reorder.new_pos::int
-        FROM (
-          SELECT unnest(${uniqueItemIds}::int[]) AS id, unnest(${sortedPositions}::int[]) AS new_pos
-          ) AS reorder
-        WHERE "CollectionItem".id = reorder.id
-          AND "CollectionItem"."collectionId" = ${id}
+        UPDATE "CollectionItem" AS ci
+        SET "position" = -r.new_pos
+        FROM unnest(${itemIds}::int[], ${positions}::int[]) AS r(id, new_pos)
+        WHERE ci."id" = r.id AND ci."collectionId" = ${id}
       `;
-
       await tx.$executeRaw`
         UPDATE "CollectionItem"
         SET "position" = -"position"
-        WHERE "collectionId" = ${id}
-          AND "position" < 0
+        WHERE "collectionId" = ${id} AND "position" < 0
       `;
+      return collection;
     });
 
-    await this.invalidateAfterItemChange(id);
+    if (changed) await this.invalidate(changed);
     return { reordered: true };
   }
 
-  private async createCollection(
-    type: CollectionType,
+  private async findManageable(db: Db, id: number, actor: Actor) {
+    const collection = await db.collection.findUnique({ where: { id }, select: MANAGE_SELECT });
+    if (!collection) throw new NotFoundException(NOT_FOUND);
+    this.assertCanManage(collection, actor);
+    return collection;
+  }
+
+  /** SYSTEM collections belong to admins, everything else to its owner. */
+  private assertCanManage(collection: Pick<Collection, 'type' | 'ownerId'>, actor: Actor): void {
+    const allowed =
+      collection.type === CollectionType.SYSTEM
+        ? actor.isAdmin
+        : collection.ownerId !== null && collection.ownerId === actor.id;
+    if (!allowed) throw new ForbiddenException('not allowed');
+  }
+
+  /** `SELECT … FOR UPDATE` that also returns everything the write paths need in one round trip. */
+  private async lockCollection(tx: Db, id: number): Promise<LockedCollection> {
+    const [row] = await tx.$queryRaw<LockedCollection[]>`
+      SELECT c."id", c."type", c."ownerId", c."visibility", c."bookCount",
+             COALESCE(
+               (SELECT MAX(i."position") FROM "CollectionItem" i WHERE i."collectionId" = c."id"),
+               0
+             ) AS "maxPosition"
+      FROM "Collection" c
+      WHERE c."id" = ${id}
+      FOR UPDATE OF c
+    `;
+    if (!row) throw new NotFoundException(NOT_FOUND);
+    return row;
+  }
+
+  /**
+   * Raw on purpose: `book.update()` would also bump `Book.updatedAt` (it is `@updatedAt`),
+   * which touches an indexed column and pollutes "recently updated" on every favorite toggle.
+   */
+  private async adjustFavoriteCount(tx: Db, bookId: number, delta: 1 | -1): Promise<void> {
+    await tx.$executeRaw`
+      UPDATE "Book"
+      SET "favoriteCount" = GREATEST("favoriteCount" + ${delta}::int, 0)
+      WHERE "id" = ${bookId}
+    `;
+  }
+
+  /**
+   * One query to find taken slugs. System slugs are canonical URLs, so a clash is an
+   * error; user slugs get a numeric suffix.
+   */
+  private async resolveSlug(
+    db: Db,
     ownerId: number | null,
-    dto: CreateCollectionDto,
-  ) {
-    const slug = await this.uniqueSlug(dto.slug, ownerId ?? undefined);
-    const collection = await this.prisma.collection.create({
-      data: {
+    desired: string,
+    excludeId?: number,
+  ): Promise<string> {
+    const base = toSlug(desired);
+    const taken = await db.collection.findMany({
+      where: {
         ownerId,
-        type,
-        title: dto.title,
-        slug,
-        description: dto.description,
-        visibility: dto.visibility ?? CollectionVisibility.PRIVATE,
-        allowIndexing: type === CollectionType.SYSTEM ? true : (dto.allowIndexing ?? false),
-        featured: type === CollectionType.SYSTEM ? (dto.featured ?? false) : false,
+        slug: { startsWith: base },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
       },
-      select: this.collectionSelect(4),
+      select: { slug: true },
     });
-    await Promise.all([
-      this.invalidateSystemCache(type),
-      this.invalidateDetailCache(),
-      this.invalidatePublicProfileCache(collection),
-    ]);
-    return this.serializeCollection(collection);
-  }
+    const used = new Set(taken.map(({ slug }) => slug));
+    if (!used.has(base)) return base;
+    if (ownerId === null) throw new ConflictException('slug already in use');
 
-  private async uniqueSlug(input: string, ownerId?: number, currentId?: number) {
-    const base = normalizeSlug(input);
-    let slug = base;
     let index = 2;
-    while (
-      await this.prisma.collection.findFirst({
-        where: { ownerId: ownerId ?? null, slug, NOT: currentId ? { id: currentId } : undefined },
-        select: { id: true },
-      })
-    )
-      slug = `${base}-${index++}`;
-    return slug;
+    while (used.has(`${base}-${index}`)) index += 1;
+    return `${base}-${index}`;
   }
 
-  private collectionSelect(itemTake: number, itemCursor?: number) {
-    const itemPagination = itemCursor ? { cursor: { id: itemCursor }, skip: 1 } : {};
-    return {
-      id: true,
-      ownerId: true,
-      type: true,
-      title: true,
-      slug: true,
-      description: true,
-      visibility: true,
-      allowIndexing: true,
-      featured: true,
-      locked: true,
-      bookCount: true,
-      updatedAt: true,
-      items: {
-        orderBy: { position: 'asc' },
-        ...itemPagination,
-        take: itemTake,
-        select: {
-          id: true,
-          position: true,
-          note: true,
-          addedAt: true,
-          book: {
-            select: {
-              id: true,
-              slug: true,
-              title: true,
-              coverImage: true,
-              ratingAvg: true,
-              ratingCount: true,
-              updatedAt: true,
-              type: { select: { id: true, name: true, slug: true } },
-              genres: { select: { genre: { select: { name: true, slug: true } } } },
-              contributors: { select: { role: true, contributor: { select: { name: true } } } },
-            },
-          },
-        },
-      },
-    } satisfies Prisma.CollectionSelect;
+  private mapSlugError(error: unknown): Error {
+    if (isPrismaError(error, 'P2002')) return new ConflictException('slug already in use');
+    return error instanceof Error ? error : new Error('unexpected error');
   }
 
-  private serializeCollection(collection: any, itemLimit?: number) {
-    const items = itemLimit ? collection.items.slice(0, itemLimit) : collection.items;
-    return {
-      ...collection,
-      indexable:
-        collection.type === CollectionType.SYSTEM ||
-        (collection.visibility === CollectionVisibility.PUBLIC && collection.allowIndexing),
-      items: items.map((item: any) => ({ ...item, book: this.serializeBook(item.book) })),
-      nextItemCursor:
-        itemLimit && collection.items.length > itemLimit
-          ? String(collection.items[itemLimit].id)
-          : undefined,
-      hasMoreItems: itemLimit ? collection.items.length > itemLimit : undefined,
-    };
+  private mapItemError(error: unknown): Error {
+    if (isPrismaError(error, 'P2002'))
+      return new ConflictException('book already exists in collection');
+    if (isPrismaError(error, 'P2003')) return new NotFoundException('book not found');
+    if (isPrismaError(error, 'P2025')) return new NotFoundException('collection item not found');
+    return error instanceof Error ? error : new Error('unexpected error');
   }
 
-  private serializeBook(book: any) {
-    const mainContributor =
-      book.contributors.find((a: any) => a.role === 'AUTHOR') ?? book.contributors[0];
+  // Cache
 
-    return {
-      id: book.id,
-      slug: book.slug,
-      title: book.title,
-      contributors: mainContributor ? mainContributor.contributor.name : null,
-      genres: book.genres.map((g: any) => g.genre),
-      coverImage: book.coverImage,
-      ratingAvg: Number(toNumber(book.ratingAvg).toFixed(2)),
-      ratingCount: book.ratingCount,
-      updatedAt: book.updatedAt.toISOString(),
-      type: book.type,
-    };
+  /**
+   * Only viewer-independent, public system data is cached. User and favorites
+   * collections are never cached, so their (frequent) writes cost no invalidation.
+   */
+  private async cached<T>(
+    namespace: string,
+    parts: ReadonlyArray<string | number>,
+    load: () => Promise<T>,
+  ): Promise<T> {
+    const version = await this.cache.getVersion(CACHE_KEYS.systemVersion);
+    const key = this.cache.buildKey(namespace, version, ...parts);
+
+    const hit = await this.cache.getString(key);
+    if (hit) return JSON.parse(hit) as T;
+
+    const value = await load();
+    await this.cache.setString(key, JSON.stringify(value), CACHE_TTL_SECONDS);
+    return value;
   }
 
-  private assertCanView(collection: any, viewerId?: number, isAdmin = false) {
-    if (isAdmin) return;
-    if (
-      collection.visibility === CollectionVisibility.PUBLIC ||
-      collection.visibility === CollectionVisibility.UNLISTED
-    )
-      return;
-    if (viewerId && collection.ownerId === viewerId) return;
-    throw new NotFoundException('collection not found');
-  }
+  /**
+   * Bumps only what a change can actually affect:
+   * - system collections → the shared system list/detail version
+   * - the owner's public profile → only when the collection is (or was) public, or is the favorites list
+   */
+  private async invalidate(
+    scope: CacheScope,
+    previousVisibility: CollectionVisibility = scope.visibility,
+  ): Promise<void> {
+    const tasks: Array<Promise<unknown>> = [];
 
-  private assertCanManage(collection: any, userId: number | null, isAdmin: boolean) {
-    if (collection.type === CollectionType.SYSTEM && isAdmin) return;
-    if (collection.ownerId && userId === collection.ownerId) return;
-    throw new ForbiddenException('not allowed');
-  }
+    if (scope.type === CollectionType.SYSTEM) {
+      tasks.push(this.cache.bumpVersion(CACHE_KEYS.systemVersion));
+    }
 
-  private async lockCollection(tx: Prisma.TransactionClient, collectionId: number) {
-    await tx.$queryRaw`SELECT id FROM "Collection" WHERE id = ${collectionId} FOR UPDATE`;
-  }
+    const profileVisible =
+      scope.type === CollectionType.FAVORITES ||
+      scope.visibility === CollectionVisibility.PUBLIC ||
+      previousVisibility === CollectionVisibility.PUBLIC;
+    if (scope.ownerId !== null && profileVisible) {
+      tasks.push(this.cache.bumpVersion(CACHE_KEYS.publicProfileVersion(scope.ownerId)));
+    }
 
-  private async nextItemPosition(tx: Prisma.TransactionClient, collectionId: number) {
-    const aggregate = await tx.collectionItem.aggregate({
-      where: { collectionId },
-      _max: { position: true },
-    });
-    return (aggregate._max.position ?? 0) + 1;
-  }
-
-  private normalizeItemLimit(limit?: number) {
-    return Math.min(
-      Math.max(limit || this.userCollectionBookLimit, 1),
-      this.userCollectionBookLimit,
-    );
-  }
-
-  private async detailCacheKey(...segments: Array<string | number | boolean>) {
-    const version = await this.cacheManager.getVersion(this.CACHE_KEY_COLLECTION_DETAIL_VERSION);
-    return this.cacheManager.buildKey('collections:detail', version, ...segments);
-  }
-
-  private async invalidateAfterItemChange(id: number) {
-    const collection = await this.prisma.collection.findUnique({
-      where: { id },
-      select: { type: true, ownerId: true, visibility: true },
-    });
-    await Promise.all([
-      this.invalidateSystemCache(collection?.type),
-      this.invalidateDetailCache(),
-      collection ? this.invalidatePublicProfileCache(collection) : Promise.resolve(),
-    ]);
-  }
-
-  private async invalidateDetailCache() {
-    await this.cacheManager.bumpVersion(this.CACHE_KEY_COLLECTION_DETAIL_VERSION);
-  }
-
-  private async invalidatePublicProfileCache(collection: {
-    type?: CollectionType | null;
-    ownerId?: number | null;
-  }) {
-    if (collection.type !== CollectionType.USER || !collection.ownerId) return;
-    await this.cacheManager.bumpVersion(`public_profile:version:${collection.ownerId}`);
-  }
-
-  private async invalidateSystemCache(type?: CollectionType) {
-    if (type === CollectionType.SYSTEM)
-      await this.cacheManager.bumpVersion(this.CACHE_KEY_SYSTEM_COLLECTIONS_VERSION);
+    await Promise.all(tasks);
   }
 }

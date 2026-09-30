@@ -40,10 +40,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import {
   COLLECTION_SLUG_REGEX,
-  type Collection,
   type CollectionFormState,
   collectionToForm,
   emptyCollectionForm,
+  type OwnedCollectionCard,
 } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
@@ -67,31 +67,31 @@ const COLLECTION_LOAD_MORE_SKELETON_KEYS = Array.from(
   (_, i) => `collection-load-more-skeleton-${i}`,
 );
 
+type CollectionsPage = { items: OwnedCollectionCard[]; nextCursor: number | null };
+
 export default function AdminCollectionsPage() {
   const t = useTranslations('Collections');
   const toast = useToast();
 
-  const [collections, setCollections] = React.useState<Collection[]>([]);
+  const [collections, setCollections] = React.useState<OwnedCollectionCard[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
-  const [nextCursor, setNextCursor] = React.useState<string | undefined>();
-  const [hasMore, setHasMore] = React.useState(false);
+  const [nextCursor, setNextCursor] = React.useState<number | null>(null);
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
   const [search, setSearch] = React.useState('');
   const [isSaving, setIsSaving] = React.useState(false);
   const [pendingId, setPendingId] = React.useState<number | null>(null);
-  const [deleteTarget, setDeleteTarget] = React.useState<Collection | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<OwnedCollectionCard | null>(null);
 
   const [modalOpen, setModalOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Collection | null>(null);
+  const [editing, setEditing] = React.useState<OwnedCollectionCard | null>(null);
   const [form, setForm] = React.useState<CollectionFormState>(emptyCollectionForm);
 
-  const requestCollections = React.useCallback(async () => {
-    return apiClient.get<{
-      items: Collection[];
-      nextCursor?: string;
-      hasMore?: boolean;
-    }>('/collections/admin?limit=24', { authRequired: true });
+  const requestCollections = React.useCallback((cursor?: number) => {
+    return apiClient.get<CollectionsPage>('/collections/admin', {
+      authRequired: true,
+      query: { limit: 24, cursor },
+    });
   }, []);
 
   const load = React.useCallback(async () => {
@@ -101,7 +101,6 @@ export default function AdminCollectionsPage() {
       const res = await requestCollections();
       setCollections(res.items ?? []);
       setNextCursor(res.nextCursor);
-      setHasMore(Boolean(res.hasMore));
     } catch (e) {
       toast.error(getApiErrorMessage(e, t('Toast.LoadFailed')));
     } finally {
@@ -117,7 +116,6 @@ export default function AdminCollectionsPage() {
         if (cancelled) return;
         setCollections(res.items ?? []);
         setNextCursor(res.nextCursor);
-        setHasMore(Boolean(res.hasMore));
       })
       .catch((error) => {
         if (!cancelled) {
@@ -136,25 +134,20 @@ export default function AdminCollectionsPage() {
   }, [requestCollections, t, toast]);
 
   const loadMore = React.useCallback(async () => {
-    if (!nextCursor || isLoadingMore) return;
+    if (nextCursor === null || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const res = await apiClient.get<{
-        items: Collection[];
-        nextCursor?: string;
-        hasMore?: boolean;
-      }>(`/collections/admin?limit=24&cursor=${encodeURIComponent(nextCursor)}`, {
-        authRequired: true,
-      });
+      const res = await requestCollections(nextCursor);
       setCollections((prev) => [...prev, ...(res.items ?? [])]);
       setNextCursor(res.nextCursor);
-      setHasMore(Boolean(res.hasMore));
     } catch (e) {
       toast.error(getApiErrorMessage(e, t('Toast.LoadFailed')));
     } finally {
       setIsLoadingMore(false);
     }
-  }, [isLoadingMore, nextCursor, t, toast]);
+  }, [isLoadingMore, nextCursor, requestCollections, t, toast]);
+
+  const hasMore = nextCursor !== null;
 
   React.useEffect(() => {
     const observer = new IntersectionObserver(
@@ -192,9 +185,16 @@ export default function AdminCollectionsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (collection: Collection) => {
+  const openEdit = (collection: OwnedCollectionCard) => {
     setEditing(collection);
-    setForm(collectionToForm(collection));
+    setForm(
+      collectionToForm({
+        ...collection,
+        indexable: collection.type === 'SYSTEM' && collection.visibility === 'PUBLIC',
+        items: [],
+        nextCursor: null,
+      }),
+    );
     setModalOpen(true);
   };
 
@@ -214,13 +214,13 @@ export default function AdminCollectionsPage() {
     }
     setIsSaving(true);
     try {
+      const description = editing ? form.description.trim() : form.description.trim() || undefined;
       const body = {
         title: form.title.trim(),
         slug,
-        description: form.description.trim() || undefined,
+        description,
         featured: form.featured,
         visibility: form.visibility,
-        allowIndexing: form.allowIndexing,
       };
       if (editing) await apiClient.patch(`/collections/${editing.id}`, body);
       else await apiClient.post('/collections/system', body);
@@ -234,7 +234,7 @@ export default function AdminCollectionsPage() {
     }
   };
 
-  const toggleFeatured = async (collection: Collection) => {
+  const toggleFeatured = async (collection: OwnedCollectionCard) => {
     setPendingId(collection.id);
     try {
       await apiClient.patch(`/collections/${collection.id}`, { featured: !collection.featured });
@@ -246,7 +246,7 @@ export default function AdminCollectionsPage() {
     }
   };
 
-  const toggleVisibility = async (collection: Collection) => {
+  const toggleVisibility = async (collection: OwnedCollectionCard) => {
     const next = collection.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
     setPendingId(collection.id);
     try {
@@ -260,7 +260,7 @@ export default function AdminCollectionsPage() {
     }
   };
 
-  const remove = async (collection: Collection) => {
+  const remove = async (collection: OwnedCollectionCard) => {
     setPendingId(collection.id);
     try {
       await apiClient.delete(`/collections/${collection.id}`);
@@ -374,7 +374,7 @@ export default function AdminCollectionsPage() {
                   className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-3 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <MiniCovers collection={collection} />
+                    <MiniCovers covers={collection.covers} />
 
                     <div className="min-w-0 flex-1 text-start">
                       <Link
@@ -557,13 +557,10 @@ export default function AdminCollectionsPage() {
   );
 }
 
-function MiniCovers({ collection }: { collection: Collection }) {
-  const covers = (collection.items ?? [])
-    .slice(0, 4)
-    .map((item) => item.book?.coverImage)
-    .filter(Boolean) as string[];
+function MiniCovers({ covers }: { covers: string[] }) {
+  const list = covers.slice(0, 4);
 
-  if (covers.length === 0) {
+  if (list.length === 0) {
     return (
       <div className="grid h-18 w-12 shrink-0 place-items-center rounded-lg bg-muted">
         <Layers className="h-4 w-4 text-muted-foreground" />
@@ -573,11 +570,11 @@ function MiniCovers({ collection }: { collection: Collection }) {
 
   return (
     <div className="flex h-18 shrink-0 items-center -space-x-2 rtl:space-x-reverse">
-      {covers.map((cover, index) => (
+      {list.map((cover, index) => (
         <div
           key={cover}
           className="h-18 w-12 overflow-hidden rounded-lg bg-muted ring-2 ring-card"
-          style={{ zIndex: covers.length - index }}
+          style={{ zIndex: list.length - index }}
         >
           <Image
             src={getBookCoverThumbnailUrl(cover)}

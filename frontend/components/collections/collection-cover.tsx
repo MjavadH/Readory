@@ -7,8 +7,11 @@ import { getBookCoverThumbnailUrl } from '@/lib/media';
 import type { BookCardData } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+type CoverSource = BookCardData | string;
+
 type CollectionCoverProps = {
-  books: BookCardData[];
+  books?: BookCardData[];
+  covers?: string[];
   className?: string;
   animate?: boolean;
   /** Collage density. `compact` = list rows, `hero` = featured tiles. */
@@ -54,14 +57,26 @@ const LAYOUTS: Record<number, Piece[]> = {
   ],
 };
 
+const isBookRecord = (source: CoverSource): source is BookCardData => typeof source !== 'string';
+
+const coverUrlOf = (source: CoverSource): string | null =>
+  isBookRecord(source) ? source.coverImage || null : source;
+
+const titleOf = (source: CoverSource): string | undefined =>
+  isBookRecord(source) ? source.title : undefined;
+
+const keyOf = (source: CoverSource, index: number): string | number =>
+  isBookRecord(source) ? (source.id ?? index) : `${source}-${index}`;
+
 export function CollectionCover({
   books,
+  covers,
   className,
   animate = true,
   size = 'default',
 }: CollectionCoverProps) {
-  const covers = books.filter(Boolean).slice(0, 5);
-  const count = covers.length;
+  const sources: CoverSource[] = (books ?? covers ?? []).filter(Boolean).slice(0, 5);
+  const count = sources.length;
   const compact = size === 'compact';
   const hero = size === 'hero';
 
@@ -85,12 +100,13 @@ export function CollectionCover({
         className,
       )}
     >
-      {covers.map((book, index) => {
+      {sources.map((source, index) => {
         const piece = layout[index] ?? layout[0];
         return (
           <CollagePiece
-            key={book.id ?? index}
-            book={book}
+            key={keyOf(source, index)}
+            coverUrl={coverUrlOf(source)}
+            title={titleOf(source)}
             index={index}
             piece={piece}
             widthPct={baseWidth * piece.s}
@@ -103,13 +119,15 @@ export function CollectionCover({
 }
 
 function CollagePiece({
-  book,
+  coverUrl,
+  title,
   index,
   piece,
   widthPct,
   animate,
 }: {
-  book: BookCardData;
+  coverUrl: string | null;
+  title: string | undefined;
   index: number;
   piece: Piece;
   widthPct: number;
@@ -142,19 +160,21 @@ function CollagePiece({
         'shadow-md shadow-foreground/15 dark:shadow-background/70',
       )}
     >
-      {book?.coverImage ? (
+      {coverUrl ? (
         <Image
-          src={getBookCoverThumbnailUrl(book.coverImage)}
-          alt={book.title}
+          src={getBookCoverThumbnailUrl(coverUrl)}
+          alt={title ?? ''}
           fill
           sizes="(max-width: 640px) 28vw, (max-width: 1024px) 18vw, 160px"
           className="object-cover"
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-muted">
-          <span className="line-clamp-3 px-1 text-center text-[9px] font-medium leading-tight text-muted-foreground sm:text-[10px]">
-            {book?.title}
-          </span>
+          {title ? (
+            <span className="line-clamp-3 px-1 text-center text-[9px] font-medium leading-tight text-muted-foreground sm:text-[10px]">
+              {title}
+            </span>
+          ) : null}
         </div>
       )}
     </motion.div>

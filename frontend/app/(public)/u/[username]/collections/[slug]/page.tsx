@@ -70,9 +70,7 @@ export default function PublicCollectionPage() {
     );
   }
 
-  // The owner may edit the collection and its items, but only admins can add books.
-  const isOwner = Boolean(user && collection.ownerId && user.id === collection.ownerId);
-  const canEdit = isOwner || (isAdmin && collection.type === 'SYSTEM');
+  const canEdit = Boolean(collection.isOwner) || (isAdmin && collection.type === 'SYSTEM');
 
   return (
     <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>

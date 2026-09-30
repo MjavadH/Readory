@@ -159,6 +159,53 @@ export function buildGenresIndexJsonLd(
 }
 
 /**
+ * Builds JSON-LD for a single user-curated/system collection page
+ * (`/collections/[slug]`): BreadcrumbList + CollectionPage + ItemList of the
+ * books actually loaded on the page.
+ */
+export function buildCollectionJsonLd(collection: {
+  title: string;
+  description?: string | null;
+  slug: string;
+  updatedAt: string;
+  bookCount: number;
+  items: Array<{ book: BookCardData }>;
+}) {
+  const canonicalUrl = absoluteUrl(`/collections/${collection.slug}`);
+
+  const collectionPage = {
+    '@type': 'CollectionPage',
+    name: collection.title,
+    description: collection.description || undefined,
+    url: canonicalUrl,
+    dateModified: collection.updatedAt,
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: getSiteUrl(),
+    },
+  };
+
+  const itemList = {
+    '@type': 'ItemList',
+    numberOfItems: collection.bookCount,
+    itemListElement: collection.items.map((entry, index) => bookListItem(entry.book, index + 1)),
+  };
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      breadcrumbList([
+        { name: 'Collections', path: '/collections' },
+        { name: collection.title, path: `/collections/${collection.slug}` },
+      ]),
+      collectionPage,
+      itemList,
+    ],
+  };
+}
+
+/**
  * Safely serializes a JSON-LD object for a <script> tag. Escapes `<` so a
  * value containing "</script>" (e.g. a book title) can't break out of the
  * script tag.

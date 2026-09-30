@@ -4,8 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import type { CollectionSummary } from '@/lib/types';
+import type { CollectionCard as CollectionCardData } from '@/lib/collection-types';
 import { getBookUrl } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { CollectionCover } from './collection-cover';
@@ -13,7 +12,7 @@ import { CollectionCover } from './collection-cover';
 export type CollectionCardVariant = 'default' | 'hero' | 'wide' | 'tall';
 
 type CollectionCardProps = {
-  collection: CollectionSummary;
+  collection: CollectionCardData;
   variant?: CollectionCardVariant;
   index?: number;
   className?: string;
@@ -30,11 +29,11 @@ export function CollectionCard({
   const t = useTranslations('Collections');
   const split = variant === 'hero' || variant === 'wide';
   const tall = variant === 'tall';
-  const books = collection.items?.map((item) => item.book) ?? [];
-  const { user } = useCurrentUser();
-  const singleBook = collection.bookCount === 1 ? collection.items?.[0]?.book : null;
-  const isOwner = Boolean(user && collection.ownerId && user.id === collection.ownerId);
-  const href = singleBook && !isOwner ? getBookUrl(singleBook) : `${hrefPrefix}/${collection.slug}`;
+  const isPublicGrid = hrefPrefix === '/collections';
+  const href =
+    isPublicGrid && collection.singleBook
+      ? getBookUrl(collection.singleBook)
+      : `${hrefPrefix}/${collection.slug}`;
 
   return (
     <motion.article
@@ -63,7 +62,7 @@ export function CollectionCard({
           )}
         >
           <CollectionCover
-            books={books}
+            covers={collection.covers}
             size={variant === 'hero' ? 'hero' : 'default'}
             className="w-full"
           />

@@ -7,21 +7,20 @@ import * as React from 'react';
 import { CollectionsGrid } from '@/components/collections/collections-grid';
 import { Skeleton } from '@/components/ui/skeleton';
 import { apiClient } from '@/lib/api-client';
-import type { CollectionSummary } from '@/lib/types';
+import type { CollectionCard } from '@/lib/collection-types';
 
 type CollectionsResponse = {
-  items: CollectionSummary[];
-  nextCursor?: string;
-  hasMore?: boolean;
+  items: CollectionCard[];
+  nextCursor: number | null;
 };
 
 export function CollectionsClient({ initialData }: { initialData: CollectionsResponse }) {
   const t = useTranslations('Collections');
   const [items, setItems] = React.useState(initialData.items ?? []);
   const [nextCursor, setNextCursor] = React.useState(initialData.nextCursor);
-  const [hasMore, setHasMore] = React.useState(Boolean(initialData.hasMore));
   const [isLoadingMore, setIsLoadingMore] = React.useState(false);
   const loadMoreRef = React.useRef<HTMLDivElement>(null);
+  const hasMore = nextCursor !== null;
 
   const LOAD_MORE_SKELETON_COUNT = 4;
   const LOAD_MORE_SKELETON_KEYS = Array.from(
@@ -30,15 +29,14 @@ export function CollectionsClient({ initialData }: { initialData: CollectionsRes
   );
 
   const loadMore = React.useCallback(async () => {
-    if (!nextCursor || isLoadingMore) return;
+    if (nextCursor === null || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
-      const res = await apiClient.get<CollectionsResponse>(
-        `/collections?limit=24&cursor=${encodeURIComponent(nextCursor)}`,
-      );
+      const res = await apiClient.get<CollectionsResponse>('/collections', {
+        query: { limit: 24, cursor: nextCursor },
+      });
       setItems((prev) => [...prev, ...(res.items ?? [])]);
       setNextCursor(res.nextCursor);
-      setHasMore(Boolean(res.hasMore));
     } finally {
       setIsLoadingMore(false);
     }

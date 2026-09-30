@@ -15,17 +15,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import type { MyCollectionCard } from '@/lib/collection-types';
 
-export type CollectionSelectionItem = {
-  id: number;
-  ownerId: number | null;
-  title: string;
-  slug: string;
-  description?: string | null;
-  bookCount: number;
-  updatedAt: string;
-  containsBook?: boolean;
-};
+export type CollectionSelectionItem = MyCollectionCard;
 
 export type CollectionSelectionProps = {
   open: boolean;

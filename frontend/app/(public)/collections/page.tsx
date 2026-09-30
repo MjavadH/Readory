@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { apiClient } from '@/lib/api-client';
-import type { CollectionSummary } from '@/lib/types';
+import type { CollectionCard } from '@/lib/collection-types';
+import { absoluteUrl } from '@/lib/seo';
 import { CollectionsClient } from './CollectionsClient';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -10,19 +11,18 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('pageTitle'),
     description: t('pageSubtitle'),
+    alternates: { canonical: absoluteUrl('/collections') },
+    robots: { index: true, follow: true },
   };
 }
 
 export default async function CollectionsPage() {
   const t = await getTranslations('Collections');
 
-  const collections = await apiClient.get<{
-    items: CollectionSummary[];
-    nextCursor?: string;
-    hasMore?: boolean;
-  }>('/collections?limit=24', {
-    next: { revalidate: 120 },
-  });
+  const collections = await apiClient.get<{ items: CollectionCard[]; nextCursor: number | null }>(
+    '/collections',
+    { query: { limit: 24 }, next: { revalidate: 120, tags: ['collections'] } },
+  );
 
   return (
     <main className="relative">

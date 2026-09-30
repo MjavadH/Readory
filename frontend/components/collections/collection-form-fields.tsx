@@ -105,7 +105,10 @@ export function CollectionFormFields({
         </p>
       </div>
 
-      {/* Only system collections can be featured or indexed by search engines. */}
+      {/*
+        Only system collections can be featured.
+        PUBLIC system collection is always indexed.
+      */}
       {isSystem ? (
         <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-3">
           <ToggleRow
@@ -113,13 +116,6 @@ export function CollectionFormFields({
             hint={t('Form.FeaturedHint')}
             checked={value.featured}
             onCheckedChange={(featured) => patch({ featured })}
-          />
-          <ToggleRow
-            label={t('Form.AllowIndexing')}
-            hint={t('Form.AllowIndexingHint')}
-            checked={value.allowIndexing}
-            disabled={value.visibility !== 'PUBLIC'}
-            onCheckedChange={(allowIndexing) => patch({ allowIndexing })}
           />
         </div>
       ) : null}

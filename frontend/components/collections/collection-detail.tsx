@@ -1,3 +1,5 @@
+'use client';
+
 import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
   ArrowDown,
@@ -116,14 +118,9 @@ export function CollectionDetail({
       await apiClient.patch(`/collections/${collection.id}`, {
         title: form.title.trim(),
         slug,
-        description: form.description.trim() || undefined,
-        ...(isSystem
-          ? {
-              featured: form.featured,
-              visibility: form.visibility,
-              allowIndexing: form.allowIndexing,
-            }
-          : { visibility: form.visibility, allowIndexing: form.allowIndexing }),
+        description: form.description.trim(),
+        visibility: form.visibility,
+        ...(isSystem ? { featured: form.featured } : {}),
       });
       toast.success(t('Toast.Updated'));
       setEditOpen(false);
@@ -206,12 +203,20 @@ export function CollectionDetail({
     else setManageMode(true);
   };
 
-  const removeItem = async (item: CollectionItem) => {
-    if (!window.confirm(t('ConfirmRemoveItem', { title: item.book.title }))) return;
+  const [removeTarget, setRemoveTarget] = React.useState<CollectionItem | null>(null);
+
+  const removeItem = (item: CollectionItem) => {
+    setRemoveTarget(item);
+  };
+
+  const confirmRemoveItem = async () => {
+    if (!removeTarget) return;
+    const item = removeTarget;
     setPendingItemId(item.id);
     try {
       await apiClient.delete(`/collections/${collection.id}/items/${item.id}`);
       toast.success(t('Toast.ItemRemoved'));
+      setRemoveTarget(null);
       await onChanged();
     } catch (e) {
       toast.error(getApiErrorMessage(e, t('Toast.ItemRemoveFailed')));
@@ -234,7 +239,7 @@ export function CollectionDetail({
     setIsSaving(true);
     try {
       await apiClient.patch(`/collections/${collection.id}/items/${noteItem.id}`, {
-        note: noteDraft.trim() || undefined,
+        note: noteDraft.trim(),
       });
       toast.success(t('Toast.NoteSaved'));
       setNoteItem(null);
@@ -384,18 +389,21 @@ export function CollectionDetail({
 
             {canEdit && (
               <div className="flex flex-col gap-2 border-t border-border/60 px-5 py-4 sm:px-6">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 gap-1.5"
-                    onClick={openEdit}
-                    disabled={isSaving}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                    {t('Actions.Edit')}
-                  </Button>
-                </div>
+                {/* Favorites has a fixed title/slug/visibility — only its books can change. */}
+                {!isFavorites && (
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 gap-1.5"
+                      onClick={openEdit}
+                      disabled={isSaving}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      {t('Actions.Edit')}
+                    </Button>
+                  </div>
+                )}
                 {!collection.locked && !isFavorites && (
                   <Button
                     size="sm"
@@ -415,7 +423,7 @@ export function CollectionDetail({
 
         {/* -------------------------------- items --------------------------- */}
         <section className="lg:col-span-8">
-          {canEdit && items.length > 0 && (
+          {(canEdit || canAddItems) && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -424,44 +432,23 @@ export function CollectionDetail({
             >
               {isReordering && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
 
-              <Button
-                size="sm"
-                variant={manageMode ? 'default' : 'outline'}
-                className="gap-1.5"
-                onClick={toggleManageMode}
-                disabled={isReordering}
-              >
-                <ListOrdered className="h-3.5 w-3.5" />
-                {manageMode ? t('Actions.Done') : t('Actions.Manage')}
-              </Button>
-
-              <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t('DeleteCollectionTitle')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('DeleteCollectionDescription', { title: collection.title })}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isSaving}>{t('Actions.Cancel')}</AlertDialogCancel>
-                    <AlertDialogAction
-                      variant="destructive"
-                      disabled={isSaving}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        void deleteCollection();
-                      }}
-                    >
-                      {isSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        t('Actions.Delete')
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {canEdit && items.length > 0 && (
+                <Button
+                  size="sm"
+                  variant={manageMode ? 'default' : 'outline'}
+                  className="gap-1.5"
+                  onClick={toggleManageMode}
+                  disabled={isReordering || (!manageMode && collection.nextCursor !== null)}
+                  title={
+                    !manageMode && collection.nextCursor !== null
+                      ? t('Toast.LoadAllToReorder')
+                      : undefined
+                  }
+                >
+                  <ListOrdered className="h-3.5 w-3.5" />
+                  {manageMode ? t('Actions.Done') : t('Actions.Manage')}
+                </Button>
+              )}
 
               {canAddItems && (
                 <Button
@@ -614,6 +601,41 @@ export function CollectionDetail({
               }}
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Actions.Delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(removeTarget)}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('ConfirmRemoveItemTitle', { title: removeTarget?.book.title ?? '' })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('ConfirmRemoveItem', { title: removeTarget?.book.title ?? '' })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pendingItemId === removeTarget?.id}>
+              {t('Actions.Cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={pendingItemId === removeTarget?.id}
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmRemoveItem();
+              }}
+            >
+              {pendingItemId === removeTarget?.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t('Actions.Remove')
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

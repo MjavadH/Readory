@@ -1,134 +1,83 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { AlertCircle } from 'lucide-react';
-import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import * as React from 'react';
-import { CollectionDetail } from '@/components/collections/collection-detail';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useCurrentUser } from '@/hooks/use-current-user';
-import { apiClient, getApiErrorMessage } from '@/lib/api-client';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { cache } from 'react';
+import { ApiError, apiClient } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
+import { getBookCoverThumbnailUrl } from '@/lib/media';
+import { absoluteUrl } from '@/lib/seo';
+import { buildCollectionJsonLd, jsonLdScript } from '@/lib/structured-data';
+import { PublicCollectionView } from './PublicCollectionView';
 
-const COLLECTION_SKELETON_COUNT = 10;
-const COLLECTION_SKELETON_KEYS = Array.from(
-  { length: COLLECTION_SKELETON_COUNT },
-  (_, i) => `public-collection-skeleton-${i}`,
-);
+const REVALIDATE_SECONDS = 120;
 
-export default function PublicCollectionPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params?.slug ?? '';
-  const t = useTranslations('Collections');
+type PageProps = { params: Promise<{ slug: string }> };
 
-  const { user } = useCurrentUser();
-  const isAdmin = user?.roleName === 'ADMIN';
-
-  const [collection, setCollection] = React.useState<Collection | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const load = React.useCallback(async () => {
-    if (!slug) return;
-
-    try {
-      const res = await apiClient.get<Collection>(`/collections/${slug}`);
-      setCollection(res);
-    } catch (e) {
-      setError(getApiErrorMessage(e, t('Toast.LoadFailed')));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [slug, t]);
-
-  React.useEffect(() => {
-    if (!slug) return;
-
-    let cancelled = false;
-
-    void apiClient
-      .get<Collection>(`/collections/${slug}`)
-      .then((res) => {
-        if (cancelled) return;
-        setCollection(res);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-
-        setError(getApiErrorMessage(error, t('Toast.LoadFailed')));
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, t]);
-
-  const handleRetry = async () => {
-    setError(null);
-    setIsLoading(true);
-    await load();
-  };
-
-  if (isLoading) return <CollectionDetailSkeleton />;
-
-  if (error || !collection) {
-    return (
-      <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center gap-3 px-4 text-center">
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-destructive/10">
-          <AlertCircle className="h-5 w-5 text-destructive" />
-        </div>
-        <p className="text-sm font-medium">{error ?? t('NotFound')}</p>
-        <Button variant="outline" size="sm" onClick={() => void handleRetry()}>
-          {t('Actions.Retry')}
-        </Button>
-      </div>
-    );
+/**
+ * `cache()` dedupes the fetch between generateMetadata and the page within a single
+ * request, so the API is hit once even though both need the collection.
+ */
+const getCollection = cache(async (slug: string): Promise<Collection | null> => {
+  try {
+    return await apiClient.get<Collection>(`/collections/${encodeURIComponent(slug)}`, {
+      query: { limit: 48 },
+      next: { revalidate: REVALIDATE_SECONDS, tags: ['collections', `collection:${slug}`] },
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
   }
+});
 
-  // The owner may edit the collection and its items, but only admins can add books.
-  const isOwner = Boolean(user && collection.ownerId && user.id === collection.ownerId);
-  const canEdit = isOwner || (isAdmin && collection.type === 'SYSTEM');
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const collection = await getCollection(slug);
 
-  return (
-    <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
-      <CollectionDetail
-        collection={collection}
-        canEdit={canEdit}
-        canAddItems={isAdmin && collection.type === 'SYSTEM'}
-        onChanged={load}
-        onDeleted={() => {
-          window.location.href = '/collections';
-        }}
-      />
-    </motion.main>
-  );
+  // Missing/private collections must never be indexed.
+  if (!collection) return { robots: { index: false, follow: false } };
+
+  const description = collection.description?.trim() || undefined;
+  const cover = collection.items.find((item) => item.book.coverImage)?.book.coverImage;
+  const canonical = absoluteUrl(`/collections/${collection.slug}`);
+
+  return {
+    title: collection.title,
+    description,
+    alternates: { canonical },
+    // `indexable` is derived server-side (SYSTEM + PUBLIC). UNLISTED collections are
+    // reachable by link but must stay out of search results.
+    robots: collection.indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: false, nocache: true },
+    openGraph: {
+      type: 'website',
+      title: collection.title,
+      description,
+      url: canonical,
+      images: cover ? [{ url: getBookCoverThumbnailUrl(cover) }] : undefined,
+    },
+    twitter: {
+      card: cover ? 'summary_large_image' : 'summary',
+      title: collection.title,
+      description,
+    },
+  };
 }
 
-function CollectionDetailSkeleton() {
+export default async function PublicCollectionPage({ params }: PageProps) {
+  const { slug } = await params;
+  const collection = await getCollection(slug);
+  if (!collection) notFound();
+
+  // Structured data only for pages that are actually meant to be indexed.
+  const jsonLd = collection.indexable ? buildCollectionJsonLd(collection) : null;
+
   return (
-    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-12 lg:gap-8 lg:px-8">
-      <div className="lg:col-span-4">
-        <Skeleton className="h-96 w-full rounded-3xl" />
-      </div>
-      <div className="lg:col-span-8">
-        <Skeleton className="mb-4 h-16 w-full rounded-2xl" />
-        <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {COLLECTION_SKELETON_KEYS.map((key) => (
-            <div key={key} className="flex flex-col gap-2">
-              <Skeleton className="aspect-2/3 w-full rounded-xl" />
-              <Skeleton className="h-3 w-4/5" />
-              <Skeleton className="h-3 w-2/5" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+    <>
+      {jsonLd ? (
+        /** biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML */
+        <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
+      ) : null}
+      <PublicCollectionView collection={collection} />
+    </>
   );
 }

@@ -35,10 +35,10 @@ import { useCurrentUser } from '@/hooks/use-current-user';
 import { apiClient, getApiErrorMessage } from '@/lib/api-client';
 import {
   COLLECTION_SLUG_REGEX,
-  type Collection,
   type CollectionFormState,
   collectionToForm,
   emptyCollectionForm,
+  type OwnedCollectionCard,
 } from '@/lib/collection-types';
 import { useToast } from '@/providers/toast-provider';
 
@@ -46,7 +46,6 @@ import { useToast } from '@/providers/toast-provider';
 const userDefaults: CollectionFormState = {
   ...emptyCollectionForm,
   visibility: 'PRIVATE',
-  allowIndexing: false,
 };
 
 const SKELETON_COUNT = 6;
@@ -61,22 +60,22 @@ export default function DashboardCollectionsPage() {
   const toast = useToast();
   const { user } = useCurrentUser();
 
-  const [collections, setCollections] = React.useState<Collection[]>([]);
+  const [collections, setCollections] = React.useState<OwnedCollectionCard[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   const [open, setOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Collection | null>(null);
+  const [editing, setEditing] = React.useState<OwnedCollectionCard | null>(null);
   const [form, setForm] = React.useState<CollectionFormState>(userDefaults);
   const [saving, setSaving] = React.useState(false);
-  const [pendingDelete, setPendingDelete] = React.useState<Collection | null>(null);
+  const [pendingDelete, setPendingDelete] = React.useState<OwnedCollectionCard | null>(null);
   const [deleting, setDeleting] = React.useState(false);
 
   const loadCollections = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<{ items: Collection[] }>('/collections/mine?limit=48');
+      const res = await apiClient.get<{ items: OwnedCollectionCard[] }>('/collections/mine');
       setCollections(res.items ?? []);
     } catch (err) {
       setError(getApiErrorMessage(err, t('Toast.LoadFailed')));
@@ -89,7 +88,7 @@ export default function DashboardCollectionsPage() {
     let cancelled = false;
 
     void apiClient
-      .get<{ items: Collection[] }>('/collections/mine?limit=48')
+      .get<{ items: OwnedCollectionCard[] }>('/collections/mine')
       .then((res) => {
         if (cancelled) return;
         setCollections(res.items ?? []);
@@ -108,7 +107,7 @@ export default function DashboardCollectionsPage() {
   }, [t]);
 
   const collectionHref = React.useCallback(
-    (collection: Collection) =>
+    (collection: OwnedCollectionCard) =>
       user ? `/u/${encodeURIComponent(user.username)}/collections/${collection.slug}` : '#',
     [user],
   );
@@ -119,9 +118,13 @@ export default function DashboardCollectionsPage() {
     setOpen(true);
   };
 
-  const openEdit = (collection: Collection) => {
+  const openEdit = (collection: OwnedCollectionCard) => {
+    if (collection.type === 'FAVORITES') return;
     setEditing(collection);
-    setForm({ ...collectionToForm(collection), allowIndexing: false, featured: false });
+    setForm({
+      ...collectionToForm({ ...collection, indexable: false, items: [], nextCursor: null }),
+      featured: false,
+    });
     setOpen(true);
   };
 
@@ -143,13 +146,8 @@ export default function DashboardCollectionsPage() {
 
     setSaving(true);
     try {
-      const body = {
-        title,
-        slug,
-        description: form.description.trim() || undefined,
-        visibility: form.visibility,
-        allowIndexing: false,
-      };
+      const description = editing ? form.description.trim() : form.description.trim() || undefined;
+      const body = { title, slug, description, visibility: form.visibility };
       if (editing) await apiClient.patch(`/collections/${editing.id}`, body);
       else await apiClient.post('/collections', body);
       toast.success(t(editing ? 'Toast.Updated' : 'Toast.Created'));
@@ -296,14 +294,15 @@ function CollectionRow({
   onEdit,
   onDelete,
 }: {
-  collection: Collection;
+  collection: OwnedCollectionCard;
   index: number;
   href: string;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   const t = useTranslations('Collections');
-  const books = collection.items?.map((item) => item.book) ?? [];
+  const covers = collection.covers ?? [];
+  const isFavorites = collection.type === 'FAVORITES';
 
   return (
     <motion.article
@@ -315,7 +314,7 @@ function CollectionRow({
       className="group flex gap-4 rounded-3xl border border-border/70 bg-card/60 p-3 transition-colors hover:border-border hover:bg-card sm:p-4"
     >
       <Link href={href} className="w-24 shrink-0 sm:w-28" tabIndex={-1} aria-hidden>
-        <CollectionCover books={books} size="compact" animate={false} />
+        <CollectionCover covers={covers} size="compact" animate={false} />
       </Link>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -342,15 +341,17 @@ function CollectionRow({
           </span>
 
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              onClick={onEdit}
-              aria-label={t('Actions.Edit')}
-            >
-              <Pencil aria-hidden className="size-4" />
-            </Button>
+            {!isFavorites ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8"
+                onClick={onEdit}
+                aria-label={t('Actions.Edit')}
+              >
+                <Pencil aria-hidden className="size-4" />
+              </Button>
+            ) : null}
             {!collection.locked ? (
               <Button
                 variant="ghost"

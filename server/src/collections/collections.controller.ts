@@ -28,84 +28,68 @@ import type {
   OptionalAuthRequest,
 } from '../common/interfaces/request.interface';
 import { CollectionsService } from './collections.service';
+import type { Actor } from './collections.types';
 import {
   AddCollectionItemDto,
   ReorderCollectionItemsDto,
   UpdateCollectionItemDto,
 } from './dto/collection-items.dto';
+import { CursorPageQueryDto, MyCollectionsQueryDto } from './dto/collection-query.dto';
 import { CreateCollectionDto } from './dto/create-collection.dto';
+import { CreateSystemCollectionDto } from './dto/create-system-collection.dto';
 import { UpdateCollectionDto } from './dto/update-collection.dto';
+
+const toActor = (req: AuthenticatedRequest): Actor => ({
+  id: Number(req.user.userId ?? req.user.id),
+  isAdmin: req.user.roleName === RoleName.ADMIN,
+});
+
+const toViewerId = (req: OptionalAuthRequest): number | undefined => {
+  const id = req.user?.userId ?? req.user?.id;
+  return id ? Number(id) : undefined;
+};
 
 @Controller('collections')
 export class CollectionsController {
-  constructor(private readonly collectionsService: CollectionsService) {}
+  constructor(private readonly collections: CollectionsService) {}
 
   @Get()
-  async listSystem(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.collectionsService.listSystem({ cursor, limit: limit ? Number(limit) : undefined });
+  listSystem(@Query() query: CursorPageQueryDto) {
+    return this.collections.listSystem(query);
   }
 
   @Get('mine')
   @UseGuards(JwtAuthGuard)
-  async listMine(
-    @Query('cursor') cursor: string | undefined,
-    @Query('limit') limit: string | undefined,
-    @Query('bookId') bookId: string | undefined,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.listMine(Number(userId), {
-      cursor,
-      limit: limit ? Number(limit) : undefined,
-      bookId: bookId ? Number(bookId) : undefined,
-    });
+  listMine(@Query() query: MyCollectionsQueryDto, @Request() req: AuthenticatedRequest) {
+    return this.collections.listMine(toActor(req).id, query.bookId);
   }
 
   @Get('admin')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async listAdmin(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
-    return this.collectionsService.listAdmin({ cursor, limit: limit ? Number(limit) : undefined });
+  listAdmin(@Query() query: CursorPageQueryDto) {
+    return this.collections.listAdmin(query);
   }
 
   @Get('admin/:id')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles(RoleName.ADMIN)
   @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async getAdminById(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.collectionsService.getAdminById(id, {
-      cursor,
-      limit: limit ? Number(limit) : undefined,
-    });
+  getAdminById(@Param('id', ParseIntPipe) id: number, @Query() query: CursorPageQueryDto) {
+    return this.collections.getAdminById(id, query);
   }
 
+  /** Public and viewer-independent (no auth): PRIVATE system collections are 404 here. */
   @Get(':slug')
-  @UseGuards(OptionalJwtAuthGuard)
-  async getBySlug(
-    @Param('slug') slug: string,
-    @Query('cursor') cursor: string | undefined,
-    @Query('limit') limit: string | undefined,
-    @Request() req: OptionalAuthRequest,
-  ) {
-    const userId = req.user?.userId ?? req.user?.id;
-    return this.collectionsService.getBySlug(
-      slug,
-      userId ? Number(userId) : undefined,
-      req.user?.roleName === RoleName.ADMIN,
-      { cursor, limit: limit ? Number(limit) : undefined },
-    );
+  getBySlug(@Param('slug') slug: string, @Query() query: CursorPageQueryDto) {
+    return this.collections.getSystemBySlug(slug, query);
   }
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async createUser(@Body() dto: CreateCollectionDto, @Request() req: AuthenticatedRequest) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.createUserCollection(Number(userId), dto);
+  createUser(@Body() dto: CreateCollectionDto, @Request() req: AuthenticatedRequest) {
+    return this.collections.createUserCollection(toActor(req).id, dto);
   }
 
   @Post('system')
@@ -118,8 +102,8 @@ export class CollectionsController {
     targetType: 'Collection',
     adminOnly: true,
   })
-  async createSystem(@Body() dto: CreateCollectionDto) {
-    return this.collectionsService.createSystemCollection(dto);
+  createSystem(@Body() dto: CreateSystemCollectionDto) {
+    return this.collections.createSystemCollection(dto);
   }
 
   @Patch(':id')
@@ -130,18 +114,12 @@ export class CollectionsController {
     targetType: 'Collection',
     adminOnly: true,
   })
-  async update(
+  update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCollectionDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.update(
-      id,
-      Number(userId),
-      req.user.roleName === RoleName.ADMIN,
-      dto,
-    );
+    return this.collections.update(id, toActor(req), dto);
   }
 
   @Delete(':id')
@@ -152,9 +130,8 @@ export class CollectionsController {
     targetType: 'Collection',
     adminOnly: true,
   })
-  async delete(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.delete(id, Number(userId), req.user.roleName === RoleName.ADMIN);
+  delete(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
+    return this.collections.delete(id, toActor(req));
   }
 
   @Post(':id/items')
@@ -166,67 +143,12 @@ export class CollectionsController {
     targetIdParam: 'id',
     adminOnly: true,
   })
-  async addBook(
+  addBook(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddCollectionItemDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.addBook(
-      id,
-      Number(userId),
-      req.user.roleName === RoleName.ADMIN,
-      dto.bookId,
-      dto.note,
-    );
-  }
-
-  @Patch(':id/items/:itemId')
-  @UseGuards(JwtAuthGuard)
-  @Audit({
-    action: AuditAction.COLLECTION_UPDATED,
-    category: AuditCategory.CONTENT,
-    targetType: 'Collection',
-    targetIdParam: 'id',
-    adminOnly: true,
-  })
-  async updateItem(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('itemId', ParseIntPipe) itemId: number,
-    @Body() dto: UpdateCollectionItemDto,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.updateItem(
-      id,
-      itemId,
-      Number(userId),
-      req.user.roleName === RoleName.ADMIN,
-      dto.note,
-    );
-  }
-
-  @Delete(':id/items/:itemId')
-  @UseGuards(JwtAuthGuard)
-  @Audit({
-    action: AuditAction.COLLECTION_UPDATED,
-    category: AuditCategory.CONTENT,
-    targetType: 'Collection',
-    targetIdParam: 'id',
-    adminOnly: true,
-  })
-  async removeBook(
-    @Param('id', ParseIntPipe) id: number,
-    @Param('itemId', ParseIntPipe) itemId: number,
-    @Request() req: AuthenticatedRequest,
-  ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.removeBook(
-      id,
-      itemId,
-      Number(userId),
-      req.user.roleName === RoleName.ADMIN,
-    );
+    return this.collections.addBook(id, toActor(req), dto);
   }
 
   @Put(':id/items/reorder')
@@ -239,55 +161,62 @@ export class CollectionsController {
     targetIdParam: 'id',
     adminOnly: true,
   })
-  async reorder(
+  reorder(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: ReorderCollectionItemsDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.userId ?? req.user.id;
-    return this.collectionsService.reorder(
-      id,
-      Number(userId),
-      req.user.roleName === RoleName.ADMIN,
-      dto.itemIds,
-    );
+    return this.collections.reorder(id, toActor(req), dto.itemIds);
+  }
+
+  @Patch(':id/items/:itemId')
+  @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
+  updateItem(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Body() dto: UpdateCollectionItemDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.collections.updateItem(id, itemId, toActor(req), dto);
+  }
+
+  @Delete(':id/items/:itemId')
+  @UseGuards(JwtAuthGuard)
+  @Audit({
+    action: AuditAction.COLLECTION_UPDATED,
+    category: AuditCategory.CONTENT,
+    targetType: 'Collection',
+    targetIdParam: 'id',
+    adminOnly: true,
+  })
+  removeBook(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.collections.removeBook(id, itemId, toActor(req));
   }
 }
 
 @Controller('u/:username/collections')
 export class UserCollectionsController {
-  constructor(private readonly collectionsService: CollectionsService) {}
-
-  @Get('admin/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles(RoleName.ADMIN)
-  @RequirePermissions(AdminPermissions.MANAGE_BOOKS)
-  async getAdminById(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.collectionsService.getAdminById(id, {
-      cursor,
-      limit: limit ? Number(limit) : undefined,
-    });
-  }
+  constructor(private readonly collections: CollectionsService) {}
 
   @Get(':slug')
   @UseGuards(OptionalJwtAuthGuard)
-  async getUserCollection(
+  getUserCollection(
     @Param('username') username: string,
     @Param('slug') slug: string,
-    @Query('cursor') cursor: string | undefined,
-    @Query('limit') limit: string | undefined,
+    @Query() query: CursorPageQueryDto,
     @Request() req: OptionalAuthRequest,
   ) {
-    const userId = req.user?.userId ?? req.user?.id;
-    return this.collectionsService.getUserCollection(
-      username,
-      slug,
-      userId ? Number(userId) : undefined,
-      { cursor, limit: limit ? Number(limit) : undefined },
-    );
+    return this.collections.getUserCollection(username, slug, toViewerId(req), query);
   }
 }

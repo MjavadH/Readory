@@ -7,29 +7,54 @@ export type CollectionType = 'SYSTEM' | 'USER' | 'FAVORITES';
 
 export type CollectionItem = {
   id: number;
-  position: number;
-  note?: string | null;
-  addedAt?: string;
+  note: string | null;
+  addedAt: string;
   book: BookCardData;
 };
 
+/** Card in public lists. `covers` feeds the cover mosaic (max 4). */
+export type CollectionCard = {
+  id: number;
+  slug: string;
+  title: string;
+  description: string | null;
+  featured: boolean;
+  bookCount: number;
+  updatedAt: string;
+  /** Up to 4 cover URLs, for the collage. */
+  covers: string[];
+  singleBook?: { id: number; slug: string; title: string; type: { slug: string } };
+};
+
+/** Owner/admin card: adds fields the public card doesn't need. */
+export type OwnedCollectionCard = CollectionCard & {
+  type: CollectionType;
+  visibility: CollectionVisibility;
+  locked: boolean;
+};
+
+/** "My collections" card, only present when the list was requested with `bookId`. */
+export type MyCollectionCard = OwnedCollectionCard & {
+  containsBook?: boolean;
+  itemId?: number | null;
+};
+
+/** Full collection detail: metadata + a page of items. */
 export type Collection = {
   id: number;
-  ownerId: number | null;
   type: CollectionType;
-  title: string;
   slug: string;
-  description?: string | null;
+  title: string;
+  description: string | null;
   visibility: CollectionVisibility;
-  allowIndexing: boolean;
   featured: boolean;
   locked: boolean;
-  indexable?: boolean;
   bookCount: number;
-  createdAt: string;
   updatedAt: string;
+  indexable: boolean;
   items: CollectionItem[];
-  containsBook?: boolean;
+  nextCursor: number | null;
+  isOwner?: boolean;
 };
 
 export type CollectionFormState = {
@@ -38,7 +63,6 @@ export type CollectionFormState = {
   description: string;
   visibility: CollectionVisibility;
   featured: boolean;
-  allowIndexing: boolean;
 };
 
 export const emptyCollectionForm: CollectionFormState = {
@@ -47,7 +71,6 @@ export const emptyCollectionForm: CollectionFormState = {
   description: '',
   visibility: 'PUBLIC',
   featured: false,
-  allowIndexing: true,
 };
 
 export const collectionToForm = (collection: Collection): CollectionFormState => ({
@@ -56,5 +79,4 @@ export const collectionToForm = (collection: Collection): CollectionFormState =>
   description: collection.description ?? '',
   visibility: collection.visibility,
   featured: collection.featured,
-  allowIndexing: collection.allowIndexing,
 });
