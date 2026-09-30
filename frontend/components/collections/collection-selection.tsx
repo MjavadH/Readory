@@ -1,9 +1,10 @@
 'use client';
 
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, Check, FolderOpen, Layers3 } from 'lucide-react';
+import { BookOpen, FolderOpen, Layers3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { CollectionCover } from '@/components/collections/collection-cover';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -16,6 +17,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import type { MyCollectionCard } from '@/lib/collection-types';
+import type { BookCardData } from '@/lib/types';
 
 export type CollectionSelectionItem = MyCollectionCard;
 
@@ -29,7 +31,12 @@ export type CollectionSelectionProps = {
   onSave: () => void | Promise<void>;
 };
 
-const SKELETON_KEYS = ['collection-skeleton-1', 'collection-skeleton-2', 'collection-skeleton-3'];
+const SKELETON_KEYS = [
+  'collection-skeleton-1',
+  'collection-skeleton-2',
+  'collection-skeleton-3',
+  'collection-skeleton-4',
+];
 
 function useDesktopPanel() {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -60,9 +67,10 @@ function SelectionHeader({ selectedCount }: { selectedCount: number }) {
             {selectedCount > 0 && (
               <motion.span
                 key={selectedCount}
-                initial={{ opacity: 0, scale: 0.8, y: -3 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.8 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
                 className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
               >
                 {t('CollectionsSelected', { count: selectedCount })}
@@ -75,6 +83,73 @@ function SelectionHeader({ selectedCount }: { selectedCount: number }) {
         </p>
       </div>
     </div>
+  );
+}
+
+function CollectionCard({
+  collection,
+  checked,
+  onToggle,
+}: {
+  collection: CollectionSelectionItem;
+  checked: boolean;
+  onToggle: (id: number, checked: boolean) => void;
+}) {
+  const t = useTranslations('Books');
+  const checkboxId = `collection-${collection.id}`;
+
+  const books = (collection as { books?: BookCardData[] }).books;
+  const covers = (collection as { covers?: string[] }).covers;
+
+  return (
+    <motion.label
+      htmlFor={checkboxId}
+      variants={{
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+      }}
+      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background ${
+        checked
+          ? 'border-primary/45 bg-primary/5'
+          : 'border-border/80 bg-card hover:border-primary/25 hover:bg-muted/30'
+      }`}
+    >
+      <span className="relative block border-b border-border/60 bg-muted/30">
+        <CollectionCover
+          books={books}
+          covers={covers}
+          size="compact"
+          animate={false}
+          className="pointer-events-none"
+        />
+        <span className="absolute inset-e-2.5 top-2.5 z-10">
+          <Checkbox
+            id={checkboxId}
+            checked={checked}
+            onCheckedChange={(value) => onToggle(collection.id, value === true)}
+            aria-label={collection.title}
+            className="h-5 w-5 rounded-md border-border/80 bg-background/85 shadow-sm backdrop-blur"
+          />
+        </span>
+      </span>
+      <span className="flex min-w-0 items-start gap-3 p-3.5">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-foreground sm:text-[15px]">
+            {collection.title}
+          </span>
+          {collection.description && (
+            <span className="mt-0.5 line-clamp-1 block text-xs leading-5 text-muted-foreground">
+              {collection.description}
+            </span>
+          )}
+        </span>
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/70 bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground">
+          <BookOpen className="h-3.5 w-3.5 text-primary" aria-hidden />
+          <span>{collection.bookCount}</span>
+          <span className="sr-only">{t('BooksCount', { count: collection.bookCount })}</span>
+        </span>
+      </span>
+    </motion.label>
   );
 }
 
@@ -94,18 +169,14 @@ function CollectionList({
 
   if (loading && collections.length === 0) {
     return (
-      <div className="space-y-2.5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {SKELETON_KEYS.map((key) => (
           <div
             key={key}
-            className="flex min-h-20 animate-pulse items-center gap-3 rounded-2xl border border-border/70 bg-muted/40 p-3.5"
+            className="overflow-hidden rounded-2xl border border-border/70 bg-muted/40 p-3"
           >
-            <div className="h-5 w-5 rounded-md bg-muted" />
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="h-4 w-2/5 rounded bg-muted" />
-              <div className="h-3 w-4/5 rounded bg-muted" />
-            </div>
-            <div className="h-8 w-12 rounded-xl bg-muted" />
+            <div className="mb-3 aspect-video w-full animate-pulse rounded-xl bg-muted" />
+            <div className="h-4 w-2/5 animate-pulse rounded bg-muted" />
           </div>
         ))}
       </div>
@@ -129,71 +200,18 @@ function CollectionList({
       animate="visible"
       variants={{
         hidden: {},
-        visible: { transition: reduceMotion ? {} : { staggerChildren: 0.045 } },
+        visible: { transition: reduceMotion ? {} : { staggerChildren: 0.03 } },
       }}
-      className="space-y-2.5"
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
     >
-      {collections.map((collection) => {
-        const checked = selectedIds.includes(collection.id);
-        const checkboxId = `collection-${collection.id}`;
-
-        return (
-          <motion.label
-            key={collection.id}
-            htmlFor={checkboxId}
-            variants={{
-              hidden: { opacity: 0, y: reduceMotion ? 0 : 8 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            whileTap={reduceMotion ? undefined : { scale: 0.99 }}
-            className={`group relative flex min-h-20 cursor-pointer items-center gap-3 overflow-hidden rounded-2xl border p-3.5 text-start transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background ${
-              checked
-                ? 'border-primary/45 bg-primary/8 shadow-sm'
-                : 'border-border/80 bg-background/65 hover:border-primary/25 hover:bg-muted/45'
-            }`}
-          >
-            <span
-              className={`absolute inset-y-3 w-1 rounded-full bg-primary transition-opacity ltr:left-0 rtl:right-0 ${checked ? 'opacity-100' : 'opacity-0'}`}
-            />
-            <Checkbox
-              id={checkboxId}
-              checked={checked}
-              onCheckedChange={(value) => onToggle(collection.id, value === true)}
-              aria-label={collection.title}
-              className="h-5 w-5 shrink-0 rounded-md"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2">
-                <span className="truncate text-sm font-semibold text-foreground sm:text-[15px]">
-                  {collection.title}
-                </span>
-                <AnimatePresence initial={false}>
-                  {checked && (
-                    <motion.span
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.6 }}
-                      className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
-                    >
-                      <Check className="h-3 w-3" aria-hidden />
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </span>
-              {collection.description && (
-                <span className="mt-1 line-clamp-2 block text-xs leading-5 text-muted-foreground">
-                  {collection.description}
-                </span>
-              )}
-            </span>
-            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/70 bg-card px-2.5 py-1.5 text-xs font-medium text-muted-foreground">
-              <BookOpen className="h-3.5 w-3.5 text-primary" aria-hidden />
-              <span>{collection.bookCount}</span>
-              <span className="sr-only">{t('BooksCount', { count: collection.bookCount })}</span>
-            </span>
-          </motion.label>
-        );
-      })}
+      {collections.map((collection) => (
+        <CollectionCard
+          key={collection.id}
+          collection={collection}
+          checked={selectedIds.includes(collection.id)}
+          onToggle={onToggle}
+        />
+      ))}
     </motion.div>
   );
 }
@@ -330,7 +348,7 @@ export function CollectionSelection({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[82dvh] w-[min(94vw,42rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-card p-0 shadow-2xl">
+      <DialogContent className="flex max-h-[82dvh] w-[min(94vw,44rem)] max-w-2xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-card p-0 shadow-2xl">
         <div className="border-b border-border/70 px-6 py-5 pe-14">
           <DialogTitle asChild>
             <div>
