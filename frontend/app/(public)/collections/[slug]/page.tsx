@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { AppIcon } from '@/components/AppIcon';
+import { Breadcrumb, buildBreadcrumbJsonLd } from '@/components/breadcrumb';
 import { ApiError, apiClient } from '@/lib/api-client';
 import type { Collection } from '@/lib/collection-types';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
@@ -38,6 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = collection.description?.trim() || undefined;
   const cover = collection.items.find((item) => item.book.coverImage)?.book.coverImage;
   const canonical = absoluteUrl(`/collections/${collection.slug}`);
+  const coverUrl = cover ? absoluteUrl(getBookCoverThumbnailUrl(cover)) : undefined;
 
   return {
     title: collection.title,
@@ -53,12 +56,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: collection.title,
       description,
       url: canonical,
-      images: cover ? [{ url: getBookCoverThumbnailUrl(cover) }] : undefined,
+      images: coverUrl ? [{ url: coverUrl }] : undefined,
     },
     twitter: {
       card: cover ? 'summary_large_image' : 'summary',
       title: collection.title,
       description,
+      images: coverUrl ? [coverUrl] : undefined,
     },
   };
 }
@@ -70,6 +74,17 @@ export default async function PublicCollectionPage({ params }: PageProps) {
 
   // Structured data only for pages that are actually meant to be indexed.
   const jsonLd = collection.indexable ? buildCollectionJsonLd(collection) : null;
+  const breadcrumbItems = [
+    {
+      label: 'Collections',
+      href: '/collections',
+      icon: <AppIcon name="collections" className="h-3.5 w-3.5" />,
+    },
+    { label: collection.title, href: `/collections/${collection.slug}` },
+  ];
+  const breadcrumbJsonLd = collection.indexable
+    ? buildBreadcrumbJsonLd(breadcrumbItems, absoluteUrl)
+    : null;
 
   return (
     <>
@@ -77,6 +92,14 @@ export default async function PublicCollectionPage({ params }: PageProps) {
         /** biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML */
         <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(jsonLd)} />
       ) : null}
+      {breadcrumbJsonLd ? (
+        <script
+          type="application/ld+json"
+          /** biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML */
+          dangerouslySetInnerHTML={jsonLdScript(breadcrumbJsonLd)}
+        />
+      ) : null}
+      <Breadcrumb items={breadcrumbItems} />
       <PublicCollectionView collection={collection} />
     </>
   );

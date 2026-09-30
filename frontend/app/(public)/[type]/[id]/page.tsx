@@ -1,10 +1,9 @@
 import { PublicationStatus } from '@readory/shared';
-import { ChevronRight, Home } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AppIcon } from '@/components/AppIcon';
 import type { BookDetailsData } from '@/components/book-details';
+import { Breadcrumb, buildBreadcrumbJsonLd } from '@/components/breadcrumb';
 import type { ChaptersSectionChapter } from '@/components/chapters-section';
 import { apiClient } from '@/lib/api-client';
 import { getBookCoverThumbnailUrl } from '@/lib/media';
@@ -174,23 +173,6 @@ function buildBookJsonLd(book: BookDetailsData, canonicalUrl: string, coverUrl: 
   };
 }
 
-function buildBreadcrumbJsonLd(book: BookDetailsData, canonicalUrl: string) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: absoluteUrl('/') },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: book.type.name,
-        item: absoluteUrl(`/${book.type.slug}`),
-      },
-      { '@type': 'ListItem', position: 3, name: book.title, item: canonicalUrl },
-    ],
-  };
-}
-
 // fetches once, renders JSON-LD + crawlable
 // breadcrumb, then hands off to the interactive client component.
 export default async function BookDetailsPage({ params }: PageProps) {
@@ -216,6 +198,14 @@ export default async function BookDetailsPage({ params }: PageProps) {
   const coverUrl = absoluteUrl(
     book.coverImage ? getBookCoverThumbnailUrl(book.coverImage) : '/placeholder.svg',
   );
+  const breadcrumbItems = [
+    {
+      label: book.type.name,
+      href: `/${book.type.slug}`,
+      icon: <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />,
+    },
+    { label: book.title, href: getBookUrl(book) },
+  ];
 
   return (
     <>
@@ -228,49 +218,10 @@ export default async function BookDetailsPage({ params }: PageProps) {
       <script
         type="application/ld+json"
         // biome-ignore lint: JSON-LD requires dangerouslySetInnerHTML
-        dangerouslySetInnerHTML={jsonLdScript(buildBreadcrumbJsonLd(book, canonicalUrl))}
+        dangerouslySetInnerHTML={jsonLdScript(buildBreadcrumbJsonLd(breadcrumbItems, absoluteUrl))}
       />
 
-      <div className="mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="min-w-0">
-          <ol className="flex min-w-0 flex-nowrap items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/70 px-2 py-1.5 text-sm shadow-sm backdrop-blur-md scrollbar-none sm:gap-1.5 sm:px-3">
-            <li className="shrink-0">
-              <Link
-                href="/"
-                className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Home className="h-3.5 w-3.5" aria-hidden />
-                <span className="hidden sm:inline">Home</span>
-                <span className="sr-only sm:hidden">Home</span>
-              </Link>
-            </li>
-
-            <li aria-hidden className="shrink-0 text-muted-foreground/40">
-              <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
-            </li>
-
-            <li className="shrink-0">
-              <Link
-                href={`/${book.type.slug}`}
-                className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-medium text-primary transition-colors hover:bg-primary/15"
-              >
-                <AppIcon name={book.type.iconKey} className="h-3.5 w-3.5" />
-                {book.type.name}
-              </Link>
-            </li>
-
-            <li aria-hidden className="shrink-0 text-muted-foreground/40">
-              <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
-            </li>
-
-            <li aria-current="page" className="min-w-0">
-              <span className="block truncate px-2.5 py-1 font-semibold text-foreground">
-                {book.title}
-              </span>
-            </li>
-          </ol>
-        </nav>
-      </div>
+      <Breadcrumb items={breadcrumbItems} />
 
       <BookDetailsPageClient
         key={book.id}
