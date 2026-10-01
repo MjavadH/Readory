@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -6,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { CollectionType, Prisma } from '@prisma/client';
 import { DomainEventType, PublicationStatus } from '@readory/shared';
-import { createHash } from 'crypto';
 import { CacheManager } from '../cache/cache.manager';
 import { CollectionsService } from '../collections/collections.service';
 import { clamp, normalizeQ, normalizeSlug, slugify, toNumber } from '../common';
@@ -198,7 +198,7 @@ export class BooksService {
     if (!exists) throw new NotFoundException('book type not found');
 
     // We cache only the first page (no cursor) to avoid huge cache growth.
-    const hasCursor = Boolean(args.cursor && args.cursor.trim().length);
+    const hasCursor = Boolean(args.cursor?.trim().length);
     if (!hasCursor) {
       const cacheKey = this.buildTypeBrowseCacheKey(typeSlug, args);
       const cached = await this.cacheManager.getString(cacheKey);

@@ -46,9 +46,7 @@ export function extractBlockUnits(nodes: EpubNode[]): BlockUnit[] {
 
   const flushPendingText = () => {
     if (pendingText.length === 0) return;
-    const hasNonWhitespace = pendingText.some(
-      (n) => isText(n) && n.text.trim().length > 0,
-    );
+    const hasNonWhitespace = pendingText.some((n) => isText(n) && n.text.trim().length > 0);
     if (hasNonWhitespace) {
       const syntheticParagraph: EpubElementNode = {
         type: 'element',

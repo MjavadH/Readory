@@ -49,14 +49,7 @@ describe('extractBlockUnits', () => {
 
   it('produces the interleaved text/image/text pattern in document order', () => {
     const units = extractBlockUnits([p('t1'), img(), p('t2'), p('t3'), img(), img()]);
-    expect(units.map((u) => u.kind)).toEqual([
-      'text',
-      'image',
-      'text',
-      'text',
-      'image',
-      'image',
-    ]);
+    expect(units.map((u) => u.kind)).toEqual(['text', 'image', 'text', 'text', 'image', 'image']);
   });
 
   it('treats table, ul, ol, blockquote, pre as single atomic units', () => {

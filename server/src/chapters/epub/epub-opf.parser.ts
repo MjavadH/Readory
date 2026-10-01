@@ -61,7 +61,7 @@ export class EpubOpfParser {
    * entries by design: container.xml and the single OPF file it points to.
    */
   static async parse(archive: EpubArchiveReader): Promise<EpubPackageDocument> {
-    const opfPath = await this.resolveOpfPath(archive);
+    const opfPath = await EpubOpfParser.resolveOpfPath(archive);
     const opfBuffer = await archive.readEntry(opfPath);
     const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/')) : '';
 
@@ -78,9 +78,9 @@ export class EpubOpfParser {
       throw new BadRequestException('Invalid EPUB: missing <package> root in OPF');
     }
 
-    const manifestById = this.parseManifest(pkg, archive, opfDir);
-    const spine = this.parseSpine(pkg, manifestById);
-    const { title, language } = this.parseMetadata(pkg);
+    const manifestById = EpubOpfParser.parseManifest(pkg, archive, opfDir);
+    const spine = EpubOpfParser.parseSpine(pkg, manifestById);
+    const { title, language } = EpubOpfParser.parseMetadata(pkg);
 
     return { opfDir, manifestById, spine, title, language };
   }

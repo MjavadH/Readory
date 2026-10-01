@@ -3,10 +3,7 @@ import { EpubElementNode, EpubNode, isElement, isText } from './epub-ast.types';
 const VOID_TAGS = new Set(['br', 'hr', 'img']);
 
 function escapeHtmlText(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function escapeAttributeValue(value: string): string {

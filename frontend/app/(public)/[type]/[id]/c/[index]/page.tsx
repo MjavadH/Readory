@@ -319,7 +319,7 @@ export default function ChapterPage() {
   // gives us no way to attach React's crossOrigin prop per-element.
   const prepareEpubHtml = useCallback((html: string) => {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE ?? '';
-    return html.replace(/<img\b([^>]*?)\ssrc="([^"]*)"([^>]*)>/gi, (match, before, src, after) => {
+    return html.replace(/<img\b([^>]*?)\ssrc="([^"]*)"([^>]*)>/gi, (_match, before, src, after) => {
       if (!src) {
         return `<img${before} src="/placeholder.svg"${after}>`;
       }
