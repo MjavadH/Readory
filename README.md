@@ -6,6 +6,8 @@
 
 Readory is a TypeScript npm-workspace monorepo for a serialized reading platform. It includes a Next.js frontend, a NestJS API server, and a shared package consumed by both applications.
 
+https://github.com/user-attachments/assets/ee96f090-5c35-4a82-bf77-6b7f6c81f346
+
 ## What the project does
 
 Readory lets readers discover, buy access to, organize, and read books and chapters while giving administrators tools to operate the catalog and platform.
